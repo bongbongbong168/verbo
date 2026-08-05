@@ -1,0 +1,394 @@
+.pe {
+  --pe-bg: #f9f8ff;
+  --pe-card: #ffffff;
+  --pe-border: #e7e3f6;
+  --pe-outline: #2b2643;
+  --pe-accent: #6c4fd1;
+  --pe-accent-light: #8b6ff0;
+  --pe-text: #1c1730;
+  --pe-text-muted: #726c88;
+
+  background: var(--pe-bg);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--pe-text);
+}
+
+.pe-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+.pe-empty {
+  color: var(--pe-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ---- header card: cover + title + player ---- */
+
+.pe-card {
+  background: var(--pe-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 20px;
+  padding: 1.8rem;
+  box-shadow: 0 4px 18px rgba(28, 23, 48, 0.06);
+  margin-bottom: 2.2rem;
+}
+
+.pe-card-top {
+  display: flex;
+  gap: 1.8rem;
+  align-items: flex-start;
+}
+
+.pe-cover {
+  width: 290px;
+  height: 185px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #cfc6ef, #8b6ff0);
+}
+
+.pe-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pe-cover-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.pe-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pe-title {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  line-height: 1.25;
+  margin: 0 0 1.1rem;
+}
+
+.pe-author-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.3rem;
+}
+
+.pe-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pe-accent-light), var(--pe-accent));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pe-author-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.pe-author-lang {
+  color: var(--pe-text-muted);
+  font-size: 0.78rem;
+  margin: 0.1rem 0 0;
+}
+
+/* ---- custom audio player ---- */
+
+.pe-player {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.pe-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.pe-skip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--pe-outline);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+}
+
+.pe-skip:hover {
+  color: var(--pe-accent);
+}
+
+.pe-skip svg {
+  width: 26px;
+  height: 26px;
+}
+
+.pe-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: var(--pe-outline);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.pe-play:hover {
+  background: var(--pe-accent);
+  transform: scale(1.04);
+}
+
+.pe-play svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pe-progress-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+
+.pe-progress {
+  position: relative;
+  height: 5px;
+  border-radius: 999px;
+  background: #ded9ee;
+  cursor: pointer;
+}
+
+.pe-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--pe-outline);
+}
+
+.pe-progress-handle {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--pe-outline);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pe-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  color: var(--pe-text-muted);
+}
+
+.pe-card-divider {
+  border: none;
+  border-top: 1px solid var(--pe-border);
+  margin: 1.6rem 0 1.2rem;
+}
+
+.pe-description {
+  color: var(--pe-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 0.3rem;
+}
+
+/* ---- transcript ---- */
+
+.pe-transcript-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.pe-transcript-heading {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.pe-admin-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pe-saved-note {
+  color: var(--pe-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 0.8rem;
+}
+
+.pe-transcript-panel {
+  background: var(--pe-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 20px;
+  padding: 2rem 2.2rem 2.4rem;
+}
+
+.pe-hint {
+  color: var(--pe-text-muted);
+  font-size: 0.8rem;
+  margin: 0 0 1.2rem;
+}
+
+/* Chinese transcript: larger, wide character spacing, regular weight.
+   Hellix leads for Latin/digits; Chinese falls through to a regular-weight
+   system CJK face — never Douyin Sans, which ships only a 700 weight. */
+.pe-transcript {
+  white-space: pre-wrap;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 2.1;
+  letter-spacing: 0.25em;
+  color: var(--pe-text);
+  margin: 0;
+}
+
+.pe-word {
+  cursor: help;
+  border-radius: 3px;
+  transition: background 0.1s ease;
+}
+
+.pe-word:hover {
+  background: #ede8fb;
+}
+
+/* ---- admin form ---- */
+
+.pe-form {
+  background: var(--pe-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 16px;
+  padding: 1.4rem;
+  max-width: 620px;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.pe-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--pe-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.pe-form input[type='text'],
+.pe-form input:not([type]),
+.pe-form select,
+.pe-form textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--pe-text);
+  border: 1px solid var(--pe-border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.pe-form input:focus,
+.pe-form select:focus,
+.pe-form textarea:focus {
+  border-color: var(--pe-accent-light);
+}
+
+.pe-btn-primary {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--pe-accent);
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.pe-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pe-btn-danger {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #b3261e;
+  background: var(--pe-card);
+  border: 1px solid #f6c6c1;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+}
+
+.pe-play:focus-visible,
+.pe-skip:focus-visible,
+.pe-progress:focus-visible,
+.pe-btn-primary:focus-visible,
+.pe-btn-danger:focus-visible {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .pe-card-top {
+    flex-direction: column;
+  }
+
+  .pe-cover {
+    width: 100%;
+    height: 200px;
+  }
+}

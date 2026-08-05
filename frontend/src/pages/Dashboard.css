@@ -1,0 +1,360 @@
+.db {
+  --db-bg: #f6f5fc;
+  --db-card: #ffffff;
+  --db-border: #e7e3f6;
+  --db-accent: #6c4fd1;
+  --db-accent-light: #8b6ff0;
+  --db-accent-dark: #4e37a8;
+  --db-text: #1c1730;
+  --db-text-muted: #726c88;
+  --db-pill-bg: #f1edfc;
+
+  background: var(--db-bg);
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--db-text);
+}
+
+.db-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.db-hero {
+  position: relative;
+  overflow: hidden;
+  background: #7d76a1;
+  border-radius: 24px;
+  padding: 2.2rem clamp(1.5rem, 4vw, 3rem);
+  color: #fff;
+  margin-bottom: 2.2rem;
+  box-shadow: 0 4px 4px rgba(43, 38, 67, 0.3);
+}
+
+.db-hero-swoosh {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.db-streak-badge {
+  position: absolute;
+  top: 1.4rem;
+  right: clamp(1.5rem, 4vw, 3rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f2f2f2;
+  color: #69667a;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  z-index: 1;
+  cursor: default;
+}
+
+.db-streak-flame {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.db-hero-content {
+  position: relative;
+  max-width: 640px;
+}
+
+.db-greeting {
+  font-family: 'Hellix', 'Douyin Sans', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin: 0 0 0.9rem;
+  letter-spacing: -0.01em;
+}
+
+.db-quote-chinese {
+  font-family: 'Hellix', 'Douyin Sans', sans-serif;
+  font-size: 1.05rem;
+  margin: 0 0 0.15rem;
+  opacity: 0.95;
+}
+
+.db-quote-pinyin {
+  font-size: 0.85rem;
+  margin: 0 0 0.15rem;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+.db-quote-english {
+  font-size: 1rem;
+  margin: 0 0 1.4rem;
+  opacity: 0.95;
+}
+
+.db-quote-empty {
+  margin: 0 0 1.4rem;
+  opacity: 0.8;
+}
+
+.db-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.db-btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #2b2643;
+  background: #fff;
+  border: 1.5px solid #2b2643;
+  border-radius: 19px;
+  box-shadow: 0 3px 0 0 #2b2643;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+
+.db-btn-cta:hover {
+  transform: translateY(-1px);
+}
+
+.db-btn-cta-arrow {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  position: relative;
+  top: 2px;
+}
+
+.db-quote-edit-toggle {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+}
+
+.db-quote-form {
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 480px;
+  margin-bottom: 1rem;
+}
+
+.db-quote-form label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 0.2rem;
+}
+
+.db-quote-form input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--db-text);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.db-quote-form-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.db-btn-primary {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--db-accent-dark);
+  background: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+}
+
+.db-btn-ghost {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+}
+
+.db-section-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+.db-section {
+  margin-bottom: 2.4rem;
+}
+
+.db-empty {
+  color: var(--db-text-muted);
+  font-size: 0.9rem;
+}
+
+.db-teachers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.db-teacher-card {
+  background: var(--db-card);
+  border: 1px solid var(--db-border);
+  border-radius: 18px;
+  padding: 1.2rem;
+  text-decoration: none;
+  color: var(--db-text);
+  display: block;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.db-teacher-card:hover {
+  box-shadow: 0 4px 14px rgba(28, 23, 48, 0.08);
+  transform: translateY(-2px);
+}
+
+.db-teacher-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: var(--db-pill-bg);
+  margin-bottom: 0.8rem;
+}
+
+.db-teacher-photo-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--db-accent-light), var(--db-accent));
+  color: #fff;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.db-teacher-name {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 0.3rem;
+}
+
+.db-teacher-meta {
+  color: var(--db-text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.db-teacher-rate {
+  display: inline-block;
+  background: var(--db-pill-bg);
+  color: var(--db-accent-dark);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+}
+
+.db-reads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  max-width: 640px;
+}
+
+.db-read-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--db-card);
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  text-decoration: none;
+  color: var(--db-text);
+  transition: box-shadow 0.15s ease;
+}
+
+.db-read-row:hover {
+  box-shadow: 0 4px 14px rgba(28, 23, 48, 0.08);
+}
+
+.db-read-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-read-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.98rem;
+  margin: 0 0 0.2rem;
+}
+
+.db-read-type {
+  color: var(--db-text-muted);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.db-read-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--db-pill-bg);
+  flex-shrink: 0;
+}
+
+.db-read-thumb-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--db-pill-bg);
+  flex-shrink: 0;
+}
