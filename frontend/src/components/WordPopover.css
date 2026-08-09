@@ -1,0 +1,127 @@
+/* Hover card for tokenized Chinese text. Prefix `wp-`.
+   Dark navy on the light page so it reads as a layer above the text, matching
+   the Scan hero and the sidebar rather than introducing a new surface colour. */
+
+.wp {
+  position: fixed;
+  z-index: 60;
+  box-sizing: border-box;
+  transform: translate(-50%, -100%);
+  background: #2b2643;
+  color: #fff;
+  border-radius: 14px;
+  padding: 0.85rem 1rem 0.7rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  box-shadow: 0 18px 38px rgba(27, 22, 48, 0.32);
+  pointer-events: none;
+  animation: wp-in 0.12s ease-out;
+}
+
+.wp-below {
+  transform: translate(-50%, 0);
+}
+
+@keyframes wp-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+}
+
+.wp-below {
+  animation-name: wp-in-below;
+}
+
+@keyframes wp-in-below {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+}
+
+/* Arrow. --wp-arrow is the word's centre relative to the (clamped) card
+   centre, so the tip keeps pointing at the word even when the card is pushed
+   away from the viewport edge. */
+.wp::after {
+  content: '';
+  position: absolute;
+  left: calc(50% + var(--wp-arrow, 0px));
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  background: #2b2643;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.wp-below::after {
+  bottom: auto;
+  top: -5px;
+}
+
+.wp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.wp-hanzi {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  line-height: 1.1;
+}
+
+.wp-pinyin {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #c9bdf3;
+}
+
+.wp-translation {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+}
+
+.wp-none {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.wp-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.wp-saved {
+  color: #a8e6b8;
+}
+
+.wp-foot kbd {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  padding: 0.1rem 0.34rem;
+  margin-right: 0.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wp {
+    animation: none;
+  }
+}

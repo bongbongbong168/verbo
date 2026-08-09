@@ -11,15 +11,27 @@ class StudyLevelController extends Controller
 {
     public function index()
     {
-        // Oldest first so HSK 1 leads the carousel rather than trailing it.
+        // Natural sort by title so the carousel runs HSK 1..5 in order,
+        // regardless of the order the levels were created in. SORT_NATURAL
+        // also keeps "HSK 10" after "HSK 9" rather than after "HSK 1".
         return StudyLevel::query()
-            ->orderBy('id')
-            ->get(['id', 'title', 'description', 'image_path', 'category']);
+            ->get(['id', 'title', 'description', 'level_label', 'image_path', 'banner_path', 'accent_color', 'category'])
+            ->sortBy('title', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
     }
 
+    /**
+     * Units carry vocabulary/grammar counts so the module cards can show
+     * "27 words · 3 Grammar" without the frontend fetching each unit.
+     */
     public function show(StudyLevel $studyLevel)
     {
-        return $studyLevel->load('units:id,study_level_id,title,description');
+        return $studyLevel->load([
+            'units' => fn ($q) => $q
+                ->select('id', 'study_level_id', 'lesson_label', 'title', 'description')
+                ->withCount(['vocabulary', 'grammarPoints'])
+                ->orderBy('id'),
+        ]);
     }
 
     public function store(Request $request)
@@ -29,8 +41,11 @@ class StudyLevelController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'level_label' => ['nullable', 'string', 'max:255'],
+            'accent_color' => ['nullable', 'string', 'max:32'],
             'category' => ['nullable', 'string', 'in:hsk,daily'],
             'image' => ['nullable', 'image', 'max:10240'],
+            'banner' => ['nullable', 'image', 'max:10240'],
         ]);
 
         $data['category'] = $data['category'] ?? 'hsk';
@@ -38,7 +53,10 @@ class StudyLevelController extends Controller
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('study-levels', 'public');
         }
-        unset($data['image']);
+        if ($request->hasFile('banner')) {
+            $data['banner_path'] = $request->file('banner')->store('study-levels', 'public');
+        }
+        unset($data['image'], $data['banner']);
 
         $level = $request->user()->studyLevels()->create($data);
 
@@ -52,8 +70,11 @@ class StudyLevelController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'level_label' => ['nullable', 'string', 'max:255'],
+            'accent_color' => ['nullable', 'string', 'max:32'],
             'category' => ['nullable', 'string', 'in:hsk,daily'],
             'image' => ['nullable', 'image', 'max:10240'],
+            'banner' => ['nullable', 'image', 'max:10240'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -62,7 +83,13 @@ class StudyLevelController extends Controller
             }
             $data['image_path'] = $request->file('image')->store('study-levels', 'public');
         }
-        unset($data['image']);
+        if ($request->hasFile('banner')) {
+            if ($studyLevel->banner_path) {
+                Storage::disk('public')->delete($studyLevel->banner_path);
+            }
+            $data['banner_path'] = $request->file('banner')->store('study-levels', 'public');
+        }
+        unset($data['image'], $data['banner']);
 
         $studyLevel->update($data);
 
@@ -73,8 +100,10 @@ class StudyLevelController extends Controller
     {
         abort_unless($request->user()->is_admin, 403);
 
-        if ($studyLevel->image_path) {
-            Storage::disk('public')->delete($studyLevel->image_path);
+        foreach ([$studyLevel->image_path, $studyLevel->banner_path] as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         $studyLevel->delete();

@@ -1,0 +1,1319 @@
+.un {
+  --un-bg: #f9f8ff;
+  --un-card: #ffffff;
+  --un-border: #e7e3f6;
+  --un-outline: #2b2643;
+  --un-accent: #6c4fd1;
+  --un-accent-light: #8b6ff0;
+  --un-text: #1c1730;
+  --un-text-muted: #726c88;
+  /* Sampled from design/study/moduledetailedpage/Study (3).png */
+  --un-tab-active: #a89ce3;
+  --un-tab-edge: #7d76a1;
+  --un-control-border: #898989;
+  --un-panel-border: #e4e3e9;
+  --un-divider: #efefef;
+
+  background: var(--un-bg);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--un-text);
+}
+
+/* ---- breadcrumb ---- */
+
+.un-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+
+.un-breadcrumb a {
+  color: var(--un-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.un-breadcrumb a:hover {
+  color: var(--un-accent);
+}
+
+.un-breadcrumb-sep {
+  color: #c9c3de;
+}
+
+.un-breadcrumb-current {
+  font-weight: 700;
+}
+
+.un-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+.un-empty {
+  color: var(--un-text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.un-saved-note {
+  color: var(--un-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 0.8rem;
+}
+
+.un-hint {
+  color: var(--un-text-muted);
+  font-size: 0.82rem;
+  margin: 0 0 1.2rem;
+}
+
+/* ---- hero: same treatment as the level page, minus the book art ---- */
+
+/* Vertical padding is deliberately uneven. Symmetric padding centres the
+   *boxes*, but the pill's box top is its ink top while the subtitle's box
+   bottom carries ~5px of empty leading under the ink — so equal padding
+   reads as sitting low. These values put the ink at the design's 30/46
+   split (measured off Study (3).png), which is what looks centred. */
+.un-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--hero-accent);
+  border: 2px solid #6d6d70;
+  border-radius: 16px;
+  padding: 1.75rem clamp(1.4rem, 3vw, 2.2rem) 2.45rem;
+  margin-bottom: 1.6rem;
+}
+
+.un-hero-pill {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.4);
+  color: #d9d9d9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1.5px solid #000;
+  border-radius: 999px;
+  padding: 0.36rem 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.un-hero-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  line-height: 1.05;
+  color: #fff;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+.un-hero-subtitle {
+  color: #fff;
+  font-size: 0.98rem;
+  margin: 0;
+  max-width: 52ch;
+}
+
+/* Decorative ring, right side of the banner. Geometry measured off the
+   export: outer 174px, 19px stroke, centre 89px in from the right edge and
+   at 54.5% of the banner height (a touch below true centre).
+
+   A gradient stroke is drawn as a filled circle with the middle punched out
+   by a radial-gradient mask — `border` cannot take a gradient, and
+   `border-image` ignores border-radius. The 1px soft edge on each stop is
+   there to antialias the circle. */
+.un-hero-ring {
+  position: absolute;
+  top: 54.5%;
+  right: 0;
+  width: 174px;
+  height: 174px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f9d6c0 0%, #f9c298 100%);
+  -webkit-mask: radial-gradient(circle 87px at center, transparent 67.5px, #000 68.5px);
+  mask: radial-gradient(circle 87px at center, transparent 67.5px, #000 68.5px);
+  pointer-events: none;
+}
+
+/* ---- tab bar ---- */
+
+.un-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  background: var(--un-card);
+  border: 1.5px solid var(--un-outline);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.un-tab {
+  flex: 1;
+  min-width: 120px;
+  box-sizing: border-box;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #b2b2b2;
+  background: var(--un-card);
+  /* 2px on every tab so switching the active one never shifts the row */
+  border: 2px solid #ebebeb;
+  border-radius: 12px;
+  padding: 0.7rem 1.2rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+/* Hovering an inactive tab previews the sticker effect: it lifts into the
+   same offset-shadow treatment the active tab wears, in a lighter tint so it
+   still reads as "not selected". :not(.active) keeps it from fighting the
+   active tab's own shadow. */
+.un-tab:not(.active):hover {
+  color: var(--un-text);
+  border-color: var(--un-tab-edge);
+  box-shadow:
+    3px 3px 0 0 var(--un-card),
+    3px 3px 0 2px var(--un-tab-edge);
+}
+
+.un-tab:not(.active):active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* Sticker treatment: the tab is duplicated 3px down/right, and the copy keeps
+   its own fill and outline. Two shadows do that — the first paints the offset
+   purple face, the second sits behind it with 2px spread to form its border. */
+.un-tab.active {
+  background: var(--un-tab-active);
+  border-color: var(--un-tab-edge);
+  color: #fff;
+  box-shadow:
+    3px 3px 0 0 var(--un-tab-active),
+    3px 3px 0 2px var(--un-tab-edge);
+}
+
+.un-tab.active:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* ---- section label ---- */
+
+.un-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.9rem;
+}
+
+.un-section-label img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* ---- shared panel ---- */
+
+.un-panel {
+  background: var(--un-card);
+  border: 1px solid var(--un-panel-border);
+  border-radius: 16px;
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 1.4rem;
+}
+
+/* ---- vocabulary list ---- */
+
+.un-vocab {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.un-vocab-item + .un-vocab-item {
+  border-top: 1px solid var(--un-divider);
+}
+
+.un-vocab-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.6rem;
+}
+
+.un-vocab-index {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--un-text);
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.un-vocab-hanzi {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.un-vocab-pinyin {
+  color: var(--un-text-muted);
+  font-size: 0.95rem;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+/* Pushes the translation and controls to the right edge */
+.un-vocab-translation {
+  flex: 1;
+  text-align: right;
+  font-weight: 700;
+  font-size: 1.05rem;
+  min-width: 0;
+}
+
+.un-explain-btn {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--un-text);
+  background: var(--un-card);
+  border: 1px solid var(--un-control-border);
+  border-radius: 10px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.un-explain-btn:hover:not(:disabled) {
+  border-color: var(--un-accent-light);
+  color: var(--un-accent);
+}
+
+.un-explain-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.un-speak-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--un-control-border);
+  border-radius: 10px;
+  background: var(--un-card);
+  color: var(--un-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.un-speak-btn:hover {
+  border-color: var(--un-accent-light);
+  color: var(--un-accent);
+}
+
+.un-speak-btn.speaking {
+  border-color: var(--un-accent);
+  color: var(--un-accent);
+}
+
+.un-speak-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.un-vocab-explanation {
+  color: var(--un-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+  padding: 0 1.6rem 1.15rem 4.6rem;
+}
+
+.un-delete-btn {
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--un-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.45rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.un-delete-btn:hover {
+  color: #b3261e;
+  background: #fdecea;
+}
+
+/* ---- reading ---- */
+
+.un-reading {
+  white-space: pre-wrap;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 2.1;
+  letter-spacing: 0.25em;
+  margin: 0;
+}
+
+.un-panel > .un-hint,
+.un-panel > .un-reading {
+  padding-left: 1.8rem;
+  padding-right: 1.8rem;
+}
+
+.un-panel > .un-hint {
+  padding-top: 1.5rem;
+}
+
+.un-panel > .un-reading {
+  padding-bottom: 1.8rem;
+}
+
+.un-word {
+  cursor: help;
+  border-radius: 3px;
+  transition: background 0.1s ease;
+}
+
+.un-word:hover {
+  background: #ede8fb;
+}
+
+/* ---- grammar ----
+   Measured off design/study/grammar.png (1440px artboard, ~1:1 with CSS px):
+   panel padding 34, badge 48x48, cards 2px #2b2643 / radius 16, tag pills
+   inset 28 left and 29 top, card gap 24. */
+
+.un-grammar {
+  list-style: none;
+  margin: 0;
+  padding: 2.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.6rem;
+}
+
+.un-grammar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.un-grammar-head {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.15rem;
+}
+
+/* Solid black square-ish badge carrying the point's index */
+.un-grammar-num {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #000;
+  color: #fff;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.un-grammar-title {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Shared card shell. The soft shadow is the resting state; .raised adds the
+   hard black offset the Structure card carries in the design. */
+.un-grammar-card {
+  position: relative;
+  background: var(--un-card);
+  border: 2px solid var(--un-outline);
+  border-radius: 16px;
+  padding: 1.75rem 1.85rem;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.22);
+}
+
+.un-grammar-card.raised {
+  box-shadow: 0 3px 0 0 #000, 0 7px 9px rgba(0, 0, 0, 0.2);
+}
+
+.un-grammar-desc {
+  font-size: 1.15rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Black tag pill sitting at the card's padding edge */
+.un-grammar-tag {
+  display: inline-block;
+  background: #000;
+  color: #fff;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  line-height: 1;
+  border-radius: 10px;
+  padding: 0.72rem 1.1rem;
+  /* The design insets the pill 28px from the card edge but the body text 32px,
+     so it hangs 4px left of the text it labels. */
+  margin: 0 0 1.6rem -4px;
+}
+
+.un-grammar-structure {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.25;
+  color: var(--un-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Chinese + pinyin on the left, English pinned right on the first line */
+.un-grammar-example {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.un-grammar-example + .un-grammar-example {
+  margin-top: 1.4rem;
+}
+
+.un-grammar-ex-cn {
+  min-width: 0;
+}
+
+.un-grammar-ex-hanzi {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.un-grammar-ex-pinyin {
+  font-size: 1.1rem;
+  line-height: 1.4;
+  color: var(--un-text);
+  margin: 0.15rem 0 0;
+}
+
+.un-grammar-ex-en {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.4;
+  text-align: right;
+  margin: 0;
+}
+
+.un-grammar-ex-remove {
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--un-text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  cursor: pointer;
+}
+
+.un-grammar-ex-remove:hover {
+  color: #b3261e;
+}
+
+.un-grammar-empty {
+  color: var(--un-text-muted);
+  margin: 0;
+}
+
+.un-form-note {
+  color: var(--un-text-muted);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .un-grammar {
+    padding: 1.25rem;
+  }
+
+  .un-grammar-title,
+  .un-grammar-structure {
+    font-size: 1.5rem;
+  }
+
+  .un-grammar-example {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .un-grammar-ex-en {
+    text-align: left;
+  }
+}
+
+/* ---- culture ----
+   Measured off design/study/culture.png (1440px artboard, ~1:1 with CSS px):
+   black card 948x706 radius 20, image frame 347x199 with a 5px white border,
+   dot strip 152x23 sitting 14px under it, and a body card inset only 4px from
+   the card's sides with a 37px black band left showing beneath it. */
+
+.un-cu-panel {
+  padding: 5.5rem 1.6rem 6.5rem;
+}
+
+.un-cu-card {
+  display: block;
+  background: #000;
+  border-radius: 20px;
+  /* Near-flush sides, deep band below — that band is the design's signature */
+  padding: 4px 4px 37px;
+}
+
+.un-cu-top {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4.6rem);
+  padding: 61px 39px 23px;
+}
+
+/* The dots hang outside the flow so the row centres the pills against the
+   image itself, which is how the design lines them up. */
+.un-cu-media {
+  position: relative;
+  flex: 0 0 auto;
+  width: 347px;
+  max-width: 100%;
+}
+
+.un-cu-frame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 347 / 199;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 5px solid #fff;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.un-cu-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.un-cu-frame-empty {
+  color: #6b6b6b;
+  font-size: 0.85rem;
+}
+
+.un-cu-dots {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  background: #292828;
+  border-radius: 999px;
+  padding: 7px 10px;
+}
+
+.un-cu-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.un-cu-dot.active,
+.un-cu-dot:hover {
+  background: #fff;
+}
+
+.un-cu-heads {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+/* Both headings are white pills on the black field, sized to their text */
+.un-cu-title {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 2.1vw, 1.875rem);
+  line-height: 1.2;
+  color: #000;
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.25rem 1.7rem;
+  margin: 0;
+  text-align: center;
+}
+
+.un-cu-term {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 1.8vw, 1.625rem);
+  line-height: 1.2;
+  color: #000;
+  background: #fff;
+  border-radius: 14px;
+  padding: 0.5rem 1.35rem;
+  margin: 0;
+  text-align: center;
+}
+
+.un-cu-body {
+  background: #fff;
+  border-radius: 16px;
+  padding: clamp(1.5rem, 3vw, 3rem);
+  text-align: center;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 600;
+  font-size: clamp(1.05rem, 2.1vw, 1.875rem);
+  line-height: 1.53;
+  color: #000;
+}
+
+.un-cu-body p {
+  margin: 0 0 1rem;
+}
+
+.un-cu-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- culture: admin photo manager ---- */
+
+.un-cu-manage {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+/* Selector is `.un-form label.un-cu-upload`, not `.un-cu-upload`, on purpose:
+   this control sits inside .un-form, and `.un-form label` (0,2,0) outranks
+   `.un-btn-primary` (0,1,0) — so the field-label styling was winning and the
+   button rendered as small grey text on the purple fill. */
+.un-form label.un-cu-upload,
+.un-cu-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--un-accent);
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.un-form label.un-cu-upload:hover,
+.un-cu-upload:hover {
+  background: var(--un-accent-light);
+}
+
+.un-cu-thumb {
+  position: relative;
+  display: inline-block;
+  width: 64px;
+  height: 46px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--un-panel-border);
+}
+
+.un-cu-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.un-cu-thumb button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .un-cu-panel {
+    padding: 2rem 1rem 2.5rem;
+  }
+
+  .un-cu-top {
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 20px 20px;
+    gap: 3rem;
+  }
+
+  .un-cu-heads {
+    width: 100%;
+  }
+}
+
+/* ---- quiz ---- */
+
+.un-quiz {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: quiz;
+}
+
+.un-quiz-item {
+  padding: 1.4rem 1.8rem;
+}
+
+.un-quiz-item + .un-quiz-item {
+  border-top: 1px solid var(--un-border);
+}
+
+.un-quiz-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.un-quiz-question {
+  font-weight: 600;
+  font-size: 1.02rem;
+  margin: 0 0 0.9rem;
+}
+
+.un-quiz-options {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.un-quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--un-text);
+  background: var(--un-card);
+  border: 1px solid var(--un-border);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.un-quiz-option:hover:not(:disabled) {
+  border-color: var(--un-accent-light);
+}
+
+.un-quiz-option-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--un-bg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.un-quiz-option.chosen {
+  border-color: var(--un-accent);
+}
+
+.un-quiz-option.correct {
+  border-color: #2e7d52;
+  background: #eaf6ef;
+}
+
+.un-quiz-option.wrong {
+  border-color: #b3261e;
+  background: #fdecea;
+}
+
+.un-quiz-option:disabled {
+  cursor: default;
+}
+
+.un-quiz-result {
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.un-quiz-result.correct {
+  color: #2e7d52;
+}
+
+.un-quiz-result.wrong {
+  color: #b3261e;
+}
+
+/* ---- admin ---- */
+
+.un-admin {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.un-btn-primary {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--un-accent);
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.un-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.un-form {
+  background: var(--un-card);
+  border: 1px solid var(--un-border);
+  border-radius: 16px;
+  padding: 1.4rem;
+  margin-bottom: 1.4rem;
+  max-width: 620px;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.un-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--un-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.un-form input,
+.un-form select,
+.un-form textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--un-text);
+  border: 1px solid var(--un-border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.un-form input:focus,
+.un-form select:focus,
+.un-form textarea:focus {
+  border-color: var(--un-accent-light);
+}
+
+.un-tab:focus-visible,
+.un-explain-btn:focus-visible,
+.un-speak-btn:focus-visible,
+.un-quiz-option:focus-visible,
+.un-btn-primary:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .un-vocab-row {
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  .un-vocab-translation {
+    text-align: left;
+    flex-basis: 100%;
+    order: 5;
+  }
+
+  .un-vocab-explanation {
+    padding-left: 1.6rem;
+  }
+}
+
+/* ================= Reading tab: conversation view =================
+   Values sampled from design/study/readinhsk/Reading.png */
+
+.un-reading-panel {
+  background: var(--un-card);
+  border: 1px solid var(--un-panel-border);
+  border-radius: 16px;
+  padding: 1.6rem;
+  margin-bottom: 1.4rem;
+}
+
+/* ---- text selector pills (same sticker idiom as the tabs) ---- */
+
+.un-text-tabs {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.8rem;
+}
+
+.un-text-pill-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.un-text-pill {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--un-text);
+  background: var(--un-card);
+  border: 2px solid var(--un-tab-edge);
+  border-radius: 10px;
+  padding: 0.6rem 1.3rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.un-text-pill:hover:not(.active) {
+  box-shadow:
+    3px 3px 0 0 var(--un-card),
+    3px 3px 0 2px var(--un-tab-edge);
+}
+
+.un-text-pill.active {
+  background: var(--un-tab-active);
+  color: #fff;
+  box-shadow:
+    3px 3px 0 0 var(--un-tab-active),
+    3px 3px 0 2px var(--un-tab-edge);
+}
+
+.un-text-pill:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.un-text-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--un-tab-edge);
+  background: var(--un-card);
+  color: var(--un-text-muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.un-text-remove:hover {
+  color: #b3261e;
+  border-color: #b3261e;
+}
+
+.un-text-add {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--un-accent);
+  background: var(--un-card);
+  border: 2px dashed var(--un-tab-edge);
+  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+}
+
+.un-form-inline {
+  max-width: 420px;
+  margin-bottom: 1.5rem;
+}
+
+/* ---- two column: dialogue + new words ---- */
+
+.un-reading-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 1.6rem;
+  align-items: start;
+}
+
+.un-dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+/* ---- a speaker line ----
+   The speaker tag straddles the bubble's top-left corner, so the bubble
+   carries top padding to leave room for it. */
+
+.un-line {
+  position: relative;
+  background: #fffbed;
+  border: 1.5px solid #000;
+  border-radius: 12px;
+  padding: 1.5rem 1.6rem 1.1rem;
+}
+
+.un-line.alt {
+  background: #e5e0ff;
+}
+
+.un-line-speaker {
+  position: absolute;
+  top: -15px;
+  left: 18px;
+  background: var(--un-card);
+  border: 1.5px solid #000;
+  border-radius: 8px;
+  padding: 0.25rem 0.85rem;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.un-line-remove {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
+}
+
+.un-line-remove:hover {
+  color: #b3261e;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.un-line-chinese {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  letter-spacing: 0.16em;
+  margin: 0 0 0.2rem;
+}
+
+.un-line-pinyin {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---- New Words side panel ----
+   Measured from design/study/readinhsk/Group 39631.png (385x420):
+   the white card sits nearly flush to the sides (~2px) and the black shows
+   as a ~12px band along the bottom, giving it the sticker look. */
+
+.un-newwords {
+  background: #000;
+  border: 1px solid var(--un-outline);
+  border-radius: 18px;
+  padding: 0 2px 12px;
+  position: sticky;
+  top: 1.5rem;
+  overflow: hidden;
+}
+
+.un-newwords-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  height: 63px;
+  padding: 0 12px 0 14px;
+}
+
+.un-newwords-title {
+  color: #fff;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.un-newwords-chip {
+  background: #fff;
+  color: #000;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-radius: 12px;
+  padding: 0 1.1rem;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.un-newwords-body {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.4rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.un-newwords-empty {
+  color: var(--un-text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+  text-align: center;
+}
+
+.un-newword {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.un-newword-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.un-newword-hanzi {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  min-width: 82px;
+  flex-shrink: 0;
+}
+
+.un-newword-meaning {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.un-newword-pinyin {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.un-newword-translation {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 1100px) {
+  .un-reading-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .un-newwords {
+    position: static;
+  }
+}

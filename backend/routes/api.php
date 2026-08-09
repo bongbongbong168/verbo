@@ -5,11 +5,13 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\FlashcardController;
 use App\Http\Controllers\Api\PodcastController;
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ScanController;
 use App\Http\Controllers\Api\StudyGrammarPointController;
 use App\Http\Controllers\Api\StudyLevelController;
 use App\Http\Controllers\Api\StudyQuizQuestionController;
+use App\Http\Controllers\Api\StudyTextController;
 use App\Http\Controllers\Api\StudyUnitController;
 use App\Http\Controllers\Api\StudyVocabularyController;
 use App\Http\Controllers\Api\TutorController;
@@ -46,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/scans', [ScanController::class, 'index']);
     Route::post('/scans', [ScanController::class, 'store']);
     Route::get('/scans/{scan}', [ScanController::class, 'show']);
+    Route::delete('/scans/{scan}', [ScanController::class, 'destroy']);
 
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::get('/articles/{article}', [ArticleController::class, 'show']);
@@ -79,16 +82,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/study-units/{studyUnit}', [StudyUnitController::class, 'show']);
     Route::put('/study-units/{studyUnit}', [StudyUnitController::class, 'update']);
     Route::delete('/study-units/{studyUnit}', [StudyUnitController::class, 'destroy']);
+    Route::post('/study-units/{studyUnit}/culture-images', [StudyUnitController::class, 'storeCultureImage']);
+    Route::delete('/study-culture-images/{studyCultureImage}', [StudyUnitController::class, 'destroyCultureImage']);
 
     Route::post('/study-units/{studyUnit}/vocabulary', [StudyVocabularyController::class, 'store']);
     Route::delete('/study-vocabulary/{studyVocabulary}', [StudyVocabularyController::class, 'destroy']);
 
+    Route::post('/study-units/{studyUnit}/texts', [StudyTextController::class, 'store']);
+    Route::delete('/study-texts/{studyText}', [StudyTextController::class, 'destroy']);
+    Route::post('/study-texts/{studyText}/lines', [StudyTextController::class, 'storeLine']);
+    Route::delete('/study-text-lines/{studyTextLine}', [StudyTextController::class, 'destroyLine']);
+
     Route::post('/study-units/{studyUnit}/grammar', [StudyGrammarPointController::class, 'store']);
+    Route::put('/study-grammar/{studyGrammarPoint}', [StudyGrammarPointController::class, 'update']);
     Route::delete('/study-grammar/{studyGrammarPoint}', [StudyGrammarPointController::class, 'destroy']);
+    Route::post('/study-grammar/{studyGrammarPoint}/examples', [StudyGrammarPointController::class, 'storeExample']);
+    Route::delete('/study-grammar-examples/{studyGrammarExample}', [StudyGrammarPointController::class, 'destroyExample']);
 
     Route::post('/study-units/{studyUnit}/quiz', [StudyQuizQuestionController::class, 'store']);
     Route::delete('/study-quiz/{studyQuizQuestion}', [StudyQuizQuestionController::class, 'destroy']);
     Route::post('/study-quiz/{studyQuizQuestion}/check', [StudyQuizQuestionController::class, 'check']);
+
+    Route::get('/activity', [ActivityController::class, 'index']);
 
     Route::get('/quote', [QuoteController::class, 'show']);
     Route::post('/quote', [QuoteController::class, 'store']);

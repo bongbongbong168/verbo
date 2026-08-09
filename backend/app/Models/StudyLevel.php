@@ -13,17 +13,26 @@ class StudyLevel extends Model
     protected $fillable = [
         'title',
         'description',
+        'level_label',
         'image_path',
+        'banner_path',
+        'accent_color',
         'category',
     ];
 
     protected $appends = [
         'image_url',
+        'banner_url',
     ];
 
     public function getImageUrlAttribute(): ?string
     {
         return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+    }
+
+    public function getBannerUrlAttribute(): ?string
+    {
+        return $this->banner_path ? Storage::disk('public')->url($this->banner_path) : null;
     }
 
     public function user()

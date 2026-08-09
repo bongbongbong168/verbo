@@ -5,14 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class StudyGrammarPoint extends Model
+class StudyText extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'title',
-        'description',
-        'structure',
+        'position',
     ];
 
     public function unit()
@@ -20,8 +19,8 @@ class StudyGrammarPoint extends Model
         return $this->belongsTo(StudyUnit::class, 'study_unit_id');
     }
 
-    public function examples()
+    public function lines()
     {
-        return $this->hasMany(StudyGrammarExample::class)->orderBy('position');
+        return $this->hasMany(StudyTextLine::class)->orderBy('position')->orderBy('id');
     }
 }

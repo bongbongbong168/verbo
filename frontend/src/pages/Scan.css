@@ -206,10 +206,28 @@
   line-height: 1.5;
 }
 
+/* Accepted formats and the size cap, stated before the picker opens rather
+   than after a rejected upload. */
+.sc-unknown {
+  color: #b6b0c8;
+  cursor: help;
+}
+
+.sc-upload-limit {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  opacity: 0.6;
+}
+
 .sc-file-chosen {
   margin: 0.9rem 0 0;
   font-size: 0.85rem;
   opacity: 0.9;
+}
+
+.sc-file-chosen span {
+  opacity: 0.65;
 }
 
 .sc-upload-actions {
@@ -243,83 +261,8 @@
   cursor: default;
 }
 
-.sc-result-card {
-  background: var(--sc-card);
-  border: 1px solid var(--sc-border);
-  border-radius: 18px;
-  padding: 1.5rem 1.7rem;
-  margin-bottom: 2.4rem;
-}
-
-.sc-result-title {
-  font-family: 'Hellix', sans-serif;
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin: 0 0 0.7rem;
-}
-
-.sc-result-title:not(:first-child) {
-  margin-top: 1.4rem;
-}
-
-.sc-result-text {
-  white-space: pre-wrap;
-  color: var(--sc-text-muted);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.sc-words-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.sc-word-row {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  background: var(--sc-pill-bg);
-  border-radius: 10px;
-  padding: 0.6rem 0.9rem;
-}
-
-.sc-word-hanzi {
-  font-weight: 700;
-}
-
-.sc-word-pinyin {
-  color: var(--sc-text-muted);
-  font-style: italic;
-  font-size: 0.88rem;
-}
-
-.sc-word-translation {
-  flex: 1;
-  color: var(--sc-text);
-  font-size: 0.9rem;
-}
-
-.sc-word-save {
-  font-family: 'Hellix', sans-serif;
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: #fff;
-  background: var(--sc-card-dark);
-  border: none;
-  border-radius: 999px;
-  padding: 0.4rem 0.9rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.sc-word-save:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
+/* Result rendering moved to ScanDocument.css — a scan now opens on its own
+   page rather than in a panel here. */
 
 .sc-documents-header {
   display: flex;
@@ -349,7 +292,57 @@
   background: var(--sc-card);
   border: 1px solid var(--sc-border);
   border-radius: 18px;
-  overflow: hidden;
+  /* Not `hidden`: the row menu is an absolutely positioned popover and would be
+     clipped on the last rows. Only this wrapper paints a background — the rows
+     and cells are transparent — so there is nothing for the radius to clip. */
+  overflow: visible;
+}
+
+.sc-row-actions {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sc-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 148px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--sc-border);
+  border-radius: 12px;
+  padding: 0.35rem;
+  box-shadow: 0 12px 28px rgba(43, 38, 67, 0.16);
+}
+
+.sc-menu-item {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  color: var(--sc-text);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+}
+
+.sc-menu-item:hover {
+  background: var(--sc-pill-bg);
+}
+
+.sc-menu-danger {
+  color: #b3261e;
+}
+
+.sc-menu-danger:hover {
+  background: #fdecea;
 }
 
 .sc-table {
@@ -407,6 +400,13 @@
   font-weight: 600;
   color: var(--sc-text);
   padding: 0;
+  /* Now an <a> to the document page, not a button */
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sc-row-name:hover {
+  color: var(--sc-link);
 }
 
 .sc-row-icon {

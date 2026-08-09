@@ -16,9 +16,22 @@ class DictionaryService
      */
     protected static array $pinyinCache = [];
 
+    protected static array $termPinyinCache = [];
+
     public function pinyinFor(string $word): string
     {
         return self::$pinyinCache[$word] ??= Pinyin::sentence($word)->join(' ');
+    }
+
+    /**
+     * Reading for a single vocabulary item, with the syllables run together
+     * ("nóngjiālè") the way a dictionary headword is written. pinyinFor()
+     * spaces every syllable, which is right for a sentence and wrong for one
+     * word.
+     */
+    public function pinyinForTerm(string $term): string
+    {
+        return self::$termPinyinCache[$term] ??= Pinyin::sentence($term)->join('');
     }
 
     public function lookup(string $word): ?string

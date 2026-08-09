@@ -5,19 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class StudyVocabulary extends Model
+class StudyTextLine extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'hanzi',
+        'speaker',
+        'chinese',
         'pinyin',
-        'translation',
-        'explanation',
+        'position',
     ];
 
-    public function unit()
+    public function text()
     {
-        return $this->belongsTo(StudyUnit::class, 'study_unit_id');
+        return $this->belongsTo(StudyText::class, 'study_text_id');
     }
 }

@@ -56,6 +56,18 @@ function articleFormData({ title, type, body, body_en, image }) {
   return formData
 }
 
+function studyLevelFormData({ title, description, level_label, accent_color, category, image, banner }) {
+  const formData = new FormData()
+  formData.append('title', title)
+  if (description != null) formData.append('description', description)
+  if (level_label != null) formData.append('level_label', level_label)
+  if (accent_color) formData.append('accent_color', accent_color)
+  if (category) formData.append('category', category)
+  if (image) formData.append('image', image)
+  if (banner) formData.append('banner', banner)
+  return formData
+}
+
 function podcastFormData({ title, transcript, level, bio, audio, image }) {
   const formData = new FormData()
   formData.append('title', title)
@@ -82,6 +94,7 @@ export const api = {
     request(`/flashcards/${id}`, { method: 'DELETE', token }),
   getScans: (token) => request('/scans', { token }),
   getScan: (token, id) => request(`/scans/${id}`, { token }),
+  deleteScan: (token, id) => request(`/scans/${id}`, { method: 'DELETE', token }),
   scan: (token, file) => {
     const formData = new FormData()
     formData.append('image', file)
@@ -129,28 +142,48 @@ export const api = {
   deletePodcast: (token, id) => request(`/podcasts/${id}`, { method: 'DELETE', token }),
   getStudyLevels: (token) => request('/study-levels', { token }),
   getStudyLevel: (token, id) => request(`/study-levels/${id}`, { token }),
-  // Multipart because a level can carry a cover image for the carousel.
-  createStudyLevel: (token, { title, description, category, image }) => {
-    const formData = new FormData()
-    formData.append('title', title)
-    if (description != null) formData.append('description', description)
-    if (category) formData.append('category', category)
-    if (image) formData.append('image', image)
-    return requestMultipart('/study-levels', formData, token)
+  // Multipart: a level carries a carousel cover plus a module-page banner.
+  createStudyLevel: (token, level) =>
+    requestMultipart('/study-levels', studyLevelFormData(level), token),
+  updateStudyLevel: (token, id, level) => {
+    const formData = studyLevelFormData(level)
+    formData.append('_method', 'PUT')
+    return requestMultipart(`/study-levels/${id}`, formData, token)
   },
   createStudyUnit: (token, levelId, unit) =>
     request(`/study-levels/${levelId}/units`, { method: 'POST', body: unit, token }),
   getStudyUnit: (token, id) => request(`/study-units/${id}`, { token }),
   updateStudyUnit: (token, id, unit) =>
     request(`/study-units/${id}`, { method: 'PUT', body: unit, token }),
+  addCultureImage: (token, unitId, image) => {
+    const formData = new FormData()
+    formData.append('image', image)
+    return requestMultipart(`/study-units/${unitId}/culture-images`, formData, token)
+  },
+  deleteCultureImage: (token, id) =>
+    request(`/study-culture-images/${id}`, { method: 'DELETE', token }),
+  addStudyText: (token, unitId, text) =>
+    request(`/study-units/${unitId}/texts`, { method: 'POST', body: text, token }),
+  deleteStudyText: (token, id) =>
+    request(`/study-texts/${id}`, { method: 'DELETE', token }),
+  addStudyTextLine: (token, textId, line) =>
+    request(`/study-texts/${textId}/lines`, { method: 'POST', body: line, token }),
+  deleteStudyTextLine: (token, id) =>
+    request(`/study-text-lines/${id}`, { method: 'DELETE', token }),
   addStudyVocabulary: (token, unitId, word) =>
     request(`/study-units/${unitId}/vocabulary`, { method: 'POST', body: word, token }),
   deleteStudyVocabulary: (token, id) =>
     request(`/study-vocabulary/${id}`, { method: 'DELETE', token }),
   addStudyGrammarPoint: (token, unitId, point) =>
     request(`/study-units/${unitId}/grammar`, { method: 'POST', body: point, token }),
+  updateStudyGrammarPoint: (token, id, point) =>
+    request(`/study-grammar/${id}`, { method: 'PUT', body: point, token }),
   deleteStudyGrammarPoint: (token, id) =>
     request(`/study-grammar/${id}`, { method: 'DELETE', token }),
+  addStudyGrammarExample: (token, pointId, example) =>
+    request(`/study-grammar/${pointId}/examples`, { method: 'POST', body: example, token }),
+  deleteStudyGrammarExample: (token, id) =>
+    request(`/study-grammar-examples/${id}`, { method: 'DELETE', token }),
   addStudyQuizQuestion: (token, unitId, question) =>
     request(`/study-units/${unitId}/quiz`, { method: 'POST', body: question, token }),
   deleteStudyQuizQuestion: (token, id) =>

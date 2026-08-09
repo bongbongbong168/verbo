@@ -1,0 +1,453 @@
+/* Scan document detail page.
+   Tokens are copied from Scan.css rather than shared so the two files stay
+   independent (the established convention here), but the values are identical
+   so the pages read as one surface. Prefix `sd-` — `sc-` is Scan's. */
+
+.sd {
+  --sd-bg: #f6f5fc;
+  --sd-card: #ffffff;
+  --sd-card-dark: #2b2643;
+  --sd-accent2: #7d76a1;
+  --sd-border: #e7e3f6;
+  --sd-text: #1c1730;
+  --sd-text-muted: #726c88;
+  --sd-pill-bg: #f1edfc;
+  --sd-link: #997ee2;
+
+  background: var(--sd-bg);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--sd-text);
+}
+
+/* ---- topbar ---- */
+
+.sd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.6rem;
+}
+
+.sd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  min-width: 0;
+}
+
+.sd-breadcrumb a {
+  color: var(--sd-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sd-breadcrumb a:hover {
+  color: var(--sd-link);
+}
+
+.sd-breadcrumb-sep {
+  color: #c9c3de;
+}
+
+.sd-breadcrumb-current {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sd-topbar-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.sd-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 1px solid var(--sd-border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.sd-icon-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ---- hero ---- */
+
+.sd-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--sd-card-dark);
+  border-radius: 24px;
+  padding: 2rem clamp(1.4rem, 4vw, 2.6rem);
+  color: #fff;
+  margin-bottom: 2rem;
+}
+
+.sd-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sd-swoosh-large {
+  position: absolute;
+  right: -4%;
+  top: -30%;
+  width: 42%;
+  opacity: 0.5;
+}
+
+.sd-swoosh-small {
+  position: absolute;
+  right: 12%;
+  bottom: -34%;
+  width: 22%;
+  opacity: 0.35;
+}
+
+.sd-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.sd-hero-file {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--sd-accent2);
+  flex-shrink: 0;
+}
+
+.sd-hero-file img {
+  width: 22px;
+  height: auto;
+}
+
+.sd-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-hero-title {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  line-height: 1.2;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.sd-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
+}
+
+.sd-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.sd-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.sd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--sd-card-dark);
+  background: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  cursor: pointer;
+}
+
+.sd-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sd-btn-ghost {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Resting state is quiet — it only turns red once armed, so the destructive
+   colour is reserved for the click that actually destroys something. */
+.sd-btn-danger {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.sd-btn-danger:hover:not(:disabled) {
+  color: #ffd9d5;
+  box-shadow: inset 0 0 0 1px rgba(255, 158, 148, 0.6);
+}
+
+.sd-btn-danger.confirming {
+  color: #fff;
+  background: #b3261e;
+  box-shadow: inset 0 0 0 1px #b3261e;
+}
+
+.sd-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ---- body split ---- */
+
+.sd-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.sd-panel {
+  background: var(--sd-card);
+  border: 1px solid var(--sd-border);
+  border-radius: 18px;
+  padding: 1.5rem 1.7rem;
+}
+
+.sd-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+}
+
+.sd-panel-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.sd-count {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--sd-pill-bg);
+  color: var(--sd-accent2);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* OCR output keeps its original line breaks, so preserve them. Hellix carries
+   the Latin and digits; Chinese falls through to the CJK stack. */
+.sd-text {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 1.15rem;
+  line-height: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+
+/* Hoverable word — same affordance as Read/Podcast/Study. The tooltip itself
+   is the native `title`, so there is no popup to position or dismiss. */
+.sd-token {
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+/* .active mirrors :hover so the highlight and the popover are driven by the
+   same state and can never disagree. */
+.sd-token:hover,
+.sd-token.active {
+  background: #6c4fd1;
+  color: #fff;
+  box-shadow: 0 0 0 2px #6c4fd1;
+}
+
+/* Quietly marks what is already in the bank, without shouting over the text */
+.sd-token.saved {
+  box-shadow: inset 0 -2px 0 0 #c9bdf3;
+}
+
+.sd-hint {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--sd-text-muted);
+}
+
+.sd-saved-note {
+  background: #f1edfc;
+  border: 1px solid #ddd3f7;
+  border-radius: 10px;
+  color: #4b3b86;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.8rem;
+  margin: 0 0 1rem;
+}
+
+/* ---- word list ---- */
+
+.sd-words {
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.sd-word-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+}
+
+.sd-word {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+  background: var(--sd-pill-bg);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+}
+
+.sd-word-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.sd-word-hanzi {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.sd-word-pinyin {
+  font-size: 0.85rem;
+  color: var(--sd-accent2);
+}
+
+.sd-word-translation {
+  grid-column: 1;
+  font-size: 0.85rem;
+  color: var(--sd-text-muted);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.sd-word-save {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #fff;
+  background: var(--sd-card-dark);
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sd-word-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- states ---- */
+
+.sd-empty,
+.sd-empty-inline {
+  color: var(--sd-text-muted);
+  margin: 0;
+}
+
+.sd-empty {
+  padding: 2rem clamp(1rem, 4vw, 2.5rem);
+}
+
+.sd-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+.sd-btn:focus-visible,
+.sd-word-save:focus-visible,
+.sd-icon-btn:focus-visible {
+  outline: 2px solid var(--sd-link);
+  outline-offset: 2px;
+}
+
+@media (max-width: 980px) {
+  .sd-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sd-words {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .sd-hero-actions {
+    width: 100%;
+  }
+
+  .sd-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

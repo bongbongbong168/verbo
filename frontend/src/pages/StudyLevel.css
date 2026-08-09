@@ -1,0 +1,387 @@
+.sl {
+  --sl-bg: #f9f8ff;
+  --sl-card: #ffffff;
+  --sl-border: #e7e3f6;
+  --sl-outline: #2b2643;
+  --sl-accent: #6c4fd1;
+  --sl-accent-light: #8b6ff0;
+  --sl-text: #1c1730;
+  --sl-text-muted: #726c88;
+
+  background: var(--sl-bg);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--sl-text);
+}
+
+/* ---- breadcrumb ---- */
+
+.sl-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  margin-bottom: 1.4rem;
+}
+
+.sl-breadcrumb a {
+  color: var(--sl-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.sl-breadcrumb a:hover {
+  color: var(--sl-accent);
+}
+
+.sl-breadcrumb-sep {
+  color: #c9c3de;
+}
+
+.sl-breadcrumb-current {
+  font-weight: 700;
+  color: var(--sl-text);
+}
+
+.sl-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+.sl-empty {
+  color: var(--sl-text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+/* ---- hero banner ----
+   Background colour comes from the level's accent_color so each book keeps
+   its own identity; the artwork sits flush to the right and is allowed to
+   overflow the top edge like the design. */
+
+/* Measured from the Figma export: a 2px slate outline, not a drop shadow.
+   The pill and button derive their colours from --hero-accent so a level in
+   any colour keeps the same relationships. */
+.sl-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--hero-accent);
+  border: 2px solid #6d6d70;
+  border-radius: 16px;
+  padding: 2.2rem clamp(1.5rem, 3vw, 2.6rem);
+  min-height: 256px;
+  box-sizing: border-box;
+  margin-bottom: 2.6rem;
+  overflow: visible;
+}
+
+.sl-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 60%;
+}
+
+/* Darkened accent (~40% black over the banner colour) with a black outline */
+.sl-hero-pill {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.4);
+  color: #d9d9d9;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1.5px solid #000;
+  border-radius: 999px;
+  padding: 0.42rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.sl-hero-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  color: #fff;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.sl-hero-subtitle {
+  color: #fff;
+  font-size: 1rem;
+  margin: 0 0 1.3rem;
+  max-width: 46ch;
+}
+
+/* Sticker button: white face, black outline, black flat shadow. White reads
+   clearly on every level accent, which a tinted fill did not. */
+.sl-hero-btn {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #000;
+  background: #fff;
+  border: 1.5px solid #000;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 0 #000;
+  padding: 0.7rem 1.7rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sl-hero-btn:hover {
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 0 #000;
+}
+
+.sl-hero-btn:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 0 #000;
+}
+
+/* Measured against the export: the art is 1.14x the banner height and
+   spills past the right edge by ~5.5% and below it by ~6%. */
+.sl-hero-art {
+  position: absolute;
+  right: -5.5%;
+  bottom: -6%;
+  height: 114%;
+  width: auto;
+  max-width: 52%;
+  object-fit: contain;
+  object-position: bottom right;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ---- section heading (accent bar, same idiom as Read Station) ---- */
+
+.sl-section-head {
+  position: relative;
+  padding-left: 1rem;
+  margin-bottom: 1.6rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.sl-section-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--sl-accent-light);
+}
+
+.sl-section-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  margin: 0 0 0.25rem;
+}
+
+.sl-section-subtitle {
+  color: var(--sl-text-muted);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ---- module list ---- */
+
+.sl-panel {
+  border: 1px solid var(--sl-outline);
+  border-radius: 16px;
+  padding: 1.6rem;
+  background: var(--sl-card);
+}
+
+.sl-modules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* Sticker card: outline plus flat bottom shadow, matching the design */
+.sl-module {
+  display: flex;
+  align-items: stretch;
+  gap: 1.4rem;
+  background: var(--sl-card);
+  border: 1.5px solid var(--sl-outline);
+  border-radius: 14px;
+  box-shadow: 0 5px 0 0 var(--sl-outline);
+  padding: 1.4rem 1.6rem;
+  text-decoration: none;
+  color: var(--sl-text);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sl-module:hover {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 0 var(--sl-outline);
+}
+
+.sl-module:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 var(--sl-outline);
+}
+
+.sl-module-label {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 128px;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 700;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.sl-module-divider {
+  width: 1.5px;
+  background: var(--sl-outline);
+  flex-shrink: 0;
+}
+
+.sl-module-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.sl-module-title {
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-weight: 500;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.sl-module-meta {
+  color: var(--sl-text-muted);
+  font-size: 0.82rem;
+}
+
+/* ---- admin ---- */
+
+.sl-admin {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.sl-btn-primary {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--sl-accent);
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.sl-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sl-form {
+  background: var(--sl-card);
+  border: 1px solid var(--sl-border);
+  border-radius: 16px;
+  padding: 1.4rem;
+  margin-bottom: 1.4rem;
+  max-width: 620px;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.sl-form label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sl-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.sl-form input,
+.sl-form textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--sl-text);
+  border: 1px solid var(--sl-border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.sl-form input:focus,
+.sl-form textarea:focus {
+  border-color: var(--sl-accent-light);
+}
+
+.sl-hero-btn:focus-visible,
+.sl-module:focus-visible,
+.sl-btn-primary:focus-visible {
+  outline: 2px solid var(--sl-outline);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-module,
+  .sl-hero-btn {
+    transition: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .sl-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sl-hero-content {
+    max-width: 100%;
+  }
+
+  .sl-hero-art {
+    position: static;
+    height: auto;
+    width: 70%;
+    max-width: 320px;
+    margin-top: 1.2rem;
+    align-self: flex-end;
+  }
+
+  .sl-module {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .sl-module-divider {
+    width: 100%;
+    height: 1.5px;
+  }
+
+  .sl-module-label {
+    min-width: 0;
+  }
+}

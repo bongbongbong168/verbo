@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import swooshSmall from '../assets/scan/swoosh-small.png'
@@ -60,16 +61,27 @@ function MenuDotsIcon() {
 
 const ROW_COLORS = ['#2b2643', '#2b2643', '#7d76a1', '#2b2643']
 
+// Mirrors `max:10240` (KB) in ScanController::store. Checked here as well as on
+// the server so an oversized photo fails instantly instead of after the upload.
+const MAX_UPLOAD_MB = 10
+
+function formatBytes(bytes) {
+  const kb = bytes / 1024
+  if (kb < 1024) return `${Math.round(kb)} KB`
+  return `${(kb / 1024).toFixed(1)} MB`
+}
+
 export default function Scan() {
   const { token } = useAuth()
+  const navigate = useNavigate()
   const [file, setFile] = useState(null)
-  const [result, setResult] = useState(null)
   const [scans, setScans] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
-  const [saved, setSaved] = useState({})
   const [search, setSearch] = useState('')
+  const [menuFor, setMenuFor] = useState(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('desc')
@@ -78,6 +90,22 @@ export default function Scan() {
   useEffect(() => {
     loadHistory()
   }, [token])
+
+  // Dismiss the row menu on any click outside it (the toggle button lives
+  // inside .sc-row-actions, so it keeps handling its own open/close).
+  useEffect(() => {
+    if (menuFor === null) return
+
+    function onDocClick(e) {
+      if (!e.target.closest('.sc-row-actions')) {
+        setMenuFor(null)
+        setConfirmingDelete(null)
+      }
+    }
+
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [menuFor])
 
   function loadHistory() {
     setHistoryLoading(true)
@@ -88,24 +116,37 @@ export default function Scan() {
       .finally(() => setHistoryLoading(false))
   }
 
+  function handleFileChange(e) {
+    const picked = e.target.files[0]
+    if (!picked) return
+
+    if (picked.size > MAX_UPLOAD_MB * 1024 * 1024) {
+      setError(
+        `That photo is ${formatBytes(picked.size)}. The limit is ${MAX_UPLOAD_MB} MB — try a smaller one.`
+      )
+      setFile(null)
+      e.target.value = ''
+      return
+    }
+
+    setError(null)
+    setFile(picked)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!file) return
 
     setError(null)
     setLoading(true)
-    setResult(null)
-    setSaved({})
 
     try {
       const data = await api.scan(token, file)
-      setResult(data)
-      setScans((prev) => [
-        { id: data.id, original_filename: data.original_filename, raw_text: data.raw_text, created_at: data.created_at },
-        ...prev,
-      ])
       setFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
+      // A finished scan opens on its own document page, so results live in
+      // exactly one place whether they are fresh or reopened from history.
+      navigate(`/scan/${data.id}`)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -113,28 +154,21 @@ export default function Scan() {
     }
   }
 
-  async function handleOpenScan(id) {
-    setError(null)
-    setSaved({})
-    try {
-      const data = await api.getScan(token, id)
-      setResult(data)
-    } catch (err) {
-      setError(err.message)
+  async function handleDeleteScan(scanId) {
+    if (confirmingDelete !== scanId) {
+      setConfirmingDelete(scanId)
+      return
     }
-  }
 
-  async function handleSaveWord(word) {
+    setError(null)
     try {
-      await api.addFlashcard(token, {
-        word: word.word,
-        pinyin: word.pinyin,
-        translation: word.translation,
-        source_module: 'scan',
-      })
-      setSaved((prev) => ({ ...prev, [word.word]: true }))
+      await api.deleteScan(token, scanId)
+      setScans((prev) => prev.filter((s) => s.id !== scanId))
     } catch (err) {
       setError(err.message)
+    } finally {
+      setMenuFor(null)
+      setConfirmingDelete(null)
     }
   }
 
@@ -212,15 +246,20 @@ export default function Scan() {
           <p className="sc-upload-subtitle">
             You can either import your photo or scan with your phone
           </p>
+          <p className="sc-upload-limit">JPG, PNG or WEBP &middot; up to {MAX_UPLOAD_MB} MB</p>
 
-          {file && <p className="sc-file-chosen">Selected: {file.name}</p>}
+          {file && (
+            <p className="sc-file-chosen">
+              Selected: {file.name} <span>({formatBytes(file.size)})</span>
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="sc-upload-actions">
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={(e) => setFile(e.target.files[0])}
+              onChange={handleFileChange}
               style={{ display: 'none' }}
             />
             <button
@@ -238,36 +277,6 @@ export default function Scan() {
           </form>
         </div>
       </div>
-
-      {result && (
-        <div className="sc-result-card">
-          <h2 className="sc-result-title">Recognized text</h2>
-          <p className="sc-result-text">{result.raw_text || '(no text detected)'}</p>
-
-          <h2 className="sc-result-title">Words</h2>
-          {result.words.length === 0 ? (
-            <p className="sc-empty">No words recognized.</p>
-          ) : (
-            <ul className="sc-words-list">
-              {result.words.map((w, idx) => (
-                <li key={idx} className="sc-word-row">
-                  <span className="sc-word-hanzi">{w.word}</span>
-                  {w.pinyin && <span className="sc-word-pinyin">{w.pinyin}</span>}
-                  {w.translation && <span className="sc-word-translation">{w.translation}</span>}
-                  <button
-                    type="button"
-                    className="sc-word-save"
-                    onClick={() => handleSaveWord(w)}
-                    disabled={saved[w.word]}
-                  >
-                    {saved[w.word] ? 'Saved' : 'Save'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
 
       <div className="sc-documents-header" id="sc-documents">
         <div>
@@ -309,7 +318,7 @@ export default function Scan() {
               {visibleScans.map((s, idx) => (
                 <tr key={s.id}>
                   <td>
-                    <button type="button" className="sc-row-name" onClick={() => handleOpenScan(s.id)}>
+                    <Link to={`/scan/${s.id}`} className="sc-row-name">
                       <span
                         className="sc-row-icon"
                         style={{ background: ROW_COLORS[idx % ROW_COLORS.length] }}
@@ -317,15 +326,51 @@ export default function Scan() {
                         <img src={fileIcon} alt="" />
                       </span>
                       {s.original_filename || `Scan #${s.id}`}
-                    </button>
+                    </Link>
                   </td>
                   <td>N/A</td>
-                  <td>N/A</td>
+                  <td>
+                    {s.size_bytes ? (
+                      formatBytes(s.size_bytes)
+                    ) : (
+                      // The image is deleted once OCR finishes, so scans made
+                      // before size was recorded can never have it filled in.
+                      <span className="sc-unknown" title="Not recorded — this scan predates file-size tracking">
+                        &mdash;
+                      </span>
+                    )}
+                  </td>
                   <td>{new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                   <td>
-                    <button type="button" className="sc-row-menu" aria-label="More options">
-                      <MenuDotsIcon />
-                    </button>
+                    <div className="sc-row-actions">
+                      <button
+                        type="button"
+                        className="sc-row-menu"
+                        aria-label={`Options for ${s.original_filename || `Scan #${s.id}`}`}
+                        aria-expanded={menuFor === s.id}
+                        onClick={() => {
+                          setMenuFor((cur) => (cur === s.id ? null : s.id))
+                          setConfirmingDelete(null)
+                        }}
+                      >
+                        <MenuDotsIcon />
+                      </button>
+
+                      {menuFor === s.id && (
+                        <div className="sc-menu">
+                          <Link to={`/scan/${s.id}`} className="sc-menu-item">
+                            Open
+                          </Link>
+                          <button
+                            type="button"
+                            className="sc-menu-item sc-menu-danger"
+                            onClick={() => handleDeleteScan(s.id)}
+                          >
+                            {confirmingDelete === s.id ? 'Confirm delete' : 'Delete'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

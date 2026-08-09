@@ -118,16 +118,18 @@ export default function Study() {
     return diff
   }
 
+  // translate3d rather than translateX so the browser composites the move on
+  // the GPU instead of repainting the scaled artwork each frame.
   function cardStyle(offset) {
     const abs = Math.abs(offset)
     const side = Math.sign(offset)
 
     if (abs === 0) {
-      return { transform: 'translateX(0) rotate(0deg) scale(1)', opacity: 0.9, zIndex: 30 }
+      return { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)', opacity: 0.9, zIndex: 30 }
     }
     if (abs === 1) {
       return {
-        transform: `translateX(${side * 62}%) rotate(${side * 11}deg) scale(0.9)`,
+        transform: `translate3d(${side * 62}%, 0, 0) rotate(${side * 11}deg) scale(0.9)`,
         opacity: 0.55,
         zIndex: 20,
       }
@@ -135,7 +137,7 @@ export default function Study() {
     // Everything further out waits behind the centre, invisible but still
     // transitioning, so stepping into view animates rather than snaps.
     return {
-      transform: `translateX(${side * 80}%) rotate(${side * 16}deg) scale(0.8)`,
+      transform: `translate3d(${side * 80}%, 0, 0) rotate(${side * 16}deg) scale(0.8)`,
       opacity: 0,
       zIndex: 10,
       pointerEvents: 'none',

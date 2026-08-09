@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Flashcards from './pages/Flashcards'
 import Scan from './pages/Scan'
+import ScanDocument from './pages/ScanDocument'
 import Read from './pages/Read'
 import ReadArticle from './pages/ReadArticle'
 import Practice from './pages/Practice'
@@ -33,6 +34,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/flashcards" element={<Flashcards />} />
         <Route path="/scan" element={<Scan />} />
+        <Route path="/scan/:id" element={<ScanDocument />} />
         <Route path="/read" element={<Read />} />
         <Route path="/read/:id" element={<ReadArticle />} />
         <Route path="/practice" element={<Practice />} />

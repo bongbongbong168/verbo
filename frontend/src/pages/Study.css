@@ -131,13 +131,21 @@
   cursor: pointer;
   transform-origin: center 92%;
 
-  /* The single line that makes the rotation read as clockwork: every card
-     eases along the same curve, so they sweep as one mechanism. The slight
-     overshoot in the curve gives the settle a mechanical snap. */
+  /* Every card eases on the same curve, so they sweep as one mechanism.
+     No overshoot — the earlier bezier sprang past its target and settled
+     back, which read as snappy rather than smooth. Transform and opacity
+     share a duration and curve so they finish together instead of the
+     fade landing early. */
   transition:
-    transform 0.62s cubic-bezier(0.34, 1.3, 0.44, 1),
-    opacity 0.45s ease;
+    transform 0.72s cubic-bezier(0.25, 0.8, 0.25, 1),
+    opacity 0.72s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  /* Keep each card on its own compositor layer: without this the browser
+     re-rasterises the scaled cover art every frame, which is what makes a
+     transform this heavy stutter. */
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .st-book img {

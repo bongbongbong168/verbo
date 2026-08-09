@@ -14,6 +14,7 @@ class Scan extends Model
         'original_filename',
         'raw_text',
         'words',
+        'size_bytes',
     ];
 
     protected $casts = [
