@@ -1,0 +1,318 @@
+/* Settings. Prefix `se-`.
+   Same surface as the rest of the app: #f9f8fe page, white cards with the 1px
+   #2b2643 navy outline, the 90px sidebar gutter, Hellix throughout. */
+
+.se {
+  --se-bg: #f9f8fe;
+  --se-card: #ffffff;
+  --se-edge: #2b2643;
+  --se-border: #e7e3f6;
+  --se-accent: #6c4fd1;
+  --se-accent-soft: #a89ce3;
+  --se-text: #1c1730;
+  --se-text-muted: #726c88;
+  --se-pill: #f1edfc;
+  --se-field: #f8f7fd;
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 2rem 90px 3rem;
+  background: var(--se-bg);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--se-text);
+}
+
+.se-head {
+  margin-bottom: 1.6rem;
+}
+
+.se-title {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.se-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--se-text-muted);
+}
+
+.se-error,
+.se-flash {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.se-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+}
+
+.se-flash {
+  color: #1f7a45;
+  background: #ecf8f0;
+  border: 1px solid #bfe4cd;
+}
+
+/* Two columns on a wide window, one when the cards would get cramped. The
+   cards are independent, so they simply reflow rather than needing a fixed
+   pairing. */
+.se-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.se-card {
+  box-sizing: border-box;
+  padding: 22px 24px 24px;
+  background: var(--se-card);
+  border: 1px solid var(--se-edge);
+  border-radius: 16px;
+}
+
+.se-card-title {
+  margin: 0 0 0.3rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.se-card-note {
+  margin: 0 0 1.1rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--se-text-muted);
+}
+
+.se-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.se-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.se-field > span {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--se-text-muted);
+}
+
+.se-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--se-text);
+  background: var(--se-field);
+  border: 1px solid var(--se-border);
+  border-radius: 9px;
+}
+
+.se-field input:focus {
+  outline: none;
+  border-color: var(--se-accent);
+}
+
+.se-field input:disabled {
+  color: var(--se-text-muted);
+  cursor: not-allowed;
+}
+
+.se-hint {
+  font-size: 0.78rem;
+  font-style: normal;
+  line-height: 1.45;
+  color: var(--se-text-muted);
+}
+
+.se-btn {
+  align-self: flex-start;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--se-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.se-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.se-btn-ghost {
+  background: none;
+  border: 1px solid var(--se-accent-soft);
+  color: var(--se-accent);
+}
+
+.se-btn-ghost:hover:not(:disabled) {
+  background: var(--se-pill);
+}
+
+.se-block + .se-block {
+  margin-top: 1.4rem;
+}
+
+.se-label {
+  margin: 0 0 0.55rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--se-text-muted);
+}
+
+/* ---- scale picker ---- */
+
+.se-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.se-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 100px;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  background: var(--se-field);
+  border: 1px solid var(--se-border);
+  border-radius: 10px;
+  font-family: inherit;
+  color: var(--se-text);
+  cursor: pointer;
+}
+
+.se-choice:hover {
+  border-color: var(--se-accent-soft);
+}
+
+.se-choice.active {
+  background: var(--se-pill);
+  border-color: var(--se-accent);
+}
+
+.se-choice-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.se-choice-label svg {
+  width: 14px;
+  height: 14px;
+  color: var(--se-accent);
+}
+
+.se-choice-hint {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--se-text-muted);
+}
+
+/* ---- switch ---- */
+
+.se-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* The real checkbox stays in the DOM for keyboard and screen readers; the
+   track beside it is what is actually painted. */
+.se-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.se-switch-track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex: none;
+  border-radius: 999px;
+  background: #d9d5e8;
+  transition: background 0.15s ease;
+}
+
+.se-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.se-switch input:checked + .se-switch-track {
+  background: var(--se-accent);
+}
+
+.se-switch input:checked + .se-switch-track::after {
+  transform: translateX(18px);
+}
+
+.se-switch input:focus-visible + .se-switch-track {
+  outline: 2px solid var(--se-accent);
+  outline-offset: 2px;
+}
+
+/* ---- data summary ---- */
+
+.se-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0 0 0.4rem;
+}
+
+.se-stats > div {
+  padding: 0.6rem 0.75rem;
+  background: var(--se-field);
+  border: 1px solid var(--se-border);
+  border-radius: 10px;
+}
+
+.se-stats dt {
+  font-size: 0.76rem;
+  color: var(--se-text-muted);
+}
+
+.se-stats dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .se-switch-track,
+  .se-switch-track::after {
+    transition: none;
+  }
+}

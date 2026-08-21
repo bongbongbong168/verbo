@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -24,6 +24,15 @@ function ChevronRight() {
     </svg>
   )
 }
+
+/* The reference animation steps every 3.2s (a 1.75s move, then a still hold).
+   Both are shortened here — the pacing suits a showcase loop but drags on a
+   page you navigate — while keeping its move-then-rest rhythm: a 1.15s move
+   (see the transition in Study.css) and a ~1.35s hold, so the card it lands on
+   still gets a beat to be looked at. Keep this above the transition duration
+   or the next step interrupts the last. */
+const ADVANCE_EVERY_MS = 2500
+const RESUME_AFTER_MS = 10000
 
 export default function Study() {
   const { token, user } = useAuth()
@@ -94,15 +103,41 @@ export default function Study() {
     [count]
   )
 
+  /* Auto-advance, timed off the reference animation: the card moves for 1.75s
+     (see the transition in Study.css) and then rests before the next step. Any
+     interaction hands control back to the user, and it only starts itself again
+     once they have been idle for RESUME_AFTER_MS. */
+  const [paused, setPaused] = useState(false)
+  const resumeTimer = useRef(null)
+
+  const holdForUser = useCallback(() => {
+    setPaused(true)
+    clearTimeout(resumeTimer.current)
+    resumeTimer.current = setTimeout(() => setPaused(false), RESUME_AFTER_MS)
+  }, [])
+
+  useEffect(() => () => clearTimeout(resumeTimer.current), [])
+
+  useEffect(() => {
+    if (paused || count <= 1) return
+    // Someone who has asked for less motion should not get a carousel that
+    // moves on its own.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const id = setInterval(() => step(1), ADVANCE_EVERY_MS)
+    return () => clearInterval(id)
+  }, [paused, count, step])
+
   // Arrow keys drive the carousel too — it is the primary control on this page.
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'ArrowLeft') step(-1)
-      if (e.key === 'ArrowRight') step(1)
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      holdForUser()
+      step(e.key === 'ArrowLeft' ? -1 : 1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [step])
+  }, [step, holdForUser])
 
   /**
    * Signed shortest distance from the active card, so the ring wraps both ways
@@ -217,7 +252,9 @@ export default function Study() {
         <p className="st-empty">No levels in {category === 'hsk' ? 'HSK' : 'Daily use'} yet.</p>
       ) : (
         <>
-          <div className="st-stage">
+          {/* pointerdown covers both a tap and a click, so touching the cards
+              anywhere stops the rotation before it moves under the finger. */}
+          <div className="st-stage" onPointerDown={holdForUser}>
             {visible.map((level, index) => {
               const offset = offsetFrom(index)
               const isActive = offset === 0
@@ -245,7 +282,15 @@ export default function Study() {
           </div>
 
           <div className="st-controls">
-            <button type="button" className="st-arrow" onClick={() => step(-1)} aria-label="Previous level">
+            <button
+              type="button"
+              className="st-arrow"
+              onClick={() => {
+                holdForUser()
+                step(-1)
+              }}
+              aria-label="Previous level"
+            >
               <ChevronLeft />
             </button>
 
@@ -255,14 +300,25 @@ export default function Study() {
                   key={level.id}
                   type="button"
                   className={'st-dot' + (index === active ? ' active' : '')}
-                  onClick={() => setActive(index)}
+                  onClick={() => {
+                    holdForUser()
+                    setActive(index)
+                  }}
                   aria-label={`Go to ${level.title}`}
                   aria-current={index === active}
                 />
               ))}
             </div>
 
-            <button type="button" className="st-arrow" onClick={() => step(1)} aria-label="Next level">
+            <button
+              type="button"
+              className="st-arrow"
+              onClick={() => {
+                holdForUser()
+                step(1)
+              }}
+              aria-label="Next level"
+            >
               <ChevronRight />
             </button>
           </div>

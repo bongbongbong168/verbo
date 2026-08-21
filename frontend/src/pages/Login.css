@@ -7,7 +7,7 @@
   --lg-btn-bg: #7d76a1;
 
   display: flex;
-  min-height: 100vh;
+  min-height: var(--app-vh);
   background: var(--lg-bg);
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--lg-text);

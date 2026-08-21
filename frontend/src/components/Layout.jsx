@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import useActivityHeartbeat from '../hooks/useActivityHeartbeat'
 import logo from '../assets/sidebar/logo.png'
+import logoMark from '../assets/sidebar/logo-mark.png'
 import './Layout.css'
 
 function NavIcon({ children }) {
@@ -102,6 +105,23 @@ function StudyIcon() {
   )
 }
 
+function SettingsIcon() {
+  return (
+    <NavIcon>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9.5a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88v.09a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1.03z" />
+    </NavIcon>
+  )
+}
+
+function CollapseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 5 8 12l7 7" />
+    </svg>
+  )
+}
+
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
   { to: '/flashcards', label: 'Flashcard Bank', Icon: FlashcardIcon },
@@ -114,8 +134,24 @@ const NAV_ITEMS = [
 ]
 
 export default function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, token } = useAuth()
   const navigate = useNavigate()
+
+  // Counts time spent, for the Dashboard's activity chart. Mounted here so it
+  // covers every authenticated page rather than being wired up per page.
+  useActivityHeartbeat(token)
+
+  // Persisted so the choice survives navigation and reloads — a sidebar that
+  // silently re-expands on every page change would be worse than not having
+  // the toggle. Read lazily so the first paint is already in the right state
+  // and the rail does not flash open.
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('sb-collapsed') === '1'
+  )
+
+  useEffect(() => {
+    localStorage.setItem('sb-collapsed', collapsed ? '1' : '0')
+  }, [collapsed])
 
   async function handleLogout() {
     await logout()
@@ -124,8 +160,24 @@ export default function Layout() {
 
   return (
     <div className="sb-shell">
-      <nav className="sb">
-        <img className="sb-logo" src={logo} alt="Verbo" />
+      <nav className={'sb' + (collapsed ? ' collapsed' : '')}>
+        <div className="sb-head">
+          {collapsed ? (
+            <img className="sb-badge" src={logoMark} alt="Verbo" />
+          ) : (
+            <img className="sb-logo" src={logo} alt="Verbo" />
+          )}
+          <button
+            type="button"
+            className="sb-toggle"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <CollapseIcon />
+          </button>
+        </div>
 
         <p className="sb-section-label">Study Area</p>
         <ul className="sb-nav">
@@ -134,9 +186,12 @@ export default function Layout() {
               <NavLink
                 to={to}
                 className={({ isActive }) => 'sb-nav-link' + (isActive ? ' active' : '')}
+                // The label is the only thing naming the link, so when it is
+                // hidden the tooltip has to carry it.
+                title={collapsed ? label : undefined}
               >
                 <Icon />
-                {label}
+                <span className="sb-nav-label">{label}</span>
               </NavLink>
             </li>
           ))}
@@ -144,9 +199,25 @@ export default function Layout() {
 
         <div className="sb-spacer" />
 
+        {/* Below the spacer, not in the Study Area list — settings are not
+            study content. */}
+        <NavLink
+          to="/settings"
+          className={({ isActive }) => 'sb-nav-link sb-settings' + (isActive ? ' active' : '')}
+          title={collapsed ? 'Settings' : undefined}
+        >
+          <SettingsIcon />
+          <span className="sb-nav-label">Settings</span>
+        </NavLink>
+
         {user && <p className="sb-user">{user.name}</p>}
-        <button type="button" className="sb-logout" onClick={handleLogout}>
-          Log out
+        <button
+          type="button"
+          className="sb-logout"
+          onClick={handleLogout}
+          title={collapsed ? 'Log out' : undefined}
+        >
+          <span className="sb-logout-label">Log out</span>
         </button>
 
         <div className="sb-promo">

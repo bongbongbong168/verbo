@@ -9,9 +9,9 @@
   --pe-text-muted: #726c88;
 
   background: var(--pe-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--pe-text);
 }
@@ -49,9 +49,12 @@
   align-items: flex-start;
 }
 
+/* 290/167 = 1.74, the same ratio the list cards use. The two views share one
+   uploaded image, so they must agree — otherwise whatever the cropper framed
+   gets re-cropped here by object-fit and the framing is lost. */
 .pe-cover {
   width: 290px;
-  height: 185px;
+  height: 167px;
   border-radius: 16px;
   overflow: hidden;
   flex-shrink: 0;
@@ -292,14 +295,20 @@
   margin: 0;
 }
 
+/* Matches .sd-token / .rd-word — one hover treatment across every tokenized
+   surface. .active mirrors :hover so the highlight and the WordPopover are
+   driven by the same state and can never disagree. */
 .pe-word {
-  cursor: help;
-  border-radius: 3px;
-  transition: background 0.1s ease;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.pe-word:hover {
-  background: #ede8fb;
+.pe-word:hover,
+.pe-word.active {
+  background: #6c4fd1;
+  color: #fff;
+  box-shadow: 0 0 0 2px #6c4fd1;
 }
 
 /* ---- admin form ---- */
@@ -391,4 +400,33 @@
     width: 100%;
     height: 200px;
   }
+}
+
+/* Preview of the cropped cover waiting to be uploaded */
+.pe-photo-chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--pe-text-muted);
+  margin-top: 0.5rem;
+}
+
+.pe-photo-chosen img {
+  width: 61px;
+  height: 35px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--pe-border);
+}
+
+.pe-photo-chosen button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--pe-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
 }

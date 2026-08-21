@@ -5,6 +5,46 @@ body {
   background: #f6f5fc;
 }
 
+/* Always reserve the scrollbar's width, even on pages short enough not to
+   need one. Without this, moving from a short page (Practice, Flashcards) to a
+   long one makes the scrollbar appear and shunts the whole layout 15px
+   sideways — which reads as the sidebar jumping. */
+html {
+  /* Always reserve the scrollbar's 15px, even on pages short enough not to need
+     one. Without it, moving from a short page (Practice, Flashcards) to a long
+     one makes the scrollbar appear and shunts the whole layout sideways, which
+     reads as the sidebar jumping.
+
+     `overflow-y: scroll`, not `scrollbar-gutter: stable`: the gutter property
+     only applies to scroll containers, and the root element's overflow
+     propagates to the viewport — Chrome computes `stable` on <html> here but
+     does not reserve the space. Verified: with the gutter alone /practice
+     measured 1280 while every other page measured 1265. */
+  overflow-y: scroll;
+}
+
+/* Global UI scale. `zoom` rather than a root font-size because the app mixes
+   rem with hard pixel values — the 90px page gutters, the tutor card's 340px
+   height, the 223px video that keeps two columns level. font-size would scale
+   only the rem half and pull those apart; zoom scales layout and type together,
+   so every measured alignment survives.
+
+   Set to 1 to go back to true 100%. */
+:root {
+  --app-scale: 1.1;
+  /* `vh` is NOT affected by zoom: inside a zoomed box, 100vh still means the
+     full viewport in CSS px, which then gets scaled up — so a 100vh container
+     renders 10% TALLER than the screen and every page gets ~10% of phantom
+     scroll. Worse, it makes the sticky sidebar taller than the scrollport, and
+     a sticky element taller than its scrollport cannot stay pinned: it slides
+     with the page. Use --app-vh instead of 100vh for anything inside #root. */
+  --app-vh: calc(100vh / var(--app-scale));
+}
+
+#root {
+  zoom: var(--app-scale);
+}
+
 @font-face {
   font-family: 'Douyin Sans';
   src: url('./assets/fonts/DouyinSans-Bold.otf') format('opentype');

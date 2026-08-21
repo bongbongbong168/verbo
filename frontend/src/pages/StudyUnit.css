@@ -15,9 +15,9 @@
   --un-divider: #efefef;
 
   background: var(--un-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--un-text);
 }
@@ -76,12 +76,6 @@
   margin: 0 0 0.8rem;
 }
 
-.un-hint {
-  color: var(--un-text-muted);
-  font-size: 0.82rem;
-  margin: 0 0 1.2rem;
-}
-
 /* ---- hero: same treatment as the level page, minus the book art ---- */
 
 /* Vertical padding is deliberately uneven. Symmetric padding centres the
@@ -94,7 +88,8 @@
   overflow: hidden;
   background: var(--hero-accent);
   border: 2px solid #6d6d70;
-  border-radius: 16px;
+  /* Matches .sl-hero on the level page — the same banner, so the same corner */
+  border-radius: 19px;
   padding: 1.75rem clamp(1.4rem, 3vw, 2.2rem) 2.45rem;
   margin-bottom: 1.6rem;
 }
@@ -225,6 +220,31 @@
   font-weight: 700;
   font-size: 1.05rem;
   margin-bottom: 0.9rem;
+}
+
+.un-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--un-panel-border);
+  border-radius: 10px;
+  background: var(--un-card);
+  color: var(--un-accent, #6c4fd1);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.un-edit svg {
+  width: 15px;
+  height: 15px;
+}
+
+.un-edit:hover {
+  border-color: var(--un-accent, #6c4fd1);
 }
 
 .un-section-label img {
@@ -359,35 +379,6 @@
   padding: 0 1.6rem 1.15rem 4.6rem;
 }
 
-.un-delete-btn {
-  font-size: 1.15rem;
-  line-height: 1;
-  color: var(--un-text-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.3rem 0.45rem;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.un-delete-btn:hover {
-  color: #b3261e;
-  background: #fdecea;
-}
-
-/* ---- reading ---- */
-
-.un-reading {
-  white-space: pre-wrap;
-  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  font-size: 1.15rem;
-  font-weight: 400;
-  line-height: 2.1;
-  letter-spacing: 0.25em;
-  margin: 0;
-}
-
 .un-panel > .un-hint,
 .un-panel > .un-reading {
   padding-left: 1.8rem;
@@ -400,16 +391,6 @@
 
 .un-panel > .un-reading {
   padding-bottom: 1.8rem;
-}
-
-.un-word {
-  cursor: help;
-  border-radius: 3px;
-  transition: background 0.1s ease;
-}
-
-.un-word:hover {
-  background: #ede8fb;
 }
 
 /* ---- grammar ----
@@ -552,30 +533,8 @@
   margin: 0;
 }
 
-.un-grammar-ex-remove {
-  flex-shrink: 0;
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: var(--un-text-muted);
-  font-size: 1.2rem;
-  line-height: 1;
-  padding: 0.2rem 0.35rem;
-  cursor: pointer;
-}
-
-.un-grammar-ex-remove:hover {
-  color: #b3261e;
-}
-
 .un-grammar-empty {
   color: var(--un-text-muted);
-  margin: 0;
-}
-
-.un-form-note {
-  color: var(--un-text-muted);
-  font-size: 0.82rem;
   margin: 0;
 }
 
@@ -741,16 +700,6 @@
   margin-bottom: 0;
 }
 
-/* ---- culture: admin photo manager ---- */
-
-.un-cu-manage {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.4rem;
-}
-
 /* Selector is `.un-form label.un-cu-upload`, not `.un-cu-upload`, on purpose:
    this control sits inside .un-form, and `.un-form label` (0,2,0) outranks
    `.un-btn-primary` (0,1,0) — so the field-label styling was winning and the
@@ -770,45 +719,6 @@
   margin-bottom: 0;
   cursor: pointer;
   transition: background 0.15s ease;
-}
-
-.un-form label.un-cu-upload:hover,
-.un-cu-upload:hover {
-  background: var(--un-accent-light);
-}
-
-.un-cu-thumb {
-  position: relative;
-  display: inline-block;
-  width: 64px;
-  height: 46px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--un-panel-border);
-}
-
-.un-cu-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.un-cu-thumb button {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  font-size: 0.85rem;
-  line-height: 1;
-  cursor: pointer;
 }
 
 @media (max-width: 860px) {
@@ -930,14 +840,6 @@
   color: #b3261e;
 }
 
-/* ---- admin ---- */
-
-.un-admin {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
-}
-
 .un-btn-primary {
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
@@ -954,45 +856,6 @@
 .un-btn-primary:disabled {
   opacity: 0.6;
   cursor: default;
-}
-
-.un-form {
-  background: var(--un-card);
-  border: 1px solid var(--un-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  margin-bottom: 1.4rem;
-  max-width: 620px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.un-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--un-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.un-form input,
-.un-form select,
-.un-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--un-text);
-  border: 1px solid var(--un-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.un-form input:focus,
-.un-form select:focus,
-.un-form textarea:focus {
-  border-color: var(--un-accent-light);
 }
 
 .un-tab:focus-visible,
@@ -1080,44 +943,6 @@
   box-shadow: none;
 }
 
-.un-text-remove {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid var(--un-tab-edge);
-  background: var(--un-card);
-  color: var(--un-text-muted);
-  font-size: 0.8rem;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-
-.un-text-remove:hover {
-  color: #b3261e;
-  border-color: #b3261e;
-}
-
-.un-text-add {
-  font-family: 'Hellix', sans-serif;
-  font-weight: 600;
-  font-size: 0.88rem;
-  color: var(--un-accent);
-  background: var(--un-card);
-  border: 2px dashed var(--un-tab-edge);
-  border-radius: 10px;
-  padding: 0.6rem 1.1rem;
-  cursor: pointer;
-}
-
-.un-form-inline {
-  max-width: 420px;
-  margin-bottom: 1.5rem;
-}
-
 /* ---- two column: dialogue + new words ---- */
 
 .un-reading-body {
@@ -1162,25 +987,6 @@
   font-weight: 600;
   font-size: 0.9rem;
   line-height: 1.4;
-}
-
-.un-line-remove {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  line-height: 1;
-  color: rgba(0, 0, 0, 0.35);
-  cursor: pointer;
-  padding: 0.2rem 0.35rem;
-  border-radius: 6px;
-}
-
-.un-line-remove:hover {
-  color: #b3261e;
-  background: rgba(255, 255, 255, 0.6);
 }
 
 .un-line-chinese {

@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import WordPopover from '../components/WordPopover'
+import ImageCropper from '../components/ImageCropper'
 import './PodcastEpisode.css'
+
+/* Cover art ratio, shared by the list card (261x150) and this page (290x167).
+   Both render the same file, so the crop has to satisfy both. */
+const COVER_ASPECT = 261 / 150
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced']
 
@@ -59,6 +65,8 @@ export default function PodcastEpisode() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lastSaved, setLastSaved] = useState(null)
+  const [saved, setSaved] = useState({})
+  const [hovered, setHovered] = useState(null)
   const hoveredWordRef = useRef(null)
 
   const audioRef = useRef(null)
@@ -73,6 +81,15 @@ export default function PodcastEpisode() {
   const [transcript, setTranscript] = useState('')
   const [audio, setAudio] = useState(null)
   const [image, setImage] = useState(null)
+  const [cropSource, setCropSource] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+
+  useEffect(() => {
+    if (!image) return setImagePreview(null)
+    const url = URL.createObjectURL(image)
+    setImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [image])
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -103,10 +120,25 @@ export default function PodcastEpisode() {
         source_module: 'podcast',
       })
       setLastSaved(word.text)
+      setSaved((prev) => ({ ...prev, [word.text]: true }))
     } catch (err) {
       setError(err.message)
     }
   }
+
+  // The popover is positioned `fixed` against a rect captured on hover, so a
+  // scroll would leave it stranded next to the wrong word. Drop it instead.
+  useEffect(() => {
+    if (!hovered) return
+
+    function drop() {
+      hoveredWordRef.current = null
+      setHovered(null)
+    }
+
+    window.addEventListener('scroll', drop, true)
+    return () => window.removeEventListener('scroll', drop, true)
+  }, [hovered])
 
   useEffect(() => {
     function handleKeyDown(e) {
@@ -309,7 +341,24 @@ export default function PodcastEpisode() {
           </div>
           <div>
             <label>Replace cover image</label>
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const picked = e.target.files[0]
+                if (picked) setCropSource(picked)
+                e.target.value = ''
+              }}
+            />
+            {image && imagePreview && (
+              <span className="pe-photo-chosen">
+                <img src={imagePreview} alt="" />
+                Ready to upload
+                <button type="button" onClick={() => setCropSource(image)}>
+                  Adjust
+                </button>
+              </span>
+            )}
           </div>
           <button type="submit" className="pe-btn-primary" disabled={submitting}>
             {submitting ? 'Saving...' : 'Save changes'}
@@ -323,13 +372,14 @@ export default function PodcastEpisode() {
               tok.type === 'word' ? (
                 <span
                   key={idx}
-                  className="pe-word"
-                  title={`${tok.pinyin}${tok.translation ? ' - ' + tok.translation : ''}`}
-                  onMouseEnter={() => {
+                  className={'pe-word' + (hovered?.tok === tok ? ' active' : '')}
+                  onMouseEnter={(e) => {
                     hoveredWordRef.current = tok
+                    setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
                   }}
                   onMouseLeave={() => {
                     if (hoveredWordRef.current === tok) hoveredWordRef.current = null
+                    setHovered((cur) => (cur?.tok === tok ? null : cur))
                   }}
                 >
                   {tok.text}
@@ -340,6 +390,21 @@ export default function PodcastEpisode() {
             )}
           </p>
         </div>
+      )}
+
+      <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
+
+      {cropSource && (
+        <ImageCropper
+          file={cropSource}
+          aspect={COVER_ASPECT}
+          outputWidth={720}
+          onCancel={() => setCropSource(null)}
+          onCrop={(cropped) => {
+            setImage(cropped)
+            setCropSource(null)
+          }}
+        />
       )}
     </div>
   )

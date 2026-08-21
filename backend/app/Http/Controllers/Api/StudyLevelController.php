@@ -14,8 +14,12 @@ class StudyLevelController extends Controller
         // Natural sort by title so the carousel runs HSK 1..5 in order,
         // regardless of the order the levels were created in. SORT_NATURAL
         // also keeps "HSK 10" after "HSK 9" rather than after "HSK 1".
+        // units_count lets the Dashboard pick the level with the most content
+        // to feature, instead of whichever happens to sort first.
         return StudyLevel::query()
-            ->get(['id', 'title', 'description', 'level_label', 'image_path', 'banner_path', 'accent_color', 'category'])
+            ->select(['id', 'title', 'description', 'level_label', 'image_path', 'banner_path', 'accent_color', 'category'])
+            ->withCount('units')
+            ->get()
             ->sortBy('title', SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
     }

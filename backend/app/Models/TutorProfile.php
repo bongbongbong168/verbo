@@ -17,6 +17,7 @@ class TutorProfile extends Model
         'photo_path',
         'languages_spoken',
         'availability',
+        'video_url',
     ];
 
     protected $appends = [
@@ -31,6 +32,11 @@ class TutorProfile extends Model
     public function lessons()
     {
         return $this->hasMany(TutorLesson::class);
+    }
+
+    public function resumeEntries()
+    {
+        return $this->hasMany(TutorResumeEntry::class)->orderBy('position')->orderByDesc('id');
     }
 
     public function getPhotoUrlAttribute(): ?string

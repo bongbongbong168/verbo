@@ -1,0 +1,109 @@
+/* Photo cropper. Prefix `cr-`. Self-contained colours so it can be dropped on
+   any page without inheriting that page's tokens. */
+
+.cr-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(28, 23, 48, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.cr {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: #1c1730;
+}
+
+.cr-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0 0 0.2rem;
+}
+
+.cr-sub {
+  color: #726c88;
+  font-size: 0.88rem;
+  margin: 0 0 1.1rem;
+}
+
+/* The crop window. Overflow is clipped so the image outside it never shows,
+   which is what makes the frame the literal source rectangle on export. */
+.cr-frame {
+  position: relative;
+  width: 240px;
+  margin: 0 auto 1.1rem;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f1edfc;
+  cursor: grab;
+  touch-action: none;
+}
+
+.cr-frame:active {
+  cursor: grabbing;
+}
+
+.cr-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.cr-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  color: #726c88;
+  margin-bottom: 1.3rem;
+}
+
+.cr-zoom input {
+  flex: 1;
+  accent-color: #6c4fd1;
+}
+
+.cr-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.cr-btn {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #1c1730;
+  background: #fff;
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  padding: 0.62rem 1.4rem;
+  cursor: pointer;
+}
+
+.cr-btn.primary {
+  color: #fff;
+  background: #6c4fd1;
+  border-color: #6c4fd1;
+}
+
+.cr-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cr-btn:focus-visible {
+  outline: 2px solid #997ee2;
+  outline-offset: 2px;
+}

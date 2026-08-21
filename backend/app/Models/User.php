@@ -68,6 +68,16 @@ class User extends Authenticatable
         return $this->hasMany(StudyLevel::class);
     }
 
+    public function activityDays()
+    {
+        return $this->hasMany(ActivityDay::class);
+    }
+
+    public function studyProgress()
+    {
+        return $this->hasMany(StudyProgress::class);
+    }
+
     public function tutorProfile()
     {
         return $this->hasOne(TutorProfile::class);

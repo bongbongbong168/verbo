@@ -48,8 +48,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // setUser is exposed so Settings can push a renamed user back without a
+  // refetch — the sidebar reads the same object.
   return (
-    <AuthContext.Provider value={{ token, user, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ token, user, setUser, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

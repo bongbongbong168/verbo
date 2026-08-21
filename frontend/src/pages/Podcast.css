@@ -9,9 +9,9 @@
   --pc-text-muted: #726c88;
 
   background: var(--pc-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--pc-text);
 }
@@ -24,48 +24,6 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 1.4rem;
-}
-
-.pc-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--pc-card);
-  border: 1px solid var(--pc-border);
-  border-radius: 18px;
-  padding: 0.6rem 0.9rem;
-  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.05);
-}
-
-.pc-toggle-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.9rem;
-  border-radius: 12px;
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--pc-text-muted);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.pc-toggle-item svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.pc-toggle-item:hover {
-  color: var(--pc-text);
-}
-
-.pc-toggle-item.active {
-  color: var(--pc-text);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 2px;
 }
 
 .pc-topbar-icons {
@@ -378,4 +336,33 @@
 .pc-new-btn:focus-visible {
   outline: 2px solid var(--pc-accent);
   outline-offset: 2px;
+}
+
+/* Preview of the cropped cover waiting to be uploaded */
+.pc-photo-chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--pc-text-muted);
+  margin-top: 0.5rem;
+}
+
+.pc-photo-chosen img {
+  width: 61px;
+  height: 35px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--pc-border);
+}
+
+.pc-photo-chosen button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--pc-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
 }

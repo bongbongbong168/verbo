@@ -1,0 +1,832 @@
+/* Tutor detail page. Prefix `td-`.
+   Geometry measured off design/find tutor/Click on Tutor (1).png (1440 wide):
+   left column 559px, right 440px, 25px gutter — so 1.27 : 1. Cards carry the
+   same 2px #a89ce3 outline as the tutor cards on the list page. */
+
+.td {
+  --td-bg: #f9f8ff;
+  --td-card: #ffffff;
+  /* Two strokes on this page, sampled off the export: the main cards are a
+     2px navy, while the review cards use a lighter 1px lavender. */
+  --td-edge: #2b2643;
+  --td-edge-soft: #a89ce3;
+  --td-border: #e7e3f6;
+  --td-accent: #6c4fd1;
+  --td-book: #6a6191;
+  --td-text: #1c1730;
+  --td-text-muted: #726c88;
+  --td-pill: #f1edfc;
+
+  background: var(--td-bg);
+  min-height: var(--app-vh);
+  box-sizing: border-box;
+  padding: 2rem 90px 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--td-text);
+}
+
+.td-back {
+  display: inline-block;
+  color: var(--td-text-muted);
+  text-decoration: none;
+  font-size: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.td-back:hover {
+  color: var(--td-accent);
+}
+
+.td-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+.td-empty,
+.td-empty-inline {
+  color: var(--td-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.td-empty {
+  padding: 2rem 90px;
+}
+
+/* Left column takes the larger share. 640 : 360 keeps the right rail near the
+   design's 440px while giving the profile card noticeably more room. */
+.td-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 640fr) minmax(0, 360fr);
+  gap: 30px 25px;
+  align-items: start;
+}
+
+/* display: contents dissolves these two wrappers so their children become grid
+   items directly. That is what lets the hire card span the profile card and
+   rating bar as one row pair — previously they lived in separate flex columns,
+   so keeping them level meant hand-tuning the video's height every time the
+   type or the card height changed. */
+.td-main,
+.td-side {
+  display: contents;
+}
+
+.td-profile { grid-column: 1; grid-row: 1; }
+.td-stats   { grid-column: 1; grid-row: 2; }
+.td-resume  { grid-column: 1; grid-row: 3; }
+.td-reviews { grid-column: 1; grid-row: 4; }
+.td-similar { grid-column: 1; grid-row: 5; }
+
+/* Spans both rows on the left, so it matches their combined height whatever
+   the bio length turns out to be. */
+.td-hire {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.td-lessons { grid-column: 2; grid-row: 3; }
+
+.td-card {
+  box-sizing: border-box;
+  background: var(--td-card);
+  border: 2px solid var(--td-edge);
+  border-radius: 19px;
+  padding: 1.3rem 1.4rem;
+}
+
+.td-h2 {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.85rem;
+  margin: 0 0 0.9rem;
+}
+
+.td-h3 {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0 0.15rem;
+}
+
+.td-sub {
+  color: var(--td-text-muted);
+  font-size: 0.92rem;
+  margin: 0 0 0.9rem;
+}
+
+/* ---- profile card ---- */
+
+/* min-height rather than height so a longer bio grows the card instead of
+   spilling out of it. Nothing else needs adjusting when this changes — the
+   hire card spans this row pair and follows it automatically. */
+.td-profile {
+  min-height: 340px;
+}
+
+.td-profile-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+/* 2px #928fa1 frame, sampled off the design. box-sizing keeps the border
+   inside the 58px so adding it does not grow the avatar. */
+.td-avatar {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 58px;
+  height: 58px;
+  border: 2px solid #928fa1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--td-pill);
+  color: var(--td-accent);
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.td-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.td-ident {
+  flex: 1;
+  min-width: 0;
+}
+
+.td-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.95rem;
+  margin: 0;
+}
+
+/* Centred on the name's cap height, not its baseline — see the same fix on
+   .ft-card-verified in FindTutor.css. */
+.td-verified {
+  display: inline-flex;
+  align-self: center;
+  position: relative;
+  top: -1px;
+}
+
+.td-verified svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.td-verified.sm svg {
+  width: 13px;
+  height: 13px;
+}
+
+.td-role {
+  color: var(--td-text-muted);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.15rem 0 0;
+}
+
+/* The bookmark used to sit directly in the header's flex row; it now shares a
+   wrapper with the Edit button so the two stay grouped at the right edge. */
+.td-head-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+/* Matches the 1px lavender stroke the review cards and the "View profile"
+   button already use, so the one edit affordance reads as part of the page
+   rather than a bolted-on admin control. */
+.td-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--td-edge-soft);
+  border-radius: 10px;
+  background: none;
+  color: var(--td-accent);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.td-edit svg {
+  width: 15px;
+  height: 15px;
+}
+
+.td-edit:hover {
+  background: var(--td-pill);
+}
+
+.td-bookmark {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--td-pill);
+  color: var(--td-text-muted);
+  cursor: pointer;
+}
+
+.td-bookmark svg {
+  width: 16px;
+  height: 16px;
+}
+
+.td-bookmark:hover {
+  color: var(--td-accent);
+}
+
+.td-bio {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0 0 0.9rem;
+}
+
+.td-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.td-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.td-meta-row svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--td-text-muted);
+}
+
+/* ---- stats bar ---- */
+
+.td-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  padding: 1.1rem 0.6rem;
+}
+
+/* Hairline dividers between the four figures, as in the design */
+.td-stat + .td-stat {
+  border-left: 1px solid var(--td-border);
+}
+
+.td-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+  color: var(--td-text-muted);
+}
+
+.td-stat strong {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.9rem;
+  color: var(--td-text);
+  line-height: 1.1;
+}
+
+.td-stars {
+  color: #f5b301;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+
+/* ---- resume ---- */
+
+.td-tabs {
+  display: flex;
+  gap: 1.6rem;
+  border-bottom: 1px solid var(--td-border);
+  margin-bottom: 1.3rem;
+}
+
+.td-tab {
+  position: relative;
+  font: inherit;
+  font-size: 1.08rem;
+  color: var(--td-text-muted);
+  background: none;
+  border: none;
+  padding: 0 0 0.6rem;
+  cursor: pointer;
+}
+
+.td-tab.active {
+  color: var(--td-text);
+  font-weight: 600;
+}
+
+/* An element, not text-decoration, so the indicator sits on the rule below */
+.td-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--td-text);
+}
+
+.td-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* baseline, not start: the year and the institution are different sizes, so
+   aligning their boxes left the year's text sitting ~3px above the title's
+   baseline. Aligning the text itself is what reads as level. */
+.td-entry {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.td-entry-years {
+  color: var(--td-text-muted);
+  font-size: 0.95rem;
+}
+
+.td-entry-title {
+  font-size: 1.08rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.td-entry-detail {
+  color: var(--td-text-muted);
+  font-size: 0.95rem;
+  margin: 0.3rem 0 0;
+}
+
+/* ---- reviews ---- */
+
+.td-review {
+  display: flex;
+  gap: 0.8rem;
+  background: var(--td-card);
+  border: 1px solid var(--td-edge-soft);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.td-review-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--td-pill);
+  color: var(--td-accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.td-review-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0 0 0.2rem;
+}
+
+.td-review-text {
+  font-style: italic;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--td-text);
+  margin: 0;
+}
+
+.td-see-more {
+  font: inherit;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--td-text);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ---- similar tutors ---- */
+
+.td-similar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.td-similar-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.td-similar-cover {
+  display: block;
+  height: 76px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #d9d9d9;
+  margin-bottom: 0.4rem;
+}
+
+.td-similar-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+/* Avatar overlaps up into the cover, as in the design */
+.td-similar-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: -1.7rem;
+  margin-bottom: 0.4rem;
+}
+
+.td-similar-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #fff;
+  color: var(--td-accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.td-similar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.td-similar-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-similar-lang {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.td-similar-lang svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--td-text-muted);
+}
+
+.td-similar-bio {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--td-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- right rail: hire card ---- */
+
+/* max-height caps what aspect-ratio would otherwise demand. Without it the
+   video was 60% of the card's height and grew with the column, since a wider
+   rail means a proportionally taller 16:10 box. The image is object-fit:cover,
+   so it crops rather than distorting. */
+/* Sticker edge borrowed from .db-btn-cta on the Dashboard: the existing 2px
+   outline plus a 3px offset shadow in the same navy. The shadow is painted,
+   not laid out, so it does not disturb the column alignment. */
+.td-hire {
+  box-shadow: 0 3px 0 0 var(--td-edge);
+}
+
+/* An explicit height rather than aspect-ratio + max-height: once the height is
+   capped, aspect-ratio shrinks the *width* to preserve the ratio, which left
+   the video 34px narrower than the buttons under it. The image crops via
+   object-fit instead.
+
+   flex: 1 lets the video absorb whatever height the card has left after the
+   price row and buttons, so the card fills its spanned rows without any
+   hand-tuned pixel value. */
+.td-video {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 150px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #2b2643;
+  margin-bottom: 0.9rem;
+}
+
+/* Absolutely positioned so it contributes no height. In the flow at
+   height:100% inside a flex-basis-0 box, the browser falls back to the
+   image's intrinsic aspect ratio and the picture ends up driving the card's
+   height — which forced the spanned rows taller than the column beside it. */
+.td-video img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+
+.td-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--td-text);
+  cursor: pointer;
+}
+
+.td-play svg {
+  width: 24px;
+  height: 24px;
+}
+
+.td-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.9rem;
+}
+
+.td-price-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--td-text);
+}
+
+.td-price-label svg {
+  width: 15px;
+  height: 15px;
+  color: var(--td-text-muted);
+}
+
+.td-price {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.td-price em {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--td-text-muted);
+}
+
+.td-btn-primary,
+.td-btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-radius: 8px;
+  padding: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.td-btn-primary {
+  color: #fff;
+  background: var(--td-book);
+  border: 1.5px solid var(--td-book);
+  margin-bottom: 0.6rem;
+}
+
+.td-btn-primary:hover:not(:disabled) {
+  background: var(--td-accent);
+  border-color: var(--td-accent);
+}
+
+/* Outline pair to the filled button — same colour, as on the list preview */
+.td-btn-ghost {
+  color: var(--td-text);
+  background: #fff;
+  border: 1.5px solid var(--td-book);
+}
+
+.td-btn-ghost:hover:not(:disabled) {
+  background: var(--td-pill);
+  border-color: var(--td-accent);
+}
+
+.td-btn-primary svg,
+.td-btn-ghost svg {
+  width: 17px;
+  height: 17px;
+}
+
+.td-btn-primary:disabled,
+.td-btn-ghost:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.td-message-form {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.td-message-form textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--td-text);
+  border: 1px solid var(--td-border);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  box-sizing: border-box;
+  outline: none;
+  resize: vertical;
+}
+
+.td-message-form textarea:focus {
+  border-color: var(--td-accent);
+}
+
+.td-response {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--td-text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0.9rem 0 0;
+}
+
+.td-response svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- right rail: lessons ---- */
+
+.td-lang-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.td-lang-pill {
+  background: var(--td-book);
+  color: #fff;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  padding: 0.32rem 0.8rem;
+}
+
+.td-lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.td-lesson {
+  position: relative;
+  background: var(--td-book);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: #fff;
+}
+
+.td-lesson-name {
+  font-weight: 600;
+  font-size: 1.02rem;
+  margin: 0;
+}
+
+.td-lesson-desc {
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0.15rem 0 0.5rem;
+  opacity: 0.9;
+}
+
+.td-lesson-price {
+  display: inline-block;
+  background: #8f86bb;
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.td-back:focus-visible,
+.td-tab:focus-visible,
+.td-btn-primary:focus-visible,
+.td-btn-ghost:focus-visible,
+.td-bookmark:focus-visible {
+  outline: 2px solid var(--td-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1000px) {
+  .td-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .td-similar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* Fills the video box once playback starts, replacing the still + play button */
+.td-video-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+  object-fit: cover;
+}
+
+.td-play.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

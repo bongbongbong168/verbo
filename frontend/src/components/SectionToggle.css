@@ -1,0 +1,72 @@
+/* Podcast / Reads switch. Prefix `tg-`. Deliberately self-contained rather
+   than reading page tokens, so it renders identically on /read, /read/:id and
+   /podcast — the whole point of pulling it out of the two page stylesheets. */
+
+.tg {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: #fff;
+  border: 1px solid #e7e3f6;
+  border-radius: 18px;
+  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.05);
+
+  /* Uneven vertical padding, derived rather than eyeballed. The indicator hangs
+     6px below the label's box (5px offset + 1px bar), so with equal padding the
+     visible block sits 6px bottom-heavy. Balancing means top = bottom - 6, and
+     holding the original 19.2px total gives 6.6 / 12.6. */
+  padding: 6.6px 14.4px 12.6px;
+}
+
+.tg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 12px;
+  font-family: 'Hellix', system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #726c88;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tg-item svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.tg-item:hover {
+  color: #1c1730;
+}
+
+.tg-item.active {
+  color: #1c1730;
+  font-weight: 700;
+  cursor: default;
+}
+
+/* The indicator is an element, not text-decoration: underline cannot take
+   rounded caps. It hangs off the label so it spans the word only, never the
+   icon, and takes currentColor so it cannot drift from the text. */
+.tg-label {
+  position: relative;
+}
+
+.tg-item.active .tg-label::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 1px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.tg-item:focus-visible {
+  outline: 2px solid #6c4fd1;
+  outline-offset: 2px;
+}

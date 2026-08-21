@@ -15,6 +15,7 @@ class Scan extends Model
         'raw_text',
         'words',
         'size_bytes',
+        'share_token',
     ];
 
     protected $casts = [

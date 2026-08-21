@@ -1,0 +1,228 @@
+/* Public shared-scan page. Prefix `ss-`.
+   Standalone: this renders for someone with no account and no sidebar, so it
+   centres its own column rather than relying on Layout's 90px gutter. Token
+   values match ScanDocument so a shared scan looks like the real thing. */
+
+.ss {
+  --ss-bg: #f6f5fc;
+  --ss-card: #ffffff;
+  --ss-border: #e7e3f6;
+  --ss-edge: #2b2643;
+  --ss-accent: #6c4fd1;
+  --ss-text: #1c1730;
+  --ss-text-muted: #726c88;
+  --ss-pill-bg: #f1edfc;
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 2rem 1.5rem 3rem;
+  background: var(--ss-bg);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--ss-text);
+}
+
+.ss-state {
+  padding: 3rem;
+  text-align: center;
+  color: #726c88;
+  font-family: 'Hellix', system-ui, sans-serif;
+}
+
+.ss-top {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: 1000px;
+  margin: 0 auto 1.2rem;
+}
+
+.ss-brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ss-accent);
+}
+
+.ss-badge {
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: var(--ss-pill-bg);
+  color: var(--ss-accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.ss-card {
+  box-sizing: border-box;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 26px 30px 22px;
+  background: var(--ss-card);
+  border: 1px solid var(--ss-border);
+  border-radius: 18px;
+}
+
+.ss-card-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.ss-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--ss-border);
+}
+
+.ss-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.ss-date {
+  font-size: 0.84rem;
+  color: var(--ss-text-muted);
+}
+
+/* Text left, word list right — the same split ScanDocument uses, since the
+   content has the same shape. */
+.ss-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 26px;
+  padding: 1.2rem 0;
+}
+
+.ss-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.ss-panel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ss-hint {
+  font-size: 0.78rem;
+  color: var(--ss-text-muted);
+}
+
+.ss-text {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  background: var(--ss-bg);
+  border: 1px solid var(--ss-border);
+  border-radius: 12px;
+  font-size: 1.05rem;
+  line-height: 2;
+  /* Reproduce the OCR's own line breaks exactly, as ScanDocument does. */
+  white-space: pre-wrap;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+
+/* .active mirrors :hover so the highlight and the popover are driven by one
+   piece of state and cannot disagree — same rule as the other reader pages. */
+.ss-token {
+  border-radius: 4px;
+  cursor: default;
+  transition: background 0.1s ease;
+}
+
+.ss-token:hover,
+.ss-token.active {
+  background: var(--ss-pill-bg);
+  box-shadow: 0 0 0 2px var(--ss-pill-bg);
+}
+
+.ss-empty,
+.ss-error {
+  margin: 0;
+  color: var(--ss-text-muted);
+  font-size: 0.95rem;
+}
+
+.ss-words {
+  min-width: 0;
+}
+
+.ss-wordlist {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.ss-wordlist li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--ss-bg);
+  border: 1px solid var(--ss-border);
+  border-radius: 9px;
+}
+
+.ss-word-hanzi {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ss-word-meta {
+  font-size: 0.8rem;
+  color: var(--ss-text-muted);
+}
+
+.ss-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--ss-border);
+  font-size: 0.85rem;
+  color: var(--ss-text-muted);
+}
+
+.ss-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  background: var(--ss-accent);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ss-btn:hover {
+  background: #5a40b4;
+}
+
+@media (max-width: 860px) {
+  .ss-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ss-wordlist {
+    max-height: none;
+  }
+}

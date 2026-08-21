@@ -7,7 +7,7 @@
   --su-panel-dark: #2b2643;
 
   display: flex;
-  min-height: 100vh;
+  min-height: var(--app-vh);
   background: var(--su-bg);
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--su-text);

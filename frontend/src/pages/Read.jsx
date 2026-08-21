@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import SectionToggle from '../components/SectionToggle'
 import iconBell from '../assets/dashboard/icon-bell.png'
 import iconProfile from '../assets/dashboard/icon-profile.png'
 import './Read.css'
@@ -10,26 +11,6 @@ const TYPE_LABELS = {
   article: 'Article',
   story: 'Story',
   funfact: 'Fun fact',
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
-      <line x1="12" y1="17.5" x2="12" y2="21" />
-    </svg>
-  )
-}
-
-function BooksIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
-      <path d="M12 3 2.5 7.5 12 12l9.5-4.5L12 3z" />
-      <path d="M2.5 12 12 16.5 21.5 12" fill="none" />
-      <path d="M2.5 16.5 12 21l9.5-4.5" fill="none" />
-    </svg>
-  )
 }
 
 function formatDate(value) {
@@ -105,16 +86,7 @@ export default function Read() {
   return (
     <div className="rd">
       <div className="rd-topbar">
-        <div className="rd-toggle">
-          <Link to="/podcast" className="rd-toggle-item">
-            <MicIcon />
-            Podcast
-          </Link>
-          <span className="rd-toggle-item active">
-            <BooksIcon />
-            Reads
-          </span>
-        </div>
+        <SectionToggle active="read" />
         <div className="rd-topbar-icons">
           <button type="button" className="rd-icon-btn" aria-label="Notifications">
             <img src={iconBell} alt="" />

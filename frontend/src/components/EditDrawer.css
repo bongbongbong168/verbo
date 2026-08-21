@@ -1,0 +1,496 @@
+/* Shared edit-drawer chrome. Prefix `ed-`.
+   Self-contained tokens rather than reaching into a page's stylesheet, so the
+   drawer can be opened from anywhere without dragging that page's CSS along —
+   same reasoning as SectionToggle. Used by TutorEditDrawer and
+   StudyUnitEditDrawer; the tab bodies come from the caller. */
+
+.ed-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(28, 23, 48, 0.42);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ed {
+  --ed-card: #ffffff;
+  --ed-border: #e7e3f6;
+  --ed-accent: #6c4fd1;
+  --ed-text: #1c1730;
+  --ed-muted: #726c88;
+  --ed-field: #f8f7fd;
+
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100%);
+  height: 100%;
+  background: var(--ed-card);
+  box-sizing: border-box;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--ed-text);
+  box-shadow: -18px 0 46px rgba(28, 23, 48, 0.18);
+  animation: ed-in 0.22s ease-out;
+}
+
+/* Deliberately a short 24px nudge rather than a full translateX(100%) slide.
+   An animation only advances while the tab is getting frames; a keyframe that
+   starts the panel a full width off-screen strands it there — unreachable —
+   if those frames never arrive. Starting 24px out means the worst case is a
+   panel 24px off its mark, still fully on screen and usable. */
+@keyframes ed-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed {
+    animation: none;
+  }
+}
+
+.ed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.6rem 1rem;
+}
+
+.ed-title {
+  margin: 0;
+  font-size: 1.24rem;
+  font-weight: 700;
+}
+
+.ed-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ed-muted);
+}
+
+.ed-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid var(--ed-border);
+  border-radius: 50%;
+  background: none;
+  color: var(--ed-muted);
+  cursor: pointer;
+}
+
+.ed-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ed-close:hover {
+  color: var(--ed-text);
+  border-color: var(--ed-muted);
+}
+
+.ed-tabs {
+  display: flex;
+  gap: 1.4rem;
+  padding: 0 1.6rem;
+  border-bottom: 1px solid var(--ed-border);
+}
+
+.ed-tab {
+  position: relative;
+  padding: 0 0 0.7rem;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ed-muted);
+  cursor: pointer;
+}
+
+.ed-tab.active {
+  color: var(--ed-accent);
+}
+
+/* An absolutely-positioned bar rather than a border, so it can overlap the
+   tab strip's own 1px rule instead of sitting above it. */
+.ed-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ed-accent);
+}
+
+.ed-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.4rem 1.6rem 2.4rem;
+}
+
+.ed-error,
+.ed-saved {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 9px;
+  font-size: 0.87rem;
+}
+
+.ed-error {
+  background: #fdecec;
+  color: #b02a2a;
+}
+
+.ed-saved {
+  background: #ecf8f0;
+  color: #1f7a45;
+}
+
+.ed-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.ed-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.ed-field > span {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--ed-muted);
+}
+
+.ed-field input,
+.ed-field textarea,
+.ed-field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.58rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ed-text);
+  background: var(--ed-field);
+  border: 1px solid var(--ed-border);
+  border-radius: 9px;
+}
+
+.ed-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ed-field input:focus,
+.ed-field textarea:focus,
+.ed-field select:focus {
+  outline: none;
+  border-color: var(--ed-accent);
+}
+
+.ed-row {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.ed-row .ed-field {
+  flex: 1;
+}
+
+.ed-row .ed-narrow {
+  flex: 0 0 130px;
+}
+
+.ed-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ed-photo {
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #efeafc;
+  color: var(--ed-accent);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.ed-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ed-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.ed-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ed-muted);
+}
+
+.ed-btn-primary {
+  align-self: flex-start;
+  padding: 0.62rem 1.3rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--ed-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ed-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Also used on a <label> wrapping a file input, so the shared rule has to hold
+   its own weight — `.ed-form label` would otherwise win on specificity, which
+   is exactly how the Study "Add photo" button lost its styling. */
+.ed-btn-ghost,
+.ed-form label.ed-btn-ghost {
+  display: inline-block;
+  padding: 0.48rem 0.9rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 9px;
+  background: none;
+  color: var(--ed-text);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ed-btn-ghost:hover {
+  border-color: var(--ed-accent);
+  color: var(--ed-accent);
+}
+
+.ed-btn-ghost input[type='file'] {
+  display: none;
+}
+
+.ed-group {
+  margin-bottom: 1.5rem;
+}
+
+.ed-group-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.83rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ed-muted);
+}
+
+.ed-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ed-muted);
+}
+
+.ed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 10px;
+  background: var(--ed-field);
+}
+
+.ed-item-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.ed-item-meta {
+  margin: 0.12rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ed-muted);
+}
+
+.ed-remove {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--ed-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ed-remove:hover {
+  background: #fdecec;
+  color: #b02a2a;
+}
+
+.ed-add {
+  padding-top: 1.3rem;
+  border-top: 1px solid var(--ed-border);
+}
+
+@media (max-width: 560px) {
+  .ed {
+    width: 100%;
+  }
+}
+
+/* ---- shared pieces the Study drawer adds ---- */
+
+/* Five tabs are a tight fit at 480px, so the strip scrolls rather than
+   wrapping into a second row that would shift the body down. */
+.ed-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ed-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ed-tab {
+  white-space: nowrap;
+}
+
+.ed-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ed-group-head .ed-group-title {
+  margin-bottom: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+  color: var(--ed-text);
+}
+
+.ed-group-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+}
+
+.ed-group-actions .ed-btn-ghost {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+/* A whole row that selects, rather than a separate hit target — the row is
+   the thing being picked. */
+.ed-item-pick {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-item-pick .ed-item-title,
+.ed-item-pick .ed-item-meta {
+  display: block;
+}
+
+.ed-item.active {
+  border-color: var(--ed-accent);
+  background: #f3efff;
+}
+
+.ed-sub {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--ed-border);
+}
+
+.ed-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ed-thumb {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 1px solid var(--ed-border);
+}
+
+.ed-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ed-thumb button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(28, 23, 48, 0.72);
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}

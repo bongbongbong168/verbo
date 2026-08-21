@@ -12,9 +12,9 @@
   --rd-indent: 30px;
 
   background: var(--rd-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--rd-text);
 }
@@ -27,48 +27,6 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 1.4rem;
-}
-
-.rd-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--rd-card);
-  border: 1px solid var(--rd-border);
-  border-radius: 18px;
-  padding: 0.6rem 0.9rem;
-  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.05);
-}
-
-.rd-toggle-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.9rem;
-  border-radius: 12px;
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--rd-text-muted);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.rd-toggle-item svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
-.rd-toggle-item:hover {
-  color: var(--rd-text);
-}
-
-.rd-toggle-item.active {
-  color: var(--rd-text);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 2px;
 }
 
 .rd-topbar-icons {
@@ -357,10 +315,18 @@
   margin-bottom: 1.1rem;
 }
 
+/* Fixed at two columns rather than auto-fit: the card count should not change
+   the layout, and on a wide screen auto-fit was spilling to three or more. */
 .rd-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.1rem;
+}
+
+@media (max-width: 720px) {
+  .rd-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .rd-card {
@@ -496,14 +462,20 @@
 
 /* No resting marker on saveable words — the text stays clean. The hover
    highlight is what signals a word is interactive. */
+/* Matches .sd-token on the Scan document page — one hover treatment across
+   every tokenized surface. .active mirrors :hover so the highlight and the
+   WordPopover are driven by the same state and can never disagree. */
 .rd-word {
-  cursor: help;
-  border-radius: 3px;
-  transition: background 0.1s ease;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.rd-word:hover {
-  background: #ede8fb;
+.rd-word:hover,
+.rd-word.active {
+  background: #6c4fd1;
+  color: #fff;
+  box-shadow: 0 0 0 2px #6c4fd1;
 }
 
 @media (max-width: 720px) {

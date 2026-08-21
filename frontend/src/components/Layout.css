@@ -20,7 +20,7 @@
 
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: var(--app-vh);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -35,13 +35,59 @@
   border-radius: 999px;
 }
 
+/* ---- header: logo + collapse toggle ---- */
+
+.sb-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.6rem;
+}
+
 .sb-logo {
   height: 42px;
   width: auto;
-  align-self: flex-start;
   display: block;
   object-fit: contain;
-  margin-bottom: 1.6rem;
+  min-width: 0;
+}
+
+/* The real chevron mark, lifted out of logo.png. The full wordmark is a solid
+   176x42 pill that cannot be cropped without slicing its rounded edge, so the
+   mark was extracted to its own transparent PNG (assets/sidebar/logo-mark.png)
+   rather than masked at runtime. Width-driven so it keeps its 40:27 aspect. */
+.sb-badge {
+  display: block;
+  width: 36px;
+  height: auto;
+  flex: none;
+  object-fit: contain;
+}
+
+.sb-toggle {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sb-text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sb-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sb-toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
 }
 
 .sb-section-label {
@@ -181,11 +227,109 @@
 .sb-shell {
   display: flex;
   align-items: flex-start;
-  min-height: 100vh;
+  min-height: var(--app-vh);
 }
 
 .sb-main {
   flex: 1;
   min-width: 0;
-  min-height: 100vh;
+  min-height: var(--app-vh);
+}
+
+
+/* ---- collapsed rail ----
+   Everything that is text-only is hidden and the rail narrows to the icon
+   column. The width transition is on .sb, so the main area (a flex sibling)
+   reflows with it for free. */
+
+.sb {
+  transition: width 0.18s ease, padding 0.18s ease;
+  /* `display` cannot transition, so the labels appear the instant the class
+     flips while the width is still animating open. Clip instead of letting
+     them spill, and never wrap — the rail already sets overflow-y, which would
+     otherwise compute overflow-x to auto and flash a horizontal scrollbar
+     mid-transition. */
+  overflow-x: hidden;
+}
+
+.sb-nav-link,
+.sb-user,
+.sb-logout {
+  white-space: nowrap;
+}
+
+.sb.collapsed {
+  width: 76px;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+}
+
+.sb.collapsed .sb-head {
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sb.collapsed .sb-toggle {
+  margin-left: 0;
+}
+
+/* The chevron points the other way once collapsed, so it always reads as
+   "this is the direction it will move". */
+.sb.collapsed .sb-toggle svg {
+  transform: rotate(180deg);
+}
+
+.sb.collapsed .sb-section-label,
+.sb.collapsed .sb-nav-label,
+.sb.collapsed .sb-user,
+.sb.collapsed .sb-promo {
+  display: none;
+}
+
+.sb.collapsed .sb-nav-link {
+  justify-content: center;
+  gap: 0;
+  padding: 0.6rem;
+}
+
+/* The active bar is drawn with ::before at the link's left edge; keep it off
+   the icon now that the link is only as wide as the icon itself. */
+.sb.collapsed .sb-nav-link.active::before {
+  left: 2px;
+}
+
+.sb.collapsed .sb-logout {
+  padding: 0.55rem 0;
+  text-align: center;
+}
+
+.sb.collapsed .sb-logout-label {
+  /* Keeps the button an accessible name while showing only a glyph. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sb.collapsed .sb-logout::after {
+  content: '⏻';
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb,
+  .sb-toggle svg {
+    transition: none;
+  }
+}
+
+/* The one nav link that lives below the spacer rather than in the Study Area
+   list — it needs its own breathing room from the user block beneath it. */
+.sb-settings {
+  margin-bottom: 0.6rem;
 }

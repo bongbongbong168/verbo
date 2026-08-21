@@ -9,9 +9,9 @@
   --st-text-muted: #726c88;
 
   background: var(--st-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--st-text);
 }
@@ -131,14 +131,21 @@
   cursor: pointer;
   transform-origin: center 92%;
 
-  /* Every card eases on the same curve, so they sweep as one mechanism.
-     No overshoot — the earlier bezier sprang past its target and settled
-     back, which read as snappy rather than smooth. Transform and opacity
-     share a duration and curve so they finish together instead of the
-     fade landing early. */
+  /* Every card eases on the same curve, so they sweep as one mechanism, and
+     transform and opacity share a duration so the fade cannot land early.
+
+     The curve is taken from the reference animation rather than picked by
+     feel: tracking its frame-to-frame motion gave a sharp symmetric velocity
+     profile peaking at ~2.9x the average speed, which rules out linear (1.0)
+     and sine (1.6) and sits between a quart and quint ease-in-out. The curve
+     is what carries the character, so it is kept exactly.
+
+     The duration is deliberately shorter than the reference's 1.75s — that
+     reads well on an ambient showcase but drags on a control you click. The
+     still hold between steps comes from ADVANCE_EVERY_MS in Study.jsx. */
   transition:
-    transform 0.72s cubic-bezier(0.25, 0.8, 0.25, 1),
-    opacity 0.72s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform 1.15s cubic-bezier(0.83, 0, 0.17, 1),
+    opacity 1.15s cubic-bezier(0.83, 0, 0.17, 1);
 
   /* Keep each card on its own compositor layer: without this the browser
      re-rasterises the scaled cover art every frame, which is what makes a

@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Flashcards from './pages/Flashcards'
 import Scan from './pages/Scan'
 import ScanDocument from './pages/ScanDocument'
+import SharedScan from './pages/SharedScan'
 import Read from './pages/Read'
 import ReadArticle from './pages/ReadArticle'
 import Practice from './pages/Practice'
@@ -15,6 +16,7 @@ import PodcastEpisode from './pages/PodcastEpisode'
 import Study from './pages/Study'
 import StudyLevel from './pages/StudyLevel'
 import StudyUnit from './pages/StudyUnit'
+import Settings from './pages/Settings'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -24,6 +26,10 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
+      {/* Public on purpose — the share token in the URL is the credential, so
+          this must sit OUTSIDE ProtectedRoute and outside Layout (a recipient
+          has no account, so there is no sidebar to render). */}
+      <Route path="/shared/scan/:shareToken" element={<SharedScan />} />
       <Route
         element={
           <ProtectedRoute>
@@ -45,6 +51,7 @@ function App() {
         <Route path="/study" element={<Study />} />
         <Route path="/study/units/:id" element={<StudyUnit />} />
         <Route path="/study/:id" element={<StudyLevel />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   )

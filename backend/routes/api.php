@@ -5,17 +5,20 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\FlashcardController;
 use App\Http\Controllers\Api\PodcastController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ScanController;
 use App\Http\Controllers\Api\StudyGrammarPointController;
 use App\Http\Controllers\Api\StudyLevelController;
+use App\Http\Controllers\Api\StudyProgressController;
 use App\Http\Controllers\Api\StudyQuizQuestionController;
 use App\Http\Controllers\Api\StudyTextController;
 use App\Http\Controllers\Api\StudyUnitController;
 use App\Http\Controllers\Api\StudyVocabularyController;
 use App\Http\Controllers\Api\TutorController;
 use App\Http\Controllers\Api\TutorLessonController;
+use App\Http\Controllers\Api\TutorResumeEntryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,12 +37,22 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Public: the share token is the credential. See ScanController::shared —
+// the response deliberately carries no owner information.
+Route::get('/shared/scans/{token}', [ScanController::class, 'shared']);
+
 // Public so <audio src> can reach it — see PodcastController::audio.
 Route::get('/podcasts/{podcast}/audio', [PodcastController::class, 'audio']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+
+    // Settings page.
+    Route::put('/user/profile', [ProfileController::class, 'update']);
+    Route::put('/user/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/user/sessions/revoke-others', [ProfileController::class, 'revokeOtherSessions']);
+    Route::get('/user/stats', [ProfileController::class, 'stats']);
 
     Route::get('/flashcards', [FlashcardController::class, 'index']);
     Route::post('/flashcards', [FlashcardController::class, 'store']);
@@ -49,6 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/scans', [ScanController::class, 'store']);
     Route::get('/scans/{scan}', [ScanController::class, 'show']);
     Route::delete('/scans/{scan}', [ScanController::class, 'destroy']);
+    Route::post('/scans/{scan}/share', [ScanController::class, 'share']);
+    Route::delete('/scans/{scan}/share', [ScanController::class, 'unshare']);
 
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::get('/articles/{article}', [ArticleController::class, 'show']);
@@ -60,8 +75,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutor-profile', [TutorController::class, 'show']);
     Route::post('/tutor-profile', [TutorController::class, 'store']);
     Route::get('/tutors/{tutorProfile}', [TutorController::class, 'showProfile']);
-    Route::post('/tutor-profile/lessons', [TutorLessonController::class, 'store']);
-    Route::delete('/tutor-profile/lessons/{lesson}', [TutorLessonController::class, 'destroy']);
+    Route::post('/tutors/{tutorProfile}/photo', [TutorController::class, 'updatePhoto']);
+    // Profile-scoped rather than hung off /tutor-profile, so an admin can edit
+    // a seeded tutor through the same drawer the tutor uses on themselves.
+    Route::post('/tutors/{tutorProfile}/profile', [TutorController::class, 'updateProfile']);
+    Route::post('/tutors/{tutorProfile}/lessons', [TutorLessonController::class, 'store']);
+    Route::delete('/tutor-lessons/{lesson}', [TutorLessonController::class, 'destroy']);
+    Route::post('/tutors/{tutorProfile}/resume', [TutorResumeEntryController::class, 'store']);
+    Route::delete('/tutor-resume/{tutorResumeEntry}', [TutorResumeEntryController::class, 'destroy']);
 
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
@@ -103,7 +124,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/study-quiz/{studyQuizQuestion}', [StudyQuizQuestionController::class, 'destroy']);
     Route::post('/study-quiz/{studyQuizQuestion}/check', [StudyQuizQuestionController::class, 'check']);
 
+    // "Pick up where you left off": the unit page pings store() on load and the
+    // Dashboard reads latest().
+    Route::post('/study-units/{studyUnit}/view', [StudyProgressController::class, 'store']);
+    Route::get('/study-progress/latest', [StudyProgressController::class, 'latest']);
+
     Route::get('/activity', [ActivityController::class, 'index']);
+    // Time tracking behind the Dashboard's activity chart. The heartbeat
+    // credits the gap between beats server-side; see ActivityController.
+    Route::post('/activity/heartbeat', [ActivityController::class, 'heartbeat']);
+    Route::get('/activity/summary', [ActivityController::class, 'summary']);
 
     Route::get('/quote', [QuoteController::class, 'show']);
     Route::post('/quote', [QuoteController::class, 'store']);

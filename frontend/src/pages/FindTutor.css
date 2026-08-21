@@ -1,5 +1,5 @@
 .ft {
-  --ft-bg: #f6f5fc;
+  --ft-bg: #ffffff;
   --ft-card: #ffffff;
   --ft-border: #e7e3f6;
   --ft-accent: #6c4fd1;
@@ -10,7 +10,7 @@
   --ft-pill-bg: #f1edfc;
 
   background: var(--ft-bg);
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--ft-text);
 }
@@ -110,11 +110,16 @@
   object-fit: contain;
 }
 
+/* Proportional rather than a fixed sidebar: the design splits its content
+   642 / 372 (1.73 : 1), and holding that ratio keeps the preview in step with
+   the list at any width instead of shrinking against it on a wide screen.
+   Capped so the page does not sprawl past the design's proportions. */
 .ft-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.73fr) minmax(0, 1fr);
+  gap: 1.8rem;
   align-items: start;
+  max-width: 1240px;
 }
 
 .ft-section-title {
@@ -211,23 +216,19 @@
   cursor: default;
 }
 
+/* No max-width here: capping the cards while the grid column stayed full width
+   left a band of dead space that pushed the preview panel to the far right.
+   The column itself is what limits them now.
+
+   No margin-top either — it offset the list against the preview panel, which
+   has none, so the two columns started at different heights. */
 .ft-list {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  margin-top: 0.9rem;
-  max-width: 760px;
 }
 
-.ft-card {
-  display: flex;
-  gap: 1.4rem;
-  background: var(--ft-card);
-  border: 1.5px solid #d6cdf0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.05);
-}
+/* .ft-card itself is defined with the tutor-card block further down. */
 
 .ft-card-photo {
   width: 130px;
@@ -317,92 +318,11 @@
   color: var(--ft-text-muted);
 }
 
-.ft-filter-panel {
-  background: var(--ft-card);
-  border: 1.5px solid #2b2643;
-  border-radius: 16px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  position: sticky;
-  top: 1.5rem;
-}
-
-.ft-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.ft-filter-box {
-  display: block;
-  border: 1px solid #2b2643;
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  background: var(--ft-card);
-}
-
-.ft-filter-label {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--ft-text-muted);
-  margin-bottom: 0.15rem;
-}
-
-.ft-filter-box input {
-  width: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: 'Hellix', sans-serif;
-  font-weight: 700;
-  font-size: 0.82rem;
-  color: var(--ft-text);
-  padding: 0;
-}
-
-.ft-filter-box input::placeholder {
-  color: #a8a3c2;
-  font-weight: 600;
-}
-
-.ft-filter-price {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 700;
-  font-size: 0.82rem;
-}
-
-.ft-filter-price input {
-  width: 100%;
-  min-width: 0;
-  -moz-appearance: textfield;
-}
-
-.ft-filter-price input::-webkit-outer-spin-button,
-.ft-filter-price input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.ft-filter-disabled {
-  cursor: not-allowed;
-}
-
-.ft-filter-disabled input {
-  cursor: not-allowed;
-}
-
 @media (max-width: 1100px) {
   .ft-layout {
     grid-template-columns: 1fr;
   }
 
-  .ft-filter-panel {
-    position: static;
-  }
 }
 
 .ft-card-self {
@@ -570,4 +490,388 @@
   font-weight: 600;
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+/* ---- filter bar ----
+   Pills across the top instead of a side panel, which is what frees the right
+   column for the tutor preview. Options are derived from the tutors that
+   actually exist, so a filter can never return nothing. */
+
+.ft-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.ft-filterbar-label {
+  font-size: 0.95rem;
+  color: var(--ft-text);
+}
+
+.ft-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The native arrow is replaced by the chevron beside it.
+   Fill #f2f3f7, and a 1px #585858 stroke at 15% — border-box keeps that stroke
+   inside the pill's box rather than adding to its size. */
+.ft-pill select {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.95rem;
+  color: var(--ft-text);
+  background: #f2f3f7;
+  border: 1px solid rgba(88, 88, 88, 0.15);
+  border-radius: 999px;
+  padding: 0.72rem 2.9rem 0.72rem 1.4rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.ft-pill select:hover {
+  border-color: rgba(88, 88, 88, 0.35);
+}
+
+.ft-pill svg {
+  position: absolute;
+  right: 1.15rem;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  color: var(--ft-text);
+}
+
+/* ---- tutor cards ----
+   Measured off the design: 2px #a89ce3 outline with a 5px lavender edge under
+   it, and a fill that matches the page rather than white — they read as
+   outlined cards, not raised ones. */
+
+.ft-card {
+  display: flex;
+  gap: 1.4rem;
+  background: var(--ft-bg);
+  border: 2px solid #a89ce3;
+  border-radius: 16px;
+  box-shadow: 0 5px 0 0 #a89ce3;
+  padding: 1.5rem;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: box-shadow 0.14s ease, transform 0.14s ease;
+}
+
+/* Hover presses the card fully onto its shadow — the same movement a click
+   makes, so hovering previews exactly what clicking will feel like. :active
+   holds that state rather than adding a second, different motion. */
+.ft-card:hover,
+.ft-card:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 0 #a89ce3;
+}
+
+/* Every card keeps the same #a89ce3 outline, as in the design. Selection is
+   shown with a faint tint instead of recolouring the border, so the card the
+   preview is following is still identifiable. */
+.ft-card.selected {
+  background: #faf9ff;
+}
+
+/* White mat around the photo, with the presence dot pinned to its corner */
+.ft-card-frame {
+  position: relative;
+  flex-shrink: 0;
+  display: block;
+  background: #fff;
+  border: 2px solid #b3a8e7;
+  border-radius: 8px;
+  padding: 4px;
+  line-height: 0;
+}
+
+.ft-card-online {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2fbf5b;
+  border: 2px solid var(--ft-bg);
+}
+
+/* The row aligns on baselines, which pins an inline-flex icon's bottom edge to
+   the name's baseline and leaves it sitting low. Centring it on the row and
+   lifting 1px puts it on the name's cap-height centre instead. */
+.ft-card-verified {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-self: center;
+  position: relative;
+  top: -1px;
+}
+
+.ft-card-verified svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* ---- preview panel ---- */
+
+/* Same outline + sticker edge as .ft-card, so the preview reads as one family
+   with the list instead of a plain bordered box. margin-bottom leaves room
+   for the 5px shadow, same reason .ft-card carries it. */
+.ft-preview {
+  position: sticky;
+  top: 1.5rem;
+  background: var(--ft-card);
+  border: 2px solid #a89ce3;
+  border-radius: 16px;
+  box-shadow: 0 5px 0 0 #a89ce3;
+  padding: 0.9rem;
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ft-preview-empty {
+  color: var(--ft-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* Positioning context for the avatar, which must sit outside the video's
+   clipping box so the half that overhangs stays visible. */
+.ft-preview-media {
+  position: relative;
+  margin-bottom: 3.1rem;
+}
+
+.ft-preview-video {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2b2643;
+}
+
+/* Desaturated because it stands in for a video still, not a portrait */
+.ft-preview-video > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.ft-preview-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ft-text);
+  cursor: pointer;
+}
+
+.ft-preview-play svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Overlaps the video's lower edge, as in the design */
+.ft-preview-avatar {
+  position: absolute;
+  left: 14px;
+  bottom: -42px;
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(28, 23, 48, 0.14);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: var(--ft-accent);
+}
+
+.ft-preview-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ft-preview-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.ft-preview-name {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.ft-preview-role {
+  color: var(--ft-text-muted);
+  font-size: 0.9rem;
+  margin: 0.1rem 0 0;
+}
+
+.ft-preview-stats {
+  display: flex;
+  gap: 1.1rem;
+  text-align: center;
+}
+
+.ft-preview-stats span {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.68rem;
+  color: var(--ft-text-muted);
+}
+
+.ft-preview-stats strong {
+  font-family: 'Hellix', sans-serif;
+  font-size: 1.3rem;
+  color: var(--ft-text);
+  line-height: 1.1;
+}
+
+.ft-preview-stars {
+  color: #f5b301;
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+}
+
+.ft-preview-book {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: #fff;
+  background: #6a6191;
+  border: none;
+  border-radius: 10px;
+  padding: 0.95rem;
+  cursor: pointer;
+  margin-bottom: 0.7rem;
+  transition: background 0.15s ease;
+}
+
+.ft-preview-book:hover:not(:disabled) {
+  background: var(--ft-accent);
+}
+
+.ft-preview-book:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Border colour matches .ft-preview-book's fill (#6a6191), not the unrelated
+   navy it had before — the two buttons read as a filled/outline pair now. */
+.ft-preview-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--ft-text);
+  text-decoration: none;
+  background: #fff;
+  border: 1.5px solid #6a6191;
+  border-radius: 999px;
+  padding: 0.9rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ft-preview-profile svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ft-preview-profile:hover {
+  background: var(--ft-pill-bg);
+  border-color: var(--ft-accent);
+}
+
+@media (max-width: 900px) {
+  .ft-preview {
+    position: static;
+  }
+}
+
+/* Preview of the cropped photo waiting to be uploaded */
+.ft-photo-chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--ft-text-muted);
+  margin-top: 0.5rem;
+}
+
+.ft-photo-chosen img {
+  width: 39px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--ft-border);
+}
+
+.ft-photo-chosen button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ft-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Admin-only overlay on the photo frame for setting a tutor's picture */
+.ft-card-photo-edit {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 2;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(28, 23, 48, 0.72);
+  border: none;
+  border-radius: 6px;
+  padding: 0.22rem 0.45rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ft-card:hover .ft-card-photo-edit,
+.ft-card-photo-edit:focus-visible {
+  opacity: 1;
 }

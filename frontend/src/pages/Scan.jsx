@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -31,14 +31,43 @@ function FilterIcon() {
   )
 }
 
-function UploadIcon() {
+function CloudUploadIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3l4 4h-3v7h-2V7H8l4-4z" fill="currentColor" stroke="none" />
-      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17.5a4 4 0 0 1 .4-8A5.5 5.5 0 0 1 18 10.2a3.7 3.7 0 0 1-.7 7.3" />
+      <path d="M12 21v-8" />
+      <path d="m8.8 16.2 3.2-3.2 3.2 3.2" />
     </svg>
   )
 }
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+}
+
+// "PNG" / "JPG" — the badge on each queued row, taken from the real filename
+// rather than the mime type so it matches what the user sees in their folder.
+function fileKind(file) {
+  const ext = (file.name.split('.').pop() || '').toUpperCase()
+  return ext && ext.length <= 4 ? ext : 'IMG'
+}
+
+let queueId = 0
 
 function ScanLinesIcon() {
   return (
@@ -74,13 +103,21 @@ function formatBytes(bytes) {
 export default function Scan() {
   const { token } = useAuth()
   const navigate = useNavigate()
-  const [file, setFile] = useState(null)
+  // Each entry: { id, file, status: 'ready' | 'uploading' | 'scanning' | 'done' | 'failed', progress, scanId, error }
+  const [queue, setQueue] = useState([])
+  const [dragging, setDragging] = useState(false)
+  const [uploaderOpen, setUploaderOpen] = useState(false)
   const [scans, setScans] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [menuFor, setMenuFor] = useState(null)
+  // Which scan's share panel is open, plus the link and a transient "Copied!".
+  const [shareFor, setShareFor] = useState(null)
+  const [shareLink, setShareLink] = useState('')
+  const [sharing, setSharing] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const [sortKey, setSortKey] = useState('date')
@@ -116,41 +153,168 @@ export default function Scan() {
       .finally(() => setHistoryLoading(false))
   }
 
-  function handleFileChange(e) {
-    const picked = e.target.files[0]
-    if (!picked) return
-
-    if (picked.size > MAX_UPLOAD_MB * 1024 * 1024) {
-      setError(
-        `That photo is ${formatBytes(picked.size)}. The limit is ${MAX_UPLOAD_MB} MB — try a smaller one.`
-      )
-      setFile(null)
-      e.target.value = ''
+  /* Every way of adding a photo — browse, drag-and-drop, paste — funnels
+     through here, so the size limit and the error wording cannot drift apart
+     between them. */
+  const addFiles = useCallback((incoming) => {
+    const images = [...incoming].filter((f) => f.type.startsWith('image/'))
+    if (images.length === 0) {
+      setError('That is not an image. Drop or paste a photo of Chinese text.')
       return
     }
 
-    setError(null)
-    setFile(picked)
+    const tooBig = images.filter((f) => f.size > MAX_UPLOAD_MB * 1024 * 1024)
+    const ok = images.filter((f) => f.size <= MAX_UPLOAD_MB * 1024 * 1024)
+
+    setError(
+      tooBig.length
+        ? `${tooBig.length === 1 ? `“${tooBig[0].name}” is` : `${tooBig.length} photos are`} over the ${MAX_UPLOAD_MB} MB limit and ${tooBig.length === 1 ? 'was' : 'were'} skipped.`
+        : null
+    )
+
+    if (ok.length) {
+      setQueue((prev) => [
+        ...prev,
+        ...ok.map((file) => ({ id: ++queueId, file, status: 'ready', progress: 0 })),
+      ])
+    }
+  }, [])
+
+  function handleFileChange(e) {
+    addFiles(e.target.files)
+    e.target.value = ''
   }
+
+  function removeFromQueue(id) {
+    setQueue((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  function openUploader() {
+    setError(null)
+    setUploaderOpen(true)
+  }
+
+  // Discard anything queued but unscanned, so reopening starts clean rather
+  // than resurrecting photos the user walked away from.
+  function closeUploader() {
+    if (loading) return
+    setUploaderOpen(false)
+    setQueue([])
+    setError(null)
+  }
+
+  useEffect(() => {
+    if (!uploaderOpen) return
+    function onKey(e) {
+      if (e.key === 'Escape' && !loading) closeUploader()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  // Pasting a screenshot is the fastest way in — Win+Shift+S then Ctrl+V.
+  useEffect(() => {
+    function onPaste(e) {
+      const files = [...(e.clipboardData?.files || [])]
+      if (files.length) {
+        e.preventDefault()
+        // Pasting is itself the intent to upload, so bring the dialog up with
+        // the photo already in it rather than making them find the button.
+        setUploaderOpen(true)
+        addFiles(files)
+      }
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [addFiles])
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!file) return
+    const pending = queue.filter((it) => it.status === 'ready' || it.status === 'failed')
+    if (pending.length === 0) return
 
     setError(null)
     setLoading(true)
 
+    const patch = (id, changes) =>
+      setQueue((prev) => prev.map((it) => (it.id === id ? { ...it, ...changes } : it)))
+
+    const completed = []
+    // Sequential, not Promise.all: OCR is CPU-bound on the server and the
+    // endpoint shares the 300/min bucket, so a burst is the wrong shape.
+    for (const item of pending) {
+      try {
+        patch(item.id, { status: 'uploading', progress: 0, error: null })
+        const data = await api.scanWithProgress(token, item.file, (fraction) =>
+          // Once the bytes are sent the server is still doing OCR, which we
+          // cannot measure — so the row switches to an indeterminate state
+          // rather than sitting at a fake 100%.
+          patch(item.id, fraction >= 1 ? { status: 'scanning', progress: 1 } : { progress: fraction })
+        )
+        patch(item.id, { status: 'done', progress: 1, scanId: data.id })
+        completed.push(data)
+      } catch (err) {
+        patch(item.id, { status: 'failed', error: err.message })
+        setError(err.message)
+      }
+    }
+
+    setLoading(false)
+    loadHistory()
+
+    // One photo lands straight on its document page, the way it did before.
+    // Several would be ambiguous, so those stay here against a refreshed list.
+    if (completed.length === 1) {
+      navigate(`/scan/${completed[0].id}`)
+    } else if (completed.length > 1) {
+      setQueue((prev) => prev.filter((it) => it.status !== 'done'))
+      setUploaderOpen(false)
+    }
+  }
+
+  /* Turning sharing on publishes the scan to anyone holding the link, so the
+     panel says so plainly and offers revoking in the same place. The endpoint
+     is idempotent, so reopening this never invalidates a link already sent. */
+  async function handleShare(scanId) {
+    setError(null)
+    setSharing(true)
+    setCopied(false)
     try {
-      const data = await api.scan(token, file)
-      setFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      // A finished scan opens on its own document page, so results live in
-      // exactly one place whether they are fresh or reopened from history.
-      navigate(`/scan/${data.id}`)
+      const { share_token } = await api.shareScan(token, scanId)
+      setScans((prev) => prev.map((s) => (s.id === scanId ? { ...s, share_token } : s)))
+      setShareLink(`${window.location.origin}/shared/scan/${share_token}`)
+      setShareFor(scanId)
+      setMenuFor(null)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setSharing(false)
+    }
+  }
+
+  async function handleStopSharing(scanId) {
+    setError(null)
+    setSharing(true)
+    try {
+      await api.unshareScan(token, scanId)
+      setScans((prev) => prev.map((s) => (s.id === scanId ? { ...s, share_token: null } : s)))
+      setShareFor(null)
+      setShareLink('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSharing(false)
+    }
+  }
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard access can be denied; the input is selectable as a fallback.
+      setError('Could not copy automatically — select the link and copy it.')
     }
   }
 
@@ -246,37 +410,152 @@ export default function Scan() {
           <p className="sc-upload-subtitle">
             You can either import your photo or scan with your phone
           </p>
-          <p className="sc-upload-limit">JPG, PNG or WEBP &middot; up to {MAX_UPLOAD_MB} MB</p>
 
-          {file && (
-            <p className="sc-file-chosen">
-              Selected: {file.name} <span>({formatBytes(file.size)})</span>
-            </p>
-          )}
-
-          <form onSubmit={handleSubmit} className="sc-upload-actions">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-            <button
-              type="button"
-              className="sc-btn"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <UploadIcon />
-              Upload
+          <div className="sc-upload-actions">
+            <button type="button" className="sc-btn" onClick={openUploader}>
+              <CloudUploadIcon />
+              Add photo
             </button>
-            <button type="submit" className="sc-btn" disabled={!file || loading}>
-              <ScanLinesIcon />
-              {loading ? 'Scanning...' : 'Scan'}
-            </button>
-          </form>
+          </div>
         </div>
       </div>
+
+      {/* The uploader is a dialog rather than part of the banner: it grows as
+          photos queue up, which pushed the page around when it lived inline. */}
+      {uploaderOpen && (
+        <div
+          className="sc-modal-overlay"
+          onMouseDown={(e) => {
+            // Only a click on the backdrop itself closes it — not one that
+            // started inside the card and drifted out.
+            if (e.target === e.currentTarget) closeUploader()
+          }}
+        >
+          <div className="sc-modal" role="dialog" aria-modal="true" aria-labelledby="sc-modal-title">
+            <div className="sc-modal-head">
+              <h2 className="sc-modal-title" id="sc-modal-title">Upload a photo</h2>
+              <p className="sc-modal-sub">Scan Chinese text from a photo or a screenshot.</p>
+              <button
+                type="button"
+                className="sc-modal-close"
+                onClick={closeUploader}
+                aria-label="Close"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {error && <p className="sc-modal-error">{error}</p>}
+
+            <form onSubmit={handleSubmit} className="sc-uploader">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+
+              {/* The drop zone is a button so it is reachable by keyboard, not
+                  just by pointer. */}
+              <button
+                type="button"
+                className={'sc-dropzone' + (dragging ? ' dragging' : '')}
+                onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragging(true)
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragging(false)
+                addFiles(e.dataTransfer.files)
+              }}
+            >
+              <span className="sc-dropzone-icon">
+                <CloudUploadIcon />
+              </span>
+              <span className="sc-dropzone-title">Drop your photo here or browse</span>
+              <span className="sc-dropzone-hint">
+                You can paste a screenshot too &middot; JPG, PNG or WEBP up to {MAX_UPLOAD_MB} MB
+              </span>
+            </button>
+
+            {queue.length > 0 && (
+              <ul className="sc-queue">
+                {queue.map((item) => {
+                  const busy = item.status === 'uploading' || item.status === 'scanning'
+                  return (
+                    <li
+                      key={item.id}
+                      className={'sc-queue-item' + (item.status === 'failed' ? ' failed' : '')}
+                    >
+                      <span className="sc-queue-kind">{fileKind(item.file)}</span>
+
+                      <span className="sc-queue-body">
+                        <span className="sc-queue-name">{item.file.name}</span>
+                        <span className="sc-queue-meta">
+                          {item.status === 'uploading'
+                            ? `${formatBytes(item.file.size * item.progress)} of ${formatBytes(item.file.size)}`
+                            : item.status === 'scanning'
+                            ? 'Reading the text…'
+                            : item.status === 'done'
+                            ? 'Scanned'
+                            : item.status === 'failed'
+                            ? item.error
+                            : formatBytes(item.file.size)}
+                        </span>
+
+                        {busy && (
+                          <span
+                            className={
+                              'sc-queue-bar' + (item.status === 'scanning' ? ' indeterminate' : '')
+                            }
+                          >
+                            <span style={{ width: `${Math.round(item.progress * 100)}%` }} />
+                          </span>
+                        )}
+                      </span>
+
+                      <button
+                        type="button"
+                        className="sc-queue-remove"
+                        onClick={() => removeFromQueue(item.id)}
+                        aria-label={`Remove ${item.file.name}`}
+                        disabled={busy}
+                      >
+                        {busy ? <CloseIcon /> : <TrashIcon />}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+              <div className="sc-modal-actions">
+                <button
+                  type="button"
+                  className="sc-modal-btn"
+                  onClick={closeUploader}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="sc-modal-btn primary"
+                  disabled={loading || queue.length === 0}
+                >
+                  <ScanLinesIcon />
+                  {loading ? 'Scanning…' : queue.length > 1 ? `Scan ${queue.length}` : 'Scan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="sc-documents-header" id="sc-documents">
         <div>
@@ -328,7 +607,13 @@ export default function Scan() {
                       {s.original_filename || `Scan #${s.id}`}
                     </Link>
                   </td>
-                  <td>N/A</td>
+                  <td>
+                    {s.share_token ? (
+                      <span className="sc-shared-yes">Anyone with link</span>
+                    ) : (
+                      <span className="sc-unknown">Private</span>
+                    )}
+                  </td>
                   <td>
                     {s.size_bytes ? (
                       formatBytes(s.size_bytes)
@@ -363,6 +648,14 @@ export default function Scan() {
                           </Link>
                           <button
                             type="button"
+                            className="sc-menu-item"
+                            disabled={sharing}
+                            onClick={() => handleShare(s.id)}
+                          >
+                            Share
+                          </button>
+                          <button
+                            type="button"
                             className="sc-menu-item sc-menu-danger"
                             onClick={() => handleDeleteScan(s.id)}
                           >
@@ -376,6 +669,46 @@ export default function Scan() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Share panel. A dialog rather than a menu item that silently copies,
+          because turning this on makes the scan readable by anyone with the
+          link — that deserves to be stated, and revoking has to be one click
+          away from where it was switched on. */}
+      {shareFor !== null && (
+        <div
+          className="sc-share-scrim"
+          onMouseDown={(e) => e.target === e.currentTarget && setShareFor(null)}
+        >
+          <div className="sc-share" role="dialog" aria-label="Share document">
+            <p className="sc-share-title">Share this document</p>
+            <p className="sc-share-note">
+              Anyone with this link can read the scanned text — no account needed. Stop sharing
+              to break the link.
+            </p>
+
+            <div className="sc-share-row">
+              <input readOnly value={shareLink} onFocus={(e) => e.target.select()} />
+              <button type="button" className="sc-share-copy" onClick={handleCopyLink}>
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+
+            <div className="sc-share-actions">
+              <button
+                type="button"
+                className="sc-share-stop"
+                disabled={sharing}
+                onClick={() => handleStopSharing(shareFor)}
+              >
+                Stop sharing
+              </button>
+              <button type="button" className="sc-share-done" onClick={() => setShareFor(null)}>
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

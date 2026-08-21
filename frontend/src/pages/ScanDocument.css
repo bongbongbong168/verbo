@@ -15,9 +15,9 @@
   --sd-link: #997ee2;
 
   background: var(--sd-bg);
-  min-height: 100vh;
+  min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
+  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--sd-text);
 }
@@ -329,7 +329,7 @@
 .sd-words {
   position: sticky;
   top: 1.5rem;
-  max-height: calc(100vh - 3rem);
+  max-height: calc(var(--app-vh) - 3rem);
   display: flex;
   flex-direction: column;
 }

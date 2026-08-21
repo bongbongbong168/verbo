@@ -2,31 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import SectionToggle from '../components/SectionToggle'
+import ImageCropper from '../components/ImageCropper'
 import iconBell from '../assets/dashboard/icon-bell.png'
 import iconProfile from '../assets/dashboard/icon-profile.png'
 import './Podcast.css'
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced']
 
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
-      <line x1="12" y1="17.5" x2="12" y2="21" />
-    </svg>
-  )
-}
-
-function BooksIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
-      <path d="M12 3 2.5 7.5 12 12l9.5-4.5L12 3z" />
-      <path d="M2.5 12 12 16.5 21.5 12" fill="none" />
-      <path d="M2.5 16.5 12 21l9.5-4.5" fill="none" />
-    </svg>
-  )
-}
+/* Cover art ratio, shared by the list card (261x150) and the episode page
+   (290x167). Both views use the same file, so the crop has to satisfy both. */
+const COVER_ASPECT = 261 / 150
 
 function PlayIcon() {
   return (
@@ -76,6 +62,17 @@ export default function Podcast() {
   const [transcript, setTranscript] = useState('')
   const [audio, setAudio] = useState(null)
   const [image, setImage] = useState(null)
+  const [cropSource, setCropSource] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+
+  // Built in an effect, not in render — createObjectURL during render mints a
+  // new URL every pass and never frees them.
+  useEffect(() => {
+    if (!image) return setImagePreview(null)
+    const url = URL.createObjectURL(image)
+    setImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [image])
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -131,16 +128,7 @@ export default function Podcast() {
   return (
     <div className="pc">
       <div className="pc-topbar">
-        <div className="pc-toggle">
-          <span className="pc-toggle-item active">
-            <MicIcon />
-            Podcast
-          </span>
-          <Link to="/read" className="pc-toggle-item">
-            <BooksIcon />
-            Reads
-          </Link>
-        </div>
+        <SectionToggle active="podcast" />
         <div className="pc-topbar-icons">
           <button type="button" className="pc-icon-btn" aria-label="Notifications">
             <img src={iconBell} alt="" />
@@ -219,7 +207,26 @@ export default function Podcast() {
           </div>
           <div>
             <label>Cover image (optional)</label>
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                // Crop before it becomes the upload, so the framing you choose
+                // is what both the list card and the episode page show.
+                const picked = e.target.files[0]
+                if (picked) setCropSource(picked)
+                e.target.value = ''
+              }}
+            />
+            {image && imagePreview && (
+              <span className="pc-photo-chosen">
+                <img src={imagePreview} alt="" />
+                Ready to upload
+                <button type="button" onClick={() => setCropSource(image)}>
+                  Adjust
+                </button>
+              </span>
+            )}
           </div>
           <button type="submit" className="pc-btn-primary" disabled={submitting}>
             {submitting ? 'Publishing...' : 'Publish'}
@@ -251,6 +258,19 @@ export default function Podcast() {
             </div>
           )}
         </>
+      )}
+
+      {cropSource && (
+        <ImageCropper
+          file={cropSource}
+          aspect={COVER_ASPECT}
+          outputWidth={720}
+          onCancel={() => setCropSource(null)}
+          onCrop={(cropped) => {
+            setImage(cropped)
+            setCropSource(null)
+          }}
+        />
       )}
     </div>
   )
