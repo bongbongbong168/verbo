@@ -1,0 +1,11 @@
+# Shell scripts and the Dockerfile MUST keep LF endings.
+#
+# Git on Windows will happily check these out with CRLF, and Linux then fails to
+# run them — the shebang becomes "#!/usr/bin/env bash\r", which resolves to no
+# such interpreter. The error Docker prints ("exec format error", or a file that
+# plainly exists reported as not found) says nothing about line endings, so this
+# is worth pinning rather than debugging later.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+docker/** text eol=lf

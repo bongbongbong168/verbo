@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local overrides. Committed as .env.example instead — a tracked .env would
+# bake this machine's localhost API URL into the Vercel build.
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,30 @@
+# Never ship the local environment into the image — it holds this machine's
+# Stripe secret, its Windows Tesseract path and its APP_KEY. Railway injects
+# its own values as real environment variables.
+.env
+.env.*
+!.env.example
+
+# Rebuilt inside the image against PHP 8.2, so the Windows-resolved tree must
+# not be copied over it.
+vendor/
+
+# The dev database and every local upload. Production keeps these on the mounted
+# volume; copying them in would ship test accounts and overwrite real data on
+# the next deploy.
+database/*.sqlite
+storage/app/public/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+
+# Fetched fresh in the Dockerfile.
+storage/tessdata/
+storage/dict/
+
+.git/
+.github/
+node_modules/
+tests/
+.phpunit.result.cache
