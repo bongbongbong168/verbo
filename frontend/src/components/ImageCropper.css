@@ -71,7 +71,7 @@
 
 .cr-zoom input {
   flex: 1;
-  accent-color: #6c4fd1;
+  accent-color: #6a6191;
 }
 
 .cr-actions {
@@ -94,8 +94,8 @@
 
 .cr-btn.primary {
   color: #fff;
-  background: #6c4fd1;
-  border-color: #6c4fd1;
+  background: #6a6191;
+  border-color: #6a6191;
 }
 
 .cr-btn:disabled {

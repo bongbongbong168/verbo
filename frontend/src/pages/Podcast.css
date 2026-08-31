@@ -1,17 +1,17 @@
 .pc {
-  --pc-bg: #f9f8ff;
+  --pc-bg: #f9f8fe;
   --pc-card: #ffffff;
   --pc-border: #e7e3f6;
   --pc-outline: #2b2643;
-  --pc-accent: #6c4fd1;
-  --pc-accent-light: #8b6ff0;
+  --pc-accent: #6a6191;
+  --pc-accent-light: #a89ce3;
   --pc-text: #1c1730;
   --pc-text-muted: #726c88;
 
   background: var(--pc-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--pc-text);
 }
@@ -26,34 +26,21 @@
   margin-bottom: 1.4rem;
 }
 
+/* Same as `.rd-topbar-icons`: the transform creates a stacking context that
+   traps the bell and account popovers inside it, so this needs a z-index of
+   its own or positioned page content paints over an open popover. */
 .pc-topbar-icons {
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 0.6rem;
 }
 
-.pc-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
 
-.pc-icon-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
 
 .pc-divider {
   border: none;
@@ -97,7 +84,9 @@
   border-radius: 10px;
   padding: 0.5rem 1.1rem;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .pc-filter:hover {
@@ -197,37 +186,116 @@
   margin: 0 0 2rem;
 }
 
-/* Recommendations: one horizontally scrolling row, like the design */
+/* Recommendations: one horizontally scrolling row, like the design.
+
+   The vertical padding is LOAD-BEARING, not spacing. `overflow-x: auto` forces
+   `overflow-y` to compute to `auto` as well, so this row is a scrollport that
+   clips anything reaching past its edges — which is what boxed the cards'
+   shadows off and cut the hover lift short. The padding gives the shadow room
+   INSIDE the scrollport and the negative margin cancels it, so nothing moves.
+   The hover shadow is `0 10px 24px`: 24px of blur reaches ~24px to each SIDE,
+   ~14px above (24 blur − 10 offset) and ~34px below (24 + 10). The padding
+   matches all four, which is why it is uneven. Getting the sides wrong is what
+   left a hard vertical edge slicing the shadow beside each card. Don't trim
+   any of it back. */
 .pc-row {
   display: flex;
   gap: 1.4rem;
   overflow-x: auto;
-  padding: 4px 4px 1.2rem;
-  margin: 0 -4px 1.8rem;
+  padding: 16px 24px 34px;
+  margin: -16px -24px 14px;
   scroll-snap-type: x proximity;
 }
 
+/* 289x324, measured off the design. The card is ONE size everywhere on this
+   page — the row and the grid below it show the same object, and a card that
+   changed shape depending on which section it landed in would read as two
+   different things. The grid therefore uses fixed 289px tracks rather than
+   `1fr`, which would stretch them on a wide screen. */
 .pc-row .pc-card {
-  flex: 0 0 285px;
+  flex: 0 0 289px;
   scroll-snap-align: start;
 }
 
 .pc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  grid-template-columns: repeat(auto-fill, 289px);
+  justify-content: start;
   gap: 1.4rem;
   margin-bottom: 1.8rem;
 }
 
 /* ---- episode card ---- */
 
+/* The 1px navy outline every other card in the app wears. Without it these
+   sat on the lavender page as shadow alone, which is the one card style in
+   Verbo that had no stroke. `border-box` so adding it does not grow the card
+   and break the row's even widths. */
+/* A FIXED height, so a row of cards is a straight line rather than a ragged
+   one — and tall enough for the WORST case rather than the average: a two-line
+   title AND three description lines AND the footer, all at full size. 324 (the
+   measured design width's partner) only fit that by squeezing the description,
+   which is what sliced the text. Nothing inside is allowed to shrink now; the
+   card carries the room instead.
+
+   380 = 150 cover + 12 top margin + the body's worst case (level, a two-line
+   title, three description lines, the footer) + padding + borders, with a few
+   px of headroom. Nothing inside may shrink, so if any of those grow this
+   number has to grow with them or the footer gets clipped. */
 .pc-card {
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  height: 380px;
   background: var(--pc-card);
+  border: 1px solid var(--pc-outline);
   border-radius: 18px;
   box-shadow: 0 4px 14px rgba(28, 23, 48, 0.08);
   overflow: hidden;
+  /* Same 0.14s ease as the Dashboard and Classes cards, so a card lifts the
+     same way wherever it appears. */
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+/* A 2px lift and a slightly deeper shadow — the app's existing card hover,
+   nothing new. Deliberately restrained: these sit four to a row, and anything
+   larger turns a scan down the list into a ripple.
+
+   `:focus-within` gets the same treatment so tabbing to the cover or title
+   link shows the card responding, not just the link inside it.
+
+   The shadow is transitioned here, unlike on the quiz: this is ornament on a
+   transient hover, not a state the card has to still be readable in. If the
+   frames never arrive the card simply does not lift. */
+.pc-card:hover,
+.pc-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(28, 23, 48, 0.14);
+}
+
+/* The cover is the largest target and reads as the "open this" affordance, so
+   it gets a whisper of scale on top. The cover's own `overflow: hidden` is
+   what keeps it inside the rounded corner. */
+.pc-card:hover .pc-card-cover img {
+  transform: scale(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-card,
+  .pc-card-cover img {
+    transition: none;
+  }
+
+  .pc-card:hover,
+  .pc-card:focus-within {
+    transform: none;
+  }
+
+  .pc-card:hover .pc-card-cover img {
+    transform: none;
+  }
 }
 
 .pc-card-cover {
@@ -235,8 +303,12 @@
   margin: 12px 12px 0;
   border-radius: 12px;
   overflow: hidden;
+  /* Back to its original 150. The card grew to carry the three description
+     lines instead — shrinking the cover to pay for them made the artwork the
+     thing that suffered, which is backwards on a card whose job is to make you
+     want to listen. */
   height: 150px;
-  background: linear-gradient(135deg, #cfc6ef, #8b6ff0);
+  background: linear-gradient(135deg, #cfc6ef, #a89ce3);
 }
 
 .pc-card-cover img {
@@ -244,6 +316,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.22s ease;
 }
 
 .pc-card-cover-placeholder {
@@ -251,17 +324,21 @@
   height: 100%;
 }
 
+/* `min-height: 0` is what lets this shrink inside the fixed-height card. A
+   flex item's default `min-height: auto` is its content height, so without it
+   the body refuses to shrink and pushes the footer out through the bottom. */
 .pc-card-body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 0.9rem 1.2rem 1.1rem;
+  min-height: 0;
+  padding: 0.75rem 1.2rem 0.9rem;
 }
 
 .pc-card-level {
   color: var(--pc-text-muted);
   font-size: 0.78rem;
-  margin: 0 0 0.25rem;
+  margin: 0 0 2px;
 }
 
 .pc-card-title-link {
@@ -273,27 +350,55 @@
   color: var(--pc-accent);
 }
 
+/* Two lines maximum. Episode titles carry both English and Chinese, so they
+   run long — unclamped, one title would eat the whole description. */
 .pc-card-title {
   font-family: 'Hellix', 'Douyin Sans', sans-serif;
   font-weight: 700;
   font-size: 1.1rem;
-  margin: 0 0 0.5rem;
+  line-height: 1.3;
+  /* 19, measured off the design. */
+  margin: 0 0 19px;
+  flex: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   transition: color 0.15s ease;
 }
 
+/* Exactly three lines, at a FIXED height — and that is what makes the "…"
+   appear. `-webkit-line-clamp` only draws its ellipsis when it is the thing
+   deciding the height. Letting this box shrink (`flex: 0 1 auto`) handed the
+   decision to flex instead, so the clamp never fired and `overflow: hidden`
+   sliced the third line through the middle of the letters.
+   `flex: none` and a height of exactly 3 x 1.45em keep the clamp in charge.
+
+   There is deliberately no "See more": the cover and the title already open
+   the episode, and a third control pointing at the same place is one door too
+   many. The ellipsis is what says there is more. */
 .pc-card-bio {
   color: var(--pc-text-muted);
   font-size: 0.85rem;
   line-height: 1.45;
-  margin: 0 0 0.9rem;
+  margin: 0 0 8px;
+  flex: none;
+  height: 4.35em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
+/* Pinned to the bottom and never allowed to shrink — the author and the play
+   button are the two things that must survive whatever the text above does. */
 .pc-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
   margin-top: auto;
+  flex: none;
 }
 
 .pc-card-author {
@@ -318,7 +423,9 @@
   background: var(--pc-outline);
   color: #fff;
   flex-shrink: 0;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .pc-play-btn:hover {

@@ -1,0 +1,703 @@
+/* Vocabulary Bank. Prefix `vb-`.
+
+   Laid out from the supplied Word Bank reference — title row, a strip of four
+   counters each with a tinted corner badge, a search field, then hairline-
+   separated word rows carrying a state chip on the right — but rendered in
+   Verbo's own palette rather than the reference's blues and greens:
+   #a89ce3 filled, #6a6191 emphasis, #f1edfc pale, #2b2643 stroke,
+   #f9f8fe ground, #1c1730 text, #726c88 muted. */
+
+.vb {
+  --vb-bg: #f9f8fe;
+  --vb-card: #ffffff;
+  --vb-edge: #2b2643;
+  --vb-line: #e7e3f6;
+  --vb-well: #f1edfc;
+  --vb-fill: #a89ce3;
+  --vb-accent: #6a6191;
+  --vb-text: #1c1730;
+  --vb-muted: #726c88;
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 2rem 90px 3rem;
+  background: var(--vb-bg);
+  font-family: "Hellix", system-ui, sans-serif;
+  color: var(--vb-text);
+}
+
+/* Hellix has no CJK glyphs, so Chinese has to fall through to a real Chinese
+   face. Hellix stays first so Latin, digits and punctuation still use it. */
+.vb-word,
+.vb-detail-example {
+  font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, sans-serif;
+}
+
+.vb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.vb-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+}
+
+/* The leading accent rule, same as the Messages and Classes titles. */
+.vb-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.vb-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--vb-fill);
+}
+
+.vb-lede {
+  margin: 0 0 1.5rem 0.7rem;
+  font-size: 0.92rem;
+  color: var(--vb-muted);
+}
+
+/* ---- the four counters ---- */
+
+.vb-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.vb-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--vb-edge);
+  border-radius: 16px;
+  background: var(--vb-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.07);
+}
+
+.vb-stat-num {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.vb-stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vb-accent);
+}
+
+/* ---- search + review ---- */
+
+.vb-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.1rem;
+}
+
+.vb-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--vb-edge);
+  border-radius: 12px;
+  background: var(--vb-card);
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.05);
+}
+
+.vb-search svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--vb-muted);
+}
+
+.vb-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--vb-text);
+  outline: none;
+}
+
+.vb-search input::placeholder {
+  color: #9a95ab;
+}
+
+.vb-review-wrap {
+  position: relative;
+  flex: none;
+}
+
+.vb-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Optical correction for the LABEL, iterated: 11.52 symmetric sat 1px low
+     and 10.52/12.52 was still 0.5px low. The extra 0.58 on each side is what
+     brings the button to the search field's exact height beside it — it does
+     not change the 3px asymmetry, so the text stays centred. */
+  padding: 10.6px 1.3rem 13.6px;
+  border: 1px solid var(--vb-edge);
+  border-radius: 12px;
+  background: var(--vb-fill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(28, 23, 48, 0.14);
+}
+
+/* Instant — the fill IS the feedback, and a transition that never gets a frame
+   leaves the button looking dead under the pointer. */
+.vb-review:hover,
+.vb-review.open {
+  background: var(--vb-accent);
+}
+
+.vb-review:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Pushed back DOWN by half the label's padding asymmetry.
+   The uneven padding above is an optical correction for the TEXT, but it moves
+   the whole content box — and a geometric shape needs no such correction, so
+   the icon came out 1.51px high. This is the same problem as the Dashboard's
+   streak badge: two things in one row, each with its own centring error, so
+   each needs its own nudge rather than a shared one. */
+/* Margin, not `position: relative` — see the note on `.rd-saved-link svg`.
+   Positioning it would lift the icon into the positioned paint layer for a
+   1.5px nudge it does not need. */
+.vb-review svg {
+  margin-top: 1.51px;
+  margin-bottom: -1.51px;
+  width: 13px;
+  height: 13px;
+}
+
+.vb-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 268px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--vb-edge);
+  border-radius: 14px;
+  background: var(--vb-card);
+  box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
+}
+
+.vb-menu-title {
+  margin: 0 0 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vb-muted);
+}
+
+.vb-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--vb-text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vb-menu-item:hover:not(:disabled) {
+  background: var(--vb-well);
+  color: var(--vb-accent);
+}
+
+.vb-menu-item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.vb-menu-count {
+  flex: none;
+  padding: 0.1rem 0.45rem;
+  border-radius: 7px;
+  background: var(--vb-well);
+  color: var(--vb-accent);
+  font-size: 0.75rem;
+}
+
+.vb-menu-foot {
+  margin: 6px 0 0;
+  padding: 0.5rem 0.6rem 0.2rem;
+  border-top: 1px solid var(--vb-line);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--vb-muted);
+}
+
+/* ---- source filter ---- */
+
+.vb-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1.6rem;
+}
+
+.vb-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Asymmetric for the same reason the Dashboard's Top Reads pills are:
+     centring the padding centres the LINE BOX, and Hellix reserves more ascent
+     than these labels use, so the glyphs sit low. Don't "tidy" it to one value.
+     Measured on the cap band, not guessed, and iterated: 6.08/7.36 sat 0.86px
+     low, 5.22/8.22 overshot to 0.5px high, this lands on 0.00. */
+  padding: 5.72px 0.95rem 7.72px;
+  border: 1px solid #7d76a0;
+  border-radius: 9px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--vb-text);
+  cursor: pointer;
+}
+
+.vb-filter:hover {
+  border-color: var(--vb-accent);
+}
+
+.vb-filter.active {
+  background: var(--vb-fill);
+  border-color: var(--vb-fill);
+  color: #fff;
+}
+
+.vb-filter-n {
+  font-size: 0.74rem;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+/* ---- list ---- */
+
+.vb-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.vb-list-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.vb-list-n {
+  padding: calc(0.1rem - 1px) 0.45rem calc(0.1rem + 1px);
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
+  border-radius: 7px;
+  background: var(--vb-well);
+  color: var(--vb-accent);
+  font-size: 0.76rem;
+}
+
+.vb-add-toggle {
+  padding: 0.35rem 0.7rem;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--vb-accent);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vb-add-toggle:hover {
+  background: var(--vb-well);
+}
+
+.vb-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--vb-line);
+  border-radius: 14px;
+  background: var(--vb-card);
+}
+
+.vb-add input {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--vb-line);
+  border-radius: 10px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--vb-text);
+  outline: none;
+}
+
+.vb-add input:focus {
+  border-color: var(--vb-fill);
+  background: #fff;
+}
+
+.vb-add-btn {
+  flex: none;
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--vb-fill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vb-add-btn:hover {
+  background: var(--vb-accent);
+}
+
+/* One card holding hairline-separated rows, as the reference draws it —
+   separate cards per word would break the list into 50 floating objects. */
+.vb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--vb-edge);
+  border-radius: 16px;
+  background: var(--vb-card);
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.07);
+}
+
+.vb-row + .vb-row {
+  border-top: 1px solid var(--vb-line);
+}
+
+.vb-row.open {
+  background: #fcfbff;
+}
+
+.vb-row-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1.2rem;
+  box-sizing: border-box;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The app's pale lavender, not the near-white page tint it used to be — on a
+   white list `#f9f8fe` was almost invisible, so there was no telling which row
+   you were about to open. The accent bar on the left says WHICH row without
+   needing a stronger fill across the whole width.
+
+   Instant, not transitioned: the highlight IS the feedback, and a transition
+   that never gets a frame leaves the row looking dead under the pointer. */
+.vb-row-main {
+  position: relative;
+}
+
+.vb-row-main:hover {
+  background: var(--vb-well);
+}
+
+.vb-row-main::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+}
+
+.vb-row-main:hover::before {
+  background: var(--vb-fill);
+}
+
+/* Keyboard users get the same treatment — the row is a button. */
+.vb-row-main:focus-visible {
+  outline: none;
+  background: var(--vb-well);
+}
+
+.vb-row-main:focus-visible::before {
+  background: var(--vb-fill);
+}
+
+.vb-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.vb-row-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.vb-word {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--vb-text);
+}
+
+.vb-pinyin {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--vb-fill);
+}
+
+.vb-meaning {
+  font-size: 0.88rem;
+  color: var(--vb-text);
+}
+
+.vb-src {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* `flex-shrink: 0` on the mark below is what stops a long source title
+     squeezing the icon into an ellipse as the row narrows. */
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--vb-muted);
+  /* One line: the source is a label, and a wrapped one would compete with the
+     meaning above it. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 14px against the 0.78rem line, and it inherits the row's muted colour —
+   which is the whole reason these are SVG and not emoji. */
+.vb-src .src-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--vb-fill);
+}
+
+.vb-src-date {
+  padding-left: 0.4rem;
+  border-left: 1px solid var(--vb-line);
+  margin-left: 0.2rem;
+}
+
+/* The state chip. Three signals in the app's own colours rather than a fourth
+   palette: pale lavender for untouched, warm for in progress, green for done. */
+.vb-state {
+  flex: none;
+  /* Same optical correction as the pills above: 3.52 symmetric sat 0.5px low. */
+  padding: 3.02px 0.6rem 4.02px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.vb-state-new {
+  background: var(--vb-well);
+  color: var(--vb-accent);
+}
+
+.vb-state-learning {
+  background: #e9e6f8;
+  color: #574f7d;
+}
+
+.vb-state-hard {
+  background: #fdeee6;
+  color: #b45b30;
+}
+
+.vb-state-mastered {
+  background: #e7f2ec;
+  color: #1f7a45;
+}
+
+/* ---- "where you learned this" ---- */
+
+.vb-detail {
+  padding: 0 1.2rem 1.1rem;
+  border-top: 1px dashed var(--vb-line);
+  margin-top: -1px;
+}
+
+.vb-detail-label {
+  margin: 0.9rem 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vb-muted);
+}
+
+.vb-detail-example {
+  margin: 0 0 0.9rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: var(--vb-bg);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.vb-detail-none {
+  margin: 0.9rem 0;
+  font-size: 0.85rem;
+  color: var(--vb-muted);
+}
+
+.vb-detail-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.vb-detail-link {
+  color: var(--vb-accent);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.vb-detail-link:hover {
+  text-decoration: underline;
+}
+
+.vb-detail-stats {
+  font-size: 0.8rem;
+  color: var(--vb-muted);
+}
+
+.vb-remove {
+  margin-left: auto;
+  padding: 0.32rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--vb-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vb-remove:hover {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+/* ---- misc ---- */
+
+.vb-empty {
+  margin: 1.4rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--vb-muted);
+}
+
+.vb-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  background: #fdecea;
+  color: #b3261e;
+  font-size: 0.88rem;
+}
+
+.vb-more {
+  margin-top: 1.1rem;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--vb-edge);
+  border-radius: 10px;
+  background: var(--vb-card);
+  color: var(--vb-text);
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vb-more:hover:not(:disabled) {
+  background: var(--vb-well);
+  color: var(--vb-accent);
+}
+
+.vb-more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

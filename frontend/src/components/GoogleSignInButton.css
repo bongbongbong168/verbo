@@ -1,0 +1,93 @@
+/* Google's sign-in button, repainted to sit with the form. Prefix `gs-`.
+
+   The control is rendered by Google Identity Services and comes out as inline
+   DOM rather than an iframe, so its colours and geometry CAN be set from here.
+   Its internal structure is not a public API though, so this file only ever
+   touches fill, radius and type — never layout or markup. If Google changes
+   what it emits, the button still works; it just wears Google's own skin. */
+
+.gs-holder {
+  /* Full width of the form column. Google is handed this measurement as a
+     number at render time — it will not accept a percentage — so the element
+     must be able to size itself first. */
+  width: 100%;
+  display: flex;
+  /* Holds the row open before the script has rendered into it, so the links
+     below do not jump upward as the button appears. */
+  min-height: 44px;
+}
+
+.gs-holder > div {
+  width: 100% !important;
+}
+
+/* Everything Google paints is transparent; the one real button below carries
+   the fill. Without this its inner layers show their own white through the
+   repaint at the edges. */
+.gs-holder > div * {
+  background-color: transparent !important;
+  font-family: 'Hellix', system-ui, sans-serif !important;
+}
+
+/* The soft fill and rounded corners from the reference.
+
+   Targeted by `[role="button"]`, NOT by Google's class names. The element that
+   actually draws the button is `div.nsm7Bb-HzV7m-LgbsSe`, and that string is
+   generated — it will change without warning, and a copied version would
+   silently stop applying one day. The ARIA role is what the element means, so
+   it survives a reskin. Styling the outer wrapper instead was the earlier
+   mistake: the wrapper took the 12px while this element kept its own 20px pill
+   AND its hairline, which is what produced the doubled edge.
+
+   The colour is the form's own input background, not the reference's neutral
+   grey — and that IS the reference's logic rather than a departure from it:
+   there, the social buttons wear the same fill as the email and password
+   fields above them. Copying the grey literally would have put a neutral block
+   in a lavender form. */
+.gs-holder [role='button'] {
+  --gs-fill: #e4e3f2;
+
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 12px !important;
+  background: var(--gs-fill) !important;
+  /* Google's outline theme draws a #dadce0 hairline; against a filled button
+     it reads as a seam rather than an edge. */
+  border: none !important;
+  box-shadow: none !important;
+  /* Google's own focus ring is a 2px #00639b — a blue that belongs to no part
+     of this app. Replaced below rather than simply removed: a control with no
+     visible focus at all is worse than one wearing the wrong colour. */
+  outline: none !important;
+}
+
+.gs-holder [role='button']:focus-visible {
+  outline: 2px solid #a89ce3 !important;
+  outline-offset: 2px;
+}
+
+/* Instant, not transitioned — the fill IS the feedback, and a transition that
+   never gets a frame leaves the button looking dead under the pointer. Same
+   rule as the Dashboard's "View all" pill. */
+.gs-holder [role='button']:hover {
+  --gs-fill: #d8d6ea;
+}
+
+/* The label at the form's own body size — 0.92rem is exactly what `.lg-input`
+   and `.su-input` use, so the button reads at the same weight as the fields it
+   sits under rather than shouting over them. Deliberately NOT the 0.98rem/700
+   of the submit button above: that one is the primary action and should stay
+   the loudest thing in the column. */
+.gs-holder span {
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #1c1730 !important;
+}
+
+.gs-failed {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #726c88;
+}

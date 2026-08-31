@@ -1,10 +1,10 @@
 .un {
-  --un-bg: #f9f8ff;
+  --un-bg: #f9f8fe;
   --un-card: #ffffff;
   --un-border: #e7e3f6;
   --un-outline: #2b2643;
-  --un-accent: #6c4fd1;
-  --un-accent-light: #8b6ff0;
+  --un-accent: #6a6191;
+  --un-accent-light: #a89ce3;
   --un-text: #1c1730;
   --un-text-muted: #726c88;
   /* Sampled from design/study/moduledetailedpage/Study (3).png */
@@ -17,7 +17,7 @@
   background: var(--un-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--un-text);
 }
@@ -173,8 +173,12 @@
   border-radius: 12px;
   padding: 0.7rem 1.2rem;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease,
-    box-shadow 0.15s ease, transform 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 /* Hovering an inactive tab previews the sticker effect: it lifts into the
@@ -231,7 +235,7 @@
   border: 1px solid var(--un-panel-border);
   border-radius: 10px;
   background: var(--un-card);
-  color: var(--un-accent, #6c4fd1);
+  color: var(--un-accent, #6a6191);
   font-family: inherit;
   font-size: 0.86rem;
   font-weight: 600;
@@ -244,7 +248,7 @@
 }
 
 .un-edit:hover {
-  border-color: var(--un-accent, #6c4fd1);
+  border-color: var(--un-accent, #6a6191);
 }
 
 .un-section-label img {
@@ -327,7 +331,9 @@
   padding: 0.55rem 1.1rem;
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .un-explain-btn:hover:not(:disabled) {
@@ -353,7 +359,9 @@
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .un-speak-btn:hover {
@@ -458,7 +466,9 @@
 }
 
 .un-grammar-card.raised {
-  box-shadow: 0 3px 0 0 #000, 0 7px 9px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 3px 0 0 #000,
+    0 7px 9px rgba(0, 0, 0, 0.2);
 }
 
 .un-grammar-desc {
@@ -700,27 +710,6 @@
   margin-bottom: 0;
 }
 
-/* Selector is `.un-form label.un-cu-upload`, not `.un-cu-upload`, on purpose:
-   this control sits inside .un-form, and `.un-form label` (0,2,0) outranks
-   `.un-btn-primary` (0,1,0) — so the field-label styling was winning and the
-   button rendered as small grey text on the purple fill. */
-.un-form label.un-cu-upload,
-.un-cu-upload {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-family: 'Hellix', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--un-accent);
-  border-radius: 999px;
-  padding: 0.55rem 1.2rem;
-  margin-bottom: 0;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
 @media (max-width: 860px) {
   .un-cu-panel {
     padding: 2rem 1rem 2.5rem;
@@ -738,76 +727,6 @@
   }
 }
 
-/* ---- quiz ---- */
-
-.un-quiz {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  counter-reset: quiz;
-}
-
-.un-quiz-item {
-  padding: 1.4rem 1.8rem;
-}
-
-.un-quiz-item + .un-quiz-item {
-  border-top: 1px solid var(--un-border);
-}
-
-.un-quiz-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.un-quiz-question {
-  font-weight: 600;
-  font-size: 1.02rem;
-  margin: 0 0 0.9rem;
-}
-
-.un-quiz-options {
-  display: grid;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
-}
-
-.un-quiz-option {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--un-text);
-  background: var(--un-card);
-  border: 1px solid var(--un-border);
-  border-radius: 12px;
-  padding: 0.7rem 1rem;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.un-quiz-option:hover:not(:disabled) {
-  border-color: var(--un-accent-light);
-}
-
-.un-quiz-option-key {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--un-bg);
-  font-size: 0.78rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
 .un-quiz-option.chosen {
   border-color: var(--un-accent);
 }
@@ -822,40 +741,12 @@
   background: #fdecea;
 }
 
-.un-quiz-option:disabled {
-  cursor: default;
-}
-
-.un-quiz-result {
-  font-weight: 600;
-  font-size: 0.92rem;
-  margin: 0;
-}
-
 .un-quiz-result.correct {
   color: #2e7d52;
 }
 
 .un-quiz-result.wrong {
   color: #b3261e;
-}
-
-.un-btn-primary {
-  font-family: 'Hellix', sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #fff;
-  background: var(--un-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 0.55rem 1.2rem;
-  cursor: pointer;
-  width: fit-content;
-}
-
-.un-btn-primary:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .un-tab:focus-visible,
@@ -920,7 +811,10 @@
   border-radius: 10px;
   padding: 0.6rem 1.3rem;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
     transform 0.15s ease;
 }
 
@@ -1122,4 +1016,20 @@
   .un-newwords {
     position: static;
   }
+}
+
+/* The quiz renders its own surface (see StudyQuiz.css), so the panel is only a
+   frame around it — the shared .un-panel padding of 0 would crop the banner's
+   rounded corners. */
+/* No panel of its own for the quiz tab. `StudyQuizLauncher` IS the card in the
+   design, so keeping `.un-panel`'s white background and border here put a
+   white bordered card inside another white bordered card. */
+.un-quiz-panel {
+  /* The 12px bottom pad reserves the card's navy band. A margin on the card
+     would COLLAPSE through this parent now that it has no padding or border,
+     reserving nothing — padding here cannot collapse. */
+  padding: 0 0 12px;
+  overflow: visible;
+  background: none;
+  border: none;
 }

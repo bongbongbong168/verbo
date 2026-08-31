@@ -2,15 +2,17 @@
   --ft-bg: #ffffff;
   --ft-card: #ffffff;
   --ft-border: #e7e3f6;
-  --ft-accent: #6c4fd1;
-  --ft-accent-light: #8b6ff0;
-  --ft-accent-dark: #4e37a8;
+  --ft-accent: #6a6191;
+  /* The theme's own purples. These were #8b6ff0 / #4e37a8 — saturated violets
+     from the same family as the dropped #6c4fd1, and the last of it in the app. */
+  --ft-accent-light: #a89ce3;
+  --ft-accent-dark: #6a6191;
   --ft-text: #1c1730;
   --ft-text-muted: #726c88;
   --ft-pill-bg: #f1edfc;
 
   background: var(--ft-bg);
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--ft-text);
 }
@@ -91,24 +93,7 @@
   gap: 0.6rem;
 }
 
-.ft-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
 
-.ft-icon-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
 
 /* Proportional rather than a fixed sidebar: the design splits its content
    642 / 372 (1.73 : 1), and holding that ratio keeps the preview in step with
@@ -143,14 +128,7 @@
 }
 
 .ft-profile-toggle:hover {
-  background: #e7defc;
-}
-
-.ft-saved-note {
-  margin-left: 0.6rem;
-  color: var(--ft-accent-dark);
-  font-size: 0.85rem;
-  font-weight: 500;
+  background: #f1edfc;
 }
 
 .ft-form {
@@ -283,7 +261,16 @@
   transition: color 0.15s ease;
 }
 
+/* Always its own line, never beside the name.
+   The name row is narrow — measured 148.9px on a card — so whether the price
+   fitted next to the name depended on how long that tutor's name happened to
+   be: "Xu Jiayin" sat inline while "Lin Wanqing" was pushed onto a second line.
+   Two cards in the same column then had different shapes for no reason the
+   reader could see. `flex-basis: 100%` in the wrapping row makes it break
+   every time, so every card has the same rhythm and the price is always in
+   the same place to look for. */
 .ft-card-rate {
+  flex-basis: 100%;
   color: var(--ft-accent-dark);
   font-weight: 600;
   font-size: 0.9rem;
@@ -322,7 +309,6 @@
   .ft-layout {
     grid-template-columns: 1fr;
   }
-
 }
 
 .ft-card-self {
@@ -370,29 +356,6 @@
 .ft-empty {
   color: var(--ft-text-muted);
   font-size: 0.9rem;
-}
-
-.ft-bookings-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 0.5rem;
-  max-width: 620px;
-}
-
-.ft-booking-row {
-  background: var(--ft-card);
-  border: 1px solid var(--ft-border);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  font-size: 0.88rem;
-}
-
-.ft-booking-status {
-  font-weight: 600;
-  color: var(--ft-accent-dark);
-  text-transform: capitalize;
 }
 
 .ft-error {
@@ -563,7 +526,9 @@
   padding: 1.5rem;
   margin-bottom: 5px;
   cursor: pointer;
-  transition: box-shadow 0.14s ease, transform 0.14s ease;
+  transition:
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
 }
 
 /* Hover presses the card fully onto its shadow — the same movement a click
@@ -579,7 +544,7 @@
    shown with a faint tint instead of recolouring the border, so the card the
    preview is following is still identifiable. */
 .ft-card.selected {
-  background: #faf9ff;
+  background: #f9f8fe;
 }
 
 /* White mat around the photo, with the presence dot pinned to its corner */
@@ -588,7 +553,7 @@
   flex-shrink: 0;
   display: block;
   background: #fff;
-  border: 2px solid #b3a8e7;
+  border: 2px solid #a89ce3;
   border-radius: 8px;
   padding: 4px;
   line-height: 0;
@@ -608,12 +573,14 @@
 /* The row aligns on baselines, which pins an inline-flex icon's bottom edge to
    the name's baseline and leaves it sitting low. Centring it on the row and
    lifting 1px puts it on the name's cap-height centre instead. */
+/* Now inline content inside `.ft-card-name` rather than a flex sibling, so
+   `align-self` no longer applies — it sits on the text baseline instead, and
+   the nudge that used to centre it on the cap height is measured from there.
+   `vertical-align` is the right tool for an inline mark; `align-self` was for
+   the flex item it used to be. */
 .ft-card-verified {
   display: inline-flex;
-  flex-shrink: 0;
-  align-self: center;
-  position: relative;
-  top: -1px;
+  vertical-align: -0.18em;
 }
 
 .ft-card-verified svg {
@@ -627,9 +594,19 @@
 /* Same outline + sticker edge as .ft-card, so the preview reads as one family
    with the list instead of a plain bordered box. margin-bottom leaves room
    for the 5px shadow, same reason .ft-card carries it. */
-.ft-preview {
+/* Holds the preview and its summary together. Sticky belongs here, not on
+   .ft-preview — pinning only the top card would let the summary scroll out
+   from under it. */
+.ft-side {
   position: sticky;
   top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-width: 0;
+}
+
+.ft-preview {
   background: var(--ft-card);
   border: 2px solid #a89ce3;
   border-radius: 16px;
@@ -804,7 +781,9 @@
   border: 1.5px solid #6a6191;
   border-radius: 999px;
   padding: 0.9rem;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .ft-preview-profile svg {
@@ -817,8 +796,85 @@
   border-color: var(--ft-accent);
 }
 
+/* ---- tutor summary ----
+   Same 2px #a89ce3 stroke and hard offset shadow as the preview above it, so
+   the two read as one stacked pair rather than two unrelated panels. */
+
+.ft-summary {
+  box-sizing: border-box;
+  background: var(--ft-card);
+  border: 2px solid #a89ce3;
+  border-radius: 16px;
+  box-shadow: 0 5px 0 0 #a89ce3;
+  padding: 1.1rem 1.15rem 1.2rem;
+  margin-bottom: 5px; /* clears its own offset shadow */
+}
+
+.ft-summary-label {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ft-text-muted);
+  margin: 0 0 0.6rem;
+}
+
+.ft-summary-bio {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ft-text);
+  margin: 0 0 0.9rem;
+  /* Bios run to any length; cap it here and let the profile page show it in
+     full rather than pushing the buttons above off the screen. */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ft-summary-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ft-summary-rows li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ft-text);
+}
+
+.ft-summary-rows svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--ft-text-muted);
+}
+
+.ft-summary-rows span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ft-summary-empty {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ft-text-muted);
+}
+
 @media (max-width: 900px) {
-  .ft-preview {
+  .ft-side {
     position: static;
   }
 }

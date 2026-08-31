@@ -1,0 +1,553 @@
+/* Study quiz page. Prefix `qp-`.
+   Laid out from design/study/quizz.png, measured not eyeballed: a 1231x810
+   white card on the page ground, ~925px of content inside it, an 8px progress
+   bar, a tinted question block with two pills, a 2x2 answer grid with circular
+   letter badges, and Skip / Next Question beneath.
+
+   Colours are this app's palette rather than the mockup's neutral greys — the
+   design's #7d76a1 pill is already a theme colour, and its grey question block
+   becomes the theme's pale lavender so the page sits with the rest of Study. */
+
+.qp-page {
+  --qp-page: #f9f8fe;
+  --qp-card: #ffffff;
+  --qp-stroke: #2b2643;
+  --qp-border: #e7e3f6;
+  --qp-well: #f1edfc;
+  --qp-accent: #6a6191;
+  --qp-fill: #a89ce3;
+  --qp-bar: #7d76a0;
+  --qp-text: #1c1730;
+  --qp-muted: #726c88;
+  --qp-ok: #1f7a45;
+  --qp-ok-bg: #ecf8f0;
+  --qp-ok-edge: #9dd5b4;
+  --qp-no: #b02a2a;
+  --qp-no-bg: #fdecea;
+  --qp-no-edge: #f0b3ad;
+
+  /* One shadow scale for the whole page, tinted with the app's navy rather
+     than neutral black so it sits on the lavender ground instead of greying
+     it. Depth follows the hierarchy: the page card floats highest, the boxes
+     inside it sit just off the surface, and pills barely lift at all. */
+  --qp-sh-xs: 0 1px 2px rgba(28, 23, 48, 0.07);
+  --qp-sh-sm: 0 2px 6px rgba(28, 23, 48, 0.07);
+  --qp-sh-md: 0 4px 12px rgba(28, 23, 48, 0.09);
+  --qp-sh-lg: 0 18px 40px rgba(28, 23, 48, 0.13);
+  --qp-sh-hover: 0 10px 22px rgba(28, 23, 48, 0.14);
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 1.6rem 90px 3rem;
+  background: var(--qp-page);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--qp-text);
+}
+
+.qp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--qp-muted);
+  text-decoration: none;
+  cursor: pointer;
+  /* Unit titles run long ("我们去机场接你们 - We will pick you up at the Airport"),
+     so the link clips rather than pushing the layout around. */
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.qp-back:hover {
+  color: var(--qp-accent);
+}
+
+.qp-back svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* The card from the export: 1231 wide with 810 of height, so it holds its
+   proportions instead of collapsing around a short question. */
+.qp-card {
+  box-sizing: border-box;
+  max-width: 1231px;
+  min-height: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem clamp(1.5rem, 6vw, 9.3rem);
+  background: var(--qp-card);
+  border: 1px solid var(--qp-stroke);
+  border-radius: 20px;
+  box-shadow: var(--qp-sh-lg);
+}
+
+/* ---- progress ---- */
+
+.qp-count {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.qp-progress {
+  height: 8px;
+  margin-bottom: 1.6rem;
+  border-radius: 999px;
+  background: var(--qp-border);
+  overflow: hidden;
+  /* Inset, not a drop shadow — the track is a groove the fill sits in, so it
+     should read as carved rather than raised. */
+  box-shadow: inset 0 1px 2px rgba(28, 23, 48, 0.12);
+}
+
+/* Static width, no transition — the bar must be right on the first paint even
+   if the tab never composites another frame. */
+.qp-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--qp-bar);
+  box-shadow: var(--qp-sh-xs);
+}
+
+/* ---- question block ---- */
+
+.qp-question {
+  padding: 1.15rem 1.4rem 1.5rem;
+  box-sizing: border-box;
+  /* The same navy stroke the card and the answer boxes carry — this block was
+     the only structural box on the page without one, which left it reading as
+     a wash of colour rather than as a box like everything around it. */
+  border: 1px solid var(--qp-stroke);
+  border-radius: 12px;
+  background: var(--qp-well);
+  box-shadow: var(--qp-sh-md);
+}
+
+.qp-tags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.qp-points,
+.qp-kind {
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--qp-sh-sm);
+}
+
+.qp-points {
+  background: var(--qp-bar);
+  color: #fff;
+}
+
+.qp-kind {
+  background: var(--qp-stroke);
+  color: #fff;
+}
+
+.qp-prompt {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* ---- answers ---- */
+
+.qp-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.qp-option {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 76px;
+  padding: 0.9rem 1.15rem;
+  box-sizing: border-box;
+  background: var(--qp-card);
+  border: 1px solid var(--qp-stroke);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--qp-text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--qp-sh-sm);
+  /* transform only. box-shadow is NOT transitioned: it carries state here
+     (picked / correct / wrong), and a transition that never gets frames sits
+     at its start value — which is exactly how the held tile came up with the
+     resting shadow instead of its own. Same reason background is excluded. */
+  transition: transform 0.14s ease;
+}
+
+.qp-option:hover:not(:disabled) {
+  border-color: var(--qp-fill);
+  transform: translateY(-2px);
+  box-shadow: var(--qp-sh-hover);
+}
+
+.qp-option:disabled {
+  cursor: default;
+}
+
+/* Once answered the row is settled, so it sits back down flat. */
+.qp-option:disabled:not(.correct):not(.wrong) {
+  box-shadow: var(--qp-sh-xs);
+}
+
+.qp-letter {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--qp-stroke);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: var(--qp-sh-sm);
+}
+
+.qp-option-text {
+  min-width: 0;
+}
+
+.qp-option.picked {
+  background: var(--qp-well);
+  border-color: var(--qp-fill);
+  box-shadow: 0 4px 12px rgba(168, 156, 227, 0.35);
+}
+
+/* The colour carries the verdict, not the animation: a keyframe that never
+   gets frames would otherwise leave the answer unmarked. */
+/* The verdict shadow is tinted to its own colour, so the right answer glows
+   green and a wrong one red — the depth reinforces the state instead of being
+   the same neutral drop under both. */
+.qp-option.correct {
+  background: var(--qp-ok-bg);
+  border-color: var(--qp-ok-edge);
+  color: var(--qp-ok);
+  box-shadow: 0 4px 14px rgba(31, 122, 69, 0.25);
+  animation: qp-pop 0.45s ease-out;
+}
+
+.qp-option.correct .qp-letter {
+  background: var(--qp-ok);
+}
+
+.qp-option.wrong {
+  background: var(--qp-no-bg);
+  border-color: var(--qp-no-edge);
+  color: var(--qp-no);
+  box-shadow: 0 4px 14px rgba(176, 42, 42, 0.22);
+  animation: qp-shake 0.35s ease-out;
+}
+
+.qp-option.wrong .qp-letter {
+  background: var(--qp-no);
+}
+
+/* Transform only. This used to animate box-shadow too, which overrode the
+   static verdict shadow — and since a tab that never composites holds the
+   animation at keyframe 0, the correct answer's green glow rendered as
+   `0 0 0 0`, i.e. nothing at all. Same rule as everywhere else here: the
+   resting style carries the state, the animation is ornament on top. */
+@keyframes qp-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.015);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes qp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* ---- footer ---- */
+
+.qp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.qp-skip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--qp-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.qp-skip:hover {
+  color: var(--qp-accent);
+}
+
+.qp-skip svg {
+  width: 16px;
+  height: 16px;
+}
+
+.qp-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-sizing: border-box;
+  padding: 0.85rem 1.4rem;
+  /* Outlined like the boxes around it, and deliberately the ONE control here
+     with no drop shadow — the outline is what defines it, and a glow under a
+     already-solid lavender fill only muddied it. */
+  border: 1px solid var(--qp-stroke);
+  border-radius: 10px;
+  background: var(--qp-fill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.14s ease;
+}
+
+.qp-next:hover:not(:disabled) {
+  background: var(--qp-accent);
+  transform: translateY(-1px);
+}
+
+.qp-next:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.qp-next svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---- end / empty states ---- */
+
+.qp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.qp-score {
+  margin: 0;
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--qp-accent);
+}
+
+.qp-score span {
+  font-size: 1.4rem;
+  color: var(--qp-muted);
+}
+
+.qp-state-title {
+  margin: 0.4rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.qp-state-note {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--qp-muted);
+}
+
+.qp-state-note a,
+.qp-state-actions a {
+  color: var(--qp-accent);
+  font-weight: 600;
+}
+
+.qp-state-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+
+.qp-note {
+  padding: 2rem 90px;
+  color: #726c88;
+  font-family: 'Hellix', system-ui, sans-serif;
+}
+
+.qp-error {
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  background: var(--qp-no-bg, #fdecea);
+  color: var(--qp-no, #b02a2a);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .qp-page {
+    padding: 1.2rem 1.1rem 2.4rem;
+  }
+
+  .qp-card {
+    padding: 1.6rem 1.2rem;
+    min-height: 0;
+  }
+
+  .qp-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qp-prompt {
+    font-size: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qp-option.correct,
+  .qp-option.wrong {
+    animation: none;
+  }
+}
+
+/* ---- matching round ---- */
+
+.qp-match {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.qp-match-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.qp-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  padding: 0.8rem 1rem;
+  box-sizing: border-box;
+  background: var(--qp-card);
+  border: 1px solid var(--qp-stroke);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--qp-text);
+  cursor: pointer;
+  box-shadow: var(--qp-sh-sm);
+  /* transform only — see .qp-option. */
+  transition: transform 0.14s ease;
+}
+
+.qp-tile:hover:not(:disabled) {
+  border-color: var(--qp-fill);
+  transform: translateY(-2px);
+  box-shadow: var(--qp-sh-hover);
+}
+
+.qp-tile-hanzi {
+  font-size: 1.5rem;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+
+/* The held tile is the one waiting for its partner. */
+.qp-tile.held {
+  background: var(--qp-well);
+  border-color: var(--qp-fill);
+  color: var(--qp-accent);
+  box-shadow: 0 4px 12px rgba(168, 156, 227, 0.4);
+}
+
+/* A matched pair is finished business — it settles flat rather than keeping
+   the lift, so the tiles still in play are the ones standing off the page. */
+.qp-tile.done {
+  background: var(--qp-ok-bg);
+  border-color: var(--qp-ok-edge);
+  color: var(--qp-ok);
+  cursor: default;
+  box-shadow: var(--qp-sh-xs);
+  animation: qp-pop 0.45s ease-out;
+}
+
+.qp-tile.missed {
+  background: var(--qp-no-bg);
+  border-color: var(--qp-no-edge);
+  color: var(--qp-no);
+  box-shadow: 0 4px 14px rgba(176, 42, 42, 0.22);
+  animation: qp-shake 0.35s ease-out;
+}
+
+.qp-tile:disabled {
+  cursor: default;
+}
+
+.qp-match-note {
+  margin: 1rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--qp-muted);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qp-tile.done,
+  .qp-tile.missed {
+    animation: none;
+  }
+}

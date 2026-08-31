@@ -10,14 +10,41 @@ const EDGE = 12
 export default function WordPopover({ word, rect, saved }) {
   if (!word || !rect) return null
 
-  // Clamp horizontally so a word near either edge still shows its whole card.
-  const centre = rect.left + rect.width / 2
-  const half = WIDTH / 2
-  const left = Math.min(Math.max(centre, EDGE + half), window.innerWidth - EDGE - half)
+  /* TWO COORDINATE SPACES, and mixing them is what put this card on top of the
+     word it describes.
 
-  // Flip below the word when there is not enough room above it.
+     `#root` carries `zoom: var(--app-scale)`. `getBoundingClientRect()` returns
+     VIEWPORT pixels — already multiplied by that zoom. But this card lives
+     inside `#root`, so a `top` written here is a CSS length the browser scales
+     by the zoom AGAIN. At 1.1 that put the card ~67px lower and ~69px right of
+     where the maths intended: `top: 670.8` rendered at 737.9, past the word's
+     own top edge at 680.8.
+
+     Dividing the measured rect by the scale converts it into the space this
+     element is actually positioned in. Same family as the `--app-vh` fix —
+     `zoom` and viewport-derived measurements do not share a unit. */
+  const scale =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--app-scale')
+    ) || 1
+
+  const top0 = rect.top / scale
+  const bottom0 = rect.bottom / scale
+  const left0 = rect.left / scale
+  const width0 = rect.width / scale
+  // window.innerWidth is viewport px too, so the clamp has to be converted with
+  // everything else or a word near the right edge clamps to the wrong number.
+  const viewportW = window.innerWidth / scale
+
+  // Clamp horizontally so a word near either edge still shows its whole card.
+  const centre = left0 + width0 / 2
+  const half = WIDTH / 2
+  const left = Math.min(Math.max(centre, EDGE + half), viewportW - EDGE - half)
+
+  // Flip below the word when there is not enough room above it. Compared in
+  // viewport px because that is what the space above the word is measured in.
   const below = rect.top < 160
-  const top = below ? rect.bottom + GAP : rect.top - GAP
+  const top = below ? bottom0 + GAP : top0 - GAP
 
   return (
     <div

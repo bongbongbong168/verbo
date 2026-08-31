@@ -1,0 +1,78 @@
+/* Messages button. Prefix `mg-`.
+
+   Every value here is taken from the bell beside it (`nm-`) so the three
+   controls read as one set. The bell is a baked PNG whose chip and glyph are
+   part of the image; this reproduces both in CSS, sampled from that file
+   rather than eyeballed:
+     chip  #f2f2f2
+     glyph #2b2643
+     glyph height 38.6% of the chip -> ~16.2px inside a 42px chip
+
+   Nothing here sets margins. PageTools is a fragment and each page's own
+   container owns the spacing, so this inherits whatever gap the bell already
+   sits in. */
+
+.mg-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #2b2643;
+  text-decoration: none;
+  cursor: pointer;
+  /* Identical to .nm-trigger: just enough to lift it off the page ground, and
+     navy-tinted rather than neutral black, which would grey the lavender
+     underneath it. */
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.1);
+}
+
+/* Sized by the INK, not by the box. The path only occupies 18 x 16.8 of its 24
+   viewBox, so an svg set to the bell's 16.2px drew a bubble just 12 x 11 —
+   visibly the smaller of the two. 21.5px puts the ink at ~16.1 x 15.0 against
+   the bell's 15.3 x 16.2.
+
+   Deliberately not an exact match on either axis: a bubble is a wide shape and
+   a bell is a tall one, so matching height alone would leave the bubble 13%
+   wider than the bell and looking oversized. This sits between the two — a
+   shade wider, a shade shorter — which is what reads as equal weight. */
+.mg-icon {
+  width: 21.5px;
+  height: 21.5px;
+}
+
+/* The ring and the lift must be ONE shadow list. A second box-shadow
+   declaration replaces the first rather than adding to it, which would drop
+   the lift the moment the ring appeared — the same trap the bell documents.
+   Instant, with no transition: the ring IS the hover signal, and a transition
+   that never receives a frame would leave it looking dead under the pointer. */
+.mg-trigger:hover,
+.mg-trigger:focus-visible {
+  box-shadow:
+    0 0 0 2px #a89ce3,
+    0 4px 12px rgba(28, 23, 48, 0.16);
+  outline: none;
+}
+
+/* Byte-for-byte the bell's dot, so two unread indicators side by side cannot
+   disagree: "something new", not how much, in the app's own #a89ce3 rather
+   than a warning red. The ring is the page ground, which keeps the dot
+   separate from the chip's edge instead of merging into it. */
+.mg-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #f9f8fe;
+  border-radius: 50%;
+  background: #a89ce3;
+}

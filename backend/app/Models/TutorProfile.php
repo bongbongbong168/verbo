@@ -18,6 +18,8 @@ class TutorProfile extends Model
         'languages_spoken',
         'availability',
         'video_url',
+        'timezone',
+        'allows_pre_booking_questions',
     ];
 
     protected $appends = [
@@ -29,9 +31,27 @@ class TutorProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** Group courses this tutor runs, the counterpart to lessons(). */
+    public function courses()
+    {
+        return $this->hasMany(Course::class);
+    }
+
     public function lessons()
     {
         return $this->hasMany(TutorLesson::class);
+    }
+
+    public function availabilitySlots()
+    {
+        return $this->hasMany(TutorAvailability::class)
+            ->orderBy('day_of_week')
+            ->orderBy('start_time');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(TutorReview::class)->latest();
     }
 
     public function resumeEntries()

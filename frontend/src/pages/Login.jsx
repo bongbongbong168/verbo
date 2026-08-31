@@ -2,11 +2,9 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import graduateIllustration from '../assets/login/graduate-illustration.png'
-import eyeIcon from '../assets/login/eye-icon.png'
-import socialFacebook from '../assets/login/social-facebook.png'
-import socialApple from '../assets/login/social-apple.png'
-import socialGoogle from '../assets/login/social-google.png'
 import verboLogo from '../assets/sidebar/logo.png'
+import EyeIcon from '../components/EyeIcon'
+import GoogleSignInButton, { googleConfigured } from '../components/GoogleSignInButton'
 import './Login.css'
 
 export default function Login() {
@@ -80,7 +78,7 @@ export default function Login() {
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                <img src={eyeIcon} alt="" />
+                <EyeIcon shown={showPassword} />
               </button>
             </div>
 
@@ -93,19 +91,25 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="lg-or">or continue with</p>
-
-          <div className="lg-social-row">
-            <button type="button" className="lg-social-btn" disabled title="Coming soon">
-              <img src={socialFacebook} alt="Facebook" />
-            </button>
-            <button type="button" className="lg-social-btn" disabled title="Coming soon">
-              <img src={socialApple} alt="Apple" />
-            </button>
-            <button type="button" className="lg-social-btn" disabled title="Coming soon">
-              <img src={socialGoogle} alt="Google" />
-            </button>
-          </div>
+          {/* Google only. The Facebook and Apple buttons the design shows are
+              not built, and a disabled control that never becomes enabled is
+              worse than no control — same rule as Payment Methods on Profile.
+              The whole section hides when Google is unconfigured, because
+              "or continue with" above nothing is a promise the page cannot
+              keep. Bring the other two back when they actually sign anyone in. */}
+          {googleConfigured && (
+            <>
+              {/* The word sits in its own span so the rules either side can be
+                  drawn on the <p> — see .lg-or in the stylesheet. */}
+              <p className="lg-or">
+                <span>or</span>
+              </p>
+              <GoogleSignInButton
+                onError={setError}
+                onSuccess={() => navigate('/dashboard')}
+              />
+            </>
+          )}
 
           <p className="lg-register-link">
             Don't have an account? <Link to="/register">Register</Link>

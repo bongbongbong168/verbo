@@ -2,15 +2,52 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import PageTools from '../components/PageTools'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
-import iconBell from '../assets/dashboard/icon-bell.png'
-import iconProfile from '../assets/dashboard/icon-profile.png'
+import iconStreak from '../assets/dashboard/icon-streak.png'
 import './Dashboard.css'
 
 /* The design's Top Reads filter is four content categories that do not exist in
    the data. `articles.type` is the real dimension, so the pills are built from
    it — plus an All that is selected by default. */
 const HAN = /[一-鿿]/
+
+/* Three tiles, as the design draws them: one wide then two narrow. */
+const PICKUP_SLOTS = 3
+
+/**
+ * A study unit as a pick-up tile: the level's book cover, a unit tag and a
+ * level tag, the unit's English title and its Chinese line.
+ *
+ * Unit titles are authored as "中文 - English", so the two halves are split off
+ * one field rather than needing separate columns — `description` wins for the
+ * English half when it is filled in. The split matches the FIRST dash with
+ * optional surrounding space, since the titles are authored inconsistently
+ * ("接你们 - We will" but also "接你- We will") and requiring a leading space
+ * silently fails on half of them. It only counts as a split when the left half
+ * actually holds Han characters, so an English title containing a hyphen is
+ * left alone.
+ */
+function shapeStudyTile(level, unit) {
+  if (!level || !unit) return null
+
+  const raw = unit.title || ''
+  const parts = raw.match(/^(.*?)\s*[-–—]\s*(.+)$/)
+  const isSplit = Boolean(parts) && HAN.test(parts[1])
+  const chinese = isSplit ? parts[1].trim() : HAN.test(raw) ? raw : ''
+  const english = isSplit ? parts[2].trim() : ''
+
+  return {
+    kind: 'study_unit',
+    key: `u${unit.id}`,
+    to: `/study/units/${unit.id}`,
+    cover: level.image_url,
+    unitTag: `Unit ${unit.position ?? (level.units || []).findIndex((u) => u.id === unit.id) + 1}`,
+    levelTag: level.title,
+    title: unit.description || english || raw,
+    chinese,
+  }
+}
 
 const READ_FILTERS = [
   { key: 'all', label: 'All' },
@@ -25,17 +62,61 @@ const READ_FILTERS = [
    and which are holding the layout:
      - podcasts have no duration or author column
      - tutors have no lesson count or rating
-     - there is no schedule/course-enrolment table at all
-   (The activity chart used to be here too; it is real data now — see
-   ActivityController and useActivityHeartbeat.)
+   (Two former residents have moved out: the activity chart is real data now —
+   see ActivityController and useActivityHeartbeat — and so is My Learning,
+   which reads real bookings and course enrolments through LearningController.)
    --------------------------------------------------------------------------- */
-const PLACEHOLDER_PODCAST = { duration: '8mins', author: 'Chen Mingyue', language: 'Chinese｜Mandarin' }
+const PLACEHOLDER_PODCAST = {
+  duration: '8mins',
+  author: 'Chen Mingyue',
+  language: 'Chinese｜Mandarin',
+}
 const PLACEHOLDER_TEACHER = { lessons: '275', rating: '4.9' }
-const PLACEHOLDER_COURSE = { title: 'Chinese for Tech Professional', time: '7:00pm - 8:00pm' }
+
+/* "Today · 7:00 PM", "Tomorrow · 6:00 PM", else "Sep 8 · 7:00 PM".
+   Relative for the two days a student actually has to act on, absolute after
+   that — "in 9 days" is a number you have to convert back into a date.
+
+   The weekday is deliberately dropped from the absolute form. The right rail
+   is ~300px, which leaves this line about 116px: "Tue, Sep 1 · 6:00 PM" wraps
+   onto two lines there, and a time broken across a line break is harder to read
+   than one without a weekday. Within a week the label is relative anyway, which
+   is when the weekday would have earned its space. */
+function whenLabel(iso, endIso) {
+  const at = new Date(iso)
+  const now = new Date()
+
+  /* A session already under way says so. Showing its start time once it has
+     passed is the least useful thing the card could say — "6:00 PM" at 6:20
+     reads as upcoming when you are already ten minutes late to it. */
+  if (endIso && at <= now && new Date(endIso) > now) {
+    const mins = Math.max(1, Math.round((new Date(endIso) - now) / 60000))
+    return `Happening now · ${mins} min left`
+  }
+
+  const day = new Date(at.getFullYear(), at.getMonth(), at.getDate())
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.round((day - midnight) / 86400000)
+
+  const time = at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  if (days === 0) return `Today · ${time}`
+  if (days === 1) return `Tomorrow · ${time}`
+
+  const date = at.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  return `${date} · ${time}`
+}
 
 function ArrowRightIcon() {
   return (
-    <svg className="db-btn-cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      className="db-btn-cta-arrow"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M9 5l7 7-7 7" />
     </svg>
   )
@@ -43,7 +124,15 @@ function ArrowRightIcon() {
 
 function ChevronRight() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="m9 5 7 7-7 7" />
     </svg>
   )
@@ -59,7 +148,15 @@ function PlayIcon() {
 
 function CalendarIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="3.5" y="5" width="17" height="16" rx="3" />
       <path d="M3.5 10h17M8 3v4M16 3v4" />
     </svg>
@@ -73,14 +170,28 @@ function VerifiedIcon() {
         fill="#d61f1f"
         d="M12.00 1.00 L9.64 3.21 L6.50 2.47 L5.57 5.57 L2.47 6.50 L3.21 9.64 L1.00 12.00 L3.21 14.36 L2.47 17.50 L5.57 18.43 L6.50 21.53 L9.64 20.79 L12.00 23.00 L14.36 20.79 L17.50 21.53 L18.43 18.43 L21.53 17.50 L20.79 14.36 L23.00 12.00 L20.79 9.64 L21.53 6.50 L18.43 5.57 L17.50 2.47 L14.36 3.21 Z"
       />
-      <path d="M7.6 12.1 10.5 15 16.4 9.1" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M7.6 12.1 10.5 15 16.4 9.1"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
 
 function CapIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4z" />
       <path d="M6 10.5V16c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-5.5" />
     </svg>
@@ -89,7 +200,15 @@ function CapIcon() {
 
 function LangIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M3 6h9M7.5 4v2M10 6c0 4-3.5 7-7 7" />
       <path d="M6 10.5c1.5 2 3.5 3.2 5.5 3.7" />
       <path d="m13 20 4-9 4 9M14.4 17h5.2" />
@@ -113,6 +232,19 @@ function SectionHead({ title, to }) {
       {to && (
         <Link className="db-viewall" to={to}>
           View all
+          {/* The chevron is the part that actually says "there is more this
+              way" — the word alone gives no direction. */}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 5l7 7-7 7" />
+          </svg>
         </Link>
       )}
     </div>
@@ -146,8 +278,9 @@ export default function Dashboard() {
   const [articles, setArticles] = useState([])
   const [podcasts, setPodcasts] = useState([])
   const [studyUnit, setStudyUnit] = useState(null)
-  const [progress, setProgress] = useState(null)
+  const [recents, setRecents] = useState([])
   const [activity, setActivity] = useState(null)
+  const [learning, setLearning] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -171,47 +304,69 @@ export default function Dashboard() {
       api.getArticles(token),
       api.getPodcasts(token),
       api.getStudyLevels(token),
-      // Resolves to null until the user has actually opened a unit.
-      api.getStudyProgress(token).catch(() => null),
+      // Empty until the user has actually opened something.
+      api.getRecentViews(token, 3).catch(() => []),
       api.getActivitySummary(token, 7).catch(() => null),
+      /* Upcoming private lessons + group classes, merged. Empty for a student
+         who has booked nothing, which the section renders as its own state. */
+      api.getMyLearning(token, 3).catch(() => []),
     ])
-      .then(([quoteData, tutorData, articleData, podcastData, levelData, progressData, activityData]) => {
-        setQuote(quoteData)
-        setQuoteChinese(quoteData?.chinese || '')
-        setQuotePinyin(quoteData?.pinyin || '')
-        setQuoteEnglish(quoteData?.english || '')
-        setTutors(tutorData.slice(0, 3))
-        setArticles(articleData)
-        setPodcasts(podcastData)
-        setProgress(progressData || null)
-        setActivity(activityData || null)
+      .then(
+        ([
+          quoteData,
+          tutorData,
+          articleData,
+          podcastData,
+          levelData,
+          recentData,
+          activityData,
+          learningData,
+        ]) => {
+          setQuote(quoteData)
+          setQuoteChinese(quoteData?.chinese || '')
+          setQuotePinyin(quoteData?.pinyin || '')
+          setQuoteEnglish(quoteData?.english || '')
+          setTutors(tutorData.slice(0, 3))
+          setArticles(articleData)
+          setPodcasts(podcastData)
+          const recentRows = Array.isArray(recentData) ? recentData : []
+          setRecents(recentRows)
+          setActivity(activityData || null)
+          setLearning(Array.isArray(learningData) ? learningData : [])
 
-        // With real progress there is nothing to guess at, so skip the extra
-        // level lookup entirely.
-        if (progressData) return
+          // The fallback only exists to fill a row real history cannot fill,
+          // so skip the extra lookup once there are three real tiles — or once
+          // a study unit is already among them, since that is the slot it
+          // would take.
+          if (recentRows.length >= 3 || recentRows.some((r) => r.kind === 'study_unit')) {
+            return
+          }
 
-        // GET /study-levels returns levels without their units, so the study
-        // tile needs the detail call to reach unit 1. Chained rather than
-        // parallel because which level to open is only known once the list
-        // arrives; a failure here leaves the tile out, not the whole page.
-        //
-        // Feature the level with the most units rather than whichever sorts
-        // first — with no progress tracking, "the course with the most content
-        // authored" is the closest honest stand-in for the one being worked
-        // through, and it keeps empty levels out of the tile. `reduce` keeps
-        // the natural sort order as the tie-break, since it only replaces on a
-        // strictly greater count.
-        const featured = levelData.reduce(
-          (best, l) => ((l.units_count ?? 0) > (best?.units_count ?? 0) ? l : best),
-          levelData[0]
-        )
-        if (featured) {
-          return api
-            .getStudyLevel(token, featured.id)
-            .then((full) => setStudyUnit(full.units?.[0] ? { level: full, unit: full.units[0] } : null))
-            .catch(() => setStudyUnit(null))
-        }
-      })
+          // GET /study-levels returns levels without their units, so the study
+          // tile needs the detail call to reach unit 1. Chained rather than
+          // parallel because which level to open is only known once the list
+          // arrives; a failure here leaves the tile out, not the whole page.
+          //
+          // Feature the level with the most units rather than whichever sorts
+          // first — with no progress tracking, "the course with the most content
+          // authored" is the closest honest stand-in for the one being worked
+          // through, and it keeps empty levels out of the tile. `reduce` keeps
+          // the natural sort order as the tie-break, since it only replaces on a
+          // strictly greater count.
+          const featured = levelData.reduce(
+            (best, l) => ((l.units_count ?? 0) > (best?.units_count ?? 0) ? l : best),
+            levelData[0],
+          )
+          if (featured) {
+            return api
+              .getStudyLevel(token, featured.id)
+              .then((full) =>
+                setStudyUnit(full.units?.[0] ? { level: full, unit: full.units[0] } : null),
+              )
+              .catch(() => setStudyUnit(null))
+          }
+        },
+      )
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }
@@ -235,45 +390,63 @@ export default function Dashboard() {
     }
   }
 
-  /* The design's first "pick up" tile is a study *unit*: the level's book
-     cover, a unit tag and a level tag, the unit's English title and its Chinese
-     line. Unit titles are authored as "中文 - English", so the two halves are
-     split off one field rather than needing separate columns — `description`
-     wins for the English half when it is filled in. Nothing records progress,
-     so this is unit 1 of the first level; the tile shape is the point. */
-  const studyCard = useMemo(() => {
-    // Real resume state when the user has opened a unit; otherwise fall back to
-    // featuring unit 1 of the most-populated level, so the tile is never empty
-    // for someone who has not started yet.
-    const { level, unit } = progress
-      ? { level: progress.level, unit: progress.unit }
-      : studyUnit || {}
-    if (!level || !unit) return null
-    const raw = unit.title || ''
-    // Split on the FIRST dash with optional surrounding space — the titles are
-    // authored inconsistently ("接你们 - We will" but also "接你- We will"), so
-    // requiring a leading space silently fails on half of them. Only treated as
-    // a split when the left half actually holds Han characters, so an English
-    // title containing a hyphen is left alone.
-    const parts = raw.match(/^(.*?)\s*[-–—]\s*(.+)$/)
-    const isSplit = Boolean(parts) && HAN.test(parts[1])
-    const chinese = isSplit ? parts[1].trim() : HAN.test(raw) ? raw : ''
-    const english = isSplit ? parts[2].trim() : ''
+  /* The pick-up row is ONE recency order across modules, not a fixed study
+     tile plus two podcasts. Whatever the user opened last leads the row and
+     the rest follow behind it, so clicking HSK 1 then a podcast puts the
+     podcast first and HSK 1 second.
 
-    return {
-      to: `/study/units/${unit.id}`,
-      cover: level.image_url,
-      unitTag: `Unit ${unit.position ?? (level.units || []).findIndex((u) => u.id === unit.id) + 1}`,
-      levelTag: level.title,
-      title: unit.description || english || raw,
-      chinese,
+     Suggestions pad the row when real history cannot fill it — a new user has
+     none at all — but they always sit AFTER real history and never duplicate
+     something already in it. Capped at three, which is what the design draws. */
+  const pickup = useMemo(() => {
+    const tiles = []
+    const seen = new Set()
+    /* Everything added in the FIRST loop is something this person actually
+       opened; everything after it is a suggestion. The count is kept so the
+       heading can tell the truth — "Pick up where you left off" over a row of
+       things you have never opened is a claim about your history that is
+       simply false. */
+    let fromHistory = 0
+
+    for (const row of recents) {
+      if (row.kind === 'study_unit') {
+        const tile = shapeStudyTile(row.level, row.unit)
+        if (tile) {
+          tiles.push(tile)
+          seen.add(tile.key)
+          fromHistory++
+        }
+      } else if (row.kind === 'podcast' && row.podcast) {
+        const key = `p${row.podcast.id}`
+        tiles.push({ kind: 'podcast', key, podcast: row.podcast })
+        seen.add(key)
+        fromHistory++
+      }
     }
-  }, [progress, studyUnit])
+
+    // Unit 1 of the most-populated level, for someone who has not opened one.
+    if (tiles.length < PICKUP_SLOTS && studyUnit) {
+      const tile = shapeStudyTile(studyUnit.level, studyUnit.unit)
+      if (tile && !seen.has(tile.key)) {
+        tiles.push(tile)
+        seen.add(tile.key)
+      }
+    }
+
+    for (const podcast of podcasts) {
+      if (tiles.length >= PICKUP_SLOTS) break
+      const key = `p${podcast.id}`
+      if (seen.has(key)) continue
+      tiles.push({ kind: 'podcast', key, podcast })
+      seen.add(key)
+    }
+
+    return { tiles: tiles.slice(0, PICKUP_SLOTS), fromHistory }
+  }, [recents, studyUnit, podcasts])
 
   const visibleReads = useMemo(
-    () =>
-      articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3),
-    [articles, readFilter]
+    () => articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3),
+    [articles, readFilter],
   )
 
   /* The chart scales to the busiest day, so the tallest bar always fills it and
@@ -291,6 +464,14 @@ export default function Dashboard() {
   const maxSeconds = Math.max(0, ...activityDays.map((d) => d.seconds))
   const hasActivity = maxSeconds > 0
   const peakDay = activityDays.reduce((a, b) => (b && b.seconds > (a?.seconds ?? -1) ? b : a), null)
+  /* The rule sits below the tallest bar, as in the design. Its height and its
+     label have to agree — a line drawn at 78% of the peak but labelled with the
+     peak would simply be wrong — so what it marks is the average across the
+     week. The peak bar stays highlighted, which is what identifies the best day
+     now that the rule no longer points at it. */
+  const avgSeconds = activityDays.length
+    ? activityDays.reduce((sum, d) => sum + d.seconds, 0) / activityDays.length
+    : 0
   // Guard the divisor only for the all-zero case, where every ratio is 0 anyway.
   const scale = maxSeconds || 1
   const pct = (seconds) => (seconds / scale) * 100
@@ -302,6 +483,10 @@ export default function Dashboard() {
       const hours = seconds / 3600
       return `${hours >= 10 ? Math.round(hours) : hours.toFixed(1)} hours`
     }
+    // A day with nothing on it has to read as nothing. The floor below rounds
+    // any non-zero value up to "1 min" so a real but tiny session is not
+    // reported as zero — but it must not catch an actually-empty day.
+    if (seconds <= 0) return 'No time'
     return `${Math.max(1, Math.round(seconds / 60))} min`
   }
 
@@ -310,12 +495,11 @@ export default function Dashboard() {
   return (
     <div className="db">
       <div className="db-topbar">
-        <button type="button" className="db-icon-btn" aria-label="Notifications">
-          <img src={iconBell} alt="" />
-        </button>
-        <button type="button" className="db-icon-btn" aria-label="Profile">
-          <img src={iconProfile} alt="" />
-        </button>
+        {/* Messages, bell, account — shared with every other page through
+            PageTools so the set cannot drift between them. This page had been
+            importing the two menus directly, which is exactly why it missed
+            the Messages button when that was added to PageTools. */}
+        <PageTools />
       </div>
 
       {error && <p className="db-error">{error}</p>}
@@ -330,15 +514,18 @@ export default function Dashboard() {
               : 'Open Verbo on consecutive days to build a streak'
           }
         >
-          {/* Emoji rather than an inline SVG: it renders in the platform's own
-              colour font, so it stays sharp at any zoom and needs no palette of
-              its own. aria-hidden because the adjacent text already says it. */}
-          <span className="db-streak-flame" role="img" aria-hidden="true">
-            🔥
-          </span>
+          {/* The supplied artwork, not the 🔥 emoji it replaced — that rendered
+              as a different picture on every OS, so the badge could not be
+              designed around it, and its ink sat off-centre in its line box and
+              needed a measured nudge to look level. A 512px source for a 15px
+              mark, so it stays sharp at any zoom or pixel ratio. */}
+          <img className="db-streak-flame" src={iconStreak} alt="" />
           {/* "5 day streak", not "5 days streak" — attributive, and it is how
-              the design words it. */}
-          {streak > 0 ? `${streak} day streak` : 'No streak yet'}
+              the design words it. Wrapped so its vertical position can be tuned
+              against the flame without dragging the flame along with it. */}
+          <span className="db-streak-text">
+            {streak > 0 ? `${streak} day streak` : 'No streak yet'}
+          </span>
         </span>
         <div className="db-hero-content">
           <h1 className="db-greeting">你好, {user?.name}!</h1>
@@ -361,7 +548,11 @@ export default function Dashboard() {
                 <button type="submit" className="db-btn-primary" disabled={savingQuote}>
                   {savingQuote ? 'Saving...' : 'Save quote'}
                 </button>
-                <button type="button" className="db-btn-ghost" onClick={() => setEditingQuote(false)}>
+                <button
+                  type="button"
+                  className="db-btn-ghost"
+                  onClick={() => setEditingQuote(false)}
+                >
                   Cancel
                 </button>
               </div>
@@ -382,7 +573,11 @@ export default function Dashboard() {
               <ArrowRightIcon />
             </Link>
             {user?.is_admin && !editingQuote && (
-              <button type="button" className="db-quote-edit-toggle" onClick={() => setEditingQuote(true)}>
+              <button
+                type="button"
+                className="db-quote-edit-toggle"
+                onClick={() => setEditingQuote(true)}
+              >
                 Edit quote
               </button>
             )}
@@ -395,33 +590,42 @@ export default function Dashboard() {
         <div className="db-panel">
           {/* ---- Pick up where you left off ---- */}
           <section className="db-section">
-            <SectionHead title="Pick up where you left off" />
+            {/* The heading follows the CONTENT. A brand-new account has no
+                recent views, so the row is padded entirely with suggestions —
+                and "Pick up where you left off" over things this person has
+                never opened is simply a false claim about their history. The
+                tiles are the same either way; only the promise changes. */}
+            <SectionHead
+              title={pickup.fromHistory > 0 ? 'Pick up where you left off' : 'Start learning'}
+            />
+            {/* Rendered straight down the recency order — the first slot is
+                wide whatever lands in it, so the most recent thing leads the
+                row regardless of which module it came from. */}
             <div className="db-pickup">
-              {studyCard && (
-                <Link className="db-study" to={studyCard.to}>
-                  <span className="db-study-cover">
-                    {studyCard.cover && <img src={studyCard.cover} alt="" />}
-                  </span>
-                  <span className="db-study-body">
-                    <span className="db-study-tags">
-                      <span className="db-tag db-tag-unit">{studyCard.unitTag}</span>
-                      <span className="db-tag db-tag-level">{studyCard.levelTag}</span>
+              {pickup.tiles.map((tile) =>
+                tile.kind === 'study_unit' ? (
+                  <Link key={tile.key} className="db-study" to={tile.to}>
+                    <span className="db-study-cover">
+                      {tile.cover && <img src={tile.cover} alt="" />}
                     </span>
-                    <span className="db-study-title">{studyCard.title}</span>
-                    <span className="db-study-rule" />
-                    {studyCard.chinese && (
-                      <span className="db-study-quote">&ldquo;{studyCard.chinese}&rdquo;</span>
-                    )}
-                  </span>
-                </Link>
+                    <span className="db-study-body">
+                      <span className="db-study-tags">
+                        <span className="db-tag db-tag-unit">{tile.unitTag}</span>
+                        <span className="db-tag db-tag-level">{tile.levelTag}</span>
+                      </span>
+                      <span className="db-study-title">{tile.title}</span>
+                      <span className="db-study-rule" />
+                      {tile.chinese && (
+                        <span className="db-study-quote">&ldquo;{tile.chinese}&rdquo;</span>
+                      )}
+                    </span>
+                  </Link>
+                ) : (
+                  <PodcastCard key={tile.key} podcast={tile.podcast} />
+                ),
               )}
-              {/* Two, not three: with the study tile that fills the row exactly,
-                  which is what the design shows. */}
-              {podcasts.slice(0, 2).map((p) => (
-                <PodcastCard key={p.id} podcast={p} />
-              ))}
-              {!studyCard && podcasts.length === 0 && (
-                <p className="db-empty">Nothing to pick up yet.</p>
+              {pickup.tiles.length === 0 && (
+                <p className="db-empty">Nothing to study yet — check back soon.</p>
               )}
             </div>
           </section>
@@ -456,7 +660,12 @@ export default function Dashboard() {
                       <LangIcon /> {t.languages_spoken || 'Chinese (Mandarin)'}
                     </span>
                     <span className="db-teacher-meta">
-                      <StarIcon /> {PLACEHOLDER_TEACHER.rating} Rating
+                      {/* No reviews yet reads as "New", not 0 — a zero looks
+                          like a terrible score rather than an absent one. */}
+                      <StarIcon />{' '}
+                      {t.reviews_avg_rating != null
+                        ? `${t.reviews_avg_rating} Rating`
+                        : 'New tutor'}
                     </span>
                   </Link>
                 ))}
@@ -519,15 +728,45 @@ export default function Dashboard() {
         {/* ================= right rail ================= */}
         <aside className="db-panel db-rail">
           <section className="db-section">
-            <SectionHead title="My Course" />
-            <div className="db-course" title="Course scheduling is not built yet">
-              <span className="db-course-thumb" />
-              <span className="db-course-body">
-                <span className="db-course-title">{PLACEHOLDER_COURSE.title}</span>
-                <span className="db-course-time">{PLACEHOLDER_COURSE.time}</span>
-              </span>
-              <ChevronRight />
-            </div>
+            {/* "My Learning", not "My Courses" or "My Tutors".
+                A student's relationship with a tutor runs through two different
+                shapes — a private lesson they scheduled and a group course they
+                joined — and this answers one question across both: what am I
+                learning, and when do I turn up? "Courses" would drop every
+                private lesson; "Tutors" would name a person when what is needed
+                is a time. */}
+            <SectionHead title="My Learning" />
+
+            {learning.length === 0 ? (
+              <div className="db-course-empty">
+                <p>No upcoming lessons</p>
+                <Link to="/find-tutor">Explore tutors →</Link>
+              </div>
+            ) : (
+              learning.map((item) => (
+                <Link key={item.key} to={item.href} className="db-course">
+                  {/* The tutor's own photo — real data, and it answers "who am
+                      I learning with" at a glance. Falls back to the plain
+                      cover block only when that tutor has no photo. */}
+                  <span className="db-course-thumb">
+                    {item.image_url && <img src={item.image_url} alt="" />}
+                  </span>
+                  <span className="db-course-body">
+                    <span className="db-course-title">{item.title}</span>
+                    {/* Who and which kind, on one quiet line. */}
+                    <span className="db-course-who">
+                      {[item.tutor, item.kind === 'group' ? 'Group' : 'Private']
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                    <span className="db-course-time">
+                      {whenLabel(item.starts_at, item.ends_at)}
+                    </span>
+                  </span>
+                  <ChevronRight />
+                </Link>
+              ))
+            )}
           </section>
 
           <section className="db-section db-section-last">
@@ -554,28 +793,43 @@ export default function Dashboard() {
                     percentages resolve against different heights and the rule
                     lands off the bar it is meant to touch. */}
                 <div className="db-plot">
-                  {/* Marks the best day, sitting on top of that bar and
-                      labelled with its time. It used to mark the average,
-                      which on a real week — one busy day, six quiet ones —
-                      put it near the floor and read as a broken chart. */}
+                  {/* Marks the weekly average, sitting below the tallest bar
+                      as the design draws it. Known trade-off: on a lopsided
+                      week — one busy day, six quiet ones — the average lands
+                      near the floor, which is why this briefly marked the peak
+                      instead. The dark peak bar is what identifies the best
+                      day now. */}
                   {hasActivity && (
-                    <span className="db-chart-mark" style={{ bottom: `${pct(maxSeconds)}%` }}>
-                      <span className="db-chart-mark-chip">{readDuration(maxSeconds)}</span>
+                    <span className="db-chart-mark" style={{ bottom: `${pct(avgSeconds)}%` }}>
+                      <span className="db-chart-mark-chip">{readDuration(avgSeconds)}</span>
                     </span>
                   )}
 
-                  {activityDays.map((d) => (
-                    <span className="db-chart-col" key={d.date}>
-                      <span
-                        className={
-                          'db-chart-bar' + (hasActivity && d.date === peakDay?.date ? ' peak' : '')
-                        }
-                        style={{ height: `${pct(d.seconds)}%` }}
-                        title={`${readDuration(d.seconds)} on ${d.date}`}
-                      />
-                      <span className="db-chart-day">{d.label}</span>
-                    </span>
-                  ))}
+                  {activityDays.map((d) => {
+                    const height = pct(d.seconds)
+                    return (
+                      <span className="db-chart-col" key={d.date}>
+                        {/* Sits just above its own bar, clamped so the peak's
+                            label stays inside the plot instead of colliding
+                            with the total above it. A styled readout rather
+                            than `title`, which takes a second to appear and
+                            cannot be positioned. */}
+                        <span
+                          className="db-chart-tip"
+                          style={{ bottom: `calc(min(${height}%, 100% - 30px) + 6px)` }}
+                        >
+                          {d.label} · {readDuration(d.seconds)}
+                        </span>
+                        <span
+                          className={
+                            'db-chart-bar' + (hasActivity && d.date === peakDay?.date ? ' peak' : '')
+                          }
+                          style={{ height: `${height}%` }}
+                        />
+                        <span className="db-chart-day">{d.label}</span>
+                      </span>
+                    )
+                  })}
                 </div>
               </div>
 

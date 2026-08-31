@@ -1,0 +1,41 @@
+/* The password show/hide mark. Prefix `eye-`.
+
+   Colour comes from `currentColor`, so each page's toggle button sets it and
+   this file never needs to know which form it is in. */
+
+.eye {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* A squeeze, played once, when the icon is toggled.
+
+     The keyframes deliberately START and END at rest. A CSS animation only
+     advances while the tab composites frames, so one that began at a scaled or
+     transparent value would be stranded there in a backgrounded tab — the same
+     trap that left the account popover invisible and the quiz's verdict glow
+     unpainted. Frozen at 0%, this is simply the icon at its normal size, which
+     is exactly right. */
+  animation: eye-blink 0.26s ease-out;
+}
+
+@keyframes eye-blink {
+  0% {
+    transform: scaleY(1);
+  }
+  /* Squashed like a blink rather than uniformly scaled — the mark is an eye,
+     and closing vertically is the movement an eye actually makes. */
+  45% {
+    transform: scaleY(0.35);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+/* Someone who has asked for less motion gets none. The icon still swaps state,
+   because that was never the animation's job. */
+@media (prefers-reduced-motion: reduce) {
+  .eye {
+    animation: none;
+  }
+}

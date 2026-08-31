@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { exampleFor } from '../sentence'
 import WordPopover from '../components/WordPopover'
 import ImageCropper from '../components/ImageCropper'
 import './PodcastEpisode.css'
@@ -68,6 +69,11 @@ export default function PodcastEpisode() {
   const [saved, setSaved] = useState({})
   const [hovered, setHovered] = useState(null)
   const hoveredWordRef = useRef(null)
+  /* The Alt+1 listener subscribes once (deps `[token]`), so its handler closes
+     over the FIRST render where `podcast` is still null. Reading the episode
+     off a ref is what keeps the saved word's source from silently going
+     missing — same trick as `hoveredWordRef`. */
+  const podcastRef = useRef(null)
 
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(false)
@@ -79,6 +85,11 @@ export default function PodcastEpisode() {
   const [level, setLevel] = useState('Beginner')
   const [bio, setBio] = useState('')
   const [transcript, setTranscript] = useState('')
+  const [transcriptEn, setTranscriptEn] = useState('')
+  /* Two independent switches, mirroring the reader: the Chinese never leaves
+     the page — turning an aid on ADDS to it rather than replacing it. */
+  const [showPinyin, setShowPinyin] = useState(false)
+  const [showTranslation, setShowTranslation] = useState(false)
   const [audio, setAudio] = useState(null)
   const [image, setImage] = useState(null)
   const [cropSource, setCropSource] = useState(null)
@@ -102,22 +113,35 @@ export default function PodcastEpisode() {
       .getPodcast(token, id)
       .then((data) => {
         setPodcast(data)
+        podcastRef.current = data
         setTitle(data.title)
         setLevel(data.level || 'Beginner')
         setBio(data.bio || '')
         setTranscript(data.transcript)
+        setTranscriptEn(data.transcript_en || '')
+        // Record the visit so the Dashboard's "Pick up where you left off"
+        // row can point back here. Fire-and-forget: a failure must not stop
+        // the page rendering, and there is nothing useful to tell the user.
+        api.recordView(token, 'podcast', id).catch(() => {})
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }
 
   async function handleSaveWord(word) {
+    // Off the ref, not the state — see the note on `podcastRef`.
+    const current = podcastRef.current
     try {
       await api.addFlashcard(token, {
         word: word.text,
         pinyin: word.pinyin,
         translation: word.translation,
         source_module: 'podcast',
+        // Which episode, and the transcript line it was in — so the bank can
+        // point back at the thing this word was actually heard in.
+        source_type: 'podcast',
+        source_id: current?.id,
+        example: exampleFor(current?.tokens, word),
       })
       setLastSaved(word.text)
       setSaved((prev) => ({ ...prev, [word.text]: true }))
@@ -184,7 +208,7 @@ export default function PodcastEpisode() {
     setError(null)
     setSubmitting(true)
     try {
-      await api.updatePodcast(token, id, { title, level, bio, transcript, audio, image })
+      await api.updatePodcast(token, id, { title, level, bio, transcript, transcriptEn, audio, image })
       setEditing(false)
       setAudio(null)
       setImage(null)
@@ -211,6 +235,9 @@ export default function PodcastEpisode() {
 
   const author = podcast.user?.name || ''
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  /* Chinese-only episodes stay valid: the Translation switch renders disabled
+     with a reason rather than opening onto a blank pane. */
+  const hasEnglish = Boolean(podcast.transcript_en && podcast.transcript_en.trim())
 
   return (
     <div className="pe">
@@ -336,6 +363,16 @@ export default function PodcastEpisode() {
             <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={8} required />
           </div>
           <div>
+            {/* Optional, exactly like an article's English body: without it the
+                episode is Chinese-only and the Translation switch stays off. */}
+            <label>English transcript (optional)</label>
+            <textarea
+              value={transcriptEn}
+              onChange={(e) => setTranscriptEn(e.target.value)}
+              rows={6}
+            />
+          </div>
+          <div>
             <label>Replace audio</label>
             <input type="file" accept="audio/*" onChange={(e) => setAudio(e.target.files[0])} />
           </div>
@@ -366,13 +403,60 @@ export default function PodcastEpisode() {
         </form>
       ) : (
         <div className="pe-transcript-panel">
+          {/* The same two switches the reader has. Neither replaces the
+              Chinese — pinyin stacks above each word and the English sits
+              underneath as its own passage. */}
+          <div className="pe-aids">
+            <button
+              type="button"
+              className={'pe-switch' + (showPinyin ? ' on' : '')}
+              onClick={() => setShowPinyin((v) => !v)}
+              aria-pressed={showPinyin}
+            >
+              <span className="pe-switch-track">
+                <span className="pe-switch-knob" />
+              </span>
+              Pinyin
+            </button>
+
+            <button
+              type="button"
+              className={'pe-switch' + (showTranslation ? ' on' : '')}
+              onClick={() => setShowTranslation((v) => !v)}
+              disabled={!hasEnglish}
+              aria-pressed={showTranslation}
+              title={
+                hasEnglish
+                  ? 'Show the English translation'
+                  : 'No English transcript for this episode yet'
+              }
+            >
+              <span className="pe-switch-track">
+                <span className="pe-switch-knob" />
+              </span>
+              Translation
+            </button>
+
+            {!hasEnglish && (
+              <span className="pe-aids-note">
+                No English transcript for this episode yet.
+              </span>
+            )}
+          </div>
+
           <p className="pe-hint">Hover a word and press Alt+1 to save it to your flashcard bank.</p>
-          <p className="pe-transcript">
+          <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
             {podcast.tokens.map((tok, idx) =>
               tok.type === 'word' ? (
                 <span
                   key={idx}
-                  className={'pe-word' + (hovered?.tok === tok ? ' active' : '')}
+                  className={
+                    'pe-word' +
+                    // Keyed by the WORD, so every occurrence in the transcript
+                    // is marked, not only the one you pressed Alt+1 on.
+                    (saved[tok.text] ? ' saved' : '') +
+                    (hovered?.tok === tok ? ' active' : '')
+                  }
                   onMouseEnter={(e) => {
                     hoveredWordRef.current = tok
                     setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
@@ -382,13 +466,29 @@ export default function PodcastEpisode() {
                     setHovered((cur) => (cur?.tok === tok ? null : cur))
                   }}
                 >
-                  {tok.text}
+                  {/* Pinyin sits ABOVE the character, the way a textbook
+                      prints it. The hover handlers stay on this outer span, so
+                      Alt+1 keeps working with the ruby showing. */}
+                  {showPinyin && tok.pinyin && (
+                    <span className="pe-word-py">{tok.pinyin}</span>
+                  )}
+                  <span className="pe-word-hz">{tok.text}</span>
                 </span>
               ) : (
                 <span key={idx}>{tok.text}</span>
               )
             )}
           </p>
+
+          {/* `transcript_en` is one free-text block, not per-line pairs, so it
+              renders as its own passage under the Chinese rather than
+              pretending to be aligned line by line. */}
+          {showTranslation && hasEnglish && (
+            <div className="pe-translation">
+              <span className="pe-translation-label">English</span>
+              <p className="pe-translation-body">{podcast.transcript_en}</p>
+            </div>
+          )}
         </div>
       )}
 

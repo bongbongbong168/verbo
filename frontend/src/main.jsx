@@ -5,6 +5,9 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { applyAppScale } from './appScale'
 import './fonts.css'
+/* After fonts.css so it wins on equal specificity. Everything inside is scoped
+   to `max-width: 767px` — the desktop layout is untouched by it. */
+import './mobile.css'
 
 // Before render, so the app never paints at the wrong size and then jump.
 applyAppScale()

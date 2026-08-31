@@ -41,6 +41,17 @@ export function AuthProvider({ children }) {
     setUser(data.user)
   }
 
+  /* Sign in with a Google ID token. Deliberately the same three lines as
+     `login` rather than a different path into the session: however you got
+     here, "signed in" must mean exactly one thing, or the two ways in drift
+     and one of them ends up half-establishing a session. */
+  async function loginWithGoogle(credential) {
+    const data = await api.googleSignIn(credential)
+    localStorage.setItem('token', data.token)
+    setToken(data.token)
+    setUser(data.user)
+  }
+
   async function logout() {
     if (token) await api.logout(token).catch(() => {})
     localStorage.removeItem('token')
@@ -51,7 +62,9 @@ export function AuthProvider({ children }) {
   // setUser is exposed so Settings can push a renamed user back without a
   // refetch — the sidebar reads the same object.
   return (
-    <AuthContext.Provider value={{ token, user, setUser, loading, register, login, logout }}>
+    <AuthContext.Provider
+      value={{ token, user, setUser, loading, register, login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )

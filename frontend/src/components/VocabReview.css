@@ -1,0 +1,256 @@
+/* Review run over the Vocabulary Bank. Prefix `vr-`.
+   Verbo's palette: #a89ce3 filled, #6a6191 emphasis, #f1edfc pale,
+   #2b2643 stroke, #1c1730 text, #726c88 muted. */
+
+.vr-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: rgba(28, 23, 48, 0.42);
+  /* Static, never transitioned — a blur that only advances while the tab
+     composites would leave the page behind half-blurred if it stalled. */
+  backdrop-filter: blur(7px);
+  font-family: "Hellix", system-ui, sans-serif;
+}
+
+.vr {
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  padding: 1.4rem 1.6rem 1.6rem;
+  border: 1px solid #2b2643;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
+  color: #1c1730;
+}
+
+.vr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.vr-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.vr-close {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #726c88;
+  font-family: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vr-close:hover {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+/* Inset, because the fill sits in it like a groove. */
+.vr-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #f1edfc;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(28, 23, 48, 0.12);
+}
+
+.vr-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #7d76a0;
+}
+
+.vr-count {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #726c88;
+}
+
+.vr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.8rem 0 1.2rem;
+  padding: 2rem 1.4rem;
+  border: 1px solid #2b2643;
+  border-radius: 16px;
+  background: #f9f8fe;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(28, 23, 48, 0.06);
+}
+
+/* Hellix carries no CJK glyphs, so the Chinese has to fall through to a real
+   Chinese face rather than whatever the system picks first. */
+.vr-word {
+  margin: 0;
+  font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, sans-serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.vr-pinyin {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6a6191;
+}
+
+.vr-meaning {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.vr-example {
+  margin: 0.7rem 0 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid #e7e3f6;
+  font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1c1730;
+}
+
+.vr-source {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #726c88;
+}
+
+.vr-prompt {
+  margin: 0.6rem 0 0;
+  font-size: 0.86rem;
+  color: #726c88;
+}
+
+.vr-answers {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.vr-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #2b2643;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vr-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Instant on hover — the fill IS the feedback. */
+.vr-reveal {
+  background: #a89ce3;
+  border-color: #a89ce3;
+  color: #fff;
+}
+
+.vr-reveal:hover {
+  background: #6a6191;
+  border-color: #6a6191;
+}
+
+.vr-yes {
+  background: #e8f5ee;
+  color: #1f7a45;
+}
+
+.vr-yes:hover:not(:disabled) {
+  background: #1f7a45;
+  color: #fff;
+}
+
+.vr-no {
+  background: #fdeee6;
+  color: #b45b30;
+}
+
+.vr-no:hover:not(:disabled) {
+  background: #b45b30;
+  color: #fff;
+}
+
+.vr-btn kbd {
+  padding: 0.05rem 0.35rem;
+  border-radius: 5px;
+  background: rgba(28, 23, 48, 0.1);
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+.vr-prompt kbd {
+  padding: 0.05rem 0.35rem;
+  border-radius: 5px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.vr-done {
+  padding: 1.6rem 0 0.4rem;
+  text-align: center;
+}
+
+.vr-done-score {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #6a6191;
+}
+
+.vr-done-text {
+  margin: 0.4rem 0 1.3rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #726c88;
+}
+
+.vr-cta {
+  padding: 0.65rem 1.4rem;
+  border: none;
+  border-radius: 12px;
+  background: #a89ce3;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vr-cta:hover {
+  background: #6a6191;
+}

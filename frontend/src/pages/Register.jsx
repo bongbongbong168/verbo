@@ -3,10 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import verboLogo from '../assets/sidebar/logo.png'
 import feather from '../assets/signup/feather.png'
-import eyeIcon from '../assets/login/eye-icon.png'
-import socialFacebook from '../assets/login/social-facebook.png'
-import socialApple from '../assets/login/social-apple.png'
-import socialGoogle from '../assets/login/social-google.png'
+import EyeIcon from '../components/EyeIcon'
+import GoogleSignInButton, { googleConfigured } from '../components/GoogleSignInButton'
 import './Register.css'
 
 export default function Register() {
@@ -103,7 +101,7 @@ export default function Register() {
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                <img src={eyeIcon} alt="" />
+                <EyeIcon shown={showPassword} />
               </button>
             </div>
 
@@ -127,7 +125,7 @@ export default function Register() {
                 onClick={() => setShowConfirmPassword((v) => !v)}
                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
-                <img src={eyeIcon} alt="" />
+                <EyeIcon shown={showConfirmPassword} />
               </button>
             </div>
 
@@ -138,19 +136,22 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="su-or">or continue with</p>
-
-          <div className="su-social-row">
-            <button type="button" className="su-social-btn" disabled title="Coming soon">
-              <img src={socialFacebook} alt="Facebook" />
-            </button>
-            <button type="button" className="su-social-btn" disabled title="Coming soon">
-              <img src={socialApple} alt="Apple" />
-            </button>
-            <button type="button" className="su-social-btn" disabled title="Coming soon">
-              <img src={socialGoogle} alt="Google" />
-            </button>
-          </div>
+          {/* Google only — see the note on Login. Same endpoint as Login uses:
+              Google cannot tell the browser whether this person has been here
+              before, so one call both signs in and signs up. A new account
+              lands on /dashboard and ProtectedRoute sends it straight to
+              onboarding, exactly as an email sign-up does. */}
+          {googleConfigured && (
+            <>
+              <p className="su-or">
+                <span>or</span>
+              </p>
+              <GoogleSignInButton
+                onError={setError}
+                onSuccess={() => navigate('/dashboard')}
+              />
+            </>
+          )}
 
           <p className="su-login-link">
             Already have an account? <Link to="/login">Log in</Link>

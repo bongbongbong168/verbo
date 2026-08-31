@@ -1,0 +1,659 @@
+/* Profile page. Prefix `pf-`.
+   Same palette and geometry as the rest of the app: #f9f8fe ground, the 90px
+   side gutter, #2b2643 card stroke, #a89ce3 fills, #6a6191 emphasis, and the
+   Dashboard's 749 : 420 body split so the two pages sit together. */
+
+.pf {
+  --pf-bg: #f9f8fe;
+  --pf-card: #ffffff;
+  --pf-edge: #2b2643;
+  --pf-line: #e7e3f6;
+  --pf-well: #f1edfc;
+  --pf-fill: #a89ce3;
+  --pf-accent: #6a6191;
+  --pf-text: #1c1730;
+  --pf-muted: #726c88;
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 2rem 90px 3rem;
+  background: var(--pf-bg);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--pf-text);
+}
+
+/* The leading accent rule, same as the Messages and Dashboard headings. */
+.pf-title {
+  position: relative;
+  margin: 0 0 1.4rem;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.pf-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--pf-fill);
+}
+
+.pf-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  background: #fdecea;
+  color: #b3261e;
+  font-size: 0.88rem;
+}
+
+/* ---- hero ---- */
+
+.pf-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1.5rem 1.6rem;
+  border: 1px solid var(--pf-edge);
+  border-radius: 20px;
+  background: var(--pf-card);
+  box-shadow: 0 4px 14px rgba(28, 23, 48, 0.08);
+}
+
+.pf-avatar-link {
+  position: relative;
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+/* Only on hover — an always-on "Change" label would sit on the user's face
+   every time they looked at their own profile. */
+.pf-avatar-edit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.28rem 0;
+  background: rgba(28, 23, 48, 0.72);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  opacity: 0;
+}
+
+/* Instant: the label IS the affordance, and a transition that never gets a
+   frame would leave it invisible under the pointer. */
+.pf-avatar-link:hover .pf-avatar-edit,
+.pf-avatar-link:focus-visible .pf-avatar-edit {
+  opacity: 1;
+}
+
+.pf-avatar {
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: var(--pf-fill);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.pf-ident {
+  flex: 1;
+  min-width: 0;
+}
+
+.pf-name {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.pf-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--pf-accent);
+}
+
+.pf-admin {
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  background: var(--pf-edge);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pf-joined {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  color: var(--pf-muted);
+}
+
+.pf-edit {
+  flex: none;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--pf-edge);
+  border-radius: 10px;
+  background: var(--pf-fill);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Instant — the fill is the feedback. */
+.pf-edit:hover {
+  background: var(--pf-accent);
+}
+
+/* ---- body split, matching the Dashboard's 749 : 420 ---- */
+
+.pf-body {
+  display: grid;
+  grid-template-columns: minmax(0, 749fr) minmax(0, 420fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.pf-col,
+.pf-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.pf-card {
+  box-sizing: border-box;
+  padding: 1.3rem 1.4rem;
+  border: 1px solid var(--pf-line);
+  border-radius: 16px;
+  background: var(--pf-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+}
+
+.pf-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.pf-card-title {
+  margin: 0 0 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pf-muted);
+}
+
+.pf-card-head .pf-card-title {
+  margin: 0;
+}
+
+/* ---- learning progress ---- */
+
+/* Ring on the left, the facts it needs beside it on the right. The old
+   full-width bar spent the card's whole width on one number. */
+.pf-prog {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+}
+
+.pf-prog-facts {
+  display: flex;
+  flex-direction: column;
+  /* Without this a long level title sets the column's floor and pushes the
+     ring out of the card — the same min-width: auto trap the Dashboard's
+     pick-up row hit. */
+  min-width: 0;
+  flex: 1;
+}
+
+.pf-ring {
+  position: relative;
+  flex: none;
+  width: 104px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+}
+
+.pf-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pf-ring-track,
+.pf-ring-fill {
+  fill: none;
+  stroke-width: 9;
+}
+
+.pf-ring-track {
+  stroke: var(--pf-well);
+}
+
+/* Round caps so a small percentage still reads as a deliberate arc rather
+   than a chipped edge. No transition: the ring must be right on first paint,
+   and an animated one sits empty in a tab that never composites. */
+.pf-ring-fill {
+  stroke: var(--pf-fill);
+  stroke-linecap: round;
+}
+
+.pf-ring-pct {
+  position: relative;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--pf-text);
+}
+
+.pf-prog-level {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pf-accent);
+}
+
+.pf-prog-note {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--pf-muted);
+}
+
+/* ---- last 7 days ---- */
+
+.pf-week-strip {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pf-line);
+}
+
+.pf-week-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--pf-muted);
+}
+
+/* space-between, not a 7-column grid. With `minmax(0, 1fr)` columns each
+   circle sat at its cell's LEFT edge, so the row stopped a full circle short
+   of the card while the count tiles below ran edge to edge — measured 34px of
+   dead space. Fixed circles pushed apart line up with those tiles instead. */
+.pf-week-days {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* A circle per day. Static states — the tick and the fill ARE the record, and
+   nothing here may depend on a frame arriving. */
+.pf-day {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--pf-bg);
+  box-shadow: inset 0 0 0 1px var(--pf-line);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #a9a4bb;
+}
+
+.pf-day.on {
+  background: var(--pf-fill);
+  box-shadow: none;
+  color: #fff;
+}
+
+/* Today is ringed rather than ticked until it is earned, so the strip says
+   where you are as well as what you have done. Drawn as an inset shadow so
+   the circle does not grow and shunt the row. */
+.pf-day.today {
+  box-shadow: inset 0 0 0 2px var(--pf-accent);
+  color: var(--pf-accent);
+}
+
+/* An earned today keeps the ring AND the fill, so it does not lose its
+   position marker the moment it is completed. */
+.pf-day.today.on {
+  box-shadow: inset 0 0 0 2px var(--pf-accent);
+  color: #fff;
+}
+
+.pf-day svg {
+  width: 60%;
+  height: 60%;
+}
+
+.pf-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 0.7rem;
+}
+
+/* Without a level there is no ring beside them, so they spread. */
+.pf-metrics-wide {
+  gap: 12px;
+  margin-top: 1.1rem;
+}
+
+/* Number and label stacked on the left, the mark trailing on the right.
+   The mark goes last on purpose: these two tiles sit directly beside the ring,
+   and a leading icon would put a column of glyphs between the ring and the
+   numbers — the one run the eye needs kept clear. */
+.pf-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background: var(--pf-well);
+  min-width: 0;
+}
+
+.pf-metric-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Pushed to the far edge rather than sitting at the end of the text, so both
+   tiles' marks line up with each other however long the numbers are — "1h 44m"
+   and "3" are wildly different widths. */
+.pf-metric-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+}
+
+.pf-metric-mark svg {
+  width: 18px;
+  height: 18px;
+  color: var(--pf-accent);
+}
+
+/* The flame is the Dashboard's artwork, and a baked raster cannot be
+   recoloured — so a streak of zero greys it rather than tinting it, exactly as
+   the Dashboard badge does. */
+.pf-metric-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.pf-metric.hot .pf-metric-mark img {
+  opacity: 1;
+  filter: none;
+}
+
+.pf-metric-n {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--pf-text);
+}
+
+.pf-metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--pf-muted);
+}
+
+/* Without the ring beside them there is room to breathe. */
+.pf-metrics-wide .pf-metric {
+  padding: 0.75rem 0.9rem;
+}
+
+.pf-metrics-wide .pf-metric-n {
+  font-size: 1.15rem;
+}
+
+.pf-metrics-wide .pf-metric-label {
+  font-size: 0.8rem;
+}
+
+.pf-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pf-count {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--pf-line);
+  border-radius: 12px;
+  color: var(--pf-text);
+  text-decoration: none;
+  transition: transform 0.14s ease;
+}
+
+.pf-count:hover {
+  transform: translateY(-2px);
+  border-color: var(--pf-fill);
+}
+
+.pf-count-n {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--pf-accent);
+}
+
+.pf-count-label {
+  font-size: 0.76rem;
+  color: var(--pf-muted);
+}
+
+/* ---- lists (tutors, courses, account) ---- */
+
+.pf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 11px;
+  color: var(--pf-text);
+  text-decoration: none;
+}
+
+.pf-row:hover {
+  background: var(--pf-well);
+}
+
+/* No hover, no pointer: there is nothing behind this row yet. */
+.pf-row-off {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.pf-face {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--pf-well);
+}
+
+.pf-face-initial {
+  display: grid;
+  place-items: center;
+  color: var(--pf-accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pf-row-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pf-row-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  /* Long names fade rather than cutting to an ellipsis, matching the cards. */
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+}
+
+.pf-row-note {
+  margin-top: 0.1rem;
+  font-size: 0.78rem;
+  color: var(--pf-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent);
+}
+
+.pf-row svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--pf-muted);
+}
+
+/* The course's own week progress, shown inline on the row. */
+.pf-week {
+  flex: none;
+  width: 68px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pf-well);
+  overflow: hidden;
+}
+
+.pf-week-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pf-fill);
+}
+
+.pf-soon {
+  flex: none;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  background: #eeedf3;
+  color: #6b6780;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pf-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  align-self: flex-start;
+  padding: 0.35rem 0.6rem 0.35rem 0.75rem;
+  border-radius: 8px;
+  background: var(--pf-well);
+  color: var(--pf-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Instant, same as the Dashboard's "View all". */
+.pf-more:hover {
+  background: var(--pf-fill);
+  color: #fff;
+}
+
+.pf-more svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pf-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--pf-muted);
+}
+
+.pf-empty-tight {
+  margin-bottom: 0.9rem;
+}
+
+@media (max-width: 1100px) {
+  .pf-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .pf {
+    padding: 1.5rem 24px 2.5rem;
+  }
+
+  .pf-hero {
+    flex-wrap: wrap;
+  }
+}

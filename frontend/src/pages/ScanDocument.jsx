@@ -1,158 +1,203 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { api } from '../api'
-import WordPopover from '../components/WordPopover'
-import swooshLarge from '../assets/scan/swoosh-large.png'
-import swooshSmall from '../assets/scan/swoosh-small.png'
-import fileIcon from '../assets/scan/file-icon.png'
-import iconBell from '../assets/dashboard/icon-bell.png'
-import iconProfile from '../assets/dashboard/icon-profile.png'
-import './ScanDocument.css'
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../api";
+import { exampleFor } from "../sentence";
+import WordPopover from "../components/WordPopover";
+import swooshLarge from "../assets/scan/swoosh-large.png";
+import swooshSmall from "../assets/scan/swoosh-small.png";
+import fileIcon from "../assets/scan/file-icon.png";
+import PageTools from "../components/PageTools";
+import "./ScanDocument.css";
 
 function CopyIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="9" y="9" width="11" height="11" rx="2.5" />
       <path d="M15 5.5A2.5 2.5 0 0 0 12.5 3h-7A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15" />
     </svg>
-  )
+  );
 }
 
 function BookmarkIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M6 4h12v16l-6-4-6 4V4z" />
     </svg>
-  )
+  );
 }
 
 function TrashIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M4 7h16" />
       <path d="M9 7V5h6v2" />
       <path d="M6 7l1 13h10l1-13" />
       <path d="M10 11v6M14 11v6" />
     </svg>
-  )
+  );
 }
 
 // Kept local, like formatDate below — this codebase duplicates small
 // formatters per page rather than sharing a utils module.
 function formatBytes(bytes) {
-  const kb = bytes / 1024
-  if (kb < 1024) return `${Math.round(kb)} KB`
-  return `${(kb / 1024).toFixed(1)} MB`
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
 }
 
 function formatDate(value) {
-  if (!value) return ''
-  return new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function ScanDocument() {
-  const { id } = useParams()
-  const { token } = useAuth()
-  const navigate = useNavigate()
+  const { id } = useParams();
+  const { token } = useAuth();
+  const navigate = useNavigate();
 
-  const [scan, setScan] = useState(null)
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saved, setSaved] = useState({})
-  const [savingAll, setSavingAll] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [lastSaved, setLastSaved] = useState(null)
+  const [scan, setScan] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState({});
+  const [savingAll, setSavingAll] = useState(false);
+  /* The reading aid Read and Podcast both have. Adds pinyin above each word
+     rather than replacing anything — the characters never leave the page. */
+  const [showPinyin, setShowPinyin] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
   // Tracked in a ref, not state, so the single keydown listener always reads
   // the current word without re-subscribing on every hover. The state below is
   // only what the popover needs to paint.
-  const hoveredWordRef = useRef(null)
-  const [hovered, setHovered] = useState(null)
+  const hoveredWordRef = useRef(null);
+  /* Same reason: the Alt+1 listener subscribes once (deps `[token]`) and its
+     handler closes over the FIRST render, where `scan` is still null. Without
+     this the saved word would lose the document it came from. */
+  const scanRef = useRef(null);
+  const [hovered, setHovered] = useState(null);
 
   useEffect(() => {
-    setLoading(true)
+    setLoading(true);
     api
       .getScan(token, id)
-      .then(setScan)
+      .then((data) => {
+        setScan(data);
+        scanRef.current = data;
+      })
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [token, id])
+      .finally(() => setLoading(false));
+  }, [token, id]);
 
   // The popover is positioned `fixed` against a rect captured on hover, so a
   // scroll would leave it stranded next to the wrong word. Drop it instead.
   useEffect(() => {
-    if (!hovered) return
+    if (!hovered) return;
 
     function drop() {
-      hoveredWordRef.current = null
-      setHovered(null)
+      hoveredWordRef.current = null;
+      setHovered(null);
     }
 
-    window.addEventListener('scroll', drop, true)
-    return () => window.removeEventListener('scroll', drop, true)
-  }, [hovered])
+    window.addEventListener("scroll", drop, true);
+    return () => window.removeEventListener("scroll", drop, true);
+  }, [hovered]);
 
   // Disarm on a timer rather than on blur: a destructive control must not stay
   // armed indefinitely, and blur never fires if focus never landed on it.
   useEffect(() => {
-    if (!confirmingDelete) return
-    const t = setTimeout(() => setConfirmingDelete(false), 4000)
-    return () => clearTimeout(t)
-  }, [confirmingDelete])
+    if (!confirmingDelete) return;
+    const t = setTimeout(() => setConfirmingDelete(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingDelete]);
 
   // One saver for both entry points — the Save buttons in the aside and the
   // Alt+1 shortcut over the text — so `saved` is keyed by the word itself and
   // a hover-save also flips the matching row in the list to "Saved".
-  async function saveWord({ text, pinyin, translation }) {
+  async function saveWord(entry) {
+    const { text, pinyin, translation } = entry;
+    // Off the ref, not the state — see the note on `scanRef`.
+    const current = scanRef.current;
     try {
       await api.addFlashcard(token, {
         word: text,
         pinyin,
         translation,
-        source_module: 'scan',
-      })
-      setSaved((prev) => ({ ...prev, [text]: true }))
-      setLastSaved(text)
+        source_module: "scan",
+        // Which document, and the line it was in. `exampleFor` falls back to
+        // matching by text, so the aside's Save buttons — which hand over a
+        // row from the word LIST rather than a token from the text — keep
+        // their context too.
+        source_type: "scan",
+        source_id: current?.id,
+        example: exampleFor(current?.tokens, entry),
+      });
+      setSaved((prev) => ({ ...prev, [text]: true }));
+      setLastSaved(text);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     }
   }
 
   useEffect(() => {
     function handleKeyDown(e) {
-      if (e.altKey && e.key === '1') {
-        const word = hoveredWordRef.current
+      if (e.altKey && e.key === "1") {
+        const word = hoveredWordRef.current;
         if (word) {
-          e.preventDefault()
-          saveWord(word)
+          e.preventDefault();
+          saveWord(word);
         }
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [token])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [token]);
 
   // Saved sequentially rather than with Promise.all: the flashcard endpoint
   // shares the 300/min bucket, and a long word list fired at once is exactly
   // the burst that used to trip it.
   async function handleSaveAll() {
-    if (!scan) return
-    setSavingAll(true)
-    setError(null)
+    if (!scan) return;
+    setSavingAll(true);
+    setError(null);
     try {
       for (const word of scan.words) {
-        if (saved[word.word]) continue
-        await saveWord({ text: word.word, pinyin: word.pinyin, translation: word.translation })
+        if (saved[word.word]) continue;
+        await saveWord({
+          text: word.word,
+          pinyin: word.pinyin,
+          translation: word.translation,
+        });
       }
     } finally {
-      setSavingAll(false)
+      setSavingAll(false);
     }
   }
 
@@ -160,41 +205,41 @@ export default function ScanDocument() {
   // and the OCR pass that produced it is not cheap to repeat.
   async function handleDelete() {
     if (!confirmingDelete) {
-      setConfirmingDelete(true)
-      return
+      setConfirmingDelete(true);
+      return;
     }
 
-    setDeleting(true)
-    setError(null)
+    setDeleting(true);
+    setError(null);
     try {
-      await api.deleteScan(token, id)
-      navigate('/scan')
+      await api.deleteScan(token, id);
+      navigate("/scan");
     } catch (err) {
-      setError(err.message)
-      setDeleting(false)
-      setConfirmingDelete(false)
+      setError(err.message);
+      setDeleting(false);
+      setConfirmingDelete(false);
     }
   }
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(scan?.raw_text || '')
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
+      await navigator.clipboard.writeText(scan?.raw_text || "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError('Could not copy to the clipboard.')
+      setError("Could not copy to the clipboard.");
     }
   }
 
-  if (loading) return <p className="sd-empty">Loading...</p>
-  if (error && !scan) return <p className="sd-error">{error}</p>
-  if (!scan) return null
+  if (loading) return <p className="sd-empty">Loading...</p>;
+  if (error && !scan) return <p className="sd-error">{error}</p>;
+  if (!scan) return null;
 
-  const name = scan.original_filename || `Scan #${scan.id}`
-  const text = scan.raw_text || ''
-  const tokens = scan.tokens || []
-  const charCount = text.replace(/\s/g, '').length
-  const unsavedCount = scan.words.filter((w) => !saved[w.word]).length
+  const name = scan.original_filename || `Scan #${scan.id}`;
+  const text = scan.raw_text || "";
+  const tokens = scan.tokens || [];
+  const charCount = text.replace(/\s/g, "").length;
+  const unsavedCount = scan.words.filter((w) => !saved[w.word]).length;
 
   return (
     <div className="sd">
@@ -206,17 +251,16 @@ export default function ScanDocument() {
         </nav>
 
         <div className="sd-topbar-icons">
-          <button type="button" className="sd-icon-btn" aria-label="Notifications">
-            <img src={iconBell} alt="" />
-          </button>
-          <button type="button" className="sd-icon-btn" aria-label="Profile">
-            <img src={iconProfile} alt="" />
-          </button>
+          <PageTools />
         </div>
       </div>
 
       {error && <p className="sd-error">{error}</p>}
-      {lastSaved && <p className="sd-saved-note">Saved &ldquo;{lastSaved}&rdquo; to flashcards.</p>}
+      {lastSaved && (
+        <p className="sd-saved-note">
+          Saved &ldquo;{lastSaved}&rdquo; to flashcards.
+        </p>
+      )}
 
       {/* Dark hero, same shell as the upload card on the Scan index */}
       <header className="sd-hero">
@@ -248,9 +292,14 @@ export default function ScanDocument() {
           </div>
 
           <div className="sd-hero-actions">
-            <button type="button" className="sd-btn" onClick={handleCopy} disabled={!text}>
+            <button
+              type="button"
+              className="sd-btn"
+              onClick={handleCopy}
+              disabled={!text}
+            >
               <CopyIcon />
-              {copied ? 'Copied' : 'Copy text'}
+              {copied ? "Copied" : "Copy text"}
             </button>
             <button
               type="button"
@@ -260,19 +309,25 @@ export default function ScanDocument() {
             >
               <BookmarkIcon />
               {savingAll
-                ? 'Saving...'
+                ? "Saving..."
                 : unsavedCount === 0
-                ? 'All saved'
-                : `Save all ${unsavedCount}`}
+                  ? "All saved"
+                  : `Save all ${unsavedCount}`}
             </button>
             <button
               type="button"
-              className={'sd-btn sd-btn-danger' + (confirmingDelete ? ' confirming' : '')}
+              className={
+                "sd-btn sd-btn-danger" + (confirmingDelete ? " confirming" : "")
+              }
               onClick={handleDelete}
               disabled={deleting}
             >
               <TrashIcon />
-              {deleting ? 'Deleting...' : confirmingDelete ? 'Confirm delete' : 'Delete'}
+              {deleting
+                ? "Deleting..."
+                : confirmingDelete
+                  ? "Confirm delete"
+                  : "Delete"}
             </button>
           </div>
         </div>
@@ -284,39 +339,67 @@ export default function ScanDocument() {
         <section className="sd-panel">
           <div className="sd-panel-head">
             <h2 className="sd-panel-title">Recognized text</h2>
+            {/* Pinyin only. There is no Translation switch here because a scan
+                has no authored English version to show — the words in the
+                aside carry their own meanings instead. */}
+            {tokens.length > 0 && (
+              <button
+                type="button"
+                className={"sd-switch" + (showPinyin ? " on" : "")}
+                onClick={() => setShowPinyin((v) => !v)}
+                aria-pressed={showPinyin}
+              >
+                <span className="sd-switch-track">
+                  <span className="sd-switch-knob" />
+                </span>
+                Pinyin
+              </button>
+            )}
             {tokens.length > 0 && (
               <span className="sd-hint">Hover a word, press Alt+1 to save</span>
             )}
           </div>
           {text ? (
-            <p className="sd-text">
+            <p className={"sd-text" + (showPinyin ? " sd-text-ruby" : "")}>
               {tokens.map((tok, idx) =>
-                tok.type === 'word' ? (
+                tok.type === "word" ? (
                   <span
                     key={idx}
                     className={
-                      'sd-token' +
-                      (saved[tok.text] ? ' saved' : '') +
-                      (hovered?.tok === tok ? ' active' : '')
+                      "sd-token" +
+                      (saved[tok.text] ? " saved" : "") +
+                      (hovered?.tok === tok ? " active" : "")
                     }
                     onMouseEnter={(e) => {
-                      hoveredWordRef.current = tok
-                      setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
+                      hoveredWordRef.current = tok;
+                      setHovered({
+                        tok,
+                        rect: e.currentTarget.getBoundingClientRect(),
+                      });
                     }}
                     onMouseLeave={() => {
-                      if (hoveredWordRef.current === tok) hoveredWordRef.current = null
-                      setHovered((cur) => (cur?.tok === tok ? null : cur))
+                      if (hoveredWordRef.current === tok)
+                        hoveredWordRef.current = null;
+                      setHovered((cur) => (cur?.tok === tok ? null : cur));
                     }}
                   >
-                    {tok.text}
+                    {/* Pinyin above the character, as a textbook prints it.
+                        The hover handlers stay on the outer span, so Alt+1
+                        keeps working with the ruby showing. */}
+                    {showPinyin && tok.pinyin && (
+                      <span className="sd-token-py">{tok.pinyin}</span>
+                    )}
+                    <span className="sd-token-hz">{tok.text}</span>
                   </span>
                 ) : (
                   <span key={idx}>{tok.text}</span>
-                )
+                ),
               )}
             </p>
           ) : (
-            <p className="sd-empty-inline">No text was detected in this image.</p>
+            <p className="sd-empty-inline">
+              No text was detected in this image.
+            </p>
           )}
         </section>
 
@@ -334,16 +417,26 @@ export default function ScanDocument() {
                 <li key={idx} className="sd-word">
                   <div className="sd-word-main">
                     <span className="sd-word-hanzi">{w.word}</span>
-                    {w.pinyin && <span className="sd-word-pinyin">{w.pinyin}</span>}
+                    {w.pinyin && (
+                      <span className="sd-word-pinyin">{w.pinyin}</span>
+                    )}
                   </div>
-                  {w.translation && <p className="sd-word-translation">{w.translation}</p>}
+                  {w.translation && (
+                    <p className="sd-word-translation">{w.translation}</p>
+                  )}
                   <button
                     type="button"
                     className="sd-word-save"
-                    onClick={() => saveWord({ text: w.word, pinyin: w.pinyin, translation: w.translation })}
+                    onClick={() =>
+                      saveWord({
+                        text: w.word,
+                        pinyin: w.pinyin,
+                        translation: w.translation,
+                      })
+                    }
                     disabled={saved[w.word]}
                   >
-                    {saved[w.word] ? 'Saved' : 'Save'}
+                    {saved[w.word] ? "Saved" : "Save"}
                   </button>
                 </li>
               ))}
@@ -352,7 +445,11 @@ export default function ScanDocument() {
         </aside>
       </div>
 
-      <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
+      <WordPopover
+        word={hovered?.tok}
+        rect={hovered?.rect}
+        saved={!!saved[hovered?.tok?.text]}
+      />
     </div>
-  )
+  );
 }

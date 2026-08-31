@@ -10,11 +10,17 @@ use Illuminate\Support\Facades\Schema;
  * table could not express: a prose `description` paragraph above the structure,
  * and examples as Chinese / pinyin / English rows rather than one text blob.
  *
- * Dropping the legacy `examples` column is done by rebuilding the table in raw
- * SQL: this machine runs SQLite 3.33 (native ALTER TABLE DROP COLUMN landed in
- * 3.35) and doctrine/dbal — which Laravel's dropColumn needs on SQLite — is not
- * installed. Legacy text is carried over into the new table first so no
- * authored content is lost.
+ * Dropping the legacy `examples` column takes two different routes, because the
+ * table rebuild below is a SQLITE WORKAROUND, not the natural way to do this:
+ * this machine runs SQLite 3.33 (native ALTER TABLE DROP COLUMN landed in 3.35)
+ * and doctrine/dbal — which Laravel's dropColumn needs on SQLite — is not
+ * installed. Legacy text is carried over first either way, so no authored
+ * content is lost.
+ *
+ * Every other engine, Postgres included, can simply alter the table. The raw
+ * DDL is SQLite-only dialect (`autoincrement`, `datetime`) and fails outright on
+ * Postgres, so keeping it unconditional would have made this the one migration
+ * blocking a move to Supabase.
  */
 return new class extends Migration
 {
@@ -26,22 +32,31 @@ return new class extends Migration
             ->where('examples', '<>', '')
             ->pluck('examples', 'id');
 
-        // 2. Rebuild study_grammar_points: + description, - examples.
-        DB::statement('CREATE TABLE study_grammar_points_new (
-            id integer not null primary key autoincrement,
-            study_unit_id integer not null,
-            title varchar not null,
-            description text null,
-            structure text null,
-            created_at datetime null,
-            updated_at datetime null
-        )');
-        DB::statement('INSERT INTO study_grammar_points_new
-            (id, study_unit_id, title, structure, created_at, updated_at)
-            SELECT id, study_unit_id, title, structure, created_at, updated_at
-            FROM study_grammar_points');
-        DB::statement('DROP TABLE study_grammar_points');
-        DB::statement('ALTER TABLE study_grammar_points_new RENAME TO study_grammar_points');
+        // 2. study_grammar_points: + description, - examples.
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('CREATE TABLE study_grammar_points_new (
+                id integer not null primary key autoincrement,
+                study_unit_id integer not null,
+                title varchar not null,
+                description text null,
+                structure text null,
+                created_at datetime null,
+                updated_at datetime null
+            )');
+            DB::statement('INSERT INTO study_grammar_points_new
+                (id, study_unit_id, title, structure, created_at, updated_at)
+                SELECT id, study_unit_id, title, structure, created_at, updated_at
+                FROM study_grammar_points');
+            DB::statement('DROP TABLE study_grammar_points');
+            DB::statement('ALTER TABLE study_grammar_points_new RENAME TO study_grammar_points');
+        } else {
+            Schema::table('study_grammar_points', function (Blueprint $table) {
+                $table->text('description')->nullable()->after('title');
+            });
+            Schema::table('study_grammar_points', function (Blueprint $table) {
+                $table->dropColumn('examples');
+            });
+        }
 
         // 3. Structured examples, one row per sentence.
         Schema::create('study_grammar_examples', function (Blueprint $table) {
@@ -87,21 +102,32 @@ return new class extends Migration
 
         Schema::dropIfExists('study_grammar_examples');
 
-        DB::statement('CREATE TABLE study_grammar_points_old (
-            id integer not null primary key autoincrement,
-            study_unit_id integer not null,
-            title varchar not null,
-            structure text null,
-            examples text null,
-            created_at datetime null,
-            updated_at datetime null
-        )');
-        DB::statement('INSERT INTO study_grammar_points_old
-            (id, study_unit_id, title, structure, created_at, updated_at)
-            SELECT id, study_unit_id, title, structure, created_at, updated_at
-            FROM study_grammar_points');
-        DB::statement('DROP TABLE study_grammar_points');
-        DB::statement('ALTER TABLE study_grammar_points_old RENAME TO study_grammar_points');
+        // Same split as `up()` — the rebuild is the SQLite workaround, not the
+        // default path.
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('CREATE TABLE study_grammar_points_old (
+                id integer not null primary key autoincrement,
+                study_unit_id integer not null,
+                title varchar not null,
+                structure text null,
+                examples text null,
+                created_at datetime null,
+                updated_at datetime null
+            )');
+            DB::statement('INSERT INTO study_grammar_points_old
+                (id, study_unit_id, title, structure, created_at, updated_at)
+                SELECT id, study_unit_id, title, structure, created_at, updated_at
+                FROM study_grammar_points');
+            DB::statement('DROP TABLE study_grammar_points');
+            DB::statement('ALTER TABLE study_grammar_points_old RENAME TO study_grammar_points');
+        } else {
+            Schema::table('study_grammar_points', function (Blueprint $table) {
+                $table->text('examples')->nullable();
+            });
+            Schema::table('study_grammar_points', function (Blueprint $table) {
+                $table->dropColumn('description');
+            });
+        }
 
         foreach ($blobs as $pointId => $text) {
             DB::table('study_grammar_points')->where('id', $pointId)->update(['examples' => $text]);

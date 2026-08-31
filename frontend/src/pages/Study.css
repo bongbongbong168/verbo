@@ -1,17 +1,17 @@
 .st {
-  --st-bg: #f9f8ff;
+  --st-bg: #f9f8fe;
   --st-card: #ffffff;
   --st-border: #e7e3f6;
   --st-outline: #2b2643;
-  --st-accent: #6c4fd1;
-  --st-accent-light: #8b6ff0;
+  --st-accent: #6a6191;
+  --st-accent-light: #a89ce3;
   --st-text: #1c1730;
   --st-text-muted: #726c88;
 
   background: var(--st-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--st-text);
 }
@@ -77,7 +77,9 @@
   border-radius: 11px;
   padding: 0.65rem 1.8rem;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .st-toggle-item.active {
@@ -134,18 +136,18 @@
   /* Every card eases on the same curve, so they sweep as one mechanism, and
      transform and opacity share a duration so the fade cannot land early.
 
-     The curve is taken from the reference animation rather than picked by
-     feel: tracking its frame-to-frame motion gave a sharp symmetric velocity
-     profile peaking at ~2.9x the average speed, which rules out linear (1.0)
-     and sine (1.6) and sits between a quart and quint ease-in-out. The curve
-     is what carries the character, so it is kept exactly.
+     Both values come from `.st-stage`, which sets them per SOURCE of the move:
+     0.42s ease-out when the user is driving, 0.8s when it is rotating on its
+     own. See the note there.
 
-     The duration is deliberately shorter than the reference's 1.75s — that
-     reads well on an ambient showcase but drags on a control you click. The
-     still hold between steps comes from ADVANCE_EVERY_MS in Study.jsx. */
+     This replaced a single 1.15s easeInOutQuint (0.83, 0, 0.17, 1) taken from
+     a reference animation. That curve is almost flat for its first third, so a
+     click produced a visible beat of nothing before the card moved — it read
+     as lag, not as easing. The fallbacks below only apply if the stage's
+     variables are ever missing. */
   transition:
-    transform 1.15s cubic-bezier(0.83, 0, 0.17, 1),
-    opacity 1.15s cubic-bezier(0.83, 0, 0.17, 1);
+    transform var(--st-move, 0.8s) var(--st-ease, cubic-bezier(0.65, 0, 0.35, 1)),
+    opacity var(--st-move, 0.8s) var(--st-ease, cubic-bezier(0.65, 0, 0.35, 1));
 
   /* Keep each card on its own compositor layer: without this the browser
      re-rasterises the scaled cover art every frame, which is what makes a
@@ -213,7 +215,9 @@
   color: var(--st-text-muted);
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .st-arrow:hover {
@@ -243,7 +247,9 @@
   padding: 0;
   background: #cdc7e4;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .st-dot:hover {

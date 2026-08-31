@@ -1,0 +1,196 @@
+/* Tutor price list. Prefix `tl-`.
+   Built from the supplied reference: a white card, a Private / Group toggle,
+   deep-purple rows carrying a lighter price pill, and a dot strip beneath.
+   Colours are the app's own — #6a6191 rows, #a89ce3 price pills — rather than
+   sampled greys, so the card sits with the rest of the tutor page. */
+
+.tl {
+  --tl-row: #6a6191;
+  --tl-pill: #a89ce3;
+  --tl-soft: #f1edfc;
+  --tl-edge: #2b2643;
+  --tl-border: #e7e3f6;
+  --tl-text: #1c1730;
+  --tl-muted: #726c88;
+
+  box-sizing: border-box;
+  padding: 1.3rem 1.4rem 1.1rem;
+  background: #fff;
+  border: 2px solid var(--tl-edge);
+  border-radius: 19px;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--tl-text);
+}
+
+.tl-title {
+  margin: 0 0 0.85rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+}
+
+/* ---- toggle ---- */
+
+.tl-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tl-tab {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--tl-soft);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tl-row);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tl-tab:hover:not(.active) {
+  background: #e7e0fa;
+}
+
+/* Static, not animated — the selected tab must be right on the first paint. */
+.tl-tab.active {
+  background: var(--tl-row);
+  color: #fff;
+}
+
+/* ---- rows ---- */
+
+.tl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.95rem 1.05rem;
+  border: none;
+  border-radius: 13px;
+  background: var(--tl-row);
+  font-family: inherit;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tl-row:hover {
+  background: #5c5480;
+}
+
+.tl-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.tl-row-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.tl-row-tag {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Italic, as in the reference — it reads as a caption under the name rather
+   than a second title. */
+.tl-row-note {
+  font-size: 0.83rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.tl-row-meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+/* Symmetric padding, and it is correct — verified, not assumed.
+
+   An asymmetric "optical correction" was tried here and REVERTED. It came from
+   centring the full ink box, which includes the tail of the `$`; that pushed
+   the text 1px high. Measured against the CAP BAND (cap top -> baseline), which
+   is what the eye actually reads and what this codebase's other corrections
+   use, an even 0.4rem lands the cap-band centre at 14.4 in a 28.8 pill —
+   exactly on centre, off by 0.00.
+
+   The reason the ink box is the wrong reference: a price with a descender in it
+   would demand a different correction from one without, so labels that should
+   look identical would not. */
+.tl-row-price {
+  flex: none;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--tl-pill);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- dot strip ---- */
+
+.tl-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 1rem auto 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--tl-soft);
+}
+
+.tl-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #c9c2de;
+  cursor: pointer;
+}
+
+/* The current page reads as a stretched pill, matching the reference. */
+.tl-dot.active {
+  width: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #c9c2de;
+}
+
+.tl-empty {
+  margin: 0;
+  padding: 0.4rem 0 0.6rem;
+  font-size: 0.9rem;
+  color: var(--tl-muted);
+}
+
+.tl-foot {
+  margin: 0.9rem 0 0;
+  font-size: 0.78rem;
+  color: var(--tl-muted);
+  text-align: center;
+}

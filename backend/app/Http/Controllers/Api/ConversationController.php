@@ -1,0 +1,377 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\CourseEnrollment;
+use App\Models\Notification;
+use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\Conversation;
+use App\Models\Course;
+use App\Models\Message;
+use App\Models\TutorProfile;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class ConversationController extends Controller
+{
+    /**
+     * Every thread this user may see, in two groups.
+     *
+     * Deliberately NOT a user directory — there is nobody to browse. You see a
+     * tutor thread because you asked or booked, and a course thread because you
+     * are enrolled. Student-to-student threads do not exist at all.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $tutorThreads = Conversation::where('type', Conversation::TYPE_TUTOR)
+            ->where(fn ($q) => $q->where('tutor_id', $user->id)->orWhere('student_id', $user->id))
+            ->with(['tutor:id,name', 'student:id,name'])
+            ->get();
+
+        $courseThreads = Conversation::where('type', Conversation::TYPE_COURSE)
+            ->whereIn('course_id', $this->courseIdsFor($user))
+            ->with('course.tutorProfile.user:id,name')
+            ->get();
+
+        return [
+            'tutors' => $tutorThreads->sortByDesc('last_message_at')->values()
+                ->map(fn ($c) => $this->summarise($c, $user)),
+            'courses' => $courseThreads->sortByDesc('last_message_at')->values()
+                ->map(fn ($c) => $this->summarise($c, $user)),
+        ];
+    }
+
+    /** Total unread, for the nav badge. */
+    public function unreadCount(Request $request)
+    {
+        $user = $request->user();
+
+        return [
+            'unread' => Message::whereIn('conversation_id', $this->readableIds($user))
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->count(),
+        ];
+    }
+
+    /**
+     * Open (or start) the thread with a tutor.
+     *
+     * firstOrCreate on the pair, so a second booking reuses the same thread
+     * rather than splitting the history in two. The unique index on
+     * (tutor_id, student_id) is what makes that true even under a race.
+     */
+    public function withTutor(Request $request, TutorProfile $tutorProfile)
+    {
+        $user = $request->user();
+        $tutorUserId = (int) $tutorProfile->user_id;
+
+        if ($tutorUserId === $user->id) {
+            return response()->json(['message' => 'You cannot message yourself.'], 422);
+        }
+
+        // A tutor who has switched off pre-booking questions is reachable only
+        // once a real booking exists between the two.
+        $hasBooking = Booking::where('tutor_id', $tutorUserId)
+            ->where('student_id', $user->id)
+            ->exists();
+
+        if (! $tutorProfile->allows_pre_booking_questions && ! $hasBooking) {
+            return response()->json([
+                'message' => 'This tutor only takes messages from students who have booked with them.',
+            ], 403);
+        }
+
+        $conversation = Conversation::firstOrCreate(
+            [
+                'type' => Conversation::TYPE_TUTOR,
+                'tutor_id' => $tutorUserId,
+                'student_id' => $user->id,
+            ],
+            ['last_message_at' => now()]
+        );
+
+        return $this->show($request, $conversation);
+    }
+
+    /** Open (or start) a course's group thread. */
+    public function forCourse(Request $request, Course $course)
+    {
+        $conversation = Conversation::firstOrCreate(
+            ['type' => Conversation::TYPE_COURSE, 'course_id' => $course->id],
+            ['last_message_at' => now()]
+        );
+
+        return $this->show($request, $conversation);
+    }
+
+    public function show(Request $request, Conversation $conversation)
+    {
+        $user = $request->user();
+        abort_unless($conversation->allows($user), 403);
+
+        // Opening the thread marks what you were sent as read.
+        $conversation->messages()
+            ->where('sender_id', '!=', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        $booking = $conversation->contextBooking();
+
+        return [
+            'id' => $conversation->id,
+            'type' => $conversation->type,
+            'title' => $this->titleFor($conversation, $user),
+            'profile_id' => optional($this->counterpartProfile($conversation, $user))->id,
+            'photo_url' => optional($this->counterpartProfile($conversation, $user))->photo_url,
+            'role_label' => $conversation->type === Conversation::TYPE_COURSE
+                ? 'Group course'
+                : ((int) $conversation->tutor_id === $user->id ? 'Student' : 'Chinese Teacher'),
+            'course' => $conversation->type === Conversation::TYPE_COURSE
+                ? $conversation->course?->only(['id', 'title', 'level', 'starts_on', 'ends_on'])
+                : null,
+            // The "why are we talking?" card at the top of the thread.
+            'booking' => $booking ? [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'starts_at' => $booking->starts_at,
+                'duration_minutes' => $booking->duration_minutes,
+                'lesson' => $booking->lesson?->only(['id', 'name', 'price']),
+            ] : null,
+            'messages' => $conversation->messages()
+                /* The sender's tutor profile comes along for `photo_url` —
+                   the only place a face is stored in this app. `user_id` and
+                   `photo_path` must both be selected: the first is the foreign
+                   key the relation matches on, the second is what the appended
+                   `photo_url` accessor reads. A student has no profile, so the
+                   photo is simply null and the row falls back to an initial. */
+                ->with(['sender:id,name,avatar_path', 'sender.tutorProfile:id,user_id,photo_path'])
+                ->orderBy('id')
+                ->get()
+                ->map(fn (Message $m) => [
+                    'id' => $m->id,
+                    'body' => $m->body,
+                    // 'event' is written by the app when a booking changes
+                    // state; the page draws it as a note, not a chat bubble.
+                    'kind' => $m->kind,
+                    'sender_id' => $m->sender_id,
+                    'sender_name' => $m->sender?->name,
+                    /* The account's own picture wins; a tutor's marketing photo
+                       is the fallback so seeded tutors still show a face. */
+                    'sender_photo_url' => $m->sender?->avatar_url
+                        ?? $m->sender?->tutorProfile?->photo_url,
+                    'mine' => (int) $m->sender_id === $user->id,
+                    'created_at' => $m->created_at,
+                    'read_at' => $m->read_at,
+                    // The file itself is fetched separately, through a route
+                    // that re-checks access — never a bare storage URL.
+                    'attachment' => $m->attachment_path ? [
+                        'name' => $m->attachment_name,
+                        'mime' => $m->attachment_mime,
+                        'size' => $m->attachment_size,
+                        'is_image' => $m->is_image,
+                    ] : null,
+                ]),
+        ];
+    }
+
+    public function send(Request $request, Conversation $conversation)
+    {
+        $user = $request->user();
+        abort_unless($conversation->allows($user), 403);
+
+        /*
+         * Either a body or a file — a picture on its own is a perfectly good
+         * message, so requiring text would be wrong. Validated by extension
+         * rather than sniffed mimetype: PHP's fileinfo reports some ordinary
+         * files with surprising types, which is the same trap podcast audio
+         * uploads hit.
+         */
+        $data = $request->validate([
+            'body' => ['nullable', 'string', 'max:4000'],
+            'file' => [
+                'nullable',
+                'file',
+                'max:10240',
+                'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,csv,xlsx,ppt,pptx',
+            ],
+        ]);
+
+        if (blank($data['body'] ?? null) && ! $request->hasFile('file')) {
+            return response()->json(['message' => 'Type a message or attach a file.'], 422);
+        }
+
+        $attachment = null;
+        if ($request->hasFile('file')) {
+            $upload = $request->file('file');
+            $attachment = [
+                // The PRIVATE disk. These are messages between two people, so a
+                // public URL anyone could guess would leak them.
+                'attachment_path' => $upload->store('chat'),
+                'attachment_name' => $upload->getClientOriginalName(),
+                'attachment_mime' => $upload->getClientMimeType(),
+                'attachment_size' => $upload->getSize(),
+            ];
+        }
+
+        $message = DB::transaction(function () use ($conversation, $user, $data, $attachment) {
+            $m = $conversation->messages()->create(array_merge([
+                'sender_id' => $user->id,
+                'body' => $data['body'] ?? '',
+            ], $attachment ?? []));
+
+            // Denormalised so the thread list can sort by recency without
+            // joining messages on every row.
+            $conversation->update(['last_message_at' => now()]);
+
+            return $m;
+        });
+
+        $this->notifyRecipients($conversation, $user, $data['body'] ?? '', $attachment !== null);
+
+        return response()->json($message->load('sender:id,name'), 201);
+    }
+
+    /**
+     * Tell the other side a message arrived.
+     *
+     * A tutor thread has exactly one recipient. A course thread has the tutor
+     * plus every live enrolment, so it fans out — but push() drops the sender,
+     * so nobody is told about their own message.
+     */
+    private function notifyRecipients(Conversation $conversation, $sender, string $body, bool $hasFile): void
+    {
+        // A file with no words would otherwise render an empty quote.
+        $preview = trim($body) !== ''
+            ? '"'.\Illuminate\Support\Str::limit(trim($body), 80).'"'
+            : ($hasFile ? 'Sent an attachment.' : '');
+
+        if ($conversation->type === Conversation::TYPE_COURSE) {
+            $recipients = CourseEnrollment::where('course_id', $conversation->course_id)
+                ->whereIn('status', ['held', 'confirmed'])
+                ->pluck('user_id')
+                ->push($conversation->tutor_id)
+                ->unique();
+
+            foreach ($recipients as $id) {
+                Notification::raise($id, $sender->id, 'message', [
+                    'title' => 'New message in '.(optional($conversation->course)->title ?? 'your course'),
+                    'body' => trim($sender->name.': '.$preview),
+                    'link' => '/messages',
+                ]);
+            }
+
+            return;
+        }
+
+        $recipient = (int) $conversation->tutor_id === (int) $sender->id
+            ? $conversation->student_id
+            : $conversation->tutor_id;
+
+        Notification::raise($recipient, $sender->id, 'message', [
+            'title' => 'New message',
+            'body' => trim($sender->name.': '.$preview),
+            'link' => '/messages',
+        ]);
+    }
+
+    /**
+     * Stream one attachment.
+     *
+     * Runs the SAME access check as the thread it belongs to, which is the
+     * whole reason these files sit on the private disk: a public URL would be
+     * readable by anyone who got hold of it, forever, with no way to revoke.
+     */
+    public function attachment(Request $request, Message $message)
+    {
+        abort_unless($message->conversation->allows($request->user()), 403);
+        abort_unless($message->attachment_path, 404);
+        abort_unless(Storage::exists($message->attachment_path), 404);
+
+        return Storage::response(
+            $message->attachment_path,
+            $message->attachment_name,
+            ['Content-Type' => $message->attachment_mime ?: 'application/octet-stream']
+        );
+    }
+
+    // ---- helpers -------------------------------------------------------
+
+    /**
+     * The other party's tutor profile, when there is one.
+     *
+     * Needed for the "View profile" button and the avatar. Looked up from the
+     * tutor side of the thread, not the viewer's — in a tutor thread the person
+     * you are looking at is whichever of the two you are not.
+     */
+    private function counterpartProfile(Conversation $c, User $user): ?TutorProfile
+    {
+        if ($c->type !== Conversation::TYPE_TUTOR) {
+            return $c->course?->tutorProfile;
+        }
+
+        // If I am the tutor, the other party is the student and has no profile.
+        if ((int) $c->tutor_id === $user->id) {
+            return null;
+        }
+
+        return TutorProfile::where('user_id', $c->tutor_id)->first();
+    }
+
+    private function titleFor(Conversation $c, User $user): ?string
+    {
+        if ($c->type === Conversation::TYPE_COURSE) {
+            return $c->course?->title;
+        }
+
+        return (int) $c->tutor_id === $user->id ? $c->student?->name : $c->tutor?->name;
+    }
+
+    private function summarise(Conversation $c, User $user): array
+    {
+        $booking = $c->type === Conversation::TYPE_TUTOR ? $c->contextBooking() : null;
+
+        return [
+            'id' => $c->id,
+            'type' => $c->type,
+            'title' => $this->titleFor($c, $user),
+            'photo_url' => optional($this->counterpartProfile($c, $user))->photo_url,
+            'subtitle' => $c->type === Conversation::TYPE_COURSE
+                ? $c->course?->liveEnrollments()->count().' students'
+                : null,
+            'last_message_at' => $c->last_message_at,
+            'preview' => optional($c->messages()->latest('id')->first())->body,
+            // Your own messages never count against you.
+            'unread' => $c->messages()
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->count(),
+            'booking' => $booking
+                ? ['id' => $booking->id, 'status' => $booking->status, 'starts_at' => $booking->starts_at]
+                : null,
+        ];
+    }
+
+    /** Courses this user is in, as tutor or as an enrolled student. */
+    private function courseIdsFor(User $user)
+    {
+        return Course::query()
+            ->whereHas('enrollments', fn ($q) => $q->where('user_id', $user->id)
+                ->whereIn('status', ['held', 'confirmed']))
+            ->orWhereHas('tutorProfile', fn ($q) => $q->where('user_id', $user->id))
+            ->pluck('id');
+    }
+
+    private function readableIds(User $user)
+    {
+        return Conversation::query()
+            ->where(fn ($q) => $q->where('tutor_id', $user->id)->orWhere('student_id', $user->id))
+            ->orWhereIn('course_id', $this->courseIdsFor($user))
+            ->pluck('id');
+    }
+}

@@ -1,11 +1,11 @@
 .rd {
-  --rd-bg: #f9f8ff;
+  --rd-bg: #f9f8fe;
   --rd-panel-bg: #ffffff;
-  --rd-card: #f9f8ff;
+  --rd-card: #f9f8fe;
   --rd-border: #e7e3f6;
   --rd-outline: #2b2643;
-  --rd-accent: #6c4fd1;
-  --rd-accent-light: #8b6ff0;
+  --rd-accent: #6a6191;
+  --rd-accent-light: #a89ce3;
   --rd-text: #1c1730;
   --rd-text-muted: #726c88;
   /* Tab-in for the pills and panel, measured from the Figma export */
@@ -14,8 +14,8 @@
   background: var(--rd-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
-  font-family: 'Hellix', system-ui, sans-serif;
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  font-family: "Hellix", system-ui, sans-serif;
   color: var(--rd-text);
 }
 
@@ -29,33 +29,24 @@
   margin-bottom: 1.4rem;
 }
 
+/* The `transform` here CREATES A STACKING CONTEXT, which traps the bell and
+   account popovers inside it — their own `z-index: 40` is then measured against
+   each other, not against the page. Without a z-index of its own this whole
+   box paints in the `z-index: auto` band, so any positioned element further
+   down the page (the Saved-articles bookmark did exactly this) lands on top of
+   an open popover.
+
+   50 sits above the page and below the modals — the word popover is 60, the
+   dialogs 60-95. Do not remove it while the transform is here. */
 .rd-topbar-icons {
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 0.6rem;
-}
-
-.rd-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
-.rd-icon-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .rd-divider {
@@ -76,7 +67,7 @@
 
 .rd-heading {
   position: relative;
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 700;
   font-size: 1.6rem;
   margin: 0;
@@ -84,7 +75,7 @@
 }
 
 .rd-heading::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 50%;
@@ -96,7 +87,7 @@
 }
 
 .rd-new-btn {
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.85rem;
   color: #fff;
@@ -138,7 +129,7 @@
   margin-bottom: 0.3rem;
 }
 
-.rd-form input[type='text'],
+.rd-form input[type="text"],
 .rd-form input:not([type]),
 .rd-form select,
 .rd-form textarea {
@@ -160,7 +151,7 @@
 }
 
 .rd-btn-primary {
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.9rem;
   color: #fff;
@@ -181,24 +172,40 @@
 
 /* Pills and panel are tabbed ~30px past the heading/divider, per the design.
    The heading stays at the outer edge so it anchors the section. */
+/* Filters left, the link out right. `align-items: center` rather than the
+   default stretch, so the saved link keeps its own height instead of being
+   pulled to the filter pills'. */
 .rd-filters {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.7rem;
   margin: 0 var(--rd-indent) 1.4rem var(--rd-indent);
 }
 
+.rd-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
 .rd-filter {
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.88rem;
   color: var(--rd-text);
   background: var(--rd-panel-bg);
   border: 1px solid var(--rd-border);
   border-radius: 10px;
-  padding: 0.5rem 1.1rem;
+  /* Asymmetric: symmetric padding centres the LINE BOX, and Hellix reserves
+     more ascent than these labels use, so the glyphs sat 1px low. Measured on
+     the cap band. Don't tidy it back to one value. */
+  padding: 7px 1.1rem 9px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .rd-filter:hover {
@@ -252,7 +259,7 @@
 }
 
 .rd-featured-title {
-  font-family: 'Hellix', 'Douyin Sans', sans-serif;
+  font-family: "Hellix", "Douyin Sans", sans-serif;
   font-weight: 700;
   font-size: 1.5rem;
   line-height: 1.3;
@@ -323,6 +330,946 @@
   gap: 1.1rem;
 }
 
+/* ============================================================
+   Read section: metadata, reading aids, interactions, comments
+   and recommendations. Same palette as the rest of the page —
+   #a89ce3 fills, #6a6191 emphasis, #f1edfc pale, #2b2643 stroke.
+   ============================================================ */
+
+/* ---- metadata chips ---- */
+
+.rd-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+
+.rd-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 7px;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The level is the one fact a learner scans for, so it takes the solid fill. */
+.rd-chip-level {
+  background: var(--rd-accent-light);
+  color: #fff;
+}
+
+.rd-chip-time {
+  background: transparent;
+  color: var(--rd-text-muted);
+  box-shadow: inset 0 0 0 1px var(--rd-border);
+}
+
+/* ---- reading aids ---- */
+
+.rd-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  background: #fbfaff;
+}
+
+.rd-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: calc(0.35rem - 1px) 0.75rem calc(0.35rem + 1px) 0.4rem;
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
+  border: 1px solid var(--rd-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--rd-text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Instant, not transitioned — the fill IS the on/off answer, and a transition
+   that never gets a frame would leave the switch looking dead. */
+.rd-switch.on {
+  border-color: var(--rd-accent-light);
+  background: #f1edfc;
+  color: var(--rd-accent);
+}
+
+.rd-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rd-switch-track {
+  display: block;
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: #e2dff0;
+}
+
+.rd-switch.on .rd-switch-track {
+  background: var(--rd-accent-light);
+}
+
+/* The knob's position is a static left, not a transform transition: it has to
+   be correct on the first paint. */
+.rd-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
+}
+
+.rd-switch.on .rd-switch-knob {
+  left: 15px;
+}
+
+.rd-controls-note {
+  font-size: 0.78rem;
+  color: var(--rd-text-muted);
+}
+
+/* ---- pinyin above the characters ---- */
+
+/* With pinyin on, each word becomes a two-line stack, so the run of text needs
+   to lay out as inline blocks rather than as one continuous line. */
+.rd-body-ruby {
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+}
+
+.rd-body-ruby .rd-word {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: bottom;
+  margin: 0 0.14em 0.35em;
+}
+
+.rd-word-py {
+  font-family: "Hellix", system-ui, sans-serif;
+  font-size: 0.62em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: var(--rd-accent);
+  white-space: nowrap;
+}
+
+/* The hover fill covers the whole stack, so the pinyin has to invert with it. */
+.rd-word:hover .rd-word-py,
+.rd-word.active .rd-word-py {
+  color: #fff;
+}
+
+/* ---- translation ---- */
+
+.rd-translation {
+  margin-top: 1.4rem;
+  padding: 1rem 1.1rem;
+  border-left: 3px solid var(--rd-accent-light);
+  border-radius: 0 12px 12px 0;
+  background: #fbfaff;
+}
+
+.rd-translation-label {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rd-translation-body {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: var(--rd-text);
+}
+
+/* ---- like / save / share ---- */
+
+.rd-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rd-border);
+}
+
+.rd-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--rd-text-muted);
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-act svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+/* Instant — the colour is the state, not an animation. */
+.rd-act:hover:not(:disabled) {
+  border-color: var(--rd-accent-light);
+  color: var(--rd-accent);
+}
+
+/* Liked is red because a heart is; saved is the theme lavender. Two different
+   states should not look like the same one. */
+.rd-act.liked {
+  border-color: #f0b3ad;
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.rd-act.saved,
+.rd-act.open {
+  border-color: var(--rd-accent-light);
+  background: #f1edfc;
+  color: var(--rd-accent);
+}
+
+.rd-act:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.rd-act-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  font-size: 0.83rem;
+  color: var(--rd-text-muted);
+}
+
+.rd-act-count svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.rd-act-note {
+  flex-basis: 100%;
+  margin: 0.6rem 0 0;
+  font-size: 0.84rem;
+  color: #b02a2a;
+}
+
+/* ---- share sheet ---- */
+
+.rd-share-wrap {
+  position: relative;
+}
+
+.rd-share {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: 310px;
+  box-sizing: border-box;
+  padding: 0.9rem;
+  border: 1px solid var(--rd-outline);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
+  /* A small nudge, never a big slide — a keyframe that starts far off would
+     strand the panel there in a tab that does not composite. */
+  animation: rd-pop 0.14s ease-out;
+}
+
+/* Transform ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames. A keyframe that
+   starts at `opacity: 0` leaves the panel FULLY TRANSPARENT if those frames
+   never arrive, which is exactly how the account popover came up invisible.
+   The movement is ornament; visibility must never depend on it. */
+@keyframes rd-pop {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.rd-share-title {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.rd-share-link {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.rd-share-link input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  background: #f9f8fe;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--rd-text-muted);
+  outline: none;
+}
+
+.rd-share-link button {
+  flex: none;
+  padding: 0.45rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--rd-accent-light);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-share-link button:hover {
+  background: var(--rd-accent);
+}
+
+.rd-share-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.rd-share-btn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--rd-accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rd-share-btn:hover {
+  background: #f1edfc;
+  border-color: var(--rd-accent-light);
+}
+
+/* ---- section headings shared by comments + recommendations ---- */
+
+.rd-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.rd-sec-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.rd-sec-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  bottom: 0.15em;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--rd-accent-light);
+}
+
+.rd-sec-count {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+/* ---- comments ---- */
+
+.rd-comments {
+  margin-top: 2rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--rd-border);
+}
+
+.rd-cm-new {
+  display: flex;
+  gap: 0.7rem;
+  margin-bottom: 1.4rem;
+}
+
+.rd-cm-new-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rd-cm-new textarea,
+.rd-cm-edit textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 11px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--rd-text);
+  resize: vertical;
+  outline: none;
+}
+
+.rd-cm-new textarea:focus,
+.rd-cm-edit textarea:focus {
+  border-color: var(--rd-accent-light);
+  background: #fff;
+}
+
+.rd-cm-send {
+  padding: calc(0.45rem - 1px) 1rem calc(0.45rem + 1px);
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
+  border: none;
+  border-radius: 9px;
+  background: var(--rd-accent-light);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-cm-send:hover:not(:disabled) {
+  background: var(--rd-accent);
+}
+
+.rd-cm-send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rd-cm-quiet {
+  padding: 0.45rem 0.7rem;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--rd-text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-cm-quiet:hover {
+  background: #f1edfc;
+  color: var(--rd-accent);
+}
+
+.rd-cm-list,
+.rd-cm-replies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rd-cm {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.8rem 0;
+}
+
+/* Replies are indented and carry a rule, so one level of nesting is obvious
+   without a second avatar size or a different card. */
+.rd-cm-replies {
+  margin-left: 1.6rem;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--rd-border);
+}
+
+.rd-cm-face {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.rd-cm-reply .rd-cm-face {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+.rd-cm-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rd-cm-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.rd-cm-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.rd-cm-time {
+  font-size: 0.74rem;
+  color: #9a95ab;
+}
+
+.rd-cm-text {
+  margin: 0.25rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rd-cm-tools {
+  display: flex;
+  gap: 0.15rem;
+  margin-top: 0.3rem;
+}
+
+.rd-cm-tools button {
+  padding: 0.2rem 0.5rem;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--rd-text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-cm-tools button:hover {
+  background: #f1edfc;
+  color: var(--rd-accent);
+}
+
+.rd-cm-tools .rd-cm-danger:hover {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.rd-cm-edit {
+  margin-top: 0.5rem;
+}
+
+.rd-cm-edit-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.rd-cm-empty,
+.rd-cm-locked {
+  margin: 0.6rem 0;
+  font-size: 0.88rem;
+  color: var(--rd-text-muted);
+}
+
+/* ---- recommendations ---- */
+
+.rd-recs {
+  margin-top: 2rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--rd-border);
+}
+
+.rd-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.rd-rec {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid var(--rd-outline);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+  color: var(--rd-text);
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
+  transition: transform 0.14s ease;
+}
+
+.rd-rec:hover {
+  transform: translateY(-2px);
+}
+
+.rd-rec-thumb {
+  position: relative;
+  display: block;
+  height: 118px;
+  background: #e9e6f5;
+}
+
+.rd-rec-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rd-rec-ph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #efecfa 0%, #e2ddf4 100%);
+}
+
+/* Marks something they have already opened — the recommender ranks these
+   lower but does not hide them, so the label explains why it is still here. */
+.rd-rec-read {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(28, 23, 48, 0.72);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rd-rec-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.35rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+}
+
+.rd-rec-tags {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.rd-rec-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+/* The reason the recommender picked this. Muted and italic so it reads as an
+   aside rather than as part of the article's own description. */
+.rd-rec-why {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--rd-text-muted);
+}
+
+.rd-rec-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: 0.76rem;
+  color: var(--rd-text-muted);
+}
+
+.rd-rec-cta {
+  padding: 0.28rem 0.7rem;
+  border-radius: 8px;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.rd-rec:hover .rd-rec-cta {
+  background: var(--rd-accent-light);
+  color: #fff;
+}
+
+/* ---- list card extras ---- */
+
+.rd-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  font-size: 0.76rem;
+  color: var(--rd-text-muted);
+}
+
+.rd-card-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+/* 14px against 0.76rem text: the mark should read as a label beside the
+   number, not compete with it. */
+.rd-card-stats svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* Only the reader's OWN like turns red — the count itself stays neutral. */
+.rd-card-stats .on {
+  color: #b02a2a;
+  font-weight: 600;
+}
+
+.rd-card-saved {
+  padding: 0.08rem 0.42rem;
+  border-radius: 6px;
+  background: #f1edfc;
+  color: var(--rd-accent);
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+/* ---- saved articles ---- */
+
+/* A DESTINATION, not a filter, so it is deliberately a different shape from
+   the pills opposite it: soft fill, a bookmark to say what it holds, and a
+   count. Same treatment as the Dashboard's "View all" — a link out of a list
+   looks the same wherever it appears in the app. */
+.rd-saved-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: none;
+  /* Wears `.rd-act`'s shape — the Like / Save / Share pills under an article.
+     Same control, same idea, so it should not be a different-looking chip on
+     the list page: white fill, 1px border, fully rounded.
+
+     The padding stays asymmetric. Symmetric padding centres the LINE BOX, and
+     Hellix reserves more ascent than this label uses, so the glyphs sit low.
+     Measured and iterated — 7.04/8.32 was still 0.36px low. The 1px border is
+     inside the box (`border-box` below), so it does not disturb that. */
+  padding: 6.68px 0.95rem 8.68px;
+  box-sizing: border-box;
+  border: 1px solid var(--rd-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--rd-text-muted);
+  font-size: 0.87rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Instant — the fill IS the feedback, and a transition that never gets a frame
+   would leave it looking dead under the pointer.
+
+   The navy rather than the lavender: this is a link OUT of the list, and the
+   lavender fill is what the page's primary controls wear. Filling it with the
+   same colour would have it competing with "New article" directly above. */
+/* The same hover `.rd-act` uses. Borrowing that pill's look but keeping a
+   solid-navy hover would have made two controls that appear identical behave
+   differently under the pointer, which is worse than either look on its own. */
+.rd-saved-link:hover {
+  border-color: var(--rd-accent-light);
+  background: #f1edfc;
+  color: var(--rd-accent);
+}
+
+/* Nudged back DOWN by half the label's padding asymmetry. That uneven padding
+   is a correction for the TEXT, but it moves the whole content box, and a
+   drawn shape needs no such correction — same as the Vocabulary Bank's play
+   icon. Two things in one row, each with its own error, each its own nudge. */
+/* Nudged down 1px by MARGIN, not by `position: relative`. The label's uneven
+   padding is an optical correction for the text and moves the whole content
+   box; a drawn shape does not need it. Doing that with `position` put the icon
+   into the positioned paint layer, where it landed on top of an open account
+   popover. Equal-and-opposite margins move it the same 1px and leave paint
+   order alone. */
+.rd-saved-link svg {
+  margin-top: 1px;
+  margin-bottom: -1px;
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+/* Reads against the pale fill at rest and against the accent fill on hover, so
+   it takes its colour from the link rather than owning one. */
+/* A circle with the number centred in it.
+   `min-width` equal to `height` with `border-box` is what keeps it round — the
+   same rule under `content-box` sizes only the content and the padding rides
+   on top, which produces an oval. Three digits turn it into a pill rather than
+   squashing the number, which is the right way to fail.
+   `line-height: 1` because a digit's own line box would otherwise push it off
+   the circle's centre. */
+.rd-saved-n {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 20px;
+  height: 20px;
+  /* The 0.4px bottom lifts the digit off the circle's floor: centring aligns
+     its line box, and Hellix's ascent reserve left it low. Iterated, not
+     computed — the sub-pixel grid under the 1.1 zoom quantises coarsely at
+     this size: 0 sat +0.40, 0.8px overshot to −0.45, 0.4px lands at −0.25,
+     the closest available. Re-measure before changing it. */
+  padding: 0 5px 0.4px;
+  /* Pushed back down 1px, the same nudge the bookmark icon needs: the link's
+     uneven padding is an optical correction for its TEXT and moves the whole
+     content box, which a circle does not want. Margins rather than
+     `position: relative`, so paint order is untouched. */
+  margin-top: 1px;
+  margin-bottom: -1px;
+  border-radius: 999px;
+  background: rgba(106, 97, 145, 0.14);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Visible to screen readers only. */
+.rd-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* No hover override for the count any more. The old one tinted it white at 26%,
+   which read correctly against the solid navy this link used to turn on hover;
+   against the pale lavender it turns now, a white tint is nearly invisible. Its
+   resting fill already reads on both. */
+
+.rd-page-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.rd-saved-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.5rem 0;
+}
+
+/* The row is a link plus a Remove button, so the link cannot wrap the whole
+   card — nesting a button inside an anchor is invalid and swallows the click. */
+.rd-card-saved-row {
+  position: relative;
+}
+
+.rd-card-link {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.rd-card-savedat {
+  margin: 0.45rem 0 0;
+  font-size: 0.74rem;
+  color: #9a95ab;
+}
+
+.rd-unsave {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--rd-text-muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rd-unsave:hover:not(:disabled) {
+  background: #fdecea;
+  border-color: #f0b3ad;
+  color: #b02a2a;
+}
+
 @media (max-width: 720px) {
   .rd-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -352,7 +1299,7 @@
 }
 
 .rd-card-title {
-  font-family: 'Hellix', 'Douyin Sans', sans-serif;
+  font-family: "Hellix", "Douyin Sans", sans-serif;
   font-weight: 600;
   font-size: 1rem;
   margin: 0 0 0.35rem;
@@ -373,7 +1320,7 @@
 }
 
 .rd-danger-btn {
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.85rem;
   color: #b3261e;
@@ -405,7 +1352,7 @@
 }
 
 .rd-lang {
-  font-family: 'Hellix', sans-serif;
+  font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.82rem;
   color: var(--rd-text-muted);
@@ -414,7 +1361,9 @@
   border-radius: 999px;
   padding: 0.4rem 1.3rem;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .rd-lang.active {
@@ -453,7 +1402,8 @@
    glyphs fall through to a regular-weight system CJK face — deliberately NOT
    Douyin Sans, which ships only a 700 weight and forces the text bold. */
 .rd-body-cn {
-  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-family:
+    "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   font-size: 1.3rem;
   font-weight: 400;
   line-height: 2;
@@ -468,14 +1418,48 @@
 .rd-word {
   cursor: pointer;
   border-radius: 5px;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+/* CENTRING THE HIGHLIGHT.
+   `letter-spacing` is added after EVERY character, the last one included, so a
+   word's inline box carries a trailing gap on the right and none on the left —
+   the hover fill and the saved underline are drawn on that box, so the
+   characters looked pushed left inside their own highlight. The padding grows
+   the painted box leftwards by that same amount and the negative margin
+   cancels the layout shift, so nothing moves. Scoped to the non-ruby view,
+   whose `margin` shorthand would otherwise overwrite the cancellation. */
+.rd-body-cn:not(.rd-body-ruby) .rd-word {
+  padding-left: 0.25em;
+  margin-left: -0.25em;
+}
+
+/* A word you have already saved keeps a 2px underline, so the text itself
+   shows what you have collected without hovering every word to find out.
+   Matches `.sd-token.saved` on the scan page — one mark across every
+   tokenized surface. */
+.rd-word.saved {
+  box-shadow: inset 0 -2px 0 0 #c9bdf3;
 }
 
 .rd-word:hover,
 .rd-word.active {
-  background: #6c4fd1;
+  background: #6a6191;
   color: #fff;
-  box-shadow: 0 0 0 2px #6c4fd1;
+  box-shadow: 0 0 0 2px #6a6191;
+}
+
+/* Both marks in ONE shadow list. A second `box-shadow` declaration REPLACES
+   the first rather than adding to it, so without this a saved word lost its
+   underline the moment you hovered it — the same trap the notification bell's
+   ring and lift hit. */
+.rd-word.saved:hover,
+.rd-word.saved.active {
+  box-shadow:
+    0 0 0 2px #6a6191,
+    inset 0 -2px 0 0 #c9bdf3;
 }
 
 @media (max-width: 720px) {
@@ -492,5 +1476,28 @@
     position: static;
     transform: none;
     margin-left: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .rd-actions {
+    gap: 0.4rem;
+  }
+
+  .rd-act-count {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  /* The sheet is wider than a phone, so it stretches to the page instead. */
+  .rd-share {
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+
+  .rd-cm-replies {
+    margin-left: 0.6rem;
+    padding-left: 0.8rem;
   }
 }

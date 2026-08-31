@@ -1,17 +1,17 @@
 .sl {
-  --sl-bg: #f9f8ff;
+  --sl-bg: #f9f8fe;
   --sl-card: #ffffff;
   --sl-border: #e7e3f6;
   --sl-outline: #2b2643;
-  --sl-accent: #6c4fd1;
-  --sl-accent-light: #8b6ff0;
+  --sl-accent: #6a6191;
+  --sl-accent-light: #a89ce3;
   --sl-text: #1c1730;
   --sl-text-muted: #726c88;
 
   background: var(--sl-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--sl-text);
 }
@@ -134,7 +134,9 @@
   box-shadow: 0 6px 0 0 #000;
   padding: 0.7rem 1.7rem;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .sl-hero-btn:hover {
@@ -225,7 +227,9 @@
   padding: 1.4rem 1.6rem;
   text-decoration: none;
   color: var(--sl-text);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .sl-module:hover {

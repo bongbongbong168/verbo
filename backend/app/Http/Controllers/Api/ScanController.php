@@ -7,7 +7,9 @@ use App\Models\Scan;
 use App\Services\DictionaryService;
 use App\Services\OcrService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Str;
 
 class ScanController extends Controller
@@ -126,6 +128,16 @@ class ScanController extends Controller
 
         try {
             $text = $ocr->extractChineseText($fullPath);
+        } catch (ProcessFailedException $e) {
+            // ProcessFailedException stringifies the whole command line —
+            // the tesseract binary path, --tessdata-dir and the upload's
+            // absolute path — and Laravel would hand all of that to the client
+            // as a 500. Log it for us, tell the user something useful.
+            Log::error('OCR failed', ['message' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'Could not read that image. Try a clearer photo, or one with more contrast.',
+            ], 422);
         } finally {
             Storage::delete($path);
         }

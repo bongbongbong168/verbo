@@ -22,8 +22,7 @@
   max-width: 520px;
   background:
     radial-gradient(65% 35% at 28% 0%, #2a0049 0%, transparent 65%),
-    radial-gradient(70% 45% at 95% 100%, rgba(43, 38, 67, 0.9) 0%, transparent 70%),
-    #060508;
+    radial-gradient(70% 45% at 95% 100%, rgba(43, 38, 67, 0.9) 0%, transparent 70%), #060508;
   border-radius: 24px;
   padding: 2.4rem;
   display: flex;
@@ -137,16 +136,23 @@
   cursor: pointer;
   padding: 0;
   border-radius: 4px;
+  /* The mark is inline SVG now, not a baked PNG, so it can take a colour AND
+     differ between the shown and hidden states — the old image could do
+     neither. EyeIcon.css draws with currentColor. */
+  color: #a89ce3;
 }
 
-.lg-password-toggle img {
-  width: 17px;
-  height: 17px;
+.lg-password-toggle:hover {
+  color: #6a6191;
+}
+
+.lg-password-toggle .eye {
+  width: 18px;
+  height: 18px;
 }
 
 .lg-password-toggle:focus-visible,
 .lg-login-btn:focus-visible,
-.lg-social-btn:focus-visible,
 .lg-input:focus-visible {
   outline: 2px solid var(--lg-btn-bg);
   outline-offset: 2px;
@@ -182,7 +188,9 @@
   border-radius: 12px;
   padding: 0.9rem 1rem;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .lg-login-btn:hover:not(:disabled) {
@@ -198,37 +206,25 @@
   cursor: default;
 }
 
+/* A ruled divider, as the reference draws it: hairlines either side of the
+   word. Done with flex plus two pseudo-elements rather than a background
+   gradient, so the rules shrink and grow with the column instead of being cut
+   to a fixed width. */
 .lg-or {
-  text-align: center;
-  color: var(--lg-text-muted);
-  font-size: 0.85rem;
-  margin: 1.6rem 0 1.2rem;
-}
-
-.lg-social-row {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.lg-social-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: not-allowed;
-  opacity: 1;
+  gap: 0.75rem;
+  margin: 1.6rem 0 1.2rem;
+  color: var(--lg-text-muted);
+  font-size: 0.85rem;
 }
 
-.lg-social-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.lg-or::before,
+.lg-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d9d6e8;
 }
 
 .lg-register-link {

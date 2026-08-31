@@ -21,3 +21,6 @@ yarn-error.log
 /storage/tessdata/*.traineddata
 /storage/dict/*.u8
 /storage/dict/*_index.php
+
+# Database snapshots pulled from production. Real user data — never committed.
+backups/

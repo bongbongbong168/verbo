@@ -35,10 +35,23 @@ return [
 
     'connections' => [
 
+        /*
+         * `DB_SQLITE_DATABASE` first, then DB_DATABASE.
+         *
+         * Both connections used to read DB_DATABASE, so pointing that at
+         * Postgres broke the SQLite one — and `db:copy` needs BOTH open at the
+         * same time to move rows between them. The dedicated variable lets the
+         * source file stay addressable while DB_DATABASE names the destination.
+         */
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'database' => env(
+                'DB_SQLITE_DATABASE',
+                env('DB_CONNECTION') === 'sqlite'
+                    ? env('DB_DATABASE', database_path('database.sqlite'))
+                    : database_path('database.sqlite')
+            ),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
@@ -75,7 +88,11 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'prefer',
+            /* Supabase requires TLS. `prefer` silently falls back to an
+               unencrypted connection if the handshake fails, which would send
+               credentials and user data in the clear without saying so — so it
+               is env-driven and should be `require` against Supabase. */
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [

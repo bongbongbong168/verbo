@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\TutorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,7 +12,26 @@ class TutorController extends Controller
 {
     public function index()
     {
-        return TutorProfile::with('user:id,name,email')->latest()->get();
+        // The aggregates ride along in the same query. Cards on the Dashboard
+        // and Find Tutor both show a rating, and fetching it per card would be
+        // an N+1 on every page load.
+        return TutorProfile::with('user:id,name,email')
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->withMin(['lessons as cheapest_lesson' => fn ($q) => $q->bookablePriced()], 'price')
+            ->latest()
+            ->get()
+            ->map(function ($profile) {
+                // withAvg returns a raw float (or null); round it here so the
+                // same tutor cannot read 4.67 on a card and 4.7 on their
+                // profile. Null means unrated, which the UI shows as "New" —
+                // 0 would read as a terrible score rather than no score.
+                $profile->reviews_avg_rating = $profile->reviews_avg_rating !== null
+                    ? round($profile->reviews_avg_rating, 1)
+                    : null;
+
+                return $profile;
+            });
     }
 
     public function show(Request $request)
@@ -19,9 +39,58 @@ class TutorController extends Controller
         return $request->user()->tutorProfile;
     }
 
-    public function showProfile(TutorProfile $tutorProfile)
+    public function showProfile(Request $request, TutorProfile $tutorProfile)
     {
-        return $tutorProfile->load('user:id,name,email', 'lessons', 'resumeEntries');
+        $tutorProfile->load([
+            'user:id,name,email',
+            'lessons',
+            'resumeEntries',
+            /* Both columns on each side are required: `avatar_path` because
+               the appended `avatar_url` accessor reads it, and `user_id` on the
+               tutor profile because the relation matches on it. Dropping either
+               makes the photo silently null. */
+            'reviews.user:id,name,avatar_path',
+            'reviews.user.tutorProfile:id,user_id,photo_path',
+        ]);
+
+        // The stats bar's rating is the real average now, rounded to 1dp.
+        // Sent as null rather than 0 when nobody has reviewed, so the page can
+        // say "no rating yet" instead of showing a damning zero.
+        $count = $tutorProfile->reviews->count();
+
+        // Whether this viewer has already used their one trial with this
+        // tutor, so the picker can grey it out instead of letting them choose
+        // it and collecting a 422.
+        $trialUsed = Booking::query()
+            ->where('student_id', $request->user()->id)
+            ->where('tutor_id', $tutorProfile->user_id)
+            ->whereIn('status', ['pending', 'held', 'confirmed'])
+            ->whereHas('lesson', fn ($q) => $q->where('is_trial', true))
+            ->where(function ($q) {
+                $q->where('status', '!=', 'held')
+                    ->orWhereNull('hold_expires_at')
+                    ->orWhere('hold_expires_at', '>', now());
+            })
+            ->exists();
+
+        /* What this tutor actually costs, from the catalogue rather than the
+           free-text `hourly_rate` they typed. Those two had drifted badly: one
+           tutor advertised $15 while their real lessons were $1, $2 and $12, so
+           the headline price matched nothing you could book.
+
+           Computed from the already-loaded relation, so it costs no extra
+           query. `index()` gets the same number via withMin + the same scope,
+           so the list card and this card cannot disagree. */
+        $cheapest = $tutorProfile->lessons
+            ->filter(fn ($l) => ! $l->is_trial && $l->price !== null && $l->price > 0)
+            ->min('price');
+
+        return array_merge($tutorProfile->toArray(), [
+            'review_count' => $count,
+            'review_average' => $count ? round($tutorProfile->reviews->avg('rating'), 1) : null,
+            'trial_used' => $trialUsed,
+            'cheapest_lesson' => $cheapest,
+        ]);
     }
 
     public function store(Request $request)

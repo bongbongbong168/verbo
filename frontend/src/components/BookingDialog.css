@@ -1,0 +1,600 @@
+/* Trial-booking dialog. Prefix `bk-`.
+   Laid out from design/book a trail/book a trail.png, measured rather than
+   eyeballed: a 331x577 card in three bands — white header, #fcfcff body,
+   #f9f8fe footer — with 25px content padding, a 7-day strip, time pills in a
+   4-column grid, and a full-width CTA.
+
+   Self-contained tokens rather than reaching into a page's stylesheet, so the
+   dialog can be opened from anywhere — same reasoning as EditDrawer. */
+
+.bk-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(28, 23, 48, 0.45);
+  /* The blur is a plain static style, never a transition. A transitioned
+     backdrop-filter only advances while the tab is getting frames, so in a
+     background tab (or on a stalled compositor) it would strand part-way and
+     leave the page behind half-blurred. Mounting the scrim blurs; unmounting
+     it restores the page, with no state to get stuck in between. */
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+
+.bk {
+  --bk-card: #ffffff;
+  --bk-body: #fcfcff;
+  --bk-footer: #f9f8fe;
+  --bk-border: #e7e3f6;
+  --bk-pill-edge: #bcb9d0;
+  /* Sampled from the design exports: the lavender #a89ce3 is what the mockups
+     actually use for the CTA and the active day, and #6a6191 is the deeper
+     purple already on the tutor page. */
+  --bk-accent: #6a6191;
+  --bk-accent-soft: #a89ce3;
+  --bk-pill-bg: #f1edfc;
+  --bk-text: #1c1730;
+  --bk-muted: #726c88;
+  --bk-field: #f8f7fd;
+  --bk-ok: #1f7a45;
+  --bk-ok-bg: #ecf8f0;
+  --bk-no: #b02a2a;
+  --bk-no-bg: #fdecea;
+  /* Exactly the navy the tutor page's cards use (`--td-edge`), so the dialog
+     and the page behind it are drawn with one colour rather than two that are
+     a single hex digit apart. */
+  --bk-stroke: #2b2643;
+  --bk-pad: 25px;
+
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: min(408px, 100%);
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--bk-stroke);
+  border-radius: 21px;
+  background: var(--bk-card);
+  font-family: "Hellix", system-ui, sans-serif;
+  color: var(--bk-text);
+  /* The "shine": a deep drop shadow plus an accent glow, so the card reads as
+     lifted off the blurred page rather than pasted onto it. */
+  box-shadow:
+    0 30px 70px rgba(28, 23, 48, 0.34),
+    0 0 60px rgba(168, 156, 227, 0.32);
+  animation: bk-in 0.2s ease-out;
+}
+
+/* Transform ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames. A keyframe that
+   starts at `opacity: 0` leaves the panel FULLY TRANSPARENT if those frames
+   never arrive, which is exactly how the account popover came up invisible.
+   The movement is ornament; visibility must never depend on it. */
+@keyframes bk-in {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ---- header band ---- */
+
+.bk-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: none;
+  padding: 20px var(--bk-pad);
+  background: var(--bk-card);
+  border-bottom: 1px solid var(--bk-stroke);
+}
+
+/* A rounded square, not a circle — same stroke as the card around it, so the
+   photo reads as part of the same drawing rather than a sticker on top. */
+.bk-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--bk-stroke);
+  border-radius: 11px;
+  background: var(--bk-accent-soft);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.bk-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bk-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.bk-title {
+  margin: 0;
+  font-size: 1.16rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.bk-blurb {
+  margin: 5px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--bk-muted);
+}
+
+/* ---- square icon buttons (close, week nav) ---- */
+
+.bk-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--bk-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--bk-text);
+  cursor: pointer;
+}
+
+.bk-icon-btn:hover:not(:disabled) {
+  border-color: var(--bk-accent);
+  color: var(--bk-accent);
+}
+
+.bk-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bk-icon-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---- body band ---- */
+
+.bk-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px var(--bk-pad) 20px;
+  background: var(--bk-body);
+}
+
+.bk-booking-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bk-booking-title {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 700;
+}
+
+.bk-nav {
+  display: flex;
+  gap: 9px;
+}
+
+/* ---- day strip ---- */
+
+.bk-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.bk-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  color: var(--bk-text);
+  cursor: pointer;
+}
+
+.bk-day em {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--bk-muted);
+}
+
+.bk-day strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.bk-day:hover:not(:disabled):not(.active) {
+  background: var(--bk-pill-bg);
+}
+
+/* Static, not animated — the selected day must be right on the first paint. */
+.bk-day.active {
+  background: var(--bk-accent-soft);
+  color: #fff;
+}
+
+.bk-day.active em {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* A day with no slots stays visible: an empty Tuesday is information, and
+   hiding it makes the calendar look shorter than it is. */
+.bk-day:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* ---- time sections ---- */
+
+.bk-part + .bk-part {
+  margin-top: 18px;
+}
+
+.bk-part-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.bk-part-title svg {
+  width: 15px;
+  height: 15px;
+  color: var(--bk-muted);
+}
+
+.bk-times {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bk-time {
+  padding: 9px 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--bk-pill-edge);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bk-text);
+  cursor: pointer;
+}
+
+.bk-time:hover {
+  border-color: var(--bk-accent);
+}
+
+.bk-time.picked {
+  background: var(--bk-accent-soft);
+  border-color: var(--bk-accent-soft);
+  color: #fff;
+}
+
+/* A time the student's own diary rules out. Struck through rather than merely
+   greyed: the strike says "this one is spoken for", where grey alone reads as
+   the app having failed to load it. Static, like every other state in this
+   codebase — no transition, so it is right on the first paint. */
+.bk-time:disabled {
+  border-color: var(--bk-border);
+  background: var(--bk-field);
+  color: var(--bk-muted);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* Hover must not promise something the button cannot do. */
+.bk-time:disabled:hover {
+  border-color: var(--bk-border);
+}
+
+.bk-zone {
+  margin: 14px 0 0;
+  font-size: 0.72rem;
+  color: var(--bk-muted);
+}
+
+/* ---- optional message ---- */
+
+.bk-link {
+  margin-top: 14px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: var(--bk-accent);
+  cursor: pointer;
+}
+
+.bk-link:hover {
+  text-decoration: underline;
+}
+
+.bk-field {
+  display: block;
+  margin-top: 14px;
+}
+
+.bk-field span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--bk-muted);
+}
+
+.bk-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid var(--bk-pill-edge);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--bk-text);
+  resize: vertical;
+}
+
+.bk-field textarea:focus {
+  outline: none;
+  border-color: var(--bk-accent);
+}
+
+/* ---- footer band ---- */
+
+.bk-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+  flex: none;
+  padding: 18px var(--bk-pad);
+  background: var(--bk-footer);
+  border-top: 1px solid var(--bk-border);
+}
+
+.bk-cta {
+  width: 100%;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bk-accent-soft);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bk-cta:hover:not(:disabled) {
+  background: var(--bk-accent);
+}
+
+.bk-cta:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.bk-back {
+  align-self: center;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--bk-accent);
+  cursor: pointer;
+}
+
+.bk-back:hover {
+  text-decoration: underline;
+}
+
+/* ---- lesson picker ---- */
+
+.bk-eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bk-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bk-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.bk-lesson {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 15px;
+  box-sizing: border-box;
+  border: 1px solid var(--bk-pill-edge);
+  border-radius: 11px;
+  background: #fff;
+  font-family: inherit;
+  color: var(--bk-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bk-lesson:hover:not(:disabled) {
+  border-color: var(--bk-accent);
+}
+
+.bk-lesson:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.bk-lesson-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bk-lesson-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.bk-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bk-pill-bg);
+  color: var(--bk-accent);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bk-lesson-desc,
+.bk-lesson-meta {
+  font-size: 0.79rem;
+  color: var(--bk-muted);
+}
+
+.bk-lesson-price {
+  flex: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ---- hold / confirmed ---- */
+
+.bk-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 0 10px;
+  text-align: center;
+}
+
+.bk-state-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.bk-state-when {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bk-accent);
+}
+
+.bk-state-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--bk-pill-bg);
+  font-size: 0.82rem;
+  color: var(--bk-muted);
+}
+
+.bk-state-note svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.bk-state-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--bk-ok-bg);
+  color: var(--bk-ok);
+}
+
+.bk-state-mark svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---- states ---- */
+
+.bk-empty {
+  margin: 0;
+  padding: 22px 0;
+  color: var(--bk-muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.bk-error {
+  margin: 14px 0 0;
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: var(--bk-no-bg);
+  color: var(--bk-no);
+  font-size: 0.83rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk {
+    animation: none;
+  }
+}

@@ -27,8 +27,8 @@ function ChevronRight() {
 
 /* The reference animation steps every 3.2s (a 1.75s move, then a still hold).
    Both are shortened here — the pacing suits a showcase loop but drags on a
-   page you navigate — while keeping its move-then-rest rhythm: a 1.15s move
-   (see the transition in Study.css) and a ~1.35s hold, so the card it lands on
+   page you navigate — while keeping its move-then-rest rhythm: a 0.8s move
+   (see `--st-move` on `.st-stage`) and a ~1.7s hold, so the card it lands on
    still gets a beat to be looked at. Keep this above the transition duration
    or the next step interrupts the last. */
 const ADVANCE_EVERY_MS = 2500
@@ -160,7 +160,12 @@ export default function Study() {
     const side = Math.sign(offset)
 
     if (abs === 0) {
-      return { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)', opacity: 0.9, zIndex: 30 }
+      // Fully opaque, deliberately. At 0.9 a tenth of the cards stacked behind
+      // it bled through the cover art, so the one you are actually choosing
+      // looked seen-through. The neighbours are dimmed instead — the contrast
+      // between them is what says which card is live, not a fade on the front
+      // one.
+      return { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)', opacity: 1, zIndex: 30 }
     }
     if (abs === 1) {
       return {
@@ -254,7 +259,25 @@ export default function Study() {
         <>
           {/* pointerdown covers both a tap and a click, so touching the cards
               anywhere stops the rotation before it moves under the finger. */}
-          <div className="st-stage" onPointerDown={holdForUser}>
+          {/* Two speeds, driven by the flag that already exists. `paused` is
+              set by holdForUser() on every user interaction, so it IS "the
+              user is driving this" — no new state needed.
+
+              A click wants to feel answered, so it gets a short ease-OUT: the
+              card leaves at full speed the instant you press and settles
+              gently. The idle rotation keeps a longer glide, because nobody is
+              waiting on it. Both curves are gentler than the old
+              easeInOutQuint, which was so flat at the start that a click read
+              as lag before it snapped. */}
+          <div
+            className="st-stage"
+            onPointerDown={holdForUser}
+            style={
+              paused
+                ? { '--st-move': '0.42s', '--st-ease': 'cubic-bezier(0.22, 0.61, 0.36, 1)' }
+                : { '--st-move': '0.8s', '--st-ease': 'cubic-bezier(0.65, 0, 0.35, 1)' }
+            }
+          >
             {visible.map((level, index) => {
               const offset = offsetFrom(index)
               const isActive = offset === 0

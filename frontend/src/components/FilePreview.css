@@ -1,0 +1,168 @@
+/* File viewer for classroom attachments and submitted work. Prefix `fp-`.
+   Verbo's palette: #a89ce3 filled, #6a6191 emphasis, #f1edfc pale,
+   #2b2643 stroke, #f9f8fe ground. */
+
+.fp-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1.5rem;
+  background: rgba(28, 23, 48, 0.45);
+  /* Static, never transitioned — a blur that only advances while the tab
+     composites would strand the page behind it half-blurred. */
+  backdrop-filter: blur(7px);
+  font-family: "Hellix", system-ui, sans-serif;
+}
+
+.fp {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  /* Capped so a tall document scrolls inside the panel rather than running the
+     panel off the bottom of the window. */
+  max-height: 100%;
+  box-sizing: border-box;
+  border: 1px solid #2b2643;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(28, 23, 48, 0.3);
+  overflow: hidden;
+}
+
+.fp-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid #e7e3f6;
+}
+
+.fp-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.fp-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1c1730;
+  /* Plain ellipsis, not a fade — a fade mask on a box that shrinks to its own
+     content eats the last characters of even a short name. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-meta {
+  font-size: 0.76rem;
+  color: #726c88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fp-btn,
+.fp-close {
+  flex: none;
+  /* Asymmetric: Hellix reserves more ascent than these labels use, so
+     symmetric padding leaves the glyphs sitting low. */
+  padding: 0.48rem 0.95rem 0.56rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fp-btn {
+  background: #a89ce3;
+  color: #fff;
+}
+
+/* Instant — the fill IS the feedback. */
+.fp-btn:hover {
+  background: #6a6191;
+}
+
+.fp-close {
+  background: none;
+  color: #726c88;
+}
+
+.fp-close:hover {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.fp-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #f9f8fe;
+  overflow: auto;
+}
+
+.fp-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* Fills the panel: a PDF in a small frame is unreadable, which defeats the
+   point of previewing it. */
+.fp-frame {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.fp-text {
+  align-self: stretch;
+  justify-self: stretch;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 10px;
+  background: #fff;
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: #1c1730;
+  /* Wrap rather than scroll sideways — a log line should not push the panel
+     into horizontal scrolling. */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fp-audio {
+  width: 100%;
+  max-width: 480px;
+}
+
+.fp-video {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 10px;
+}
+
+.fp-note {
+  margin: 0;
+  padding: 2.5rem 1rem;
+  max-width: 420px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-align: center;
+  color: #726c88;
+}

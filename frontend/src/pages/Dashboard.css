@@ -2,28 +2,30 @@
   --db-bg: #f9f8fe;
   --db-card: #ffffff;
   --db-border: #e7e3f6;
-  --db-accent: #6c4fd1;
-  --db-accent-light: #8b6ff0;
-  --db-accent-dark: #4e37a8;
+  --db-accent: #6a6191;
+  --db-accent-dark: #6a6191;
   --db-text: #1c1730;
   --db-text-muted: #726c88;
   --db-pill-bg: #f1edfc;
 
   /* Sampled off design/Dashboard.jpg */
-  --db-edge: #2b2644;          /* card outline — the same navy Find Tutor uses */
-  --db-panel-edge: #c8c8c8;    /* the two big panels' 1px outline */
-  --db-hero: #7d76a0;          /* hero fill, also the podcast duration badge */
-  --db-tag-unit: #bcb3e8;      /* "Unit 1" tag */
-  --db-tag-level: #fe916a;     /* "HSK 3" tag */
-  --db-cover: #cccbd1;         /* image placeholder grey */
-  --db-section-bar: #8d87ad;   /* the leading bar on section titles */
+  --db-edge: #2b2644; /* card outline — the same navy Find Tutor uses */
+  --db-panel-edge: #c8c8c8; /* the two big panels' 1px outline */
+  --db-hero: #7d76a0; /* hero fill, also the podcast duration badge */
+  --db-tag-unit: #bcb3e8; /* "Unit 1" tag */
+  --db-tag-level: #fe916a; /* "HSK 3" tag */
+  --db-duration-edge: #544d77; /* the podcast duration badge's stroke */
+  --db-tag-unit-edge: #7d76a1; /* "Unit 1" tag stroke */
+  --db-tag-level-edge: #dd7753; /* "HSK 1" tag stroke */
+  --db-cover: #cccbd1; /* image placeholder grey */
+  --db-section-bar: #8d87ad; /* the leading bar on section titles */
   --db-filter-edge: #7d76a0;
-  --db-viewall: #a89ce3;       /* "View all" pill */
-  --db-bar: #d5c6ff;           /* activity bar */
-  --db-bar-peak: #7d76a0;      /* the highlighted day */
+  --db-viewall: #a89ce3; /* "View all" pill */
+  --db-bar: #d5c6ff; /* activity bar */
+  --db-bar-peak: #7d76a0; /* the highlighted day */
 
   background: var(--db-bg);
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--db-text);
 }
@@ -50,23 +52,7 @@
   margin-bottom: 1.4rem;
 }
 
-.db-icon-btn {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-}
 
-.db-icon-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
 
 /* ---- hero ---- */
 
@@ -99,39 +85,71 @@
   right: clamp(1.5rem, 4vw, 3rem);
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  /* 0.4rem minus the flame's own transparent margin (see the padding note
+     below), so the SEEN gap between artwork and text is the 6.4px intended. */
+  gap: 0.27rem;
   background: #f2f2f2;
   color: #69667a;
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
   font-size: 0.85rem;
-  border-radius: 999px;
-  padding: 0.5rem 1rem;
+  border-radius: 14px;
+  /* Vertically symmetric — the optical correction lives on .db-streak-text
+     alone, and the flame sits where flexbox puts it because its artwork is
+     centred in its own box.
+     Horizontally it is NOT symmetric, and deliberately so. The flame artwork
+     fills only 75.4% of its square source (measured: 63px of transparent
+     canvas each side of 512), so ~2.09px of nothing sits between the pill's
+     left padding and the first lit pixel. Trimming that from the left inset
+     makes the flame LOOK 1rem in, matching the text on the right. Same family
+     of correction as the bell's 143% scale, and for the same reason: the
+     artwork's box is not its ink. */
+  padding: 0.5rem 1rem 0.5rem calc(1rem - 2.09px);
   z-index: 1;
   cursor: default;
 }
 
 /* No streak yet: the flame stays (it is what makes the badge recognisable)
-   but drops back so it does not read as an achievement the user has not
-   earned. */
+   but goes cold, so it does not read as an achievement the user has not
+   earned. A baked raster cannot be recoloured, so this is a filter — the same
+   constraint the bell PNG has, and the reason its state is a ring rather than
+   a fill. */
 .db-streak-badge.idle {
   color: #8e8ba0;
 }
 
 .db-streak-badge.idle .db-streak-flame {
-  opacity: 0.45;
+  opacity: 0.5;
   filter: grayscale(1);
 }
 
-/* Sized by font-size, not width/height — it is a glyph now, not an SVG box.
-   The explicit family keeps it on the colour emoji font: Hellix is listed
-   first everywhere else on this page and has no emoji coverage, so without
-   this it can fall through to a mono outline glyph on some systems. */
+/* Sized by the box, not by font-size — it is an image now, not a glyph.
+   `display: block` keeps it off the text baseline; an inline image sits on the
+   baseline and reserves descender space below it, which is what would push it
+   visibly high in the pill. Height is set and width follows the square source,
+   so the artwork can never be squashed. */
 .db-streak-flame {
   flex-shrink: 0;
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-  font-size: 15px;
-  line-height: 1;
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+
+/* Flexbox centres an item's LINE BOX, and Hellix does not centre its ink
+   inside that box — it reserves more ascent than a short label uses, so the
+   text lands high. Measured on the CAP BAND (cap top -> baseline), never the
+   ink box, because the `y` in "day streak" has a descender that would drag the
+   centre down and make a label with one disagree with a label without.
+   Only the text needs correcting now: the flame is an image whose artwork runs
+   edge to edge, so its box centre IS its ink centre (measured 49.90% of the
+   source canvas) and it sits right where flexbox puts it. This value was
+   -1.64px in the emoji era, tuned against that glyph's own offset; against the
+   artwork it overshot by 0.72px. Note `line-height` cannot do this job:
+   half-leading is symmetric, so the ink-to-line-box offset is constant
+   whatever the line height. */
+.db-streak-text {
+  position: relative;
+  top: -0.92px;
 }
 
 .db-hero-content {
@@ -192,7 +210,11 @@
   border: 1.5px solid #2b2643;
   border-radius: 19px;
   box-shadow: 0 3px 0 0 #2b2643;
-  padding: 0.7rem 1.5rem;
+  padding: calc(0.7rem - 1.5px) 1.5rem calc(0.7rem + 1.5px);
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
   text-decoration: none;
   transition: transform 0.15s ease;
 }
@@ -339,21 +361,48 @@
   background: var(--db-section-bar);
 }
 
+/* "View all" is SECONDARY navigation — it repeats on four sections down this
+   page. Drawn as the design's solid lavender pill it competed with the real
+   CTAs (the hero button, the promo card) and pulled the eye off the content it
+   labels, so at rest it is a soft-tinted pill instead. Hovering promotes it to
+   exactly the solid pill the export draws, which is where that fill belongs:
+   on the one the pointer is actually on. */
 .db-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
   flex: none;
   /* Same optical correction as .db-pod-duration — measured 9.97 above /
-     7.97 below with a symmetric pad. */
-  padding: 4.5px 13.6px 6.4px;
+     7.97 below with a symmetric pad. Trimmed on the right, where the chevron
+     now carries the weight the padding used to. */
+  padding: 4.5px 9px 6.4px 13.6px;
   border-radius: 8px;
-  background: var(--db-viewall);
-  color: #fff;
+  background: var(--db-pill-bg);
+  color: var(--db-accent);
   font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
+  /* The hover fill IS the feedback, so it is not transitioned — a transition
+     that never gets a frame sits at its start value and the pill would look
+     dead under the pointer. Only the chevron nudge below is eased. */
 }
 
 .db-viewall:hover {
-  background: var(--db-accent);
+  background: var(--db-viewall);
+  color: #fff;
+}
+
+.db-viewall svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  transition: transform 0.14s ease;
+}
+
+/* Nudges toward where it is taking you. Ornament only — the chevron is already
+   legible at rest if this never gets a frame. */
+.db-viewall:hover svg {
+  transform: translateX(2px);
 }
 
 .db-grid3 {
@@ -374,11 +423,61 @@
    327 : 209 : 209 proportions as flex weights against a 0 basis, so they share
    the width in the right ratio at any panel size — no scrollbar, and nothing
    runs off the edge to be clipped. */
+/* Every card keeps ITS OWN design size here — a study card is always 327 wide
+   and a podcast always 209, wherever the recency order puts it. The row is not
+   made to fit by shrinking them; when it runs past the panel the overflow just
+   FADES OUT at the right edge.
+
+   The mask needs no "is it overflowing?" test: a short row ends before the
+   fade region, so nothing visible fades — same trick as the card titles.
+
+   The vertical padding + matching negative margin exist so the cards' hover
+   lift and shadow have room INSIDE the clip. Both `overflow: hidden` and the
+   mask cut to this box, and without the padding they would shave the shadow
+   off. (For the same reason, don't reach for `overflow-x: auto` — it forces
+   `overflow-y` to compute to `auto` too and brings the clipping back.) */
 .db-pickup {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 20px;
-  align-items: stretch;
+  /* flex-start, not stretch: stretching pulled the podcast card to the study
+     card's height, and a podcast card has to be the same card here as in the
+     Podcasts section below — same width AND height. Each card type keeps its
+     own natural height instead. */
+  align-items: flex-start;
+  /* Asymmetric because the hover shadow is: 0 8px 20px reaches ~12px above the
+     card and ~28px below it. The negative margin cancels the padding, so this
+     buys clip room without moving anything. */
+  padding: 14px 0 28px;
+  margin: -14px 0 -28px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 60px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 60px), transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* A flex item defaults to `min-width: auto`, i.e. its min-content width — and
+   `.db-pod-title` is `white-space: nowrap`, so a long title's full unwrapped
+   width became the card's floor and blew it far past its set width. The 3-up
+   grid below never had this because `minmax(0, 1fr)` floors its columns at 0;
+   this is the flex equivalent, and it is what keeps a card the SAME size
+   whatever title happens to be in it. */
+.db-pickup > * {
+  min-width: 0;
+}
+
+/* The design's own widths, by card type — not by slot. */
+.db-pickup > .db-study {
+  flex: 0 0 327px;
+}
+
+/* A podcast card is the SAME card here as in the Podcasts section below, so it
+   takes that section's width rather than the pick-up row's own 209 — same
+   formula as `.db-grid3` (three columns, 20px gaps) against the same panel
+   width, so the two stay identical at any size instead of only matching here. */
+.db-pickup > .db-pod {
+  flex: 0 0 calc((100% - 40px) / 3);
 }
 
 /* ---- study card (first "pick up" tile) ---- */
@@ -386,10 +485,6 @@
 .db-study {
   display: flex;
   gap: 14px;
-  flex: 327 1 0;
-  /* A floor, not a fixed width: below this the row wraps rather than squeezing
-     the tiles down to unreadable slivers on a narrow window. */
-  min-width: 260px;
   box-sizing: border-box;
   padding: 14px;
   background: var(--db-card);
@@ -398,7 +493,9 @@
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 .db-study:hover,
@@ -437,31 +534,53 @@
   gap: 8px;
 }
 
+/* A fixed 60x30 rather than a padded pill: the two tags are a matched pair in
+   the design and sit at one size whatever word is in them. `flex: none` is what
+   holds it — as a flex child the box would otherwise shrink under a tight row.
+   `place-items: center` keeps the label centred once the padding is gone. */
 .db-tag {
-  padding: 0.22rem 0.6rem;
-  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 60px;
+  height: 30px;
+  border-radius: 8px;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
+/* Both tags carry a 2px stroke, each in a deeper cut of its own fill rather
+   than the page navy — a shared outline colour would flatten the two into one
+   kind of tag, and the point of the pair is that they say different things.
+
+   Drawn as an inset shadow, not a border: a border would grow both pills and
+   pull the whole tag row 4px taller, and this pair sits above a title pinned to
+   exactly two lines with no spare height to give. */
 .db-tag-unit {
   background: var(--db-tag-unit);
+  box-shadow: inset 0 0 0 2px var(--db-tag-unit-edge);
 }
 
 .db-tag-level {
   background: var(--db-tag-level);
+  box-shadow: inset 0 0 0 2px var(--db-tag-level-edge);
 }
 
+/* Two lines, and what does not fit FADES rather than cutting to an ellipsis.
+   The height is pinned to exactly two lines (2 x 1.35 line-height) so a
+   one-line title leaves the second empty and the fade lands on nothing — the
+   softening only ever shows where there is really more text below. */
 .db-study-title {
   font-size: 0.92rem;
   font-weight: 700;
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  height: 2.7em;
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 2.3em, transparent 2.7em);
+  mask-image: linear-gradient(to bottom, #000 2.3em, transparent 2.7em);
 }
 
 .db-study-rule {
@@ -471,13 +590,17 @@
   background: var(--db-edge);
 }
 
+/* The Chinese line is one line in the design, so it fades sideways rather than
+   down — same rule as the podcast title, and the mask only bites when the text
+   actually reaches the edge. */
 .db-study-quote {
   font-size: 0.84rem;
+  line-height: 1.4;
   color: var(--db-text);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
 }
 
 /* ---- podcast card ---- */
@@ -494,15 +617,13 @@
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 /* In the pick-up row the tile is weighted against the wider study card; in the
    3-up grid below it simply fills its column. */
-.db-pickup .db-pod {
-  flex: 209 1 0;
-  min-width: 175px;
-}
 
 .db-pod-cover {
   position: relative;
@@ -520,22 +641,29 @@
   object-fit: cover;
 }
 
-/* 1px navy outline, same as every card on this page. Confirmed off the export
-   rather than guessed: the badge's edge samples #534c76, which is the 50/50
-   blend of the #7d76a0 fill and #2b2644 — i.e. a 1px navy stroke smeared by
-   JPEG, not a mid-purple colour of its own. */
+/* The one card outline on this page that is NOT the shared navy: the badge's
+   edge samples #534c76 in the export, and it is drawn as that mid-purple in its
+   own right (`--db-duration-edge` #544d77) rather than as navy blurred into the
+   #7d76a0 fill by JPEG, which is how it was read at first. */
 .db-pod-duration {
   position: absolute;
   top: 8px;
   left: 8px;
-  /* Asymmetric on purpose. Hellix reserves more ascent than "8mins" actually
-     uses (font ascent 12 vs ink ascent 8) while its descent is nearly all
-     used, so a symmetric pad centres the *line box* and leaves the glyphs
-     sitting ~1px low. Measured: 7.45 above / 5.45 below; this moves the ink up
-     by the half-difference. Same reason the Read/Podcast toggle's padding is
-     uneven — don't "tidy" it back to one value. */
-  padding: 1.3px 8px 3.2px;
-  border: 1px solid var(--db-edge);
+  /* A fixed 48x20, not a padded pill — the badge is one size in the design
+     whatever duration lands in it. */
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 48px;
+  height: 20px;
+  /* The 3px bottom is NOT spacing, it is an optical correction. Centring aligns
+     the *line box*, and Hellix reserves more ascent than "8mins" uses (font
+     ascent 12 vs ink ascent 8) while spending nearly all its descent, so the
+     glyphs land ~1.5px low in a 20px box. A bottom pad lifts them by half its
+     value; measured back, 3px lands the ink at 5.49 above / 5.51 below.
+     Don't "tidy" it to 0. */
+  padding: 0 0 3px;
+  border: 1px solid var(--db-duration-edge);
   border-radius: 6px;
   background: var(--db-hero);
   color: #fff;
@@ -569,13 +697,18 @@
 
 /* One line, as in the design — a second line pushes the card 17px past its
    208px height and breaks the row's even card heights. */
+/* A title too long for its tile FADES OUT rather than cutting to an ellipsis.
+   The mask only bites where the text actually reaches the right edge, so a
+   short title is left completely untouched — no JS overflow detection needed,
+   and nothing to get out of step with the real text width. */
 .db-pod-title {
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
 }
 
 .db-pod-author {
@@ -601,7 +734,9 @@
   border-radius: 14px;
   text-decoration: none;
   color: var(--db-text);
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 .db-teacher-cover {
@@ -698,9 +833,19 @@
 }
 
 .db-filter {
-  padding: 0.42rem 1.05rem;
+  /* Asymmetric on purpose, and it keeps the pill's original height (5.72 + 7.72
+     = the 13.44 the symmetric 0.42rem gave). Symmetric padding centres the LINE
+     BOX, and Hellix reserves more ascent than these labels use, so the glyphs
+     sat 2px low — measured 13.8 above the cap top against 9.8 below the
+     baseline. The extra 2px on the BOTTOM lifts them; it now measures
+     10.8 / 10.8.
+     Correcting on the cap band rather than the ink bounding box is deliberate:
+     "Story" has a descender and "Fun fact" does not, so matching ink boxes
+     would leave the four pills disagreeing with each other.
+     Same correction as `.db-pod-duration`; don't "tidy" it to one value. */
+  padding: 5.72px 1.05rem 7.72px;
   border: 1px solid var(--db-filter-edge);
-  border-radius: 999px;
+  border-radius: 9px;
   background: transparent;
   font-family: inherit;
   font-size: 0.84rem;
@@ -738,7 +883,9 @@
   border-radius: 12px;
   text-decoration: none;
   color: var(--db-text);
-  transition: border-color 0.14s ease, background 0.14s ease;
+  transition:
+    border-color 0.14s ease,
+    background 0.14s ease;
 }
 
 .db-read:hover {
@@ -794,14 +941,41 @@
   border: 1px solid var(--db-edge);
   border-radius: 12px;
   cursor: default;
+  color: inherit;
+  text-decoration: none;
 }
 
+/* More than one enrolment stacks. Two or three is the realistic case — this is
+   "what's next", not a full schedule. */
+.db-course + .db-course {
+  margin-top: 10px;
+}
+
+a.db-course {
+  cursor: pointer;
+}
+
+a.db-course:hover {
+  border-color: var(--db-accent-soft, #a89ce3);
+}
+
+/* Narrowed from the placeholder's 63x47. The right rail is ~420px wide and the
+   card also carries a chevron, so the old thumb left the title wrapping across
+   three lines — "HSK 3 Speaking Course" broke mid-phrase. 46px square gives the
+   text back enough room to sit on two. */
 .db-course-thumb {
-  width: 63px;
-  height: 47px;
+  width: 46px;
+  height: 46px;
   flex: none;
+  overflow: hidden;
   border-radius: 8px;
   background: var(--db-cover);
+}
+
+.db-course-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .db-course-body {
@@ -817,10 +991,43 @@
   font-weight: 700;
 }
 
+/* "Chen Wei · Private" — who, and which kind. One quiet line rather than a
+   badge: Private and Group are a distinction the student barely needs to act
+   on, so it should not shout. */
+.db-course-who {
+  font-size: 0.8rem;
+  color: var(--db-muted, #726c88);
+}
+
 .db-course-time {
   font-size: 0.84rem;
   font-style: italic;
   color: var(--db-text);
+}
+
+/* Nothing joined yet. Deliberately small — a large illustrated empty state
+   would make an ordinary "not yet" look like a fault. */
+.db-course-empty {
+  padding: 14px;
+  border: 1px dashed var(--db-edge);
+  border-radius: 12px;
+}
+
+.db-course-empty p {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  color: var(--db-muted, #726c88);
+}
+
+.db-course-empty a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--db-accent, #6a6191);
+  text-decoration: none;
+}
+
+.db-course-empty a:hover {
+  text-decoration: underline;
 }
 
 .db-course svg {
@@ -929,6 +1136,43 @@
   background: var(--db-bar-peak);
 }
 
+/* Hover readout for one day's total. The whole COLUMN is the hover target, not
+   the bar — a five-minute day is a two-pixel sliver nobody can point at, and a
+   day with nothing at all has no bar to hover in the first place.
+
+   Shown by visibility/opacity with no transition, for the usual reason: a tab
+   that never composites would strand it half-faded. */
+.db-chart-tip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: calc(0.16rem - 1px) 0.5rem calc(0.16rem + 1px);
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
+  border-radius: 5px;
+  background: var(--db-text);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.db-chart-col:hover .db-chart-tip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* The hovered bar darkens slightly, so the readout is clearly about THIS day. */
+.db-chart-col:hover .db-chart-bar {
+  filter: brightness(0.92);
+}
+
 .db-chart-day {
   position: absolute;
   left: 0;
@@ -945,7 +1189,11 @@
   right: 0;
   border-top: 1.5px dashed var(--db-text);
   pointer-events: none;
-  z-index: 1;
+  /* Drawn ON TOP of the bars — a rule that disappears behind the tallest bar
+     cannot be read against the one day it most needs comparing to. The columns
+     are deliberately left at `z-index: auto`: giving them one would create a
+     stacking context and trap `.db-chart-tip` inside it, underneath this. */
+  z-index: 3;
 }
 
 /* Centred on the rule rather than sitting above it, as in the design — the
@@ -955,7 +1203,11 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  padding: 0.12rem 0.5rem;
+  padding: calc(0.12rem - 1px) 0.5rem calc(0.12rem + 1px);
+  /* Hellix reserves more ascent than a short label uses, so symmetric padding
+     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
+     BAND (cap top -> baseline), never the ink box. The pair sums to the original
+     value, so the box height is unchanged and only the text moves. */
   border-radius: 5px;
   background: var(--db-text);
   color: #fff;

@@ -1,0 +1,188 @@
+/* Account button + popover. Prefix `pm-`.
+   Palette is the app's: #a89ce3 filled, #6a6191 emphasis, #f1edfc pale pill,
+   #2b2643 stroke, #1c1730 text. */
+
+.pm {
+  position: relative;
+  display: inline-flex;
+}
+
+.pm-trigger {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  box-sizing: border-box;
+  /* No border. It was `1px solid transparent` so the open state could colour it
+     without resizing the button — but with `border-box` that shrinks the
+     CONTENT box by 2px, and the avatar (`width: 100%`) filled only 34 of the
+     36, leaving a 1px ring of this button's purple around the photo. The open
+     ring is a box-shadow now, which sits outside the box and costs the image
+     nothing. */
+  border: none;
+  border-radius: 50%;
+  background: #a89ce3;
+  color: #fff;
+  font-family: "Hellix", system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  /* Matches the bell beside it — the pair should read as one control group. */
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.12);
+}
+
+/* A real picture fills the button; the initial is the fallback. */
+.pm-trigger img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Instant, not transitioned — the ring IS the "this menu is open" signal, and
+   a transition that never gets a frame would leave it looking shut. */
+/* The ring and the lift are ONE shadow list — a second `box-shadow`
+   declaration replaces the first rather than adding to it, which would drop
+   the lift the moment the ring appeared. Same rule the bell follows. */
+.pm-trigger:hover,
+.pm-trigger.open {
+  background: #6a6191;
+  box-shadow:
+    0 0 0 2px #2b2643,
+    0 4px 12px rgba(28, 23, 48, 0.18);
+}
+
+.pm-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  width: 236px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid #2b2643;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
+  font-family: "Hellix", system-ui, sans-serif;
+  /* A 24px nudge rather than a full slide: a keyframe that starts the panel
+     far off would strand it there if the tab never composites. */
+  animation: pm-in 0.14s ease-out;
+}
+
+/* Transform ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames. A keyframe that
+   starts at `opacity: 0` leaves the panel FULLY TRANSPARENT if those frames
+   never arrive, which is exactly how the account popover came up invisible.
+   The movement is ornament; visibility must never depend on it. */
+@keyframes pm-in {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ---- identity ---- */
+
+.pm-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.6rem 0.7rem;
+}
+
+.pm-avatar {
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f1edfc;
+  color: #6a6191;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.pm-who {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1c1730;
+  /* Plain ellipsis, NOT a fade mask. `.pm-who` is only as wide as its content,
+     so the box ended exactly where the text did and the right-edge fade ate the
+     last characters of even a short name — which is the "transparency" this
+     menu appeared to have. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-sub {
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #726c88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pm-sep {
+  height: 1px;
+  margin: 0 0.35rem 6px;
+  background: #e7e3f6;
+}
+
+/* ---- actions ---- */
+
+.pm-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: #1c1730;
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Not transitioned: the highlight is the feedback. */
+.pm-item:hover {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.pm-item svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: #6a6191;
+}
+
+.pm-danger:hover {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.pm-danger:hover svg {
+  color: #b02a2a;
+}

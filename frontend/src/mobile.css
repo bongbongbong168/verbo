@@ -1,0 +1,809 @@
+/* Phone layer. Imported after fonts.css so it wins on equal specificity.
+   Everything here is inside a `max-width: 767px` query — the desktop app is
+   untouched.
+
+   The target is iOS Safari behaving like an app, not merely a page that fits.
+   That means four things it does NOT get for free: a viewport height that
+   survives the toolbar sliding away, fields that do not zoom the page when
+   focused, content that clears the notch and the home indicator, and
+   navigation that lives where a thumb is. */
+
+@media (max-width: 767px) {
+  /* ---- viewport height ----
+     `100vh` on iOS Safari is the height with the toolbars HIDDEN, so a 100vh
+     box is taller than what you can see and its bottom is cut off until you
+     scroll. `100dvh` is the live height and shrinks as the toolbar appears.
+
+     Deliberately scoped INSIDE the phone query rather than applied globally:
+     dvh and vh are identical on a desktop browser, so a global override would
+     be a change with no benefit to the one layout that is already correct. */
+  @supports (height: 100dvh) {
+    :root {
+      --app-vh: calc(100dvh / var(--app-scale));
+    }
+  }
+
+  :root {
+    /* The 1.1 zoom is a desktop decision — it buys legibility on a large
+       screen. On a phone it just spends 10% of a narrow viewport, so the phone
+       renders at true scale. --app-vh follows automatically, since it is
+       defined as a division by this.
+
+       `!important` is load-bearing, not laziness: appScale.js writes this
+       variable as an INLINE style on <html>, and an inline style beats any
+       stylesheet rule. This is the only thing that can override it from CSS,
+       and doing it here keeps the breakpoint in one place rather than teaching
+       appScale.js to measure the window too. */
+    --app-scale: 1 !important;
+  }
+
+  html {
+    /* Stops the page rubber-banding away from the viewport and showing white
+       behind it — the single most "this is a web page" tell on iOS. */
+    overscroll-behavior-y: none;
+    /* The reserved scrollbar gutter is a desktop fix for pages that shift
+       sideways when the bar appears. Phones have no persistent scrollbar and
+       it only costs width here. */
+    overflow-y: auto;
+    /* Honour the notch on landscape, where the inset is horizontal. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    background: #f9f8fe;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* iOS zooms the whole page in when a focused field is under 16px, and never
+     zooms back out — which is why a form can leave you stranded at 150% with
+     the layout off screen. 16px is the threshold, so every field gets it.
+     `max-width: 100%` stops a fixed-width input widening the page. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    max-width: 100%;
+  }
+
+  /* The grey flash on tap is a browser default that reads as a web page. Real
+     controls keep their own :active styling. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* An image or table wider than the phone drags the whole layout sideways,
+     and horizontal page scroll is the other big "not an app" tell. */
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ---- page gutters ----
+     Nine pages were laid out with a 90px desktop gutter. On a 390px phone that
+     is 46% of the screen, leaving a column too narrow to read. Overridden here
+     rather than in nine stylesheets so they cannot drift apart. */
+  .db,
+  .rd,
+  .pc,
+  .sc,
+  .sd,
+  .ft,
+  /* The tutor profile page. Missing from this list, it kept its 90px desktop
+     gutters on a 390px phone — 180px of padding left a 210px column. */
+  .td,
+  .cd,
+  .ck,
+  .bo,
+  .ms,
+  .vb,
+  .nt,
+  .pf,
+  .se,
+  .cl,
+  .st,
+  .un,
+  .qp,
+  .ss {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* ---- multi-column bodies collapse ----
+     The app's two-panel pages are all built on the same 749fr / 420fr split.
+     None of them fit side by side on a phone. */
+  .db-body,
+  .pf-body,
+  .ft-layout,
+  /* The tutor profile page. Missed in the first pass, which is why its right
+     rail (the video / price / Lessons cards) still sat at desktop coordinates
+     and pushed 20px off the side of the screen. */
+  .td-layout,
+  .ck-grid,
+  /* `.ms-panels` was listed here and matches nothing — Messages' wrapper is
+     `.ms-layout`, and it gets its own one-panel-at-a-time treatment further
+     down. Removed rather than corrected, so there is exactly one place that
+     decides how that page behaves on a phone. */
+  .un-layout,
+  .sd-layout,
+  .ss-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* ---- vertical order: the rail comes FIRST on a phone ----
+
+     Every two-column page in Verbo puts browse content on the left and the
+     personal, decision-making content on the right. Collapsing to one column
+     stacks the whole left column before the whole right one, so on a phone the
+     right rail's content — which is the part the user came for — landed at the
+     bottom. Measured before this fix, at 375x812:
+
+       Dashboard      "My Learning" (your next lesson)      3.09 screens down
+       Tutor profile  "Book a lesson" / price               2.58 screens down
+       Tutor profile  the Lessons catalogue                 2.84 screens down
+
+     On the tutor page that meant scrolling past the entire résumé and every
+     review before finding out what a lesson costs. Negative `order` lifts the
+     rail above the browse column; nothing moves on desktop, where both columns
+     are visible at once and the order never mattered.
+
+     This is the ONE structural hierarchy change in this pass — the rest of the
+     app's pages already read top-to-bottom correctly (Bookings, Profile and
+     Find Tutor's filters all measured in a sensible order). */
+  /* The Dashboard's rail holds "My Learning" — whether you have a lesson today
+     — which outranks anything you might browse to. */
+  .db-rail {
+    order: -2;
+  }
+
+  /* The tutor page reads: who they are → are they any good → what it costs →
+     book → then the supporting material. Identity stays FIRST; the fix is to
+     lift price and booking above the résumé and reviews, not above the person.
+     (An earlier pass put the booking card at the very top, which answered
+     "how much" before "who", and read like a checkout for a stranger.) */
+  .td-profile {
+    order: -4;
+  }
+  .td-stats {
+    order: -3;
+  }
+  .td-hire {
+    order: -2;
+  }
+  .td-lessons {
+    order: -1;
+  }
+
+  /* NOT `.pf-side`. The Profile page's rail is the Account/Teaching block, and
+     it already sits correctly at the bottom — lifting it would put account
+     settings above the user's own learning progress, which is the opposite of
+     what that page is for. Measured before touching it: identity → progress →
+     tutors → courses → account, which is already right. */
+
+  /* Explicit grid placement is a desktop instruction. Left in place it fights
+     `order` — the browser honours the row/column coordinates and ignores the
+     ordering — so the single-column stack has to be freed from it first. */
+  .td-profile,
+  .td-stats,
+  .td-resume,
+  .td-reviews,
+  .td-similar,
+  .td-hire,
+  .td-lessons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  /* Find Tutor's preview rail is HOVER-driven — `onMouseEnter` on each card
+     fills it. A touch screen has no hover, and tapping a card navigates to the
+     full profile instead, so on a phone this rail can only ever show its empty
+     state ("Pick a tutor to see their profile") while costing most of a screen.
+     Measured at 2.27 screens down, below the results it was meant to preview.
+     Hidden rather than reordered: there is nothing here a phone user can reach
+     that the card above and the profile behind it do not already give them. */
+  .ft-side {
+    display: none !important;
+  }
+
+  /* A sticky right rail becomes a block that scrolls with everything else —
+     pinned to a viewport this short, it would cover the content. */
+  .td-side,
+  .pf-side,
+  .un-aside,
+  .sd-aside,
+  .ss-aside {
+    position: static !important;
+    width: auto !important;
+  }
+
+  /* Fixed panel heights are a desktop affordance: two columns that scroll
+     independently. On one narrow column the page itself is the scroller. */
+  .ms-list,
+  .ms-thread {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* ---- dialogs become sheets ----
+     A centred 452px card floating on a 390px screen reads as a web modal. Full
+     width, anchored to the bottom, is what a phone does. */
+  .bk-scrim,
+  .cx-scrim {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .bk,
+  .cx {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    /* Clear the home indicator, or the CTA sits under it. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ---- pages that scrolled sideways ----
+   Measured, not guessed: each rule below names the one element that was
+   overflowing on a 375px viewport. Horizontal page scroll is the loudest
+   "this is a website" tell on a phone, so every page must measure
+   scrollWidth === clientWidth. */
+@media (max-width: 767px) {
+  /* Read: the toggle and the bell/account pair could not both fit on one line,
+     and the row had no way to break. Read.css already un-pins the icons at
+     720px; it is the ROW that needed permission to wrap. */
+  .rd-topbar,
+  .pc-topbar {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  /* Podcast: the row's -24px side margins are a desktop bleed that lets the
+     card shadows breathe past the page gutter. Against a 16px gutter they
+     reach 8px past the viewport. Re-cut to the gutter so the bleed still
+     exists but ends exactly at the edge. */
+  .pc-row {
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+
+  /* Find Tutor and Scan: a search field plus two selects on one unbreakable
+     row. `flex-shrink: 0` is what pinned them at full desktop width. */
+  .ft-header-controls,
+  .sc-header-controls {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    gap: 0.6rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ft-header-controls > *,
+  .sc-header-controls > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .ft-header,
+  .sc-header {
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  /* Study: the 3-D carousel places its side books with translate + scale, so
+     they reach past the stage however small the book itself is made — the
+     720px rule already shrinks it to 190px and the neighbours still stuck out.
+     The stage clips instead. Vertical padding with a matching negative margin
+     keeps the books' drop shadows, which `overflow: hidden` would otherwise
+     shave off top and bottom — the same trick .db-pickup uses. */
+  .st-stage {
+    overflow: hidden;
+    padding-top: 24px;
+    padding-bottom: 24px;
+    margin-top: calc(1rem - 24px);
+    margin-bottom: calc(1.5rem - 24px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phone layout pass 2. The first pass made every page FIT; this one makes the
+   pages that were still laid out for a mouse actually work on a phone.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* ---- Messages: one panel at a time ----
+     The desktop layout is a thread list beside an open conversation. Stacked on
+     a phone that gave a full screen of "Pick a conversation." underneath the
+     list — a whole viewport spent saying nothing. Now it behaves like a phone
+     mail app: the list, then the conversation replacing it.
+
+     (The earlier pass targeted `.ms-panels`, which is not a class this page
+     has — the wrapper is `.ms-layout` — so that rule had been doing nothing.)
+
+     `:has()` is doing the work. Unsupported browsers simply keep the stacked
+     behaviour, which is the layout as it was rather than a broken one. */
+  .ms-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    display: block;
+  }
+
+  /* Nothing open: the empty chat pane is not worth a screen. */
+  .ms-chat:has(.ms-empty-chat) {
+    display: none;
+  }
+
+  /* Something open: the conversation takes the screen, the list steps aside.
+     Keyed on the list row that carries .active rather than on the chat pane —
+     CSS forbids nesting :has() inside :has(), so the obvious
+     `:has(.ms-chat:not(:has(...)))` is an INVALID selector and silently does
+     nothing. This is a single :has() and actually applies. */
+  .ms-layout:has(.ms-thread.active) .ms-list-panel {
+    display: none;
+  }
+
+  /* The way back, since the list is now hidden. */
+  .ms-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    margin-right: 2px;
+    border: 1px solid #e7e3f6;
+    border-radius: 10px;
+    background: #fff;
+    color: #1c1730;
+    cursor: pointer;
+  }
+
+  .ms-back svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* ---- Find Tutor ---- */
+  /* The tools wrapped onto their own line and sat left, stranded under the
+     search field. Pushed back to the right where they live everywhere else. */
+  .ft-header-controls {
+    justify-content: flex-end;
+  }
+
+  .ft-search {
+    flex: 1 1 100%;
+  }
+
+  /* Each pill was taking a full line — three stacked rows to say "Chinese,
+     Availability, Price". They flow now, two to a row. */
+  .ft-filterbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ft-pill {
+    flex: 0 1 auto;
+  }
+
+  /* 130x150 is a third of a phone screen for a thumbnail, which left the name
+     and bio squeezed into the remaining half. */
+  .ft-card {
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+
+  .ft-card-photo,
+  .ft-card-photo-placeholder {
+    width: 84px;
+    height: 100px;
+  }
+
+  /* ---- Dashboard: the pick-up row ----
+     `.db-study` is a fixed 327px — wider than the whole 296px row on a 390px
+     phone, so one card filled the strip and the rest were unreachable behind
+     the fade. On a phone the row becomes a real swipe strip: cards sized to the
+     screen, and touch scrolling so the ones past the edge can be reached.
+
+     `overflow-x: auto` forces `overflow-y` to compute to `auto` as well, which
+     would normally clip the cards' hover shadow — but the row already carries
+     14px/28px of vertical padding with a matching negative margin for exactly
+     that reason, so the shadow still has its room. */
+  .db-pickup {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .db-pickup::-webkit-scrollbar {
+    display: none;
+  }
+
+  .db-pickup > .db-study,
+  .db-pickup > .db-pod {
+    scroll-snap-align: start;
+  }
+
+  /* 310, not 250. The cover is a fixed 135px and the card has 14px padding
+     plus a 14px gap, so at 250 the text column was left with 73px — narrower
+     than the two 60px tags plus their 8px gap (128). They wrapped onto two
+     rows, which pushed the title down and made the card look cut off.
+     310 - 28 - 135 - 14 = 133px, enough for Unit and HSK to sit side by side
+     as the pair they are meant to be. */
+  .db-pickup > .db-study {
+    flex: 0 0 310px;
+    width: 310px;
+    min-width: 310px;
+  }
+
+  .db-pickup > .db-pod {
+    flex: 0 0 190px;
+    width: 190px;
+    min-width: 190px;
+  }
+
+  /* ---- Dashboard: hero ----
+     253px of an 844px screen was going on the greeting before any content. */
+  .db-hero {
+    padding: 22px 18px;
+  }
+
+  /* .db-greeting, not .db-greet — an earlier attempt used the wrong class and
+     silently did nothing. 1.8rem: the desktop 28.8px ran the greeting under
+     the streak badge on a 390px screen. */
+  .db-greeting {
+    font-size: 1.35rem;
+    /* The badge is absolutely positioned top-right, so the greeting needs a
+       hard stop before it rather than relying on the hero padding. */
+    padding-right: 118px;
+  }
+
+  .db-quote-chinese {
+    font-size: 1rem;
+  }
+
+  .db-quote-english {
+    font-size: 0.9rem;
+  }
+
+  /* Smaller and tucked in, so it clears the greeting beneath it. */
+  .db-streak-badge {
+    top: 12px;
+    right: 12px;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- conversation header ----
+     Avatar + name + "View profile" on one 390px line squeezed the name to
+     "Xu Ji…". The row wraps instead, so the person's name — the thing the
+     header exists to state — gets the space, and the profile link drops to its
+     own line when it cannot fit. */
+  .ms-chat-head {
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  .ms-chat-who {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .ms-chat-name {
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .ms-profile-btn {
+    margin-left: auto;
+  }
+
+  /* Same problem on the context card: the lesson name is what the card is
+     about, and it was clamped to "HSK…". */
+  .ms-context-lesson {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+@media (max-width: 767px) {
+  /* The icon group was stretched to the full row by the earlier
+     `.ft-header-controls > * { flex: 1 1 auto }` rule, so the three buttons
+     sat left inside a 358px box — stranded under the search field rather than
+     sitting at the right where they are on every other page. It keeps its own
+     width, and pushes itself to the end of the wrapped line. */
+  .ft-header-icons,
+  .sc-header-icons {
+    flex: 0 0 auto !important;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- tutor profile: unpin the explicit grid placement ----
+     `.td-main` and `.td-side` are `display: contents`, so their children are
+     the real grid items and each is pinned with `grid-column: 1` or `2` and an
+     explicit `grid-row`. Collapsing the grid to one column therefore did NOT
+     move anything: column 2 simply became an IMPLICIT track, and the right rail
+     kept its own width off the side of the screen — which is why `.td-side`
+     going `static` changed nothing.
+
+     Every item is released to auto placement so they stack in source order. */
+  .td-profile,
+  .td-stats,
+  .td-resume,
+  .td-reviews,
+  .td-similar,
+  .td-hire,
+  .td-lessons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  /* The price/video card spanned two rows to match the left column's height —
+     meaningless once everything is one column. */
+  .td-hire {
+    align-self: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* The photo frame is a flex item in .ft-card, so it stretched to the card's
+     full height while the photo inside stayed 84x100 — leaving a tall empty
+     bordered box under every portrait. It hugs its photo now.
+
+     Scoped to phones deliberately: on desktop the card is short enough that the
+     stretch is not visible, and this is not the moment to move the desktop
+     layout around. */
+  .ft-card-frame {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- Scan: the illustration was sitting on the copy ----
+     `.sc-notebook` is absolutely positioned at z-index 2 with the text at 1, so
+     on a 390px card the 245px artwork covered "Upload a Photo" and most of the
+     sentence under it. On desktop the card is wide enough for both; on a phone
+     the art has to give way, because the words are the part that matters.
+
+     It shrinks, moves to the corner, and drops BEHIND the copy — decoration
+     again rather than an obstruction. */
+  .sc-notebook {
+    width: 112px !important;
+    height: auto !important;
+    right: -6px !important;
+    bottom: -8px !important;
+    top: auto !important;
+    z-index: 1 !important;
+    opacity: 0.9;
+  }
+
+  .sc-upload-content {
+    position: relative;
+    z-index: 3;
+    /* Stops the text running under what is left of the artwork. */
+    padding-right: 96px;
+  }
+
+  /* Same stranded-icons problem Find Tutor had. The earlier rule guessed
+     `.sc-header-icons`; the class this page actually uses is
+     `.sc-topbar-icons`, so it had been doing nothing. */
+  .sc-topbar-icons {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- Read: the card thumbnail was eating the card ----
+     The article thumb is a fixed 185px inside a 245px card, leaving 82px for
+     the title and excerpt — a column so narrow that "How to use 为了" broke
+     across three lines and the excerpt read one or two words at a time.
+
+     Two things were stealing the width: the panel's own 25.6px padding on top
+     of the page's 16px gutter, and the thumb itself. Both give some back. */
+  .rd-panel {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .rd-thumb {
+    width: 104px !important;
+    min-width: 104px;
+    flex: 0 0 104px !important;
+  }
+
+  /* The featured card leads the page, so it keeps a larger image than the
+     rows beneath it — just not one that crowds out its own headline. */
+  .rd-thumb-lg {
+    width: 132px !important;
+    min-width: 132px;
+    flex: 0 0 132px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phone fixes from real-device testing (iPhone, Safari). Emulation missed all
+   three of these.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* ---- Podcast / Read: the icons were sitting ON the section toggle ----
+     `.pc-topbar-icons` and `.rd-topbar-icons` are `position: absolute; right: 0`
+     so they can sit beside the toggle on a wide screen. On a phone the toggle
+     fills the row and the icons landed on top of it, covering the word "Reads".
+
+     Taken out of absolute flow so they sit in the row instead. Podcast never
+     had a mobile rule at all — Read had one, but only at 720px and only
+     un-pinning its own copy. */
+  .pc-topbar-icons,
+  .rd-topbar-icons {
+    position: static !important;
+    transform: none !important;
+    margin-left: auto;
+  }
+
+  .pc-topbar,
+  .rd-topbar {
+    display: flex;
+    /* NOWRAP. Wrapping is what dropped the three tools onto a line of their
+       own — a 42px band plus its gap, spent on nothing, at the top of every
+       page. Measured at 375px: the toggle was 276 and the tools 145, needing
+       432 in a 343 bar. The two rules below buy that back. */
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.7rem;
+    /* The absolute icons needed room reserved on the right; static ones do not,
+       and the leftover padding just pushed the toggle off-centre. */
+    padding-right: 0 !important;
+  }
+
+  /* The toggle gives up 68px: tighter padding, a smaller label and a smaller
+     glyph. It is still the biggest thing in the row and still reads clearly —
+     a phone-sized control rather than a desktop one shrunk in place. */
+  .rd-topbar .tg,
+  .pc-topbar .tg {
+    gap: 0.4rem;
+    flex: none;
+  }
+
+  .rd-topbar .tg-item,
+  .pc-topbar .tg-item {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.92rem;
+    gap: 0.35rem;
+  }
+
+  .rd-topbar .tg-item svg,
+  .pc-topbar .tg-item svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* ---- the tools cluster, everywhere it appears on a phone ----
+     42px is a comfortable desktop target; on a phone these three sit in a row
+     that has to share its width with a real control, so they come down to 36 —
+     still above the 32px minimum a fingertip needs. */
+  .rd-topbar-icons,
+  .pc-topbar-icons,
+  .ft-header-icons,
+  .sc-topbar-icons {
+    gap: 0.4rem;
+    flex: none;
+  }
+
+/* Sized by the trigger classes themselves, not per container. Scoping it to
+     the three pages that needed the room would have left the same three
+     buttons at 42px on Scan and the Dashboard — one control at two sizes
+     depending on which page you were looking at. The bell's PNG is scaled by
+     percentage, so its visible chip follows the box down and stays correct. */
+  .nm-trigger,
+  .mg-trigger,
+  .pm-trigger {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* ---- Find Tutor: the tools belong beside the page title ----
+     Here they sat under a full-width search field, again on a row of their own.
+     The title block is only 226 of the header's 343, so there is already a gap
+     to its right exactly the shape of this cluster. Positioned rather than
+     re-parented: they live inside `.ft-header-controls` in the markup, and
+     moving them in the DOM would change the desktop layout too. */
+  .ft-header {
+    position: relative;
+  }
+
+  .ft-header-icons {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  /* Keeps a long title or subtitle from running under the cluster above it. */
+  .ft-header > :first-child {
+    padding-right: 124px;
+  }
+
+  /* ---- Scan: a five-column table on a 390px screen ----
+     Name / Shared Users / File Size / Last Modified / actions cannot fit, and
+     "Last Modified" was running off the right edge.
+
+     The columns are hidden rather than put in a horizontal scroller, because
+     the wrapper is deliberately `overflow: visible` — the row's ⋮ menu is an
+     absolutely positioned popover that a scroll container would clip. Name and
+     the menu are what you act on; the rest is detail the document page carries.
+
+     nth-child(2) and (3) are Shared Users and File Size. Last Modified stays:
+     "which scan was that?" is usually answered by when you made it. */
+  .sc-table th:nth-child(2),
+  .sc-table td:nth-child(2),
+  .sc-table th:nth-child(3),
+  .sc-table td:nth-child(3) {
+    display: none;
+  }
+
+  .sc-table th,
+  .sc-table td {
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+
+  /* ---- the tab bar was touching the last line of every page ----
+     `.sb-main` reserves 64px, but that is the bar's own height with no gap, so
+     content ended flush against it — the Study page's "HSK 1" heading sat
+     directly on the bar. A little breathing room, plus the home indicator. */
+  .sb-main {
+    padding-bottom: calc(64px + 18px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 767px) {
+  /* ---- Classroom header: the class code sat on top of the chips ----
+     `.cl-head` is a non-wrapping flex row and `.jc` is `flex: none`, so on a
+     phone the code box kept its full width while `.cl-head-body` was squeezed
+     below its content width — the Business / term / HSK chips then spilled out
+     of their box and rendered underneath it.
+
+     The row wraps now and the code takes a line of its own, which is also
+     where it belongs: it is read aloud across a room, so it wants width. */
+  .cl-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .cl-head-body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .cl-head-chips {
+    flex-wrap: wrap;
+  }
+
+  .jc {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  /* The tab strip is four items wide on a phone; let it wrap rather than
+     squeezing "Attendance SOON" off the edge. */
+  .cl-tabs {
+    flex-wrap: wrap;
+  }
+}

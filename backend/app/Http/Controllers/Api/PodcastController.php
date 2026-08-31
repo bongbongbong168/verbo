@@ -56,6 +56,7 @@ class PodcastController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'transcript' => ['required', 'string'],
+            'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'bio' => ['nullable', 'string'],
             'audio' => ['required', 'file', 'mimes:mp3,wav,m4a,ogg,aac,flac,mp4', 'max:20480'],
@@ -82,6 +83,7 @@ class PodcastController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'transcript' => ['required', 'string'],
+            'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'bio' => ['nullable', 'string'],
             'audio' => ['nullable', 'file', 'mimes:mp3,wav,m4a,ogg,aac,flac,mp4', 'max:20480'],

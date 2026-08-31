@@ -1,0 +1,650 @@
+/* Bookings page. Prefix `bo-`.
+   Same purple set as Find Tutor / the booking dialog, so arriving here from a
+   booking does not feel like a different product. */
+
+.bo-page {
+  --bo-card: #ffffff;
+  --bo-border: #e7e3f6;
+  /* Theme colours sampled from the design exports. */
+  --bo-accent: #6a6191;
+  --bo-accent-soft: #a89ce3;
+  --bo-pill-bg: #f1edfc;
+  --bo-text: #1c1730;
+  --bo-muted: #726c88;
+  --bo-field: #f8f7fd;
+
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching every other page */
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--bo-text);
+}
+
+/* Title on the left, the Messages/bell/account tools on the right. Wraps so
+   the tools drop below the heading on a phone rather than squeezing it. */
+.bo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+}
+
+.bo-head-text {
+  min-width: 0;
+}
+
+/* The tools are three 42px circles; `flex: none` keeps them their own size
+   rather than being stretched by the row. */
+.bo-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+  /* Keeps them on the right once the row WRAPS. `space-between` only positions
+     items sharing a line — a wrapped item starts at the left of its new line,
+     which put the icons under the title on a phone while Find Tutor and Scan
+     kept theirs on the right. */
+  margin-left: auto;
+}
+
+.bo-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.bo-sub {
+  margin: 0.3rem 0 0;
+  font-size: 0.92rem;
+  color: var(--bo-muted);
+}
+
+/* ---- tabs ---- */
+
+/* One line: tabs left, Clear all right.
+   `space-between` puts them at opposite ends, and `wrap` is the safety net —
+   on a narrow window, or with the armed note showing, the Clear-all group
+   drops to its own line instead of colliding with the tab pills.
+   `align-items: center` is what actually puts the button at the tabs' height,
+   since the two groups are different heights. */
+.bo-tabrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  margin-bottom: 1.3rem;
+}
+
+/* The margin moved to .bo-tabrow — leaving it here would space the tabs away
+   from a button now sitting beside them. */
+.bo-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bo-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--bo-text);
+  cursor: pointer;
+}
+
+.bo-tab:hover {
+  border-color: var(--bo-accent);
+}
+
+/* Static, not animated — the selected tab must be right on the first paint. */
+.bo-tab.active {
+  background: var(--bo-accent-soft);
+  border-color: var(--bo-accent-soft);
+  color: #fff;
+}
+
+/* A circle with the number centred in it. `min-width` equal to `height` under
+   `border-box` is what keeps it round — the same rule with `content-box` sizes
+   only the content and the padding rides on top, which is what made this an
+   oval. `line-height: 1` because a digit's own line box would otherwise push
+   it off the circle's centre. Three digits turn it into a pill rather than
+   squashing the number. */
+.bo-count {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  /* The 0.3px bottom lifts the digit off the circle's floor — centring aligns
+     its line box and Hellix reserves more ascent than a numeral uses. */
+  padding: 0 5px 0.3px;
+  border-radius: 999px;
+  background: var(--bo-pill-bg);
+  color: var(--bo-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bo-tab.active .bo-count {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* ---- groups ---- */
+
+.bo-group {
+  margin: 1.5rem 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--bo-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bo-group:first-of-type {
+  margin-top: 0;
+}
+
+.bo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-list-muted .bo-row {
+  opacity: 0.72;
+}
+
+/* ---- row ---- */
+
+.bo-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--bo-card);
+  border: 1px solid var(--bo-border);
+  border-radius: 14px;
+}
+
+.bo-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bo-accent-soft);
+  color: #fff;
+  font-weight: 700;
+}
+
+.bo-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.bo-who {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.bo-lesson {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--bo-pill-bg);
+  color: var(--bo-accent);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.bo-when {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+  color: var(--bo-muted);
+}
+
+.bo-when svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.bo-untimed {
+  font-style: italic;
+}
+
+.bo-message {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bo-muted);
+}
+
+.bo-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex: none;
+}
+
+/* ---- status ---- */
+
+.bo-chip {
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bo-chip-ok {
+  background: #ecf8f0;
+  color: #1f7a45;
+}
+
+.bo-chip-wait {
+  background: #fff4e5;
+  color: #9a5b00;
+}
+
+.bo-chip-off {
+  background: #f1f0f5;
+  color: #6b6780;
+}
+
+.bo-chip-lapsed {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+/* ---- actions ---- */
+
+.bo-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.bo-btn {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bo-text);
+  cursor: pointer;
+}
+
+.bo-btn:hover:not(:disabled) {
+  border-color: var(--bo-accent);
+  color: var(--bo-accent);
+}
+
+.bo-btn-primary {
+  background: var(--bo-accent-soft);
+  border-color: var(--bo-accent-soft);
+  color: #fff;
+}
+
+.bo-btn-primary:hover:not(:disabled) {
+  color: #fff;
+}
+
+.bo-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- states ---- */
+
+.bo-empty,
+.bo-empty-inline {
+  margin: 0;
+  color: var(--bo-muted);
+  font-size: 0.92rem;
+}
+
+/* Top trimmed from 2rem to 0.6rem. The tab row already contributes its own
+   1.3rem beneath it, so 2rem on top of that left the message floating ~53px
+   below the tabs with nothing in between — it read as detached from the tab
+   that produced it rather than as that tab's answer. The bottom keeps its
+   2rem so the message is not jammed against whatever follows. */
+.bo-empty {
+  padding: 0.6rem 0 2rem;
+}
+
+.bo-empty a {
+  color: var(--bo-accent);
+  font-weight: 600;
+}
+
+.bo-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 9px;
+  background: #fdecea;
+  color: #b02a2a;
+  font-size: 0.87rem;
+}
+
+@media (max-width: 720px) {
+  .bo-page {
+    padding: 1.4rem 1.2rem 2.4rem;
+  }
+
+  .bo-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .bo-side {
+    align-items: flex-start;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+/* ---- role switch (only when the account is also a tutor) ---- */
+
+.bo-roles {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 1rem;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--bo-pill-bg);
+}
+
+.bo-role {
+  padding: 0.4rem 0.95rem;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bo-accent);
+  cursor: pointer;
+}
+
+/* Static, not animated — the selected role must be right on the first paint. */
+.bo-role.active {
+  background: #fff;
+  color: var(--bo-text);
+  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.12);
+}
+
+.bo-title-h1 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+/* ---- richer row ---- */
+
+.bo-kind {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--bo-pill-bg);
+  color: var(--bo-accent);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bo-title {
+  margin: 0.15rem 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bo-accent);
+}
+
+.bo-note {
+  margin: 0.45rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9px;
+  background: #f8f7fd;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--bo-text);
+}
+
+.bo-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.84rem;
+  color: var(--bo-muted);
+}
+
+.bo-hint-no {
+  color: #b02a2a;
+}
+
+/* ---- status chips: one vocabulary, five states ---- */
+
+.bo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* `currentColor`, so the dot is whatever tone the chip already is — it cannot
+   be a different colour from the words beside it the way the old emoji was. */
+.bo-chip-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.bo-chip-done {
+  background: #eef0f6;
+  color: #4a5268;
+}
+
+.bo-chip-no {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.bo-btn-danger {
+  background: #b02a2a;
+  border-color: #b02a2a;
+  color: #fff;
+}
+
+.bo-btn-danger:hover:not(:disabled) {
+  color: #fff;
+}
+
+/* ---- decline dialog ---- */
+
+.bo-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(28, 23, 48, 0.45);
+  /* Static blur, never transitioned — see BookingDialog. */
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+
+.bo-modal {
+  width: min(400px, 100%);
+  box-sizing: border-box;
+  padding: 1.5rem 1.6rem;
+  background: #fff;
+  border: 1px solid var(--bo-edge, #2b2643);
+  border-radius: 18px;
+  box-shadow: 0 30px 70px rgba(28, 23, 48, 0.34);
+}
+
+.bo-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.bo-modal-sub {
+  margin: 0.2rem 0 1rem;
+  font-size: 0.88rem;
+  color: var(--bo-muted);
+}
+
+.bo-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bo-reason {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 11px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bo-reason input {
+  accent-color: var(--bo-accent-soft);
+}
+
+.bo-reason.active {
+  border-color: var(--bo-accent-soft);
+  background: var(--bo-pill-bg);
+}
+
+.bo-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+
+/* Clearing a row is a tidy-up, not a decision — it should not compete with
+   Accept or Cancel for attention. */
+.bo-btn-quiet {
+  border-color: transparent;
+  color: var(--bo-muted);
+}
+
+.bo-btn-quiet:hover:not(:disabled) {
+  border-color: var(--bo-border);
+  color: #b02a2a;
+}
+
+/* ---- clear the whole Past list ---- */
+
+/* Sits at the right-hand end of .bo-tabrow, level with the tabs. A destructive
+   control under the left edge of the tab strip read as part of the navigation;
+   on the far side of the same line it is clearly an action on the list below.
+   No bottom margin — the row owns the spacing now. */
+.bo-bulk {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+/* The armed note renders BEFORE the button despite coming after it in the
+   DOM. Packed to the right, the natural order would put the explanation on the
+   far edge and the button in the middle — reading "…keep their records. Click
+   again to clear 6" right to left. `order` fixes the reading direction without
+   moving the markup, which keeps the button first for the keyboard. */
+.bo-bulk-note {
+  order: -1;
+}
+
+/* Sized to the tab pills directly above it, not to the smaller role switch:
+   this sits in the same band and read as a different kind of control when it
+   was 7px shorter in a smaller face. `flex: none` stops the flex row shrinking
+   it below its own label on a narrow page — a squeezed pill with its text
+   spilling out is how this reads as broken. */
+.bo-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  /* `normal`, not a ratio. The tab pill leaves this at its default, and the
+     font's own metrics are what set its line box — any number chosen here
+     lands a fraction of a pixel off and would drift again on a font change.
+     Same font-size and padding as the tab, so the two pills match exactly. */
+  line-height: normal;
+  color: var(--bo-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The glyph carries the meaning on its own. A destructive control that is a
+   wordless red slab if anything goes wrong with its label is exactly the thing
+   nobody should be asked to click twice. */
+.bo-clear svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+
+.bo-clear:hover:not(:disabled) {
+  border-color: #b02a2a;
+  color: #b02a2a;
+}
+
+/* Armed is a static style, not an animation — the second click must be
+   unmistakably a different button from the first. */
+.bo-clear.armed {
+  background: #b02a2a;
+  border-color: #b02a2a;
+  color: #fff;
+}
+
+.bo-clear:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.bo-bulk-note {
+  font-size: 0.78rem;
+  color: var(--bo-muted);
+}

@@ -145,6 +145,13 @@ class ActivityController extends Controller
                 'label' => $date->format('D'),
                 'seconds' => $seconds,
                 'hours' => round($seconds / 3600, 2),
+                /* Did the user turn up at all? NOT `seconds > 0`: the first
+                   heartbeat of a day credits nothing, so a genuine short visit
+                   stores a row worth 0 seconds. The streak counts that day, so
+                   anything drawing a "days active" strip has to count it too —
+                   otherwise a streak of 3 can sit beside 2 ticked days on the
+                   same card, which reads as a bug even though both are right. */
+                'active' => array_key_exists($date->toDateString(), $byDay),
             ];
         }
 

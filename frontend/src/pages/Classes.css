@@ -1,0 +1,1648 @@
+/* Tutor portal. Prefix `cl-` (pages), with `cu-` curriculum rows, `ci-` create
+   dialog, `st-` submission table, `sw-` student submit, `jc-` join code.
+
+   Structure follows the reference export — class header, tab strip, expandable
+   log rows, modal — but rendered in Verbo's palette rather than its black and
+   white: #a89ce3 fills, #6a6191 emphasis, #f1edfc pale, #2b2643 stroke. */
+
+.cl {
+  --cl-bg: #f9f8fe;
+  --cl-card: #ffffff;
+  --cl-edge: #2b2643;
+  --cl-line: #e7e3f6;
+  --cl-well: #f1edfc;
+  --cl-fill: #a89ce3;
+  --cl-accent: #6a6191;
+  --cl-text: #1c1730;
+  --cl-muted: #726c88;
+
+  box-sizing: border-box;
+  min-height: var(--app-vh);
+  padding: 2rem 90px 3rem;
+  background: var(--cl-bg);
+  font-family: "Hellix", system-ui, sans-serif;
+  color: var(--cl-text);
+}
+
+.cl-page-note {
+  padding: 2rem 90px;
+}
+
+.cl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.3rem;
+}
+
+.cl-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+}
+
+.cl-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.cl-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--cl-fill);
+}
+
+.cl-back {
+  color: var(--cl-accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cl-back:hover {
+  text-decoration: underline;
+}
+
+.cl-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  background: #fdecea;
+  color: #b3261e;
+  font-size: 0.88rem;
+}
+
+.cl-empty {
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
+.cl-muted {
+  color: var(--cl-muted);
+}
+
+/* ---- the two ways in ---- */
+
+.cl-entry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 1.6rem;
+}
+
+.cl-entry-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 16px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+}
+
+.cl-entry-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.cl-entry-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--cl-muted);
+}
+
+.cl-join {
+  display: flex;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+/* Monospace and spaced: a class code is read aloud as often as it is typed. */
+.cl-join input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 10px;
+  background: #fbfaff;
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--cl-text);
+  text-transform: uppercase;
+  outline: none;
+}
+
+.cl-join input:focus {
+  border-color: var(--cl-fill);
+  background: #fff;
+}
+
+.cl-join-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b02a2a;
+}
+
+.cl-join-note.ok {
+  color: #1f7a45;
+}
+
+/* ---- buttons ---- */
+
+.cl-btn {
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--cl-fill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Instant — the fill is the feedback. */
+.cl-btn:hover:not(:disabled) {
+  background: var(--cl-accent);
+}
+
+.cl-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cl-btn-sm {
+  padding: 0.42rem 0.9rem;
+  font-size: 0.83rem;
+}
+
+.cl-btn-ghost {
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cl-btn-ghost:hover:not(:disabled) {
+  background: var(--cl-fill);
+  color: #fff;
+}
+
+/* ---- curriculum section head ----
+   The create button used to sit on its own above the list, which left it
+   looking unattached to anything. It is the right-hand action of a proper
+   section head now: what the list is on the left, how you add to it on the
+   right — the shape the Vocabulary Bank already uses. */
+
+.cl-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.cl-log-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.cl-log-title h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* A circle holding the number, nothing else.
+   `min-width` equal to `height` with `border-box` is what keeps it round: the
+   same rule sized with `content-box` produces an oval, because min-width then
+   sizes only the content and the padding rides on top. Three digits turn it
+   into a pill rather than squashing the number, which is the right failure. */
+.cl-log-count {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 24px;
+  height: 24px;
+  /* No optical correction here, and that is the measured answer rather than an
+     oversight. The digit sits 0.29px high, but at this size the sub-pixel grid
+     under the 1.1 zoom quantises coarsely: 0.3px of top padding lands at
+     +0.35 and 0.58px at +0.50, both further from centre than doing nothing.
+     Don't "fix" it without re-measuring. */
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  /* 1, not `normal`: a digit's own line box is what would otherwise push it
+     off the circle's centre. */
+  line-height: 1;
+}
+
+/* Visible to screen readers only — same clip pattern the sidebar's logout
+   button uses. */
+.cl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.cl-btn-log {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: none;
+  box-shadow: 0 2px 8px rgba(28, 23, 48, 0.14);
+}
+
+.cl-btn-log svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- empty curriculum ----
+   Dashed, because this is a slot waiting to be filled rather than a card with
+   something in it. The action lives inside the empty state: an empty list is
+   exactly where someone needs telling what the thing is for. */
+
+.cl-log-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.8rem 1.5rem 2.4rem;
+  border: 1px dashed #cfc9e6;
+  border-radius: 18px;
+  background: var(--cl-card);
+  text-align: center;
+}
+
+.cl-log-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 0.3rem;
+  border-radius: 14px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cl-log-empty-mark svg {
+  width: 21px;
+  height: 21px;
+}
+
+.cl-log-empty-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cl-log-empty-text {
+  margin: 0 0 0.9rem;
+  max-width: 430px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.cl-quiet {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--cl-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cl-quiet:hover {
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+/* ---- chips ---- */
+
+/* Two treatments only: quiet for the facts about the class (room, term,
+   teacher), filled for the level. A third style — the white chip with a navy
+   outline the room used to wear — made one row of three metadata chips look
+   like three unrelated controls. */
+.cl-chip {
+  /* Asymmetric: symmetric padding centres the LINE BOX, and Hellix reserves
+     more ascent than these short labels use, so the glyphs sat low. */
+  padding: 0.14rem 0.6rem 0.22rem;
+  border-radius: 7px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cl-chip-level {
+  background: var(--cl-fill);
+  color: #fff;
+}
+
+/* ---- class cards ---- */
+
+.cl-section {
+  margin-top: 1.8rem;
+}
+
+.cl-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.cl-sec-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cl-pending {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #fdeee6;
+  color: #b45b30;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.cl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.cl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--cl-edge);
+  border-radius: 16px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
+  transition: transform 0.14s ease;
+}
+
+.cl-card:hover {
+  transform: translateY(-2px);
+}
+
+.cl-card-link {
+  display: flex;
+  gap: 0.85rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cl-card-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cl-card-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.cl-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.cl-card-name {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.cl-card-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.cl-card-stats {
+  font-size: 0.79rem;
+  color: var(--cl-muted);
+}
+
+/* ---- class header ---- */
+
+.cl-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.3rem;
+}
+
+.cl-head-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  background: var(--cl-fill);
+  color: #fff;
+}
+
+.cl-head-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.cl-head-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-head-name {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.cl-head-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+}
+
+/* ---- tab strip ---- */
+
+.cl-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 1.2rem;
+  border-radius: 13px;
+  background: var(--cl-well);
+}
+
+.cl-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--cl-accent);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Instant — the active tab must be right on the first paint. */
+.cl-tab.active {
+  background: var(--cl-card);
+  color: var(--cl-text);
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.12);
+}
+
+.cl-soon {
+  padding: 0.06rem 0.38rem;
+  border-radius: 6px;
+  background: #eeedf3;
+  color: #6b6780;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ---- panels, forms, tables ---- */
+
+.cl-panel {
+  padding: 1.3rem 1.4rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 16px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+}
+
+.cl-soon-panel {
+  text-align: center;
+  padding: 2.4rem 1.4rem;
+}
+
+.cl-soon-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cl-form {
+  margin-bottom: 1.6rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 16px;
+  background: var(--cl-card);
+}
+
+.cl-panel .cl-form {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.cl-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.cl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.cl-field-wide {
+  grid-column: 1 / -1;
+}
+
+.cl-field span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cl-text);
+}
+
+.cl-field input,
+.cl-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 10px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--cl-text);
+  outline: none;
+  resize: vertical;
+}
+
+.cl-field input:focus,
+.cl-field textarea:focus {
+  border-color: var(--cl-fill);
+  background: #fff;
+}
+
+.cl-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.cl-check em {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--cl-muted);
+}
+
+.cl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.cl-table th {
+  padding: 0 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--cl-line);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+  text-align: left;
+}
+
+/* Centred, not top-aligned. The student cell is two lines (name + email) and
+   everything beside it is one, so `top` left the 7px progress bar clinging to
+   the ceiling of the row while the "1/1" text sat lower — three cells, three
+   different heights. */
+.cl-table td {
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid #f3f1fa;
+  vertical-align: middle;
+}
+
+/* The grading table keeps `top`: its last cell expands into a whole score +
+   feedback form, and centring against that would drag the student's name into
+   the middle of an otherwise empty row. */
+.st-table td {
+  vertical-align: top;
+}
+
+.cl-row-end {
+  text-align: right;
+}
+
+.cl-student {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* An inline-level box sits on the line's BASELINE by default, which leaves
+     room for descenders underneath and lifted this block 1.18px above the row
+     centre while every other cell sat exactly on it. */
+  vertical-align: middle;
+}
+
+.cl-face {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.cl-student-name {
+  display: block;
+  font-weight: 700;
+}
+
+.cl-student-email {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--cl-muted);
+}
+
+.cl-progress {
+  display: block;
+  width: 90px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--cl-well);
+  overflow: hidden;
+}
+
+/* Static width, no transition — the bar must be right on the first paint. */
+.cl-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cl-fill);
+}
+
+.cl-danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #f0b3ad;
+  border-radius: 12px;
+  background: #fdf6f5;
+}
+
+.cl-danger p {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--cl-muted);
+}
+
+.cl-danger-btn {
+  flex: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #f0b3ad;
+  border-radius: 9px;
+  background: #fff;
+  color: #b02a2a;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cl-danger-btn:hover:not(:disabled) {
+  background: #b02a2a;
+  border-color: #b02a2a;
+  color: #fff;
+}
+
+/* ============ join code ============ */
+
+.jc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+  padding: 0.4rem 0.4rem 0.4rem 0.7rem;
+  border: 1px dashed #c9c2ea;
+  border-radius: 11px;
+  background: #fbfaff;
+}
+
+.jc-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #726c88;
+}
+
+/* Monospace and letter-spaced: this gets dictated across a room. */
+.jc-code {
+  font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #1c1730;
+}
+
+.jc-copy {
+  padding: 0.3rem 0.65rem;
+  border: none;
+  border-radius: 8px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jc-copy:hover {
+  background: #a89ce3;
+  color: #fff;
+}
+
+.jc-closed {
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  background: #eeedf3;
+  color: #6b6780;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ============ curriculum rows ============ */
+
+.cl-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cu {
+  border: 1px solid var(--cl-line);
+  border-radius: 14px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+  overflow: hidden;
+}
+
+.cu.open {
+  border-color: #d9d3f2;
+}
+
+.cu-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+}
+
+.cu-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+/* Material gets its own tint so the two kinds are told apart before the label
+   is read. */
+.cu-icon.material {
+  background: #fdeee6;
+  color: #b45b30;
+}
+
+.cu-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cu-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cu-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--cl-text);
+}
+
+.cu-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--cl-muted);
+}
+
+.cu-meta > span + span::before {
+  content: "·";
+  margin-right: 0.5rem;
+}
+
+.cu-kind {
+  padding: 0.08rem 0.45rem;
+  border-radius: 6px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cu-kind.material {
+  background: #fdeee6;
+  color: #b45b30;
+}
+
+.cu-kind::before {
+  content: none !important;
+}
+
+.cu-due-past {
+  color: #b02a2a;
+  font-weight: 600;
+}
+
+.cu-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+  line-height: 1.15;
+}
+
+.cu-count strong {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.cu-count em {
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.cu-status {
+  flex: none;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.cu-status-missing {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.cu-status-submitted {
+  background: #e6f0fb;
+  color: #2f6199;
+}
+
+.cu-status-graded {
+  background: #ecf8f0;
+  color: #1f7a45;
+}
+
+.cu-del,
+.cu-chev {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--cl-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Inherits the button's colour, so it turns red with the rest of the control
+   on hover and on arming — which the emoji it replaced could never do. */
+.cu-del-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.cu-del:hover {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+/* Armed state after the first click — instant, because it IS the warning. */
+.cu-del.armed {
+  width: auto;
+  padding: 0 0.6rem;
+  background: #fdecea;
+  color: #b02a2a;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.cu-chev:hover {
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cu-chev svg {
+  width: 17px;
+  height: 17px;
+}
+
+.cu-body {
+  padding: 0 1rem 1rem 4.15rem;
+  border-top: 1px solid #f3f1fa;
+}
+
+.cu-desc {
+  margin: 0.9rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.cu-files {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+
+.cu-file {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 9px;
+  background: #fbfaff;
+  color: var(--cl-accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 260px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cu-file:hover {
+  border-color: var(--cl-fill);
+  background: var(--cl-well);
+}
+
+/* ============ submission table ============ */
+
+.st {
+  margin-top: 1.2rem;
+}
+
+.st-table {
+  font-size: 0.85rem;
+}
+
+.st-badge {
+  display: inline-block;
+  padding: 0.14rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.st-missing {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.st-submitted {
+  background: #e6f0fb;
+  color: #2f6199;
+}
+
+.st-graded {
+  background: #ecf8f0;
+  color: #1f7a45;
+}
+
+.st-late {
+  margin-left: 0.35rem;
+  padding: 0.14rem 0.45rem;
+  border-radius: 6px;
+  background: #fdeee6;
+  color: #b45b30;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.st-file {
+  max-width: 190px;
+  font-size: 0.76rem;
+}
+
+.st-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 11px;
+  background: #fbfaff;
+  text-align: left;
+}
+
+.st-grade label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.st-grade input,
+.st-grade textarea {
+  box-sizing: border-box;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  resize: vertical;
+}
+
+.st-grade input {
+  width: 88px;
+}
+
+.st-grade textarea {
+  width: 100%;
+}
+
+.st-note {
+  margin: 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--cl-muted);
+}
+
+/* ============ student submit ============ */
+
+.sw {
+  margin-top: 1.1rem;
+}
+
+.sw-current {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 12px;
+  background: #fbfaff;
+}
+
+.sw-current-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.sw-score {
+  margin-left: auto;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cl-accent);
+}
+
+.sw-feedback {
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--cl-line);
+}
+
+.sw-feedback-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.sw-feedback p {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.sw-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.sw-drop {
+  width: 100%;
+}
+
+.sw-late-warn {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b45b30;
+}
+
+.sw-closed {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+/* ============ create dialog ============ */
+
+.ci-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(28, 23, 48, 0.42);
+  /* Static, never transitioned — a blur that only half-advances would leave
+     the page behind stuck in an in-between state. */
+  backdrop-filter: blur(6px);
+}
+
+.ci {
+  width: min(460px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.4rem;
+  border: 1px solid #2b2643;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
+  font-family: "Hellix", system-ui, sans-serif;
+  color: #1c1730;
+  /* A small nudge, not a big slide: a keyframe starting far off-screen would
+     strand the dialog there if the tab never composites. */
+  animation: ci-in 0.15s ease-out;
+}
+
+/* Transform ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames. A keyframe that
+   starts at `opacity: 0` leaves the panel FULLY TRANSPARENT if those frames
+   never arrive, which is exactly how the account popover came up invisible.
+   The movement is ornament; visibility must never depend on it. */
+@keyframes ci-in {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* The create-class dialog reuses the `ci` shell but runs a two-column field
+   grid, which needs more room than the single-column item form. */
+.cl-create {
+  width: min(560px, 100%);
+}
+
+/* The cap tile ties the dialog to the class it is about to make — the same
+   mark the class header wears once it exists. */
+/* Both classes are on the element and `.ci-head` (align-items: flex-start) is
+   declared later in this file, so an equal-specificity override here would
+   lose on source order. Qualified deliberately rather than relying on where
+   the rule happens to sit. */
+.ci-head.cl-create-head {
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cl-line, #e7e3f6);
+}
+
+.cl-create-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--cl-fill, #a89ce3);
+  color: #fff;
+}
+
+.cl-create-mark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cl-create-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A sentence, so it is styled as one: sentence case, muted, normal tracking.
+   `.ci-sub` is an uppercase letter-spaced eyebrow — right for a label like the
+   class name, wrong for a line of prose. */
+.cl-create-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--cl-muted, #726c88);
+}
+
+.cl-create-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cl-line, #e7e3f6);
+}
+
+/* Pushes the buttons right while the hint holds the left — one row, so the
+   note is read on the way to the button rather than stranded above it. */
+.cl-create-hint {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--cl-muted, #726c88);
+}
+
+.ci-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ci-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ci-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #726c88;
+}
+
+.ci-x {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: #726c88;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ci-x:hover {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.ci-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 0.9rem;
+  border-radius: 11px;
+  background: #f1edfc;
+}
+
+.ci-switch-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: #6a6191;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ci-switch-btn.active {
+  background: #fff;
+  color: #1c1730;
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.12);
+}
+
+.ci-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ci-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 11px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: #1c1730;
+  outline: none;
+}
+
+.ci-input:focus {
+  border-color: #a89ce3;
+  background: #fff;
+}
+
+.ci-area {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ci-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ci-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.ci-inline-sm {
+  flex: none;
+  min-width: 92px;
+}
+
+.ci-inline span {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #726c88;
+}
+
+.ci-inline input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 10px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: #1c1730;
+  outline: none;
+}
+
+.ci-late {
+  flex: none;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 10px;
+  background: #fff;
+  color: #726c88;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ci-late.on {
+  border-color: #a89ce3;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.ci-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.1rem;
+  border: 1.5px dashed #c9c2ea;
+  border-radius: 12px;
+  background: #fbfaff;
+  color: #726c88;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ci-drop:hover {
+  border-color: #a89ce3;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.ci-drop svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ci-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ci-files li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  background: #f1edfc;
+  font-size: 0.8rem;
+}
+
+.ci-files li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ci-files button {
+  border: none;
+  background: none;
+  color: #726c88;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ci-error {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 9px;
+  background: #fdecea;
+  color: #b02a2a;
+  font-size: 0.84rem;
+}
+
+.ci-save {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 12px;
+  background: #a89ce3;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ci-save:hover:not(:disabled) {
+  background: #6a6191;
+}
+
+.ci-save:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  .cl {
+    padding: 1.5rem 24px 2.5rem;
+  }
+
+  .cl-tabs {
+    overflow-x: auto;
+  }
+
+  .cl-tab {
+    flex: none;
+  }
+
+  .cu-body {
+    padding-left: 1rem;
+  }
+
+  .cl-danger {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

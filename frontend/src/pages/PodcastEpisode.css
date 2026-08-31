@@ -1,17 +1,17 @@
 .pe {
-  --pe-bg: #f9f8ff;
+  --pe-bg: #f9f8fe;
   --pe-card: #ffffff;
   --pe-border: #e7e3f6;
   --pe-outline: #2b2643;
-  --pe-accent: #6c4fd1;
-  --pe-accent-light: #8b6ff0;
+  --pe-accent: #6a6191;
+  --pe-accent-light: #a89ce3;
   --pe-text: #1c1730;
   --pe-text-muted: #726c88;
 
   background: var(--pe-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem;  /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--pe-text);
 }
@@ -58,7 +58,7 @@
   border-radius: 16px;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #cfc6ef, #8b6ff0);
+  background: linear-gradient(135deg, #cfc6ef, #a89ce3);
 }
 
 .pe-cover img {
@@ -171,7 +171,9 @@
   color: #fff;
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .pe-play:hover {
@@ -184,9 +186,21 @@
   height: 20px;
 }
 
+/* The padding-top is an ALIGNMENT device, not spacing.
+
+   `.pe-player` centres its children, and this box is the bar (5px) plus a gap
+   plus the times row (13.6px) — so its centre sits ~10px BELOW the bar, and
+   the play button was landing 10.4px low against the thing it belongs to.
+   Reserving the same height above the bar as the times take below it makes the
+   bar the box's true centre, so `align-items: center` puts the play button
+   exactly on it. Keeping the times in flow (rather than absolutely positioned)
+   means the row still wraps safely on a narrow screen. */
 .pe-progress-wrap {
   flex: 1;
   min-width: 200px;
+  /* 0.45rem is the times' own margin-top; 0.85rem is its measured rendered
+     height (13.6px). Together they mirror exactly what sits below the bar. */
+  padding-top: calc(0.45rem + 0.85rem);
 }
 
 .pe-progress {
@@ -275,6 +289,90 @@
   padding: 2rem 2.2rem 2.4rem;
 }
 
+/* ---- reading aids: Pinyin + Translation ----
+   The reader's switches, brought over so the transcript behaves the same way
+   an article does. Same shapes and same rules as `.rd-controls`. */
+
+/* `pe-aids`, NOT `pe-controls`: the audio player's button cluster in the
+   banner already owns that name, so reusing it painted this panel's border,
+   fill and padding onto the play/skip controls up in the header. One class,
+   two meanings, on the same page. */
+.pe-aids {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--pe-border);
+  border-radius: 12px;
+  background: #fbfaff;
+}
+
+.pe-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.4rem;
+  border: 1px solid var(--pe-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pe-text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Instant, not transitioned — the fill IS the on/off answer, and a transition
+   that never gets a frame would leave the switch looking dead. */
+.pe-switch.on {
+  border-color: var(--pe-accent-light);
+  background: #f1edfc;
+  color: var(--pe-accent);
+}
+
+.pe-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pe-switch-track {
+  display: block;
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: #e2dff0;
+}
+
+.pe-switch.on .pe-switch-track {
+  background: var(--pe-accent-light);
+}
+
+/* The knob's position is a static `left`, not a transform transition: it has
+   to be correct on the first paint. */
+.pe-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
+}
+
+.pe-switch.on .pe-switch-knob {
+  left: 15px;
+}
+
+.pe-aids-note {
+  font-size: 0.78rem;
+  color: var(--pe-text-muted);
+}
+
 .pe-hint {
   color: var(--pe-text-muted);
   font-size: 0.8rem;
@@ -284,12 +382,17 @@
 /* Chinese transcript: larger, wide character spacing, regular weight.
    Hellix leads for Latin/digits; Chinese falls through to a regular-weight
    system CJK face — never Douyin Sans, which ships only a 700 weight. */
+/* Deliberately IDENTICAL to `.rd-body-cn`. A transcript and an article body are
+   the same thing — tokenized Chinese you hover for pinyin and save from — and
+   they were 1.15rem here against 1.3rem there, so the same sentence changed
+   size depending on which page you met it on. Read's 1.3 wins because it is
+   the size chosen for reading Chinese; keep the two in step. */
 .pe-transcript {
   white-space: pre-wrap;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   font-weight: 400;
-  line-height: 2.1;
+  line-height: 2;
   letter-spacing: 0.25em;
   color: var(--pe-text);
   margin: 0;
@@ -301,14 +404,117 @@
 .pe-word {
   cursor: pointer;
   border-radius: 5px;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+/* CENTRING THE HIGHLIGHT.
+   `letter-spacing` is added AFTER every character, the last one included, so a
+   word's inline box carries 5.2px of dead space on its right and none on its
+   left. The hover fill and the saved underline are drawn on that box, so both
+   sat visibly off-centre — the characters looked pushed to the left inside
+   their own highlight.
+
+   The padding grows the painted box leftwards by exactly that trailing space
+   and the negative margin cancels the layout shift, so the text does not move
+   at all. Scoped to the non-ruby view: the ruby rule sets its own `margin`
+   shorthand, which would overwrite the cancellation and shove the word right —
+   and ruby mode drops letter-spacing to 0.05em anyway, where the imbalance is
+   not visible. */
+.pe-transcript:not(.pe-transcript-ruby) .pe-word {
+  padding-left: 0.25em;
+  margin-left: -0.25em;
+}
+
+/* Saved words keep a 2px underline — same mark as `.sd-token.saved` and
+   `.rd-word.saved`, so a collected word looks the same wherever you meet it. */
+.pe-word.saved {
+  box-shadow: inset 0 -2px 0 0 #c9bdf3;
 }
 
 .pe-word:hover,
 .pe-word.active {
-  background: #6c4fd1;
+  background: #6a6191;
   color: #fff;
-  box-shadow: 0 0 0 2px #6c4fd1;
+  box-shadow: 0 0 0 2px #6a6191;
+}
+
+/* One shadow list, or the hover ring would REPLACE the saved underline
+   instead of joining it. */
+.pe-word.saved:hover,
+.pe-word.saved.active {
+  box-shadow:
+    0 0 0 2px #6a6191,
+    inset 0 -2px 0 0 #c9bdf3;
+}
+
+/* ---- ruby: pinyin stacked over the character ----
+   Each word becomes a two-line inline-flex column. The extra line-height and
+   bottom margin are what stop the stacked rows colliding. */
+
+/* Matches `.rd-body-ruby`: the stacked pinyin adds its own height, so the line
+   tightens from 2 to 1.5 rather than compounding. */
+.pe-transcript-ruby {
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+}
+
+.pe-transcript-ruby .pe-word {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: bottom;
+  margin: 0 0.14em 0.35em;
+}
+
+.pe-word-py {
+  font-family: 'Hellix', system-ui, sans-serif;
+  /* 0.62em, same as `.rd-word-py` — it is relative to the character it sits
+     over, so matching the ratio keeps the pairing identical on both pages. */
+  font-size: 0.62em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: var(--pe-accent);
+  white-space: nowrap;
+}
+
+/* The hover fill covers the whole stack, so the pinyin has to invert with it. */
+.pe-word:hover .pe-word-py,
+.pe-word.active .pe-word-py {
+  color: #fff;
+}
+
+/* ---- translation ---- */
+
+.pe-translation {
+  margin-top: 1.6rem;
+  padding: 1rem 1.1rem;
+  border-left: 3px solid var(--pe-accent-light);
+  border-radius: 0 12px 12px 0;
+  background: #fbfaff;
+}
+
+.pe-translation-label {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  background: #f1edfc;
+  color: var(--pe-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pe-translation-body {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: var(--pe-text);
 }
 
 /* ---- admin form ---- */

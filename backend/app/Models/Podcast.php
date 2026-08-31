@@ -15,6 +15,7 @@ class Podcast extends Model
         'audio_path',
         'image_path',
         'transcript',
+        'transcript_en',
         'level',
         'bio',
     ];

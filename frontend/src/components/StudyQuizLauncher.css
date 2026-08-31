@@ -1,0 +1,131 @@
+/* Quiz-tab launcher. Prefix `ql-`.
+   Built to `design/Group 39644.png`. Same palette as the quiz page it opens,
+   so the hand-off does not change look. */
+
+.ql {
+  --ql-stroke: #2b2643;
+  --ql-fill: #a89ce3;
+  --ql-accent: #6a6191;
+  --ql-well: #f1edfc;
+  --ql-text: #1c1730;
+  --ql-muted: #726c88;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  /* Widened to land on the design's landscape proportion (~1.6:1). The card
+     was 1.41 at 620 — it carries one line the design does not (the real
+     question count), so the width absorbs that rather than the content being
+     cut to fit. */
+  max-width: 700px;
+  /* No bottom margin — the band's height is reserved by `.un-quiz-panel`'s
+     padding, because a margin here would collapse through it. */
+  margin: 0 auto;
+  padding: 1.9rem 2rem 2rem;
+  border: 1px solid var(--ql-stroke);
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--ql-text);
+  /* The navy band beneath the card — the design's signature, the same one the
+     Culture card wears. A HARD offset shadow (no blur, no spread) rather than
+     a soft one: it is a solid slab showing under the bottom edge, and it
+     follows the 20px radius for free. The bottom margin reserves its height so
+     it does not sit on whatever follows. */
+  box-shadow: 0 12px 0 0 var(--ql-stroke);
+}
+
+/* Height-driven, so the artwork keeps its own aspect whatever the card width
+   does. Transparent PNG — the background was flood-filled from the edges, so
+   the shirt collar and the owl's face kept their whites. */
+.ql-art {
+  display: block;
+  /* Sized so the card lands near the design's landscape proportion (~1.6:1)
+     rather than the portrait shape a taller illustration produced. */
+  height: 150px;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: 0.7rem;
+}
+
+.ql-heading {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.ql-lede {
+  margin: 0.5rem 0 0;
+  /* Held narrower than the card so the two lines break near the design's
+     measure instead of running the full width. */
+  max-width: 430px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ql-muted);
+}
+
+/* What the run actually contains — the one line on this card that differs per
+   unit, so it is set apart from the static description above it. */
+.ql-count {
+  margin: 0.55rem 0 0;
+  padding: 0.24rem 0.7rem 0.32rem;
+  border-radius: 8px;
+  background: var(--ql-well);
+  color: var(--ql-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ql-start {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 250px;
+  margin-top: 1.2rem;
+  /* Asymmetric: Hellix reserves more ascent than this label uses, so a
+     symmetric pad leaves the glyphs sitting low. The 1px taken off each side
+     pays for the border below, so adding the stroke does not make the button
+     2px taller — and the 1.28px difference that does the optical work is
+     untouched. */
+  padding: 11.12px 1.6rem 13.12px;
+  border: 1px solid var(--ql-stroke);
+  border-radius: 12px;
+  background: var(--ql-fill);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Instant — the fill IS the feedback, and a transition that never gets a frame
+   leaves the button looking dead under the pointer. */
+.ql-start:hover {
+  background: var(--ql-accent);
+}
+
+.ql-start:focus-visible {
+  outline: 2px solid var(--ql-accent);
+  outline-offset: 3px;
+}
+
+.ql-empty {
+  margin: 0;
+  font-family: 'Hellix', system-ui, sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: #726c88;
+}
+
+@media (max-width: 620px) {
+  .ql-art {
+    height: 150px;
+  }
+
+  .ql-start {
+    min-width: 0;
+    width: 100%;
+  }
+}

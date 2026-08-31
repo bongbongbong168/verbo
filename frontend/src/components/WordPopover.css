@@ -11,7 +11,7 @@
   color: #fff;
   border-radius: 14px;
   padding: 0.85rem 1rem 0.7rem;
-  font-family: 'Hellix', system-ui, sans-serif;
+  font-family: "Hellix", system-ui, sans-serif;
   box-shadow: 0 18px 38px rgba(27, 22, 48, 0.32);
   pointer-events: none;
   animation: wp-in 0.12s ease-out;
@@ -21,9 +21,10 @@
   transform: translate(-50%, 0);
 }
 
+/* Transform only — an `opacity: 0` start would leave the popover invisible
+   whenever the animation does not get frames, and this card IS the feature. */
 @keyframes wp-in {
   from {
-    opacity: 0;
     transform: translate(-50%, calc(-100% - 4px));
   }
 }
@@ -34,7 +35,6 @@
 
 @keyframes wp-in-below {
   from {
-    opacity: 0;
     transform: translate(-50%, 4px);
   }
 }
@@ -43,7 +43,7 @@
    centre, so the tip keeps pointing at the word even when the card is pushed
    away from the viewport edge. */
 .wp::after {
-  content: '';
+  content: "";
   position: absolute;
   left: calc(50% + var(--wp-arrow, 0px));
   bottom: -5px;
@@ -69,7 +69,8 @@
 }
 
 .wp-hanzi {
-  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-family:
+    "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   font-weight: 700;
   font-size: 1.4rem;
   line-height: 1.1;

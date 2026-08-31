@@ -45,6 +45,26 @@ html {
   zoom: var(--app-scale);
 }
 
+/* The app-wide base face.
+
+   This file only ever declared @font-face blocks — nothing set a font-family on
+   body. Every component named its own, so anything using `font-family: inherit`
+   inherited from an ancestor that had none, and fell back to the browser
+   default. On iOS Safari that default is a SERIF: the bottom tab bar rendered
+   Home / Learn / Explore in Times while the rest of the app was Hellix.
+
+   Hellix leads so Latin, digits and punctuation use it; Chinese then falls
+   through to the platform CJK faces, because Hellix carries no CJK glyphs. */
+body {
+  font-family:
+    'Hellix',
+    system-ui,
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Noto Sans SC',
+    sans-serif;
+}
+
 @font-face {
   font-family: 'Douyin Sans';
   src: url('./assets/fonts/DouyinSans-Bold.otf') format('opentype');

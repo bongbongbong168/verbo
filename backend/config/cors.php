@@ -33,7 +33,10 @@ return [
      * silently insert an empty origin.
      */
     'allowed_origins' => array_values(array_filter(array_map(
-        'trim',
+        /* Cast before trimming. An unset FRONTEND_URL is null, and PHP 8.2
+           deprecates passing null to trim() — which surfaced as a deprecation
+           notice on every request in the production build. */
+        fn ($origin) => trim((string) $origin),
         array_merge(
             ['http://localhost:5173'],
             [env('FRONTEND_URL')],

@@ -47,7 +47,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Laravel's front controller lives in public/, and its .htaccess needs
 # AllowOverride to be honoured or every route but "/" returns 404.
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN a2enmod rewrite \
+# Exactly one MPM may be loaded, and the apt install above leaves mpm_event
+# enabled alongside the prefork that mod_php requires — Apache then refuses to
+# start with "More than one MPM loaded" and the container crash-loops.
+#
+# The symlinks are removed directly rather than with `a2dismod mpm_event
+# mpm_worker`: mpm_worker is not installed, so a2dismod aborts on the invalid
+# argument WITHOUT disabling mpm_event, and a2enmod then happily adds prefork
+# next to it. That failure is silent, which is how it reached production.
+#
+# The `test` at the end is the guard: exactly one MPM .load must remain, or the
+# BUILD fails here rather than the container crash-looping after deploy.
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* \
+          /etc/apache2/mods-enabled/mpm_worker.* \
+    && a2enmod mpm_prefork \
+    && test "$(ls /etc/apache2/mods-enabled/ | grep -c 'mpm_.*\.load')" = "1" \
+    && a2enmod rewrite \
     && sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
         /etc/apache2/sites-available/*.conf \
     && sed -ri 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' \

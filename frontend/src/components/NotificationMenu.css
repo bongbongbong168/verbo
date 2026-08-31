@@ -1,0 +1,327 @@
+/* Notification bell + dropdown. Prefix `nm-`.
+   Palette matches ProfileMenu, which sits beside it: #a89ce3 filled,
+   #6a6191 emphasis, #f1edfc pale, #2b2643 stroke. */
+
+.nm {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The Figma export, not a drawn circle: the PNG already carries its own light
+   chip and the navy bell. The button itself is transparent and exists only as
+   the hit area and the badge's positioning context. */
+.nm-trigger {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  /* Just enough to lift it off the page ground. Navy-tinted like every other
+     shadow in the app rather than neutral black, which would grey the lavender
+     underneath it. */
+  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.1);
+}
+
+/* The export pads its circle to 70% of the frame, so scaling to 143% makes the
+   visible circle exactly 42px — matching the account button beside it. Without
+   this the bell's chip renders ~29px and the pair look mismatched. */
+.nm-trigger img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 143%;
+  height: 143%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* A baked raster cannot change colour, so the state is a ring around it.
+   Instant — the ring IS the "open" signal, and a transition that never gets a
+   frame would leave it looking shut. */
+/* The ring and the lift are one shadow list — a second box-shadow declaration
+   would replace the first rather than add to it. */
+.nm-trigger:hover,
+.nm-trigger.open {
+  box-shadow:
+    0 0 0 2px #a89ce3,
+    0 4px 12px rgba(28, 23, 48, 0.16);
+}
+
+/* "Something new", not how much. The app's own #a89ce3 rather than a warning
+   red — an unread message is not an alert. The ring is the page ground, so the
+   dot stays separate from the chip's edge instead of merging into it. */
+.nm-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  box-sizing: border-box;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #f9f8fe;
+  border-radius: 50%;
+  background: #a89ce3;
+}
+
+/* ---- panel ---- */
+
+.nm-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  width: 356px;
+  box-sizing: border-box;
+  border: 1px solid #2b2643;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
+  font-family: "Hellix", system-ui, sans-serif;
+  overflow: hidden;
+  /* A small nudge, not a full slide: a keyframe starting far off-screen would
+     strand the panel there if the tab never composites. */
+  animation: nm-in 0.14s ease-out;
+}
+
+/* Transform ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames. A keyframe that
+   starts at `opacity: 0` leaves the panel FULLY TRANSPARENT if those frames
+   never arrive, which is exactly how the account popover came up invisible.
+   The movement is ornament; visibility must never depend on it. */
+@keyframes nm-in {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.nm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem 0.7rem;
+  border-bottom: 1px solid #e7e3f6;
+}
+
+.nm-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1c1730;
+}
+
+.nm-mark {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6a6191;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nm-mark:hover {
+  text-decoration: underline;
+}
+
+/* Capped height so a long history scrolls inside the panel rather than running
+   off the bottom of the window. */
+.nm-list {
+  max-height: 344px;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.nm-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.6rem 0.65rem;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nm-item:hover {
+  background: #f9f8fe;
+}
+
+/* Unread carries a tint AND a dot — two signals, so the state survives being
+   glanced at rather than read. */
+.nm-item.unread {
+  background: #f7f4ff;
+}
+
+.nm-item.unread:hover {
+  background: #f1edfc;
+}
+
+.nm-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.nm-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* A row showing a face drops its category tint: the picture IS the fill, and a
+   coloured ring around it would read as a second competing shape. The class is
+   set alongside the tint rather than instead of it, so this has to override —
+   hence repeating background here. */
+.nm-icon.nm-icon-photo {
+  background: #ece8f7;
+  overflow: hidden;
+}
+
+.nm-icon-photo img {
+  width: 100%;
+  height: 100%;
+  /* Faces are cropped to the circle rather than squashed into it. */
+  object-fit: cover;
+  display: block;
+}
+
+/* Category tints. Distinct enough to tell apart at a glance, all within the
+   app's range rather than a new palette. */
+.nm-tutor {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.nm-message {
+  background: #e6f0fb;
+  color: #2f6199;
+}
+
+.nm-course {
+  background: #fdeee6;
+  color: #b45b30;
+}
+
+.nm-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.nm-item-title {
+  font-size: 0.87rem;
+  font-weight: 700;
+  color: #1c1730;
+}
+
+.nm-item-text {
+  margin-top: 0.1rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #726c88;
+  /* Two lines, then it fades — the full text is on the page behind it. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nm-time {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9a95ab;
+}
+
+.nm-unread-dot {
+  flex: none;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a89ce3;
+}
+
+.nm-empty {
+  margin: 0;
+  padding: 1.4rem 1rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  text-align: center;
+  color: #726c88;
+}
+
+.nm-all {
+  display: block;
+  padding: 0.75rem;
+  border-top: 1px solid #e7e3f6;
+  background: #fff;
+  color: #6a6191;
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nm-all:hover {
+  background: #f1edfc;
+}
+
+/* Two text actions in the head, so they need their own row to sit in — the
+   head is `space-between`, which would otherwise push them to opposite ends
+   with the title stranded in the middle. */
+.nm-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: none;
+}
+
+/* Same quiet text button as "Mark all as read", but red: this one destroys.
+   It sits second, so the safe action is the one nearer the title. */
+.nm-clear {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #b02a2a;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nm-clear:hover {
+  text-decoration: underline;
+}
+
+/* Armed is a static style, never a transition — a confirm state that only
+   appears once an animation frame arrives would leave the second tap looking
+   like the first. */
+.nm-clear.armed {
+  padding: 2px 8px 3px;
+  border-radius: 999px;
+  background: #b02a2a;
+  color: #fff;
+}
+
+.nm-clear.armed:hover {
+  text-decoration: none;
+}

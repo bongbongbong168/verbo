@@ -3,8 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+
+    <!-- viewport-fit=cover is what lets the page paint under the notch and the
+         home indicator; without it iOS letterboxes the whole app in white bars
+         and it can never look native. The safe areas are then paid back with
+         env(safe-area-inset-*) in mobile.css.
+
+         Zoom is deliberately NOT disabled. Pinch-zoom is an accessibility
+         feature, and the reason people disable it — Safari zooming in when a
+         field is focused — is fixed properly in mobile.css by giving inputs a
+         16px face instead. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Added to the Home screen, this runs without Safari's chrome. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- `default` keeps the status-bar text dark, which is what suits the app's
+         pale ground. `black-translucent` would put white text on it. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Verbo" />
+    <!-- Tints Safari's UI to the page ground so the seam does not show. -->
+    <meta name="theme-color" content="#f9f8fe" />
+
+    <title>Verbo</title>
   </head>
   <body>
     <div id="root"></div>

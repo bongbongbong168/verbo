@@ -54,5 +54,25 @@ php artisan route:cache
 sed -ri "s/^Listen [0-9]+/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
+# Exactly one MPM may be loaded or Apache refuses to start ("More than one MPM
+# loaded") and the container crash-loops. The base image ships mpm_prefork,
+# which mod_php requires, but the apt layer leaves mpm_event enabled too.
+#
+# Done HERE rather than only in the Dockerfile because the build layer that
+# fixes it can be served from cache, and a cached layer silently reintroduced
+# the broken state on three consecutive deploys. Start-up state is the thing
+# that actually matters, so it is asserted at start-up: idempotent, and immune
+# to whatever the builder decided to reuse.
+rm -f /etc/apache2/mods-enabled/mpm_event.* \
+      /etc/apache2/mods-enabled/mpm_worker.*
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
+mpm_count="$(find /etc/apache2/mods-enabled -name 'mpm_*.load' | wc -l)"
+echo "[verbo] MPM modules loaded: ${mpm_count} ($(find /etc/apache2/mods-enabled -name 'mpm_*.load' -printf '%f '))"
+if [ "$mpm_count" != "1" ]; then
+  echo "[verbo] FATAL: expected exactly one MPM, found ${mpm_count}" >&2
+  exit 1
+fi
+
 echo "[verbo] serving on ${PORT}"
 exec apache2-foreground
