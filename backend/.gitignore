@@ -24,3 +24,7 @@ yarn-error.log
 
 # Database snapshots pulled from production. Real user data — never committed.
 backups/
+
+# Scratch from manual API testing — a booking payload and its id.
+bk.json
+bkid.txt
