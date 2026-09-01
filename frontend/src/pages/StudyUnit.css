@@ -94,6 +94,17 @@
   margin-bottom: 1.6rem;
 }
 
+/* The pills sit in a row now — the level label plus, when a topic has more
+   than one lesson, where this one falls. The margin moved off the pill and
+   onto the row so two pills do not double it. */
+.un-hero-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
 .un-hero-pill {
   display: inline-block;
   background: rgba(0, 0, 0, 0.4);
@@ -103,7 +114,86 @@
   border: 1.5px solid #000;
   border-radius: 999px;
   padding: 0.36rem 1rem;
-  margin-bottom: 0.8rem;
+}
+
+/* Position is a fact, not a badge — it should not compete with the level. */
+.un-hero-pill-quiet {
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+/* ---- after the conversation ---- */
+
+.un-outro {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.6rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--un-tab-edge, #e7e3f6);
+}
+
+/* The one action here, so it is the only filled thing in the row. */
+.un-outro-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.75rem 1.4rem;
+  border-radius: 12px;
+  background: #a89ce3;
+  color: #fff;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.un-outro-sub {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.un-outro-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.un-outro-next,
+.un-outro-back {
+  padding: 0.6rem 1.1rem;
+  border: 1px solid #a89ce3;
+  border-radius: 10px;
+  background: #fff;
+  color: #6a6191;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Leaving is the quieter of the two ways out — continuing is the expected one. */
+.un-outro-back {
+  border-color: var(--un-tab-edge, #e7e3f6);
+  color: #726c88;
+}
+
+.un-outro-next:hover,
+.un-outro-back:hover {
+  background: #f1edfc;
+}
+
+@media (max-width: 767px) {
+  .un-outro-nav {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .un-outro-cta {
+    width: 100%;
+  }
 }
 
 .un-hero-title {
@@ -899,6 +989,115 @@
   margin: 0;
 }
 
+/* The English rendering of the line, under its pinyin. Quieter than both, so
+   the Chinese stays the thing being read and this is a check you glance at. */
+.un-line-english {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.62);
+}
+
+/* A hoverable word in the dialogue.
+   `.active` mirrors `:hover` so the highlight and the popover are driven by one
+   piece of state and cannot disagree — the rule every other reading surface in
+   the app follows. Static, no transition: the highlight IS the feedback. */
+.un-word {
+  border-radius: 4px;
+  cursor: help;
+}
+
+.un-word:hover,
+.un-word.active {
+  background: var(--un-pill, #f1edfc);
+}
+
+/* Already in the vocabulary bank. An underline rather than a fill, so a saved
+   word still reads as part of the sentence instead of a highlighted block. */
+.un-word.saved {
+  text-decoration: underline;
+  text-decoration-color: #a89ce3;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* ---- reading aids ---- */
+
+.un-aids {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.un-aid {
+  padding: 0.45rem 0.9rem;
+  border: 2px solid var(--un-tab-edge);
+  border-radius: 10px;
+  background: var(--un-card);
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--un-text);
+  cursor: pointer;
+}
+
+/* Static, not transitioned — the fill IS the on/off state, and a transition
+   that never gets a frame would leave a switched-on aid looking off. */
+.un-aid.on {
+  background: #a89ce3;
+  border-color: #a89ce3;
+  color: #fff;
+}
+
+.un-aid:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Play is the one action in this row rather than a display toggle, so it reads
+   as the primary of the three. */
+.un-aid-play {
+  border-color: #a89ce3;
+  color: #6a6191;
+}
+
+/* ---- per-line audio ---- */
+
+.un-line-say {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 0.4rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(168, 156, 227, 0.18);
+  color: #6a6191;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.un-line-say:hover {
+  background: rgba(168, 156, 227, 0.34);
+}
+
+.un-line-say svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* The line currently being spoken during full playback. A left rule plus a
+   tint rather than a colour change on the text itself, so the Chinese keeps
+   the contrast it needs to be read while it is being read aloud. Static — the
+   highlight has to be correct on the frame it appears, and a transition that
+   never advances would leave it looking unhighlighted. */
+.un-line.speaking {
+  box-shadow: inset 3px 0 0 0 #a89ce3;
+  background: rgba(168, 156, 227, 0.1);
+}
+
 /* ---- New Words side panel ----
    Measured from design/study/readinhsk/Group 39631.png (385x420):
    the white card sits nearly flush to the sides (~2px) and the black shows
@@ -932,17 +1131,24 @@
   text-underline-offset: 5px;
 }
 
+/* Holds a count now, not a repeat of the heading. Sized as a round badge
+   rather than a wide pill: `min-width` equal to `height` with `border-box` is
+   what keeps a single digit circular instead of oval — the same rule the Read
+   page's saved-count badge follows — and a three-digit count stretches it into
+   a pill rather than squashing the number. */
 .un-newwords-chip {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.55rem;
   background: #fff;
   color: #000;
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
-  font-size: 1.05rem;
-  border-radius: 12px;
-  padding: 0 1.1rem;
-  height: 42px;
-  display: inline-flex;
-  align-items: center;
+  font-size: 0.95rem;
+  border-radius: 999px;
 }
 
 .un-newwords-body {

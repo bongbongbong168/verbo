@@ -8,6 +8,7 @@ use App\Models\Flashcard;
 use App\Models\Podcast;
 use App\Models\Scan;
 use App\Models\StudyUnit;
+use App\Services\ExampleFinder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
@@ -224,6 +225,33 @@ class FlashcardController extends Controller
         $flashcard = $request->user()->flashcards()->create($data);
 
         return response()->json($this->attachSources(collect([$flashcard]))->first(), 201);
+    }
+
+    /**
+     * Sentences using this word, found across the learner's own library.
+     *
+     * On demand rather than on the list: this runs four LIKE scans, and doing
+     * it for every row of a bank that grows without bound would be most of the
+     * work thrown away — nobody opens every word.
+     *
+     * The card's OWN saved example is not included here. It is already on the
+     * card (captured at save time, from the passage the learner actually read)
+     * and the client shows it first, labelled as where they met the word. These
+     * are the additional places it turns up.
+     */
+    public function examples(Request $request, Flashcard $flashcard, ExampleFinder $finder)
+    {
+        // (int) cast: SQLite returns the foreign key as a string, and a bare
+        // !== would 403 the rightful owner.
+        if ((int) $flashcard->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $limit = min(max((int) $request->query('limit', 3), 1), 6);
+
+        return response()->json(
+            $finder->find($flashcard->word, $request->user()->id, $limit)
+        );
     }
 
     public function destroy(Request $request, Flashcard $flashcard)

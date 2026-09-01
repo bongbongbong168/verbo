@@ -5,6 +5,10 @@ import { api } from '../api'
 /* The same artwork the Dashboard's streak badge uses. One flame in the app, so
    the mark means the same thing wherever a streak is shown. */
 import iconStreak from '../assets/dashboard/icon-streak.png'
+/* The supplied export, kept separate from the quiz launcher's copy of the same
+   figure: that one was cropped out of a screenshot and flood-filled, this is
+   the clean original with a real alpha channel. */
+import heroArt from '../assets/profile/graduate.png'
 import './Profile.css'
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
@@ -235,6 +239,10 @@ export default function Profile() {
       {error && <p className="pf-error">{error}</p>}
 
       <header className="pf-hero">
+        {/* The graduation art already used by the quiz launcher. Decorative, so
+            `alt=""` and pointer-events off — it must never sit between a click
+            and the Edit link beneath it. */}
+        <img className="pf-hero-art" src={heroArt} alt="" aria-hidden="true" />
         {/* The picture is also the affordance for changing it — clicking your
             own face is where people look first. Editing itself stays in
             Settings, so name and photo have one home between them. */}
@@ -248,7 +256,16 @@ export default function Profile() {
         </Link>
 
         <div className="pf-ident">
-          <h2 className="pf-name">{user?.name}</h2>
+          {/* "Edit" sits beside the name, as in the reference, rather than as a
+              large button on the far right. It edits the identity next to it,
+              and against the banner a solid block competed with the name for
+              the one thing the eye should land on first. */}
+          <h2 className="pf-name">
+            {user?.name}
+            <Link className="pf-edit" to="/settings?s=profile">
+              Edit
+            </Link>
+          </h2>
           {/* Derived from the last unit opened — see ProfileController. */}
           <p className="pf-sub">
             {level ? level.title : user?.email}
@@ -261,9 +278,6 @@ export default function Profile() {
           )}
         </div>
 
-        <Link className="pf-edit" to="/settings?s=profile">
-          Edit Profile
-        </Link>
       </header>
 
       <div className="pf-body">

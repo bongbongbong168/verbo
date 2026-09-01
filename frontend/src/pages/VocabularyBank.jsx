@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
@@ -61,6 +61,84 @@ function formatDate(value) {
 }
 
 /**
+ * The word, picked out of the sentence around it.
+ *
+ * Seeing WHERE a word sits is most of what an example teaches — which
+ * characters belong to it, what comes before and after. An unmarked sentence
+ * makes the reader hunt for the word they just clicked.
+ *
+ * Splits on the literal word rather than using a regex, so a word containing
+ * regex metacharacters cannot break the render.
+ */
+function Marked({ text, word }) {
+  if (!word || !text?.includes(word)) return text || null;
+
+  const parts = text.split(word);
+
+  return parts.map((part, i) => (
+    <span key={i}>
+      {part}
+      {i < parts.length - 1 && <mark className="vb-mark">{word}</mark>}
+    </span>
+  ));
+}
+
+/**
+ * Sentences from elsewhere in the library.
+ *
+ * Renders nothing at all while loading and nothing when there are none AND the
+ * card already carries a saved example — a "no examples found" line under a
+ * word that already shows one is noise. It speaks up only when the panel would
+ * otherwise be empty.
+ */
+function Examples({ state, word, hasSaved }) {
+  if (!state || state.loading) return null;
+
+  const items = state.items || [];
+
+  if (!items.length) {
+    return hasSaved ? null : (
+      <p className="vb-detail-none">
+        This word does not appear anywhere else in your library yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="vb-ex">
+      <p className="vb-detail-label">
+        {hasSaved ? "Also used in" : "Used in"}
+      </p>
+      <ul className="vb-ex-list">
+        {items.map((ex, i) => (
+          <li className="vb-ex-item" key={i}>
+            <p className="vb-ex-cn">
+              <Marked text={ex.text} word={word} />
+            </p>
+            {ex.pinyin && <p className="vb-ex-py">{ex.pinyin}</p>}
+            {/* Only study lines carry a human translation. Nothing here is
+                machine-translated, so most sentences show none rather than a
+                guess. */}
+            {ex.english && <p className="vb-ex-en">{ex.english}</p>}
+            <p className="vb-ex-src">
+              {ex.source.link ? (
+                <Link to={ex.source.link}>
+                  {ex.source.label} · {ex.source.title}
+                </Link>
+              ) : (
+                <span>
+                  {ex.source.label} · {ex.source.title}
+                </span>
+              )}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
  * The Vocabulary Bank.
  *
  * Not a dictionary and not a deck: a record of every word this learner has met
@@ -85,6 +163,11 @@ export default function VocabularyBank() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState(null);
+  /* Keyed by card id and kept for the session: reopening a word you were just
+     looking at should not re-run four table scans, and the sentences cannot
+     change while you sit on this page. */
+  const [examples, setExamples] = useState({});
+  const askedRef = useRef(new Set());
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState(null);
@@ -129,6 +212,36 @@ export default function VocabularyBank() {
       live = false;
     };
   }, [token, source, search]);
+
+  /* Fetched when a word is opened, not with the list. A bank grows without
+     bound and nobody opens every row, so scanning four tables per card up
+     front would be almost entirely wasted work.
+
+     A failure sets `items: []` rather than surfacing an error: this is
+     supporting material under the word, and a red message here would be louder
+     than the thing it is attached to. The panel simply says none were found. */
+  /* The "already asked" set is a REF, not the state above.
+     Listing `examples` as a dependency made this effect cancel its own
+     request: writing `{loading: true}` changed `examples`, which re-ran the
+     effect, whose cleanup flipped the first run's `live` flag to false — so the
+     200 that came back was discarded and the panel stayed empty forever.
+
+     A ref is read without subscribing to it, so the deps stay down to what
+     actually decides whether to fetch. No `live` flag is needed either: the
+     result is written under its own card's id, so a response arriving after
+     that word was closed just fills the cache, which is exactly what should
+     happen. */
+  useEffect(() => {
+    if (!openId || askedRef.current.has(openId)) return;
+
+    askedRef.current.add(openId);
+    setExamples((e) => ({ ...e, [openId]: { loading: true } }));
+
+    api
+      .getFlashcardExamples(token, openId)
+      .then((items) => setExamples((e) => ({ ...e, [openId]: { items } })))
+      .catch(() => setExamples((e) => ({ ...e, [openId]: { items: [] } })));
+  }, [openId, token]);
 
   async function loadMore() {
     setLoadingMore(true);
@@ -420,14 +533,27 @@ export default function VocabularyBank() {
                   <div className="vb-detail">
                     {card.example ? (
                       <>
-                        <p className="vb-detail-label">Example sentence</p>
-                        <p className="vb-detail-example">{card.example}</p>
+                        <p className="vb-detail-label">Where you met it</p>
+                        <p className="vb-detail-example">
+                          <Marked text={card.example} word={card.word} />
+                        </p>
                       </>
                     ) : (
                       <p className="vb-detail-none">
                         No example sentence was captured for this word.
                       </p>
                     )}
+
+                    {/* Sentences found across everything else in the library.
+                        Distinct from the one above, which is the passage this
+                        learner actually read — so it keeps its own heading
+                        rather than being folded into one undifferentiated
+                        list. */}
+                    <Examples
+                      state={examples[card.id]}
+                      word={card.word}
+                      hasSaved={!!card.example}
+                    />
 
                     <div className="vb-detail-foot">
                       {card.source ? (

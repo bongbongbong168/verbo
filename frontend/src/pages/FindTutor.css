@@ -551,6 +551,13 @@
 .ft-card-frame {
   position: relative;
   flex-shrink: 0;
+  /* Hugs the photo instead of stretching to the card.
+     As a flex item it inherited `align-items: stretch` from the card, so on a
+     tutor with a long bio the frame grew to the full card height while the
+     photo stayed 150px — measured 223.2px of frame around a 150px image, i.e.
+     67px of empty white below it. Short bios did not stretch, which is why it
+     looked like it only happened to some tutors. */
+  align-self: flex-start;
   display: block;
   background: #fff;
   border: 2px solid #a89ce3;

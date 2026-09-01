@@ -13,6 +13,7 @@ class StudyTextLine extends Model
         'speaker',
         'chinese',
         'pinyin',
+        'english',
         'position',
     ];
 

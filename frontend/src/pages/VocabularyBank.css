@@ -619,6 +619,74 @@
   color: var(--vb-muted);
 }
 
+/* ---- the word, picked out of its sentence ----
+   A tint rather than a highlighter block: these sentences are read, not
+   scanned, and a solid fill behind two characters cuts the line in half.
+   `background: none` on <mark> is deliberate — the browser default is a bright
+   yellow that belongs to no palette in this app. */
+.vb-mark {
+  background: none;
+  color: var(--vb-accent);
+  font-weight: 700;
+  border-radius: 3px;
+  box-shadow: inset 0 -0.42em 0 #f1edfc;
+}
+
+/* ---- sentences found elsewhere in the library ---- */
+
+.vb-ex-list {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vb-ex-item {
+  padding: 0.7rem 0.9rem 0.75rem;
+  border-radius: 12px;
+  background: var(--vb-bg);
+  /* A left rule rather than a full border: these sit under the saved example,
+     which is a filled block, and two identically outlined boxes would read as
+     the same kind of thing. */
+  border-left: 3px solid #e0d8f7;
+}
+
+.vb-ex-cn {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.vb-ex-py {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--vb-muted);
+}
+
+.vb-ex-en {
+  margin: 0.25rem 0 0;
+  font-size: 0.83rem;
+  color: var(--vb-text);
+}
+
+.vb-ex-src {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: var(--vb-muted);
+}
+
+.vb-ex-src a {
+  color: var(--vb-muted);
+  text-decoration: none;
+}
+
+.vb-ex-src a:hover {
+  color: var(--vb-accent);
+  text-decoration: underline;
+}
+
 .vb-detail-foot {
   display: flex;
   align-items: center;

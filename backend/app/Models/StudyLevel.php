@@ -18,6 +18,30 @@ class StudyLevel extends Model
         'banner_path',
         'accent_color',
         'category',
+        'topic_group',
+        'emoji',
+    ];
+
+    /**
+     * The shelves a Daily Use topic can sit on.
+     *
+     * A whitelist rather than a free-for-all, so the listing page has a stable
+     * set of headings and two topics cannot end up under "Food" and "Food &
+     * Drink". Ordered as the page shows them: the situations a learner meets
+     * soonest come first.
+     *
+     * Only meaningful when `category` is 'daily'. An HSK level has no group and
+     * is never listed this way.
+     */
+    public const TOPIC_GROUPS = [
+        'Daily Life',
+        'Food & Restaurants',
+        'Travel',
+        'Shopping',
+        'Social',
+        'Work',
+        'Education',
+        'Health',
     ];
 
     protected $appends = [

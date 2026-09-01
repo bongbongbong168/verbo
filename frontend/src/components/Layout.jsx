@@ -267,9 +267,16 @@ export default function Layout() {
                       "sb-nav-link" +
                       (isActive || entryHolds(pathname, entry) ? " active" : "")
                     }
-                    // The label is the only thing naming the link, so when it
-                    // is hidden the tooltip has to carry it.
-                    title={collapsed ? entry.label : undefined}
+                    /* The rail's tooltip, drawn in CSS from this attribute
+                       rather than left to the browser's `title`: the native one
+                       waits about a second, cannot be styled to match the rail
+                       and cannot be placed. It is only shown while collapsed.
+
+                       The label span is still in the DOM when collapsed — it is
+                       clipped, not `display: none` — so the link keeps its
+                       accessible name on its own and this attribute is purely
+                       decorative. */
+                    data-tip={entry.label}
                   >
                     <entry.Icon />
                     <span className="sb-nav-label">{entry.label}</span>
@@ -294,30 +301,46 @@ export default function Layout() {
                   }
                   onClick={() => openSection(entry.key)}
                   aria-expanded={open}
-                  title={collapsed ? entry.label : undefined}
+                  /* No tooltip on a section: hovering one in the rail already
+                     opens its flyout, and a chip firing at the same moment
+                     would be two answers to one gesture. */
                 >
                   <entry.Icon />
                   <span className="sb-nav-label">{entry.label}</span>
                   <CaretIcon />
                 </button>
 
-                {open && (
-                  <ul className="sb-sub">
-                    {entry.items.map((item) => (
-                      <li key={item.to}>
-                        <NavLink
-                          to={item.to}
-                          className={
-                            "sb-sub-link" +
-                            (covers(pathname, item.to) ? " active" : "")
-                          }
-                        >
-                          {item.label}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {/* Always rendered, opened by CSS rather than by mounting it.
+                    A list that appears only when `open` cannot animate — there
+                    is nothing on screen to animate FROM, and unmounting cuts
+                    the closing move off entirely. The wrapper animates
+                    `grid-template-rows: 0fr -> 1fr`, which is the one way to
+                    ease to a height nobody has measured.
+
+                    Closed, it is zero-height with `overflow: hidden`, so it is
+                    invisible and unclickable — but it is still in the document,
+                    hence `tabIndex={-1}`, or Tab would walk into a section that
+                    is shut. */}
+                <div className="sb-sub-wrap" data-open={open}>
+                  <div className="sb-sub-inner">
+                    <ul className="sb-sub">
+                      {entry.items.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            className={
+                              "sb-sub-link" +
+                              (covers(pathname, item.to) ? " active" : "")
+                            }
+                            tabIndex={open ? undefined : -1}
+                          >
+                            {item.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
 
                 {/* The rail's answer to the sub-list: hovering the icon shows
                     the section without expanding the sidebar. Shown by CSS
@@ -358,7 +381,7 @@ export default function Layout() {
           className={({ isActive }) =>
             "sb-nav-link sb-settings" + (isActive ? " active" : "")
           }
-          title={collapsed ? "Settings" : undefined}
+          data-tip="Settings"
         >
           <SettingsIcon />
           <span className="sb-nav-label">Settings</span>

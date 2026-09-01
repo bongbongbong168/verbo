@@ -33,9 +33,25 @@
 }
 
 /* A real picture fills the button; the initial is the fallback. */
+/* `aspect-ratio: 1` is what actually holds the circle, and it is not
+   decoration — without it a tall avatar spills out of the button.
+
+   The button is `display: grid; place-items: center`, so the image is not
+   stretched to its grid area, and `height: 100%` against an unstretched area
+   resolves to `auto`. The height then came from the image's own proportions:
+   a 400x900 portrait rendered 42 wide by 94.5 tall — a vertical pill hanging
+   below the button. A near-square avatar landed at ~42 and looked almost
+   right, which is why this appeared to affect only some accounts.
+
+   Two other fixes were tried and measured as NOT working, so don't swap back:
+   `place-self: stretch` (stretch does not apply to an item whose height is a
+   percentage) and `height: auto` with stretch (the intrinsic ratio still wins
+   for a replaced element with a definite width). Pinning the ratio makes the
+   height follow the width whatever the source image is; `object-fit: cover`
+   then crops it. */
 .pm-trigger img {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
 }

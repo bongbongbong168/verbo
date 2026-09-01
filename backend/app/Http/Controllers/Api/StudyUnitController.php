@@ -14,19 +14,70 @@ class StudyUnitController extends Controller
 {
     public function show(StudyUnit $studyUnit, DictionaryService $dictionary)
     {
-        return array_merge(
-            // The unit page reuses the level's banner styling, so it needs the
-            // label, blurb and accent colour alongside the title.
-            $studyUnit->load(
-                'vocabulary',
-                'texts.lines',
-                'grammarPoints.examples',
-                'quizQuestions',
-                'cultureImages',
-                'level:id,title,description,level_label,accent_color'
-            )->toArray(),
-            ['reading_tokens' => $studyUnit->reading ? $dictionary->annotate($studyUnit->reading) : []]
+        // The unit page reuses the level's banner styling, so it needs the
+        // label, blurb and accent colour alongside the title.
+        $studyUnit->load(
+            'vocabulary',
+            'texts.lines',
+            'grammarPoints.examples',
+            'quizQuestions',
+            'cultureImages',
+            // `category` too: the unit page words its way out differently for a
+            // Daily Use situation than for an HSK rung, and without the column
+            // that check silently reads undefined and always picks HSK.
+            'level:id,title,description,level_label,accent_color,category'
         );
+
+        $payload = $studyUnit->toArray();
+
+        /* Every conversation line gets the same token treatment Read, Podcast
+           and Scan already give their text, so a word in a dialogue can be
+           hovered for pinyin + meaning and saved with Alt+1.
+
+           This closes a real gap rather than adding a feature: the reading
+           rework replaced the annotated render with plain per-character spans,
+           which left the unit page's Alt+1 listener reading a ref that nothing
+           ever assigned to — the shortcut was dead here and only here. Words
+           are the point of a conversation lesson, so the one page built around
+           dialogue was the worst place to lose it.
+
+           Annotated per line, not over the joined text: a line belongs to one
+           speaker, and segmenting across a speaker change would invent words
+           that span two people talking. */
+        foreach ($payload['texts'] ?? [] as $ti => $text) {
+            foreach ($text['lines'] ?? [] as $li => $line) {
+                $payload['texts'][$ti]['lines'][$li]['tokens'] =
+                    filled($line['chinese']) ? $dictionary->annotate($line['chinese']) : [];
+            }
+        }
+
+        /* Where this lesson sits in its topic, and what follows it.
+​
+           Derived from the sibling list rather than stored: a `position` column
+           would need rewriting every time a lesson was added, reordered or
+           deleted, and would be silently wrong the first time that failed.
+
+           Ordered by id, which is the order they were authored and the order
+           the level page already lists them in — so "Lesson 2 of 4" agrees with
+           what the learner just clicked.
+
+           `next` is the next lesson IN THIS TOPIC only. Progression belongs
+           inside a topic; nothing here should push someone from Ordering Food
+           into an unrelated situation. */
+        $siblings = $studyUnit->level
+            ? $studyUnit->level->units()->orderBy('id')->pluck('title', 'id')
+            : collect();
+
+        $ids = $siblings->keys()->all();
+        $index = array_search($studyUnit->id, $ids, true);
+        $nextId = $index !== false ? ($ids[$index + 1] ?? null) : null;
+
+        return array_merge($payload, [
+            'reading_tokens' => $studyUnit->reading ? $dictionary->annotate($studyUnit->reading) : [],
+            'lesson_position' => $index === false ? null : $index + 1,
+            'lesson_total' => count($ids),
+            'next_unit' => $nextId ? ['id' => $nextId, 'title' => $siblings[$nextId]] : null,
+        ]);
     }
 
     public function store(Request $request, StudyLevel $studyLevel)

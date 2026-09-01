@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import ImageCropper from "../components/ImageCropper";
 import LearningPreferences from "../components/LearningPreferences";
 import PageTools from "../components/PageTools";
 import { SCALE_OPTIONS, getAppScale, setAppScale } from "../appScale";
@@ -80,6 +81,8 @@ export default function Settings() {
   const [error, setError] = useState(null);
   const [flash, setFlash] = useState(null);
   const [busy, setBusy] = useState(null);
+  /* The file waiting to be cropped. Null means the cropper is closed. */
+  const [cropSource, setCropSource] = useState(null);
 
   const [name, setName] = useState(user?.name || "");
   const avatarRef = useRef(null);
@@ -139,12 +142,21 @@ export default function Settings() {
 
   /* The returned user replaces the one in context, so the sidebar, the account
      popover and every message row pick the new picture up without a refetch. */
+  /* Picking a file opens the cropper rather than uploading straight away.
+     It used to upload the raw image, which then had to survive `object-fit:
+     cover` in a 42px circle — on a full-length photo that centres on the
+     torso and the face never appears. A tutor's marketing photo already went
+     through this cropper; the account avatar, which is the picture shown on
+     every message row and in the account button, did not. */
   function onAvatarPicked(e) {
     const file = e.target.files?.[0];
     // Cleared immediately so picking the SAME file again still fires onChange.
     e.target.value = "";
     if (!file) return;
+    setCropSource(file);
+  }
 
+  function uploadAvatar(file) {
     run(
       "avatar",
       () => api.uploadAvatar(token, file),
@@ -550,6 +562,22 @@ export default function Settings() {
           )}
         </section>
       </div>
+
+      {/* `aspect={1}` because the avatar is shown in a circle everywhere it
+          appears — the account button, message rows, review rows. Cropping to
+          the shape it will actually be displayed in is the whole point; a
+          13:15 crop would just be re-cropped by `object-fit` later. */}
+      {cropSource && (
+        <ImageCropper
+          file={cropSource}
+          aspect={1}
+          onCancel={() => setCropSource(null)}
+          onCrop={(cropped) => {
+            setCropSource(null);
+            uploadAvatar(cropped);
+          }}
+        />
+      )}
     </div>
   );
 }

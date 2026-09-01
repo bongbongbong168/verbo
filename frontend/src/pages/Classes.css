@@ -360,8 +360,20 @@
    like three unrelated controls. */
 .cl-chip {
   /* Asymmetric: symmetric padding centres the LINE BOX, and Hellix reserves
-     more ascent than these short labels use, so the glyphs sat low. */
-  padding: 0.14rem 0.6rem 0.22rem;
+     more ascent than these short labels use, so the glyphs sit low.
+
+     RE-MEASURED. The previous 0.14/0.22rem pair was derived with a broken
+     instrument — it read the box through getBoundingClientRect and divided by
+     an assumed 1.1 page zoom, which reported this chip as 19.38px tall when it
+     is 19.96. It corrected the right way but stopped 0.62px short.
+
+     These values come from font metrics and computed padding only, so no zoom
+     factor enters: line-height `normal` resolves to ascent+descent (14.20px),
+     the cap band is 8.50px, and half the residual comes off each side. The
+     0.335 rather than 0.31 splits the difference between the letter labels and
+     "HSK 3", whose digits measure 0.1px shorter — one shared rule cannot land
+     both on zero, so it lands both within 0.05px. */
+  padding: 1.905px 0.6rem 3.855px;
   border-radius: 7px;
   background: var(--cl-well);
   color: var(--cl-accent);
@@ -552,7 +564,11 @@
 }
 
 .cl-soon {
-  padding: 0.06rem 0.38rem;
+  /* The worst of the three: its label sat 1.70px low, because at 0.62rem the
+     line box still reserves Hellix's full 11.90px of leading while these caps
+     are only 7.10px tall. Half the error off each side. Measured from font
+     metrics, not from the rendered box. */
+  padding: 0.11px 0.38rem 1.81px;
   border-radius: 6px;
   background: #eeedf3;
   color: #6b6780;
@@ -931,7 +947,14 @@
 }
 
 .cu-kind {
-  padding: 0.08rem 0.45rem;
+  /* Asymmetric, and MEASURED — not a tidy single value.
+     The pill itself is centred against the meta text beside it (0.00px), but
+     the word inside it was sitting 1.70px LOW: symmetric padding centres the
+     LINE BOX, and Hellix's line box reserves 11.30px of ascent above the
+     baseline while these all-caps glyphs are only 7.80px tall, so the ink ends
+     up below the box's middle. Half the error off each side lifts it.
+     Written in px because it is a measurement, not a design step. */
+  padding: 0.43px 0.45rem 2.13px;
   border-radius: 6px;
   background: var(--cl-well);
   color: var(--cl-accent);

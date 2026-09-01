@@ -1,0 +1,322 @@
+/* Daily Use situation library. Prefix `du-`.
+
+   Same palette, radii and spacing as the rest of Study — this is a different
+   arrangement of the app's existing card, not a new visual language. The
+   search + level pills + shelves layout is deliberately the Read page's, since
+   both are "browse a library" pages. */
+
+.du {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ---- search + level ---- */
+
+.du-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.du-search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 380px;
+  height: 42px;
+  padding: 0 0.9rem;
+  box-sizing: border-box;
+  border: 1px solid #e7e3f6;
+  border-radius: 12px;
+  background: #fff;
+  color: #726c88;
+}
+
+/* Focus lands on the input, so the ring has to be drawn on the box around it
+   or the field would light up nothing at all. */
+.du-search:focus-within {
+  border-color: #a89ce3;
+}
+
+.du-search svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.du-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #1c1730;
+}
+
+/* The native clear button is a grey X that belongs to no palette here. */
+.du-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.du-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.du-pill {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1c1730;
+  background: #fff;
+  border: 1px solid #2b2643;
+  border-radius: 10px;
+  /* Asymmetric, measured on the CAP BAND: Hellix reserves more ascent than
+     these labels use, so symmetric padding centres the line box and leaves the
+     glyphs a pixel low. The same pair the Read page's pills carry. */
+  padding: 7px 1rem 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease;
+}
+
+.du-pill:hover {
+  border-color: #6a6191;
+}
+
+/* Static, never transitioned: the fill IS the selected state, and a transition
+   that never gets a frame would leave the chosen level looking unchosen. */
+.du-pill.active {
+  color: #fff;
+  background: #6a6191;
+  border-color: #6a6191;
+}
+
+.du-pill:focus-visible {
+  outline: 2px solid #a89ce3;
+  outline-offset: 2px;
+}
+
+/* ---- shelves ---- */
+
+/* One heading over all the group shelves, so the page reads as two parts —
+   what was picked for you, and everything there is — rather than as eight
+   sibling shelves of equal weight. */
+.du-section {
+  margin: 0.6rem 0 -0.6rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #726c88;
+}
+
+.du-shelf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.du-shelf-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1c1730;
+}
+
+/* The leading accent rule the app uses on every section heading. */
+.du-shelf-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: #a89ce3;
+}
+
+.du-clear {
+  flex: none;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #6a6191;
+  background: #f1edfc;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 0.9rem 9px;
+  cursor: pointer;
+}
+
+.du-clear:hover {
+  background: #a89ce3;
+  color: #fff;
+}
+
+/* auto-fill, not a fixed column count: the shelves hold anywhere from one topic
+   to a dozen, and a fixed grid would leave a lone card stretched across the
+   page. `minmax(0, 1fr)` floors the columns so a long title cannot push a card
+   wider than its share. */
+.du-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 16px;
+  /* Every card in a row the same height, whatever its description does. */
+  grid-auto-rows: 1fr;
+}
+
+/* ---- the situation card ---- */
+
+.du-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.95rem 1rem 1rem;
+  box-sizing: border-box;
+  min-width: 0;
+  border: 1px solid #2b2643;
+  border-radius: 14px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Instant, not transitioned — the fill IS the feedback, and a transition that
+   never gets a frame leaves the card looking dead under the pointer. */
+.du-card:hover {
+  background: #f9f8fe;
+  border-color: #a89ce3;
+}
+
+.du-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* Without this a long title sets the card's floor and blows the grid column
+     past its share — the min-width: auto trap. */
+  min-width: 0;
+}
+
+/* The situation's mark. A tinted round chip rather than a bare glyph: emoji are
+   drawn at wildly different widths by different fonts, and a fixed chip keeps
+   every card's title starting on the same x whatever mark it wears. */
+.du-card-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  /* Square whatever is inside it — the same reason the account avatar needs
+     this: a percentage height would fall back to the content's own ratio. */
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #f1edfc;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.du-card-title {
+  font-family: 'Hellix', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c1730;
+  min-width: 0;
+}
+
+.du-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: #726c88;
+}
+
+.du-chip {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-weight: 600;
+}
+
+/* Two lines, then it stops — pinned by height rather than left to the content,
+   so the Start row below sits on one straight line across a shelf. */
+.du-card-desc {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: #726c88;
+  height: 3em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Why this topic was suggested. Says which stated interest earned it, so the
+   recommendation can be argued with rather than just accepted. */
+.du-card-reason {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #6a6191;
+}
+
+/* `margin-top: auto` pins this to the bottom, so cards of differing content
+   still line their calls-to-action up with each other. */
+.du-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: auto;
+  padding-top: 0.2rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6a6191;
+}
+
+.du-card-go svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 0.15s ease;
+}
+
+.du-card:hover .du-card-go svg {
+  transform: translateX(2px);
+}
+
+.du-empty {
+  margin: 0;
+  padding: 2rem 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #726c88;
+}
+
+@media (max-width: 767px) {
+  .du-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The search takes the row and the level pills sit under it: side by side at
+     this width the field shrank to about eight characters, which is not enough
+     to see what you typed. */
+  .du-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}

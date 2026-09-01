@@ -168,53 +168,380 @@
   cursor: default;
 }
 
-/* ---- category filter pills ---- */
+/* ---- topic pills + search ----
+   Topics on the left, search on the right. They are not the same kind of
+   control and they are not drawn alike: the pills are the page's primary cut
+   of the library — always visible, always saying which one you are on — while
+   search is the escape hatch for someone who already knows what they want.
+   Saved rides with the search because it is a DESTINATION, not a filter. */
 
-/* Pills and panel are tabbed ~30px past the heading/divider, per the design.
-   The heading stays at the outer edge so it anchors the section. */
-/* Filters left, the link out right. `align-items: center` rather than the
-   default stretch, so the saved link keeps its own height instead of being
-   pulled to the filter pills'. */
-.rd-filters {
+/* Two rows, and deliberately so — MEASURED, not assumed. At 1440 the content
+   column is 875px; the seven topic pills need 788 and the search group 359, so
+   one row is 1163 against 875 and cannot be had at any sane type size. Sharing
+   a row therefore meant the pills wrapping AROUND the search box, which left
+   three stragglers on a second line under a gap and read as an accident.
+
+   So the search takes a row of its own, pinned right, and the pills get the
+   full width beneath it — where all seven fit on one line with 87px to spare.
+   The search also lands under the bell and account buttons in the top bar, so
+   the page has one right edge rather than two. */
+.rd-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.9rem;
+  /* No --rd-indent. The topbar, the divider and the icon buttons above all sit
+     at the page gutter, so a 30px tab-in here gave the page two different right
+     edges 30px apart — measured, and the reason the top read as inconsistent.
+     The shelves below drop it for the same reason. (.rd-panel keeps the indent;
+     it belongs to ReadArticle and SavedArticles, not to this page.) */
+  margin: 0 0 1.8rem;
+}
+
+.rd-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rd-bar-right {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 0 var(--rd-indent) 1.4rem var(--rd-indent);
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
 
-.rd-filter-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-}
-
-.rd-filter {
+.rd-pill {
   font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.88rem;
   color: var(--rd-text);
   background: var(--rd-panel-bg);
-  border: 1px solid var(--rd-border);
+  border: 1px solid var(--rd-outline);
   border-radius: 10px;
   /* Asymmetric: symmetric padding centres the LINE BOX, and Hellix reserves
-     more ascent than these labels use, so the glyphs sat 1px low. Measured on
-     the cap band. Don't tidy it back to one value. */
+     more ascent than these labels use.
+
+     LEAVE THESE ALONE unless you can measure better than the attempt that is
+     documented in CLAUDE.md under 'measuring optical centring'. Three separate
+     instrument bugs each produced a confident, wrong correction here. */
   padding: 7px 1.1rem 9px;
   cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease;
+  white-space: nowrap;
+  transition: border-color 0.15s ease;
 }
 
-.rd-filter:hover {
+.rd-pill:hover {
+  border-color: var(--rd-accent);
+}
+
+/* Static, never transitioned: the fill IS the selected state, and a transition
+   that never gets a frame would leave the chosen topic looking unchosen. */
+.rd-pill.active {
+  color: #fff;
+  background: var(--rd-accent);
+  border-color: var(--rd-accent);
+}
+
+.rd-pill:focus-visible {
+  outline: 2px solid var(--rd-accent-light);
+  outline-offset: 2px;
+}
+
+.rd-search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* Sized, not grown: the row it sits in is right-aligned, so a search box that
+     took the free space would stretch the whole width and stop reading as a
+     control pinned to the right. */
+  flex: 0 1 300px;
+  min-width: 0;
+  padding: 0 0.9rem;
+  height: 42px;
+  box-sizing: border-box;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  background: var(--rd-panel-bg);
+  color: var(--rd-text-muted);
+}
+
+/* Focus lands on the input, so the ring has to be drawn on the box around it
+   or the field would light up nothing at all. */
+.rd-search:focus-within {
   border-color: var(--rd-accent-light);
 }
 
-.rd-filter.active {
-  border-color: var(--rd-accent);
+.rd-search svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.rd-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--rd-text);
+}
+
+/* The native clear button is a grey X that matches nothing else here. */
+.rd-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* ---- shelves ----
+   One topic per shelf, three cards across. A shelf is a browsing surface: it
+   shows enough to tempt and stops, rather than emptying a whole topic onto the
+   page. Searching or picking a topic replaces all of them with one grid. */
+
+.rd-shelf {
+  margin: 0 0 2.4rem;
+}
+
+.rd-shelf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.7rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--rd-border);
+}
+
+.rd-shelf-title {
+  font-family: "Hellix", sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.rd-shelf-note {
+  color: var(--rd-text-muted);
+  font-size: 0.84rem;
+  margin: -0.5rem 0 1.1rem;
+}
+
+/* Soft at rest, filled on hover — the Dashboard's "View all" treatment, so a
+   link out of a list looks the same wherever it appears. The fill is NOT
+   transitioned: it is the feedback, and a transition that never gets a frame
+   leaves the control looking dead under the pointer. Only the chevron eases. */
+.rd-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+  font-family: "Hellix", sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
   color: var(--rd-accent);
+  background: #f1edfc;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 0.9rem 9px;
+  cursor: pointer;
+}
+
+.rd-viewall:hover {
+  background: var(--rd-accent-light);
+  color: #fff;
+}
+
+.rd-viewall svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 0.15s ease;
+}
+
+.rd-viewall:hover svg {
+  transform: translateX(2px);
+}
+
+/* ---- the card ----
+   Cover, then topic + level, then title, then how long it takes. No excerpt:
+   this page is for CHOOSING, and body text on every card is what turned the
+   old grid into a wall of paragraphs. */
+
+.rd-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+  /* Every row the same height, not just the cards within one row — grid sizes
+     each row to its own tallest card otherwise, so a second row stood taller
+     than the first. */
+  grid-auto-rows: 1fr;
+}
+
+.rd-tile {
+  display: flex;
+  flex-direction: column;
+  background: var(--rd-panel-bg);
+  border: 1px solid var(--rd-outline);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--rd-text);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rd-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(28, 23, 48, 0.1);
+}
+
+.rd-tile-media {
+  position: relative;
+  /* A ratio, not a height: the cover is the one part of the card that can be
+     sized proportionally, so it holds its shape at every column width. */
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #cfc6ef, #a99ce0);
+}
+
+/* ---- generated covers ----
+   Every topic has its own gradient and character, so an article with no
+   uploaded photo still gets a cover that says which shelf it is on. Six pairs
+   drawn from the app's own palette rather than six arbitrary colours — each is
+   a two-stop ramp in one hue family, and none of them stray from the lavender
+   the rest of the page is built on far enough to read as a different product.
+
+   An uploaded image is absolutely positioned over the top, so it covers this
+   completely wherever one exists. */
+.rd-tile-media[data-topic="everyday-chinese"] {
+  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
+}
+
+.rd-tile-media[data-topic="culture"] {
+  background: linear-gradient(135deg, #eba98f, #d1734f);
+}
+
+.rd-tile-media[data-topic="entertainment"] {
+  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
+}
+
+.rd-tile-media[data-topic="stories"] {
+  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
+}
+
+.rd-tile-media[data-topic="travel"] {
+  background: linear-gradient(135deg, #92c9c0, #5c9c92);
+}
+
+.rd-tile-media[data-topic="business"] {
+  background: linear-gradient(135deg, #a8a2c4, #6f6893);
+}
+
+/* Oversized and cropped by the cover's own overflow, so it reads as a texture
+   rather than as a character someone is meant to read. Hellix carries NO CJK
+   glyphs, so the stack has to fall through to a font that does — listing
+   Hellix first here would silently hand every cover to the browser's default
+   CJK face instead of Douyin Sans. */
+.rd-tile-glyph {
+  font-family: "Douyin Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    sans-serif;
+  font-size: 5.6rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.34);
+  user-select: none;
+  transform: translate(18%, 6%);
+}
+
+/* Three placements cycling across the row. A single fixed offset was not
+   enough: a shelf whose cards share a topic — which Recommended often is —
+   showed the same glyph in the same spot three times and read as one image
+   repeated. Positional, not derived from the article, because the point is
+   only to break the repetition; keying it to the id would make the same
+   article look different depending on which shelf you met it on. */
+.rd-tile:nth-child(3n + 2) .rd-tile-glyph {
+  transform: translate(-20%, -10%) rotate(-8deg);
+}
+
+.rd-tile:nth-child(3n) .rd-tile-glyph {
+  transform: translate(24%, -14%) rotate(6deg);
+}
+
+/* Taken OUT OF FLOW, not just sized. `height: 100%` resolves against a parent
+   whose height comes from `aspect-ratio`, which is not a definite height — so
+   it fell back to `auto` and the image rendered at its own intrinsic ratio,
+   growing the box it was supposed to fill. A shelf holding one photographed
+   article measured 505px against its neighbours' 292px. Absolute positioning
+   is what makes the cover unable to size its own container.
+   (Same family as the profile avatar's `aspect-ratio: 1` fix.) */
+.rd-tile-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The FORMAT — article / story / fun fact — sits on the cover rather than in
+   the text block, because the line beneath is the topic and level, and running
+   all three together read as one long undifferentiated string. */
+.rd-tile-format {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--rd-text);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 7px;
+  padding: 4px 8px 5px;
+}
+
+.rd-tile-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.95rem 1rem 1.05rem;
+}
+
+.rd-tile-meta {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--rd-accent);
+  margin: 0 0 0.4rem;
+}
+
+/* Two lines, then it stops. Fixed at `height` rather than left to the content,
+   so every card in a row breaks at the same place and the reading time below
+   sits on one straight line across the shelf. Clamped rather than faded: a
+   fade needs to know whether the text actually overflows, and at two lines a
+   full-length title fills the box exactly, so the gradient would dim a title
+   that fits. */
+.rd-tile-title {
+  font-family: "Hellix", "Douyin Sans", sans-serif;
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  height: 2.7em;
+  margin: 0 0 0.7rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* `margin-top: auto` pins this to the bottom of the card, so the reading time
+   sits on one line across a row whatever the titles do above it. */
+.rd-tile-time {
+  margin: auto 0 0;
+  font-size: 0.78rem;
+  color: var(--rd-text-muted);
 }
 
 /* ---- outlined content panel ---- */
@@ -309,18 +636,6 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
-/* ---- type pill + grid ---- */
-
-.rd-type-pill {
-  display: inline-block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--rd-text);
-  border: 1px solid var(--rd-outline);
-  border-radius: 10px;
-  padding: 0.5rem 1.1rem;
-  margin-bottom: 1.1rem;
-}
 
 /* Fixed at two columns rather than auto-fit: the card count should not change
    the layout, and on a wide screen auto-fit was spilling to three or more. */
@@ -328,6 +643,11 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.1rem;
+  /* Every row the same height, not just the two cards within a row. Grid
+     already stretches siblings in one row, so a short card matched its
+     neighbour — but each ROW sized to its own tallest card, which is why the
+     second row stood taller than the first. `1fr` makes them all equal. */
+  grid-auto-rows: 1fr;
 }
 
 /* ============================================================
@@ -1305,11 +1625,23 @@
   margin: 0 0 0.35rem;
 }
 
+/* Three lines, then it stops.
+   The excerpt arrives trimmed to 120 characters, which is a sensible cap for
+   English but a great deal of text in Chinese — a dense excerpt ran to seven
+   lines and made its card half again as tall as the one beside it. The card is
+   for CHOOSING what to read, so the title does the attracting and this only has
+   to say what kind of thing it is. Clamping the render rather than shortening
+   the excerpt server-side keeps the featured card, which has room for more,
+   free to show it. */
 .rd-card-excerpt {
   color: var(--rd-text-muted);
   font-size: 0.82rem;
   line-height: 1.45;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ---- article detail: EN/CN toggle + body ---- */

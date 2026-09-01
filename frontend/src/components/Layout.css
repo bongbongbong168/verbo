@@ -206,7 +206,14 @@
   flex: none;
   margin-left: auto;
   opacity: 0.7;
-  transition: transform 0.18s ease;
+  overflow: hidden;
+  max-width: 15px;
+  transition:
+    transform 0.18s ease,
+    /* Collapses out with the label rather than snapping — it is part of the
+       same row of text, so it has to leave on the same schedule. */
+    max-width var(--sb-dur) var(--sb-ease),
+    opacity 0.16s ease;
 }
 
 /* The caret's direction is the state, so it must be readable from the STATIC
@@ -220,6 +227,30 @@
    Text only, no icons: the section header already carries the icon, and a
    second column of glyphs here rebuilds the clutter this replaced. The tree
    line is what ties them to their parent. */
+
+/* ---- the accordion ----
+   `height: auto` is not animatable and nothing here knows how tall a section
+   is, so the wrapper is a one-row grid and the ROW eases from 0fr to 1fr. That
+   is the only way to reach a natural height without measuring it in JS and
+   writing a pixel value that goes stale the moment a link is added.
+
+   `min-height: 0` on the inner track is load-bearing: a grid item's default
+   `min-height: auto` is its content height, which the 0fr row cannot go below,
+   so without it the section never closes at all. */
+.sb-sub-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--sb-dur) var(--sb-ease);
+}
+
+.sb-sub-wrap[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+.sb-sub-inner {
+  min-height: 0;
+  overflow: hidden;
+}
 
 .sb-sub {
   list-style: none;
@@ -359,15 +390,22 @@
    column. The width transition is on .sb, so the main area (a flex sibling)
    reflows with it for free. */
 
+/* One duration and one curve for the whole collapse, so the width, the labels,
+   the caret and the footer all arrive together instead of finishing at four
+   different moments — that stagger is what made the old rail read as a jump
+   rather than a movement. The curve leaves quickly and settles slowly, which
+   is what makes a width change feel driven rather than linear. */
 .sb {
+  --sb-ease: cubic-bezier(0.32, 0.72, 0.2, 1);
+  --sb-dur: 0.26s;
+
   transition:
-    width 0.18s ease,
-    padding 0.18s ease;
-  /* `display` cannot transition, so the labels appear the instant the class
-     flips while the width is still animating open. Clip instead of letting
-     them spill, and never wrap — the rail already sets overflow-y, which would
-     otherwise compute overflow-x to auto and flash a horizontal scrollbar
-     mid-transition. */
+    width var(--sb-dur) var(--sb-ease),
+    padding var(--sb-dur) var(--sb-ease);
+  /* The labels are clipped rather than hidden while the rail narrows, so they
+     slide out under the edge instead of vanishing. Never wrap — the rail
+     already sets overflow-y, which would otherwise compute overflow-x to auto
+     and flash a horizontal scrollbar mid-transition. */
   overflow-x: hidden;
 }
 
@@ -375,6 +413,28 @@
 .sb-user,
 .sb-logout {
   white-space: nowrap;
+}
+
+/* The label carries the actual collapse. `display: none` cannot be eased, so
+   it used to pop out a frame before the rail had moved; a max-width running to
+   0 alongside the fade takes it out with the rail instead.
+
+   `max-width` rather than `width`: the label is a shrink-to-fit inline box, so
+   there is no width to animate from — the cap just has to clear the longest
+   label in the rail.
+
+   NOTE this is a click-driven transition on an element that is always mounted,
+   which is why fading to `opacity: 0` is allowed here when a panel's entrance
+   animation is not. Nothing is revealed by these frames: the rail is already
+   readable in both end states, and only a click — which requires a foreground,
+   compositing tab — can start the trip. A stalled transition leaves a label
+   part-way out, never a sidebar with no labels at all. */
+.sb-nav-label {
+  overflow: hidden;
+  max-width: 160px;
+  transition:
+    max-width var(--sb-dur) var(--sb-ease),
+    opacity 0.16s ease;
 }
 
 .sb.collapsed {
@@ -399,16 +459,52 @@
 }
 
 .sb.collapsed .sb-nav-label,
-.sb.collapsed .sb-caret,
+.sb.collapsed .sb-caret {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* The footer block collapses by height rather than disappearing, or the rail
+   would lose 150px of content in a single frame while the width was still
+   moving. `max-height` is the same trick as the label's `max-width` — a floor
+   comfortably above the real height, since there is no measured one to ease
+   to. */
+.sb-user,
+.sb-promo {
+  overflow: hidden;
+  max-height: 240px;
+  transition:
+    max-height var(--sb-dur) var(--sb-ease),
+    opacity 0.16s ease,
+    margin var(--sb-dur) var(--sb-ease),
+    padding var(--sb-dur) var(--sb-ease);
+}
+
 .sb.collapsed .sb-user,
 .sb.collapsed .sb-promo {
-  display: none;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .sb.collapsed .sb-nav-link {
   justify-content: center;
   gap: 0;
   padding: 0.6rem;
+}
+
+/* The gap has to travel too. Left static it snapped to 0 the moment the class
+   flipped, which pulled every icon left before the rail had started to narrow
+   — the single most visible part of the old jump. */
+.sb-nav-link {
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease,
+    gap var(--sb-dur) var(--sb-ease),
+    padding var(--sb-dur) var(--sb-ease);
 }
 
 /* The flyout has to escape the rail, and `overflow-x: hidden` above would clip
@@ -420,9 +516,11 @@
 }
 
 /* ---- collapsed flyout ----
-   Shown by :hover / :focus-within alone. No animation and no opacity ramp: a
-   panel whose visibility depends on frames is invisible when those frames
-   never arrive, which is how the account popover once came up blank. */
+   Shown by :hover / :focus-within alone. No opacity ramp: a panel whose
+   VISIBILITY depends on frames is invisible when those frames never arrive,
+   which is how the account popover once came up blank. The nudge below is
+   transform-only for exactly that reason — it is fully opaque at keyframe 0,
+   so a stalled animation leaves it 8px off its mark and perfectly readable. */
 
 .sb-flyout {
   display: none;
@@ -443,7 +541,14 @@
   display: block;
 }
 
+@keyframes sb-flyout-in {
+  from {
+    transform: translateX(-8px);
+  }
+}
+
 .sb-flyout-card {
+  animation: sb-flyout-in 0.18s var(--sb-ease);
   min-width: 176px;
   padding: 8px;
   border-radius: 14px;
@@ -480,6 +585,59 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* ---- collapsed tooltip ----
+   The rail is a column of unlabelled glyphs, and the browser's own `title`
+   answers "what is this?" about a second late, in a system chip that matches
+   nothing around it. This is the same card the flyout uses, so the two answers
+   the rail gives — a chip for a link, a panel for a section — read as one
+   family.
+
+   Shown by `display`, a static swap, and animated with transform ONLY: the
+   chip is fully opaque at keyframe 0, so it can never be a tooltip that failed
+   to arrive. It is also `pointer-events: none`, so it cannot sit between the
+   pointer and the link it names.
+
+   Only in the rail — an expanded sidebar has the label right there, and
+   labelling a label is noise. */
+.sb.collapsed .sb-nav-link[data-tip]::after {
+  content: attr(data-tip);
+  display: none;
+  position: absolute;
+  left: calc(100% + 0.85rem + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  padding: 0.42rem 0.7rem 0.46rem;
+  border-radius: 10px;
+  background: var(--sb-card);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(12, 9, 24, 0.4);
+  color: var(--sb-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sb-tip-in 0.16s var(--sb-ease);
+}
+
+/* translateY is repeated in both frames because it is doing the centring, not
+   the motion — dropping it from `from` would make the chip jump up half its
+   own height and slide back down. */
+@keyframes sb-tip-in {
+  from {
+    transform: translateY(-50%) translateX(-6px);
+  }
+  to {
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.sb.collapsed .sb-nav-link[data-tip]:hover::after,
+.sb.collapsed .sb-nav-link[data-tip]:focus-visible::after {
+  display: block;
+}
+
 /* The active/section bar is drawn with ::before at the link's left edge; keep
    it off the icon now that the link is only as wide as the icon itself. */
 .sb.collapsed .sb-nav-link.active::before,
@@ -510,10 +668,24 @@
   line-height: 1;
 }
 
+/* Every end state on this rail is a static style, so cutting the motion out
+   entirely changes nothing about what is on screen — it only removes the trip
+   between the two. */
 @media (prefers-reduced-motion: reduce) {
   .sb,
-  .sb-toggle svg {
+  .sb-toggle svg,
+  .sb-nav-link,
+  .sb-nav-label,
+  .sb-caret,
+  .sb-user,
+  .sb-promo,
+  .sb-sub-wrap {
     transition: none;
+  }
+
+  .sb-flyout-card,
+  .sb.collapsed .sb-nav-link[data-tip]::after {
+    animation: none;
   }
 }
 

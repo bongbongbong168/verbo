@@ -164,6 +164,12 @@ export const api = {
   addFlashcard: (token, flashcard) =>
     request('/flashcards', { method: 'POST', body: flashcard, token }),
   deleteFlashcard: (token, id) => request(`/flashcards/${id}`, { method: 'DELETE', token }),
+  /* Sentences using this word, found across the learner's own articles,
+     podcasts, lessons and scans. Fetched only when a word is opened — it runs
+     four LIKE scans, so doing it for a whole page of the bank would be most of
+     the work thrown away. */
+  getFlashcardExamples: (token, id, limit = 3) =>
+    request(`/flashcards/${id}/examples?limit=${limit}`, { token }),
   getScans: (token) => request('/scans', { token }),
   getScan: (token, id) => request(`/scans/${id}`, { token }),
   deleteScan: (token, id) => request(`/scans/${id}`, { method: 'DELETE', token }),
@@ -484,6 +490,9 @@ export const api = {
     return requestMultipart(`/podcasts/${id}`, formData, token)
   },
   deletePodcast: (token, id) => request(`/podcasts/${id}`, { method: 'DELETE', token }),
+  /* The Daily Use shelves in one call — recommended, popular and
+     grouped topics are slices of the same small set. */
+  getDailyUse: (token) => request('/study-levels/daily', { token }),
   getStudyLevels: (token) => request('/study-levels', { token }),
   getStudyLevel: (token, id) => request(`/study-levels/${id}`, { token }),
   // Multipart: a level carries a carousel cover plus a module-page banner.

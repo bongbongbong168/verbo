@@ -451,8 +451,13 @@
   padding: 14px 0 28px;
   margin: -14px 0 -28px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 60px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 60px), transparent);
+  /* A 26px ramp, not 60. The point of the fade is to avoid a hard chop at the
+     panel edge, not to dim the card behind it — over 60px it washed out about a
+     quarter of the third card, so a real title and cover read as greyed-out
+     rather than as content continuing past the edge. Short enough to be almost
+     unnoticed, long enough that nothing is visibly guillotined. */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }

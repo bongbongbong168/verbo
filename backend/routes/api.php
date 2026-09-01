@@ -107,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/flashcards/review', [FlashcardController::class, 'review']);
     Route::post('/flashcards', [FlashcardController::class, 'store']);
     Route::post('/flashcards/{flashcard}/grade', [FlashcardController::class, 'grade']);
+    Route::get('/flashcards/{flashcard}/examples', [FlashcardController::class, 'examples']);
     Route::delete('/flashcards/{flashcard}', [FlashcardController::class, 'destroy']);
 
     Route::get('/scans', [ScanController::class, 'index']);
@@ -214,6 +215,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/podcasts/{podcast}', [PodcastController::class, 'destroy']);
 
     Route::get('/study-levels', [StudyLevelController::class, 'index']);
+    /* BEFORE the {studyLevel} route, or "daily" binds as an id — the same trap
+       `bookings/clear-past`, `notifications/read-all` and
+       `articles/recommended` all hit. */
+    Route::get('/study-levels/daily', [StudyLevelController::class, 'daily']);
     Route::get('/study-levels/{studyLevel}', [StudyLevelController::class, 'show']);
     Route::post('/study-levels', [StudyLevelController::class, 'store']);
     Route::put('/study-levels/{studyLevel}', [StudyLevelController::class, 'update']);

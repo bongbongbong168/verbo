@@ -93,8 +93,17 @@ export default function StudyLevel() {
       </section>
 
       <div className="sl-section-head" ref={modulesRef}>
-        <h2 className="sl-section-title">Modules</h2>
-        <p className="sl-section-subtitle">Select your current level</p>
+        {/* An HSK level is a ladder you pick a rung of; a Daily Use topic is
+            one situation with lessons that run in order. "Select your current
+            level" describes the first and misdescribes the second. */}
+        <h2 className="sl-section-title">
+          {level.category === 'daily' ? 'Lessons' : 'Modules'}
+        </h2>
+        <p className="sl-section-subtitle">
+          {level.category === 'daily'
+            ? 'Work through them in order'
+            : 'Select your current level'}
+        </p>
       </div>
 
       {user?.is_admin && (

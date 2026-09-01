@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import DailyUseList from '../components/DailyUseList'
 import './Study.css'
 
 const CATEGORIES = [
@@ -188,8 +189,17 @@ export default function Study() {
     <div className="st">
       <div className="st-header">
         <div className="st-heading-block">
-          <h1 className="st-heading">Select Your Level</h1>
-          <p className="st-subtitle">Pick the proficiency option fits you best</p>
+          {/* The heading follows the tab. "Select Your Level" is true of HSK,
+              which is a ladder; Daily Use is a set of situations with no level
+              to select, so saying it there would misdescribe the page. */}
+          <h1 className="st-heading">
+            {category === 'daily' ? 'Daily Use' : 'Select Your Level'}
+          </h1>
+          <p className="st-subtitle">
+            {category === 'daily'
+              ? 'Learn how Chinese is actually used in everyday situations.'
+              : 'Pick the proficiency option fits you best'}
+          </p>
         </div>
 
         <div className="st-toggle">
@@ -251,10 +261,18 @@ export default function Study() {
         </form>
       )}
 
-      {loading ? (
+      {/* Daily Use gets its own arrangement rather than the carousel. HSK is a
+          ladder and the rotation says "you are here on it"; Daily Use has no
+          order — you pick the situation you are about to be in — so a card that
+          has to be caught while moving would fight the whole idea. It fetches
+          its own shelves, so this branch returns before the carousel's data is
+          touched. */}
+      {category === 'daily' ? (
+        <DailyUseList />
+      ) : loading ? (
         <p className="st-empty">Loading...</p>
       ) : count === 0 ? (
-        <p className="st-empty">No levels in {category === 'hsk' ? 'HSK' : 'Daily use'} yet.</p>
+        <p className="st-empty">No levels in HSK yet.</p>
       ) : (
         <>
           {/* pointerdown covers both a tap and a click, so touching the cards

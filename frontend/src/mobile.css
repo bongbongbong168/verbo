@@ -634,7 +634,86 @@
     min-width: 132px;
     flex: 0 0 132px !important;
   }
+
+  /* ---- shelves on a phone: swipe, don't stack ----
+     Three columns across 375px leaves each card about 105px — narrower than a
+     two-line title needs, with the cover reduced to a 59px strip. But stacking
+     them is worse: at full width a 16:9 cover is 193px, so one card runs about
+     350px and seven shelves become a page you scroll for a minute to reach the
+     bottom of.
+
+     So the shelf becomes what a shelf actually is on a phone — a row you swipe.
+     Cards sit at 74% of the width, which leaves the next one visibly peeking;
+     that peek IS the affordance, which is why there is no fade mask here as
+     there is on the Dashboard's pick-up row. A mask would dim the very thing
+     telling you to swipe.
+
+     `overflow-x: auto` computes `overflow-y` to `auto` too, which would clip a
+     hover lift — harmless on a touch screen, where there is no hover. */
+  .rd-row {
+    display: flex !important;
+    gap: 0.8rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* The card's 2px hover/active lift needs somewhere to go now that
+       overflow-y is clipping. */
+    padding-bottom: 4px;
+  }
+
+  .rd-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rd-tile {
+    flex: 0 0 74%;
+    scroll-snap-align: start;
+  }
+
+  /* The search field takes the whole row and the topic select drops beneath it.
+     Side by side at this width the field shrank to about eight characters,
+     which is not enough to see what you typed. */
+  .rd-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  /* Seven topic pills wrap to THREE rows on a 375px screen — 230px of controls
+     before a single article, which put the first shelf 338px down. One row that
+     scrolls sideways instead, the same gesture the shelves beneath it use.
+
+     This one DOES get a fade, unlike the shelves: a card row leaves the next
+     card peeking and that peek is its own affordance, but pills are small
+     enough that the row can end flush against the edge with nothing to
+     suggest more. The gradient only bites where a pill actually reaches the
+     edge, so a short row is untouched and needs no overflow test. */
+  .rd-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - 26px),
+      transparent
+    );
+    mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  }
+
+  .rd-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rd-pill {
+    flex: none;
+  }
+
+  /* Uppercase at 1.05rem wraps EVERYDAY CHINESE onto a second line against the
+     View all pill; one step down keeps every shelf heading on one. */
+  .rd-shelf-title {
+    font-size: 0.95rem;
+  }
 }
+
 
 /* ---------------------------------------------------------------------------
    Phone fixes from real-device testing (iPhone, Safari). Emulation missed all
