@@ -66,6 +66,15 @@ export default function GoogleSignInButton({ onError, onSuccess }) {
   const { loginWithGoogle } = useAuth()
   const holder = useRef(null)
   const [failed, setFailed] = useState(false)
+  /* Google opens its account chooser in a POPUP, and when the browser refuses
+     to open one, GIS writes "Failed to open popup window ... Maybe blocked by
+     the browser?" to the console and calls NOTHING. No callback, no error, no
+     rejected promise — so the page had no way to know and the user got silence
+     on click, which is exactly what "it doesn't work" looked like.
+
+     Safari blocks pop-ups by default, so this is the normal experience there
+     rather than an edge case. */
+  const [popupBlocked, setPopupBlocked] = useState(false)
   /** Disconnects the ResizeObserver; set once GIS has actually loaded. */
   const cleanup = useRef(null)
   /* The handler is held in a ref because GIS keeps the callback it was
@@ -76,6 +85,8 @@ export default function GoogleSignInButton({ onError, onSuccess }) {
   const handle = useRef(null)
 
   handle.current = async (response) => {
+    // A credential arrived, so the window plainly opened.
+    setPopupBlocked(false)
     try {
       await loginWithGoogle(response.credential)
       /* The page decides where to go, exactly as its own submit handler does.
@@ -88,6 +99,40 @@ export default function GoogleSignInButton({ onError, onSuccess }) {
       onError?.(err.message || 'Google sign-in failed.')
     }
   }
+
+  /* Watch `window.open` for a blocked pop-up.
+   *
+   * GIS opens its account chooser with `window.open` FROM THIS PAGE, and a
+   * browser that refuses returns null. That return value is the exact signal —
+   * measured, not inferred: patched in and clicked, the two calls GIS makes
+   * (`/o/oauth2/v2/auth` and `/gsi/select`) both came back null under a
+   * blocker.
+   *
+   * A click listener cannot do this job. GIS overlays its button with a
+   * CROSS-ORIGIN iframe, so the click never reaches any handler of ours — the
+   * first attempt at this listened on the holder and was silent.
+   *
+   * Patching a global is invasive, so it is kept honest: the original is
+   * restored on unmount, every call is passed through untouched, and only
+   * accounts.google.com URLs are judged, so an unrelated pop-up elsewhere can
+   * never be reported as a broken sign-in.
+   */
+  useEffect(() => {
+    if (!googleConfigured) return undefined
+
+    const nativeOpen = window.open
+    window.open = function patched(...args) {
+      const opened = nativeOpen.apply(window, args)
+      if (!opened && String(args[0] || '').includes('accounts.google.com')) {
+        setPopupBlocked(true)
+      }
+      return opened
+    }
+
+    return () => {
+      window.open = nativeOpen
+    }
+  }, [])
 
   useEffect(() => {
     if (!googleConfigured) return undefined
@@ -163,5 +208,19 @@ export default function GoogleSignInButton({ onError, onSuccess }) {
     )
   }
 
-  return <div className="gs-holder" ref={holder} />
+  return (
+    <>
+      {/* Capture phase, on the wrapper: GIS owns everything inside `holder`
+          and replaces it on every redraw, so a listener bound to its children
+          would be thrown away. Capture also means this runs before GIS's own
+          handler, so the watch starts even if that handler throws. */}
+      <div className="gs-holder" ref={holder} />
+      {popupBlocked && (
+        <p className="gs-blocked" role="status">
+          Your browser blocked the Google sign-in window. Allow pop-ups for this
+          site and try again, or sign in with your email and password.
+        </p>
+      )}
+    </>
+  )
 }
