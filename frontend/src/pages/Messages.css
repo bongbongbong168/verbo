@@ -638,6 +638,59 @@
   color: var(--ms-muted);
 }
 
+/* ---- unsend ----
+   Hidden until the row is hovered or the button itself is focused, so a thread
+   at rest is messages and times rather than a column of Delete links. But
+   `visibility`, never `display: none`: a keyboard user has to be able to Tab
+   to it, and a display-none control is not focusable at all — so
+   :focus-within on the row is what reveals it for them.
+
+   No transition on the reveal. It is a state, not an animation, and a fade
+   that never gets a frame would leave the button invisible but clickable. */
+.ms-unsend {
+  visibility: hidden;
+  /* The label widens when armed ("Delete" 32px -> "Tap again to delete"
+     96.8px) and the button is the LAST thing on a right-aligned line, so it
+     grows leftward and its right edge does not move — verified below. That is
+     what keeps a pointer resting on "Delete" inside the armed button, so no
+     width has to be reserved here. Reserving one was tried and reverted: at
+     97px it padded every own-message timestamp with 65px of dead space to
+     push a button nobody can see out of the way. */
+  margin-left: 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ms-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ms-row:hover .ms-unsend,
+.ms-row:focus-within .ms-unsend {
+  visibility: visible;
+}
+
+.ms-unsend:hover {
+  color: #b02a2a;
+}
+
+/* Armed. Stays visible whatever the pointer does — the row it belongs to may
+   scroll out from under the cursor between the two clicks, and a control that
+   vanished mid-decision would leave the message armed with nothing on screen
+   saying so. */
+.ms-unsend.armed {
+  visibility: visible;
+  color: #b02a2a;
+  font-weight: 600;
+}
+
+.ms-unsend:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
 /* ---- composer ---- */
 
 .ms-composer {

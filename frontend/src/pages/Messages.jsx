@@ -209,6 +209,12 @@ export default function Messages() {
   const [active, setActive] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  /* Which message is one click away from being deleted, and which is in
+     flight. Two pieces of state rather than one, because a message being
+     deleted must stop being armed — otherwise the label flickers back to
+     "Tap again" if the request is slow. */
+  const [armedId, setArmedId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
   const [draft, setDraft] = useState('')
   const [search, setSearch] = useState('')
   const [file, setFile] = useState(null)
@@ -293,6 +299,41 @@ export default function Messages() {
       setError(err.message)
     } finally {
       setSending(false)
+    }
+  }
+
+  /**
+   * Take back a message you sent.
+   *
+   * First click arms, second deletes — and the arming lapses after 4s on a
+   * timer rather than on blur, because blur never fires if focus never landed
+   * on the button in the first place. Same reasoning as Scan's delete.
+   *
+   * Removed from the thread locally rather than by refetching: the server has
+   * already confirmed it is gone, and reloading the whole conversation to
+   * learn one thing we know would jump the scroll position.
+   */
+  async function unsend(id) {
+    if (armedId !== id) {
+      setArmedId(id)
+      setTimeout(() => setArmedId((cur) => (cur === id ? null : cur)), 4000)
+      return
+    }
+
+    setArmedId(null)
+    setDeletingId(id)
+    try {
+      await api.deleteMessage(token, id)
+      setActive((a) =>
+        a ? { ...a, messages: a.messages.filter((m) => m.id !== id) } : a,
+      )
+      // The thread list shows a preview of the last message, which may be the
+      // one that just went.
+      loadThreads()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -590,6 +631,30 @@ export default function Messages() {
                           <time className="ms-time">
                             {clockFmt.format(new Date(m.created_at))}
                             {m.mine && m.read_at ? ' · Read' : ''}
+                            {/* Only on your own messages: you can take back
+                                what you said, not what someone said to you.
+
+                                Arms on the first click and acts on the second
+                                — the pattern Scan's delete and the Bookings
+                                clear use — because this cannot be undone and
+                                the control sits right beside a timestamp
+                                somebody may be aiming a scroll at. */}
+                            {m.mine && (
+                              <button
+                                type="button"
+                                className={
+                                  'ms-unsend' + (armedId === m.id ? ' armed' : '')
+                                }
+                                onClick={() => unsend(m.id)}
+                                disabled={deletingId === m.id}
+                              >
+                                {deletingId === m.id
+                                  ? 'Deleting…'
+                                  : armedId === m.id
+                                    ? 'Tap again to delete'
+                                    : 'Delete'}
+                              </button>
+                            )}
                           </time>
                         </div>
                       </div>

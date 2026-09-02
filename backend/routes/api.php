@@ -188,6 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
     Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send']);
     Route::get('/messages/{message}/attachment', [ConversationController::class, 'attachment']);
+    Route::delete('/messages/{message}', [ConversationController::class, 'destroyMessage']);
     // Opening a thread is idempotent — it returns the existing one or starts it.
     Route::post('/tutors/{tutorProfile}/conversation', [ConversationController::class, 'withTutor']);
     Route::post('/courses/{course}/conversation', [ConversationController::class, 'forCourse']);

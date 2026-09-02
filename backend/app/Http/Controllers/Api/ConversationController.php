@@ -300,6 +300,61 @@ class ConversationController extends Controller
         );
     }
 
+    /**
+     * Unsend a message you wrote.
+     *
+     * The SENDER only — not the recipient, and not the tutor in their own
+     * thread. A message is a thing you said, so you may take it back; letting
+     * the other side delete it would let them edit the record of a
+     * conversation they are also party to.
+     *
+     * It goes for EVERYONE, unlike clearing a booking from your own list. A
+     * booking row is one shared fact two people each keep a view of, so hiding
+     * it for one is honest. A message is something one person said to another,
+     * and leaving it on the recipient's screen after the writer withdrew it
+     * would make "delete" a lie.
+     *
+     * No tombstone. "This message was deleted" is a claim the app would then
+     * have to keep true forever, and it tells the reader exactly what a
+     * withdrawn message tells them — that something was there — while denying
+     * the writer the thing they asked for.
+     */
+    public function destroyMessage(Request $request, Message $message)
+    {
+        $user = $request->user();
+
+        // (int) cast: the FK arrives as a string from SQLite, and a bare !==
+        // would refuse the rightful author. Same trap as everywhere else here.
+        abort_unless((int) $message->sender_id === $user->id, 403);
+        // Still a member of the thread — access can have been revoked since.
+        abort_unless($message->conversation->allows($user), 403);
+
+        $conversation = $message->conversation;
+
+        DB::transaction(function () use ($message, $conversation) {
+            // The row cascades; the file on disk does not, and an orphaned
+            // upload in a private bucket is unreachable and permanent.
+            if ($message->attachment_path) {
+                Storage::delete($message->attachment_path);
+            }
+
+            $message->delete();
+
+            /* `last_message_at` is denormalised for the thread list's sort
+               order, so deleting the newest message leaves that column
+               pointing at a message that no longer exists — the thread would
+               keep its place at the top of the list forever. Recomputed from
+               what is actually left, and falling back to when the conversation
+               itself was created when the last message goes. */
+            $conversation->update([
+                'last_message_at' => $conversation->messages()->max('created_at')
+                    ?? $conversation->created_at,
+            ]);
+        });
+
+        return response()->json(['message' => 'Deleted']);
+    }
+
     // ---- helpers -------------------------------------------------------
 
     /**

@@ -415,6 +415,9 @@ export const api = {
   /* Attachments live on the private disk and stream through an authorised
      route, so they cannot go straight into an <img src>. Fetched as a blob with
      the token attached, then handed to the page as an object URL. */
+  /* Unsend one of your own messages. It goes for both sides — see the
+     controller for why there is no "delete for me". */
+  deleteMessage: (token, id) => request(`/messages/${id}`, { method: 'DELETE', token }),
   fetchAttachment: async (token, messageId) => {
     const res = await fetch(`${BASE_URL}/messages/${messageId}/attachment`, {
       headers: { Authorization: `Bearer ${token}` },
