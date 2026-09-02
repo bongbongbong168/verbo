@@ -107,3 +107,30 @@
   text-align: center;
   color: #8a5a1a;
 }
+
+/* ---- centre the label on the BUTTON, not on what the logo left over ----
+
+   Google lays the button out as a flex row: logo, then a label with flex-grow
+   that centres its text inside whatever space remains. So the text's centre
+   sits half the logo's width to the right of the button's — measured at
+   14.3px off on a 418px button, which is plainly visible.
+
+   Taking the logo OUT OF FLOW is what fixes it: the label then spans the whole
+   row and its own centring lands on the true centre, while the logo stays
+   exactly where it was at the left edge. Self-correcting too — nothing here
+   hard-codes the logo's width, so it holds at any button size.
+
+   Selected by structure and role rather than by Google's class names, for the
+   reason given above: `nsm7Bb-HzV7m-LgbsSe-Bz112c` is generated and will change
+   without warning. The row is the button's last div (the first is the ripple
+   layer) and the logo is that row's first child. */
+.gs-holder [role='button'] > div:last-of-type {
+  position: relative;
+}
+
+.gs-holder [role='button'] > div:last-of-type > div:first-child {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
