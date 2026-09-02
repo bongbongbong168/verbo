@@ -265,22 +265,26 @@
   margin: 0 0 2.4rem;
 }
 
+/* No rule under the heading. The Podcast page — the other half of Explore,
+   reached by the toggle at the top of this one — sets its sections with a
+   plain bold line of type and nothing else, and two sibling pages should not
+   punctuate themselves differently. The row stays a flex row because the
+   "View all" pill still sits at its right. */
 .rd-shelf-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.7rem;
-  margin-bottom: 1.1rem;
-  border-bottom: 1px solid var(--rd-border);
+  margin-bottom: 1.2rem;
 }
 
+/* Matched to `.pc-section-title`: same family, weight and size, title case.
+   The uppercase-and-letterspaced version made these read as small labels
+   rather than as the headings they are. */
 .rd-shelf-title {
   font-family: "Hellix", sans-serif;
   font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 1.45rem;
   margin: 0;
 }
 
