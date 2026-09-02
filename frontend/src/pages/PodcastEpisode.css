@@ -839,3 +839,96 @@
     padding: 0.45rem 0.5rem;
   }
 }
+
+/* The play mark on a transcript line. Hidden until the line is hovered or is
+   the one playing, so a resting transcript is text and times rather than a
+   column of controls — but the affordance is there the moment the pointer
+   suggests someone is looking for it. `visibility`, not `display`, so the
+   timestamp beside it never shifts when the mark appears. */
+.pe-cue-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.pe-cue-play {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  visibility: hidden;
+  color: var(--pe-accent);
+  align-self: center;
+}
+
+.pe-cue:hover .pe-cue-play,
+.pe-cue.now .pe-cue-play {
+  visibility: visible;
+}
+
+.pe-cue-stamp {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the aids row carries playback too, and stays put ----
+
+   `position: sticky` rather than a floating bar toggled by an
+   IntersectionObserver. The observer version was built first and thrown away:
+   IO callbacks are delivered in the browser's rendering steps, so the bar's
+   VISIBILITY depended on frames arriving — the exact failure this codebase
+   already has a rule against. Sticky needs no JavaScript, no observer and no
+   frames; the browser holds the row in place on its own. */
+.pe-aids {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  /* Opaque, or the transcript scrolls visibly through it. */
+  background: var(--pe-card);
+  /* Cancels the panel's own left/right padding so the sticky band spans the
+     full card, then puts the padding back inside. Without this the transcript
+     shows in the gutters either side while scrolling under it. */
+  margin: 0 -2.2rem;
+  padding: 0.4rem 2.2rem 0.9rem;
+  border-bottom: 1px solid var(--pe-border);
+}
+
+.pe-aids-play {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-right: 0.4rem;
+}
+
+.pe-aids-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--pe-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pe-aids-btn svg { width: 14px; height: 14px; }
+
+.pe-aids-btn:focus-visible {
+  outline: 2px solid var(--pe-accent-light);
+  outline-offset: 2px;
+}
+
+.pe-aids-time {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--pe-text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .pe-aids {
+    margin: 0 -1.1rem;
+    padding: 0.4rem 1.1rem 0.8rem;
+  }
+  .pe-aids-time { display: none; }
+}

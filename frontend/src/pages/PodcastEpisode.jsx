@@ -632,6 +632,35 @@ export default function PodcastEpisode() {
               Chinese — pinyin stacks above each word and the English sits
               underneath as its own passage. */}
           <div className="pe-aids">
+            {/* Playback lives in this row, not only in the card above, because
+                the card scrolls away the moment a synced transcript starts
+                scrolling itself — and losing pause exactly when the feature
+                starts working is the wrong trade. The row is sticky in CSS, so
+                it needs no observer and no frames to stay put. */}
+            {podcast.audio_url && (
+              <div className="pe-aids-play">
+                <button
+                  type="button"
+                  className="pe-aids-btn"
+                  onClick={togglePlay}
+                  aria-label={playing ? 'Pause' : 'Play'}
+                >
+                  {playing ? (
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <rect x="7" y="5" width="3.6" height="14" rx="1.2" />
+                      <rect x="13.4" y="5" width="3.6" height="14" rx="1.2" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M8 5.5v13c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L9.6 4.6c-.7-.4-1.6.1-1.6.9z" />
+                    </svg>
+                  )}
+                </button>
+                <span className="pe-aids-time">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+            )}
             <button
               type="button"
               className={'pe-switch' + (showPinyin ? ' on' : '')}
@@ -745,7 +774,16 @@ export default function PodcastEpisode() {
                     }
                     onClick={() => seekTo(cue.start_ms)}
                   >
-                    <span className="pe-cue-time">{formatTime(cue.start_ms / 1000)}</span>
+                    {/* The timestamp alone never said the line was clickable —
+                        a time reads as a label. The mark appears on hover and
+                        stays on the playing line, so the affordance is visible
+                        exactly when it is relevant. */}
+                    <span className="pe-cue-time">
+                      <svg className="pe-cue-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M8 5.5v13c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L9.6 4.6c-.7-.4-1.6.1-1.6.9z" />
+                      </svg>
+                      <span className="pe-cue-stamp">{formatTime(cue.start_ms / 1000)}</span>
+                    </span>
                     <span
                       className={
                         'pe-cue-text' + (showPinyin ? ' pe-transcript-ruby' : '')
