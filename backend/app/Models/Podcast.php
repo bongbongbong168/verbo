@@ -31,6 +31,16 @@ class Podcast extends Model
     }
 
     /**
+     * Timed transcript lines. Ordered by `position` rather than `start_ms`
+     * because a line whose time has not been stamped yet still has a place in
+     * the transcript, and ordering by an unset time would move it to the top.
+     */
+    public function cues()
+    {
+        return $this->hasMany(PodcastCue::class)->orderBy('position');
+    }
+
+    /**
      * Points at the streaming route, not the raw storage path, so the player
      * gets Range support (seeking). See PodcastController::audio.
      */

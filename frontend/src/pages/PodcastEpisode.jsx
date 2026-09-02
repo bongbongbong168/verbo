@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -80,6 +80,19 @@ export default function PodcastEpisode() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
 
+  /* Timed transcript. One <p> per line, kept in a ref list so the playing line
+     can be scrolled to without re-querying the DOM. */
+  const cueRefs = useRef([])
+  /* When the reader last moved the transcript themselves. Auto-scroll stands
+     down for a few seconds after that — a reader who has scrolled ahead to
+     look at a later line is not helped by being yanked back to the audio. */
+  const manualScrollAt = useRef(0)
+  /* Sync mode: the admin tool for stamping a start time onto each line. */
+  const [syncing, setSyncing] = useState(false)
+  const [draftCues, setDraftCues] = useState([])
+  const [syncAt, setSyncAt] = useState(0)
+  const [savingCues, setSavingCues] = useState(false)
+
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState('')
   const [level, setLevel] = useState('Beginner')
@@ -94,6 +107,53 @@ export default function PodcastEpisode() {
   const [image, setImage] = useState(null)
   const [cropSource, setCropSource] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+
+  /* Memoised, or `|| []` hands back a NEW array on every render and the
+     active-line memo below it recomputes every time regardless — a memo that
+     never hits is just a slower render with extra words around it. */
+  const cues = useMemo(() => podcast?.cues || [], [podcast])
+
+  /* Which line the audio is inside: the LAST one that has already started.
+     A linear scan, deliberately — a transcript is tens of lines, and a binary
+     search here would be cleverness with nothing to buy.
+
+     `timeupdate` fires about four times a second, which is ample for lines. It
+     would not be for word-level highlighting; that needs requestAnimationFrame,
+     which is throttled to nothing in a background tab. */
+  const activeCue = useMemo(() => {
+    if (!cues.length) return -1
+    const ms = currentTime * 1000
+    let found = -1
+    for (let i = 0; i < cues.length; i += 1) {
+      if (cues[i].start_ms <= ms) found = i
+      else break
+    }
+    return found
+  }, [cues, currentTime])
+
+  /* Keep the playing line in view — but only while it is actually playing, and
+     not if the reader has just scrolled. `block: 'nearest'` is what stops the
+     page twitching on every line change: a line already on screen is left
+     exactly where it is. */
+  useEffect(() => {
+    if (activeCue < 0 || !playing) return
+    if (Date.now() - manualScrollAt.current < 4000) return
+
+    cueRefs.current[activeCue]?.scrollIntoView({
+      block: 'nearest',
+      behavior: 'smooth',
+    })
+  }, [activeCue, playing])
+
+  useEffect(() => {
+    const note = () => { manualScrollAt.current = Date.now() }
+    window.addEventListener('wheel', note, { passive: true })
+    window.addEventListener('touchmove', note, { passive: true })
+    return () => {
+      window.removeEventListener('wheel', note)
+      window.removeEventListener('touchmove', note)
+    }
+  }, [])
 
   useEffect(() => {
     if (!image) return setImagePreview(null)
@@ -179,6 +239,141 @@ export default function PodcastEpisode() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [token])
 
+  /* The tap key, live only while timing. Its own listener rather than a branch
+     in the one above, because that one subscribes once against `[token]` and
+     would close over a stale `syncAt` — the cursor would never advance past
+     the first line. This one re-subscribes as the cursor moves, which is
+     cheap and correct.
+
+     Ignored while a field has focus, or typing an "s" into the transcript
+     editor would stamp a timing. */
+  useEffect(() => {
+    if (!syncing) return undefined
+
+    function onTap(e) {
+      if (e.key !== 's' && e.key !== 'S') return
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.preventDefault()
+      markCue()
+    }
+
+    window.addEventListener('keydown', onTap)
+    return () => window.removeEventListener('keydown', onTap)
+  }, [syncing, syncAt, draftCues.length])
+
+  /**
+   * The word spans, shared by the plain transcript and the timed lines.
+   *
+   * One function rather than two copies of the markup: the hover popover, the
+   * saved-word highlight and the Alt+1 shortcut all have to behave identically
+   * whichever transcript is on screen, and duplicating this is exactly how the
+   * two would drift apart.
+   */
+  function renderTokens(tokens) {
+    return tokens.map((tok, idx) =>
+      tok.type === 'word' ? (
+        <span
+          key={idx}
+          className={
+            'pe-word' +
+            // Keyed by the WORD, so every occurrence is marked, not only the
+            // one that was saved.
+            (saved[tok.text] ? ' saved' : '') +
+            (hovered?.tok === tok ? ' active' : '')
+          }
+          onMouseEnter={(e) => {
+            hoveredWordRef.current = tok
+            setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
+          }}
+          onMouseLeave={() => {
+            if (hoveredWordRef.current === tok) hoveredWordRef.current = null
+            setHovered((cur) => (cur?.tok === tok ? null : cur))
+          }}
+        >
+          {showPinyin && tok.pinyin && (
+            <span className="pe-word-py">{tok.pinyin}</span>
+          )}
+          <span className="pe-word-hz">{tok.text}</span>
+        </span>
+      ) : (
+        <span key={idx}>{tok.text}</span>
+      ),
+    )
+  }
+
+  /* ---------- sync mode (admin) ----------
+   *
+   * Timings are TAPPED IN, not typed. An episode is tens of lines, and typing
+   * a timestamp per line means transcribing the clock by hand; playing the
+   * episode once and pressing a key as each line begins takes exactly as long
+   * as the episode, which the author was going to listen to anyway.
+   *
+   * This is why there is no forced-alignment dependency here. Aligning text to
+   * audio automatically means Python, a Mandarin acoustic model and downloaded
+   * weights on the server — the same class of machine-state dependency that
+   * Tesseract already is for Scan, and it buys word-level precision this
+   * feature does not use.
+   */
+  function startSync() {
+    /* Lines come from the transcript the author already wrote. Split on
+       newlines first — an author writing a dialogue puts each turn on its own
+       line — and fall back to sentence terminators for a transcript typed as
+       one paragraph. */
+    const source = podcast?.transcript || ''
+    const byLine = source.split(/\n+/).map((l) => l.trim()).filter(Boolean)
+    const lines =
+      byLine.length > 1
+        ? byLine
+        : source.split(/(?<=[。！？；!?;])/u).map((l) => l.trim()).filter(Boolean)
+
+    /* Existing timings are kept when re-syncing, so fixing one line does not
+       mean re-tapping the whole episode. Matched by position, which is what
+       the author sees. */
+    setDraftCues(
+      lines.map((text, i) => ({
+        text,
+        start_ms: cues[i]?.text === text ? cues[i].start_ms : null,
+      })),
+    )
+    setSyncAt(0)
+    setSyncing(true)
+  }
+
+  /** Stamp the playhead onto the line the cursor is on, and step forward. */
+  function markCue() {
+    const el = audioRef.current
+    if (!el || syncAt >= draftCues.length) return
+
+    const ms = Math.round(el.currentTime * 1000)
+    setDraftCues((cur) =>
+      cur.map((c, i) => (i === syncAt ? { ...c, start_ms: ms } : c)),
+    )
+    setSyncAt((i) => i + 1)
+  }
+
+  async function saveCues() {
+    setSavingCues(true)
+    setError(null)
+    try {
+      /* Only the stamped lines are sent. A line with no time is not "at zero" —
+         it is untimed, and saving it as 0 would make it flash past at the very
+         start of the episode. */
+      const timed = draftCues
+        .filter((c) => c.start_ms != null)
+        .map((c) => ({ start_ms: c.start_ms, text: c.text }))
+        .sort((a, b) => a.start_ms - b.start_ms)
+
+      await api.savePodcastCues(token, id, timed)
+      setSyncing(false)
+      loadPodcast()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSavingCues(false)
+    }
+  }
+
   function togglePlay() {
     const el = audioRef.current
     if (!el) return
@@ -187,6 +382,29 @@ export default function PodcastEpisode() {
     } else {
       el.pause()
     }
+  }
+
+  /**
+   * Jump the audio to a transcript line.
+   *
+   * Guarded on `readyState`, not just on the element existing: iOS Safari
+   * silently refuses a `currentTime` write before metadata has loaded, so on a
+   * cold page the first click on a line would do nothing at all. Below
+   * HAVE_METADATA the seek is deferred to the `loadedmetadata` event instead of
+   * being dropped.
+   */
+  function seekTo(ms) {
+    const el = audioRef.current
+    if (!el) return
+
+    const seconds = ms / 1000
+
+    if (el.readyState < 1) {
+      el.addEventListener('loadedmetadata', () => { el.currentTime = seconds }, { once: true })
+      return
+    }
+
+    el.currentTime = seconds
   }
 
   function skip(seconds) {
@@ -329,6 +547,13 @@ export default function PodcastEpisode() {
             <button type="button" className="pe-btn-primary" onClick={() => setEditing((v) => !v)}>
               {editing ? 'Cancel edit' : 'Edit'}
             </button>
+            {/* Only offered once there is audio and a transcript — there is
+                nothing to time against otherwise. */}
+            {podcast.audio_url && podcast.transcript && !syncing && (
+              <button type="button" className="pe-btn-primary" onClick={startSync}>
+                {cues.length ? 'Re-time' : 'Sync transcript'}
+              </button>
+            )}
             <button type="button" className="pe-btn-danger" onClick={handleDelete}>
               Delete
             </button>
@@ -444,7 +669,97 @@ export default function PodcastEpisode() {
             )}
           </div>
 
-          <p className="pe-hint">Hover a word and press Alt+1 to save it to your flashcard bank.</p>
+          {/* ---------- sync mode ---------- */}
+          {syncing && (
+            <div className="pe-sync">
+              <div className="pe-sync-head">
+                <div>
+                  <p className="pe-sync-title">Timing the transcript</p>
+                  <p className="pe-sync-note">
+                    Play the episode and press <kbd>S</kbd> — or Mark — as each
+                    line begins. {syncAt} of {draftCues.length} timed.
+                  </p>
+                </div>
+                <div className="pe-sync-actions">
+                  <button type="button" className="pe-sync-btn" onClick={markCue} disabled={syncAt >= draftCues.length}>
+                    Mark line
+                  </button>
+                  <button type="button" className="pe-sync-btn ghost" onClick={() => setSyncAt((i) => Math.max(0, i - 1))} disabled={syncAt === 0}>
+                    Back
+                  </button>
+                  <button type="button" className="pe-sync-btn solid" onClick={saveCues} disabled={savingCues}>
+                    {savingCues ? 'Saving…' : 'Save timings'}
+                  </button>
+                  <button type="button" className="pe-sync-btn ghost" onClick={() => setSyncing(false)}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              <ol className="pe-sync-lines">
+                {draftCues.map((c, i) => (
+                  <li
+                    key={i}
+                    className={
+                      'pe-sync-line' +
+                      (i === syncAt ? ' cursor' : '') +
+                      (c.start_ms != null ? ' timed' : '')
+                    }
+                  >
+                    <span className="pe-sync-stamp">
+                      {c.start_ms != null ? formatTime(c.start_ms / 1000) : '—'}
+                    </span>
+                    <span>{c.text}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <p className="pe-sync-note">
+                Lines you never mark are left out, so a half-timed pass saves
+                what it got. Saving none at all unsyncs the episode.
+              </p>
+            </div>
+          )}
+
+          <p className="pe-hint">
+            {cues.length
+              ? 'Click any line to jump there. Hover a word and press Alt+1 to save it.'
+              : 'Hover a word and press Alt+1 to save it to your flashcard bank.'}
+          </p>
+
+          {/* ---------- synced transcript ----------
+              Rendered only when the episode has timed lines. Without them the
+              plain passage below is what shows, unchanged — syncing is an
+              addition to an episode, never a precondition for reading it. */}
+          {cues.length > 0 && (
+            <ol className="pe-cues">
+              {cues.map((cue, i) => (
+                <li key={cue.id}>
+                  <button
+                    type="button"
+                    ref={(el) => { cueRefs.current[i] = el }}
+                    className={
+                      'pe-cue' +
+                      (i === activeCue ? ' now' : '') +
+                      (i < activeCue ? ' past' : '')
+                    }
+                    onClick={() => seekTo(cue.start_ms)}
+                  >
+                    <span className="pe-cue-time">{formatTime(cue.start_ms / 1000)}</span>
+                    <span
+                      className={
+                        'pe-cue-text' + (showPinyin ? ' pe-transcript-ruby' : '')
+                      }
+                    >
+                      {renderTokens(cue.tokens || [])}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {cues.length === 0 && (
           <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
             {podcast.tokens.map((tok, idx) =>
               tok.type === 'word' ? (
@@ -479,6 +794,7 @@ export default function PodcastEpisode() {
               )
             )}
           </p>
+          )}
 
           {/* `transcript_en` is one free-text block, not per-line pairs, so it
               renders as its own passage under the Chinese rather than

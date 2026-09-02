@@ -214,6 +214,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/podcasts', [PodcastController::class, 'store']);
     Route::put('/podcasts/{podcast}', [PodcastController::class, 'update']);
     Route::delete('/podcasts/{podcast}', [PodcastController::class, 'destroy']);
+    // Wholesale replace of an episode's timed transcript lines.
+    Route::post('/podcasts/{podcast}/cues', [PodcastController::class, 'saveCues']);
 
     Route::get('/study-levels', [StudyLevelController::class, 'index']);
     /* BEFORE the {studyLevel} route, or "daily" binds as an id — the same trap
