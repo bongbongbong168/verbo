@@ -180,87 +180,148 @@
   grid-auto-rows: 1fr;
 }
 
-/* ---- the situation card ---- */
+/* ---- the situation card ----
+   The Read tile's arrangement: a cover, then group, title and lesson count.
+   The two libraries are the same kind of page, so the card is the same card —
+   a learner should not have to read two different layouts to choose something
+   to open. */
 
 .du-card {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.95rem 1rem 1rem;
   box-sizing: border-box;
   min-width: 0;
   border: 1px solid #2b2643;
   border-radius: 14px;
+  overflow: hidden;
   background: #fff;
   color: inherit;
   text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-/* Instant, not transitioned — the fill IS the feedback, and a transition that
-   never gets a frame leaves the card looking dead under the pointer. */
 .du-card:hover {
-  background: #f9f8fe;
-  border-color: #a89ce3;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(28, 23, 48, 0.1);
 }
 
-.du-card-top {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  /* Without this a long title sets the card's floor and blows the grid column
-     past its share — the min-width: auto trap. */
-  min-width: 0;
-}
-
-/* The situation's mark. A tinted round chip rather than a bare glyph: emoji are
-   drawn at wildly different widths by different fonts, and a fixed chip keeps
-   every card's title starting on the same x whatever mark it wears. */
-.du-card-mark {
+/* A ratio, not a height: the cover is the one part that can be sized
+   proportionally, so it holds its shape at every column width. */
+.du-card-media {
+  position: relative;
   display: grid;
   place-items: center;
-  flex: none;
-  width: 34px;
-  /* Square whatever is inside it — the same reason the account avatar needs
-     this: a percentage height would fall back to the content's own ratio. */
-  aspect-ratio: 1;
-  border-radius: 10px;
-  background: #f1edfc;
-  font-size: 1.05rem;
-  line-height: 1;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
 }
 
-.du-card-title {
-  font-family: 'Hellix', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
+/* Taken OUT OF FLOW, not merely sized. `height: 100%` resolves against a
+   parent whose height comes from `aspect-ratio`, which is not a definite
+   height — it falls back to the image's own ratio and grows the box it was
+   meant to fill. The Read shelves measured 505px against 292px before this. */
+.du-card-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Generated covers, one per shelf. Each is a two-stop ramp in a single hue
+   family drawn from the app's palette, so a row of situations reads as one
+   product rather than a paint chart. */
+.du-card-media[data-group='daily-life'] {
+  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
+}
+.du-card-media[data-group='food-restaurants'] {
+  background: linear-gradient(135deg, #eba98f, #d1734f);
+}
+.du-card-media[data-group='travel'] {
+  background: linear-gradient(135deg, #92c9c0, #5c9c92);
+}
+.du-card-media[data-group='shopping'] {
+  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
+}
+.du-card-media[data-group='social'] {
+  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
+}
+.du-card-media[data-group='work'] {
+  background: linear-gradient(135deg, #a8a2c4, #6f6893);
+}
+.du-card-media[data-group='education'] {
+  background: linear-gradient(135deg, #e8c88f, #c49a4f);
+}
+.du-card-media[data-group='health'] {
+  background: linear-gradient(135deg, #a6d3a0, #6ba05f);
+}
+
+/* Oversized and cropped by the cover's own overflow, so the mark reads as
+   texture rather than as an emoji someone is meant to look at. */
+.du-card-glyph {
+  font-size: 4.4rem;
+  line-height: 1;
+  opacity: 0.42;
+  user-select: none;
+  transform: translate(16%, 6%);
+}
+
+/* Three placements cycling across a row, because a shelf's cards share a group
+   and so share a mark — three identical glyphs in the same spot read as one
+   image repeated. Positional rather than keyed to the topic, or the same
+   situation would look different depending on which shelf you met it on. */
+.du-card:nth-child(3n + 2) .du-card-glyph {
+  transform: translate(-18%, -10%) rotate(-8deg);
+}
+
+.du-card:nth-child(3n) .du-card-glyph {
+  transform: translate(22%, -12%) rotate(6deg);
+}
+
+/* The level sits on the cover, where Read puts the format — it is the one fact
+   you want before reading anything, and it keeps the text block to three
+   short lines. */
+.du-card-badge {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: #1c1730;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 7px;
+  padding: 4px 8px 5px;
+}
+
+.du-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.95rem 1rem 1.05rem;
   min-width: 0;
 }
 
 .du-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  font-size: 0.78rem;
-  color: #726c88;
-}
-
-.du-chip {
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  background: #f1edfc;
-  color: #6a6191;
+  font-size: 0.76rem;
   font-weight: 600;
+  color: #6a6191;
+  margin-bottom: 0.4rem;
 }
 
-/* Two lines, then it stops — pinned by height rather than left to the content,
-   so the Start row below sits on one straight line across a shelf. */
-.du-card-desc {
-  font-size: 0.83rem;
-  line-height: 1.5;
-  color: #726c88;
-  height: 3em;
+/* Two lines, then it stops. Fixed by height rather than left to the content,
+   so the lesson count below sits on one straight line across a shelf. */
+.du-card-title {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 700;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  height: 2.7em;
+  color: #1c1730;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -270,33 +331,19 @@
 /* Why this topic was suggested. Says which stated interest earned it, so the
    recommendation can be argued with rather than just accepted. */
 .du-card-reason {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   line-height: 1.4;
   color: #6a6191;
+  margin-top: 0.35rem;
 }
 
 /* `margin-top: auto` pins this to the bottom, so cards of differing content
-   still line their calls-to-action up with each other. */
-.du-card-go {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
+   still line their footers up with each other. */
+.du-card-count {
   margin-top: auto;
-  padding-top: 0.2rem;
-  font-family: 'Hellix', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #6a6191;
-}
-
-.du-card-go svg {
-  width: 13px;
-  height: 13px;
-  transition: transform 0.15s ease;
-}
-
-.du-card:hover .du-card-go svg {
-  transform: translateX(2px);
+  padding-top: 0.7rem;
+  font-size: 0.78rem;
+  color: #726c88;
 }
 
 .du-empty {

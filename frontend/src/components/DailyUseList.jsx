@@ -270,38 +270,41 @@ function TopicCard({ topic, reason }) {
      project hit. */
   const lessons = Number(topic.units_count ?? 0)
   const mark = topic.emoji || GROUP_MARKS[topic.topic_group] || '💬'
+  const groupKey = (topic.topic_group || 'default').toLowerCase().replace(/[^a-z]+/g, '-')
 
   return (
     <Link className="du-card" to={`/study/${topic.id}`}>
-      <span className="du-card-top">
-        <span className="du-card-mark" aria-hidden="true">
-          {mark}
-        </span>
-        <span className="du-card-title">{topic.title}</span>
+      {/* An uploaded picture wins; without one the cover is generated from the
+          situation's own group and mark, so a topic nobody has photographed
+          still gets a finished card. Exactly the Read tile's arrangement — the
+          two libraries are the same kind of page and should not need to be
+          learned twice. */}
+      <span className="du-card-media" data-group={groupKey}>
+        {topic.image_url ? (
+          <img src={topic.image_url} alt="" />
+        ) : (
+          <span className="du-card-glyph" aria-hidden="true">
+            {mark}
+          </span>
+        )}
+        {topic.level_label && (
+          <span className="du-card-badge">{topic.level_label}</span>
+        )}
       </span>
 
-      <span className="du-card-meta">
-        {topic.level_label && <span className="du-chip">{topic.level_label}</span>}
+      <span className="du-card-body">
+        {topic.topic_group && (
+          <span className="du-card-meta">{topic.topic_group}</span>
+        )}
+        <span className="du-card-title">{topic.title}</span>
+
+        {reason && <span className="du-card-reason">{reason}</span>}
+
         <span className="du-card-count">
           {/* An empty topic says so rather than reading "0 lessons", which
               looks like a loading state. */}
           {lessons === 0 ? 'Coming soon' : `${lessons} ${lessons === 1 ? 'lesson' : 'lessons'}`}
         </span>
-      </span>
-
-      {topic.description && <span className="du-card-desc">{topic.description}</span>}
-
-      {reason && <span className="du-card-reason">{reason}</span>}
-
-      {/* A span, not a button: the whole card is already the link, and a real
-          button inside an anchor is a nested interactive control that keyboard
-          and screen-reader users cannot reach sensibly. This is the affordance
-          the mockup draws, without the trap. */}
-      <span className="du-card-go">
-        Start
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M5 12h13M13 6l6 6-6 6" />
-        </svg>
       </span>
     </Link>
   )

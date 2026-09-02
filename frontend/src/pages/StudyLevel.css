@@ -283,8 +283,30 @@
 
 .sl-admin {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 0.6rem;
   margin-bottom: 1rem;
+}
+
+/* Outlined, not filled: it sits beside the primary action and only one of the
+   two should be shouting. A <label>, so it needs the cursor and the type a
+   button would have had for free. */
+.sl-btn-quiet {
+  font-family: 'Hellix', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--sl-accent);
+  background: none;
+  border: 1px solid var(--sl-accent);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.sl-btn-quiet:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .sl-btn-primary {

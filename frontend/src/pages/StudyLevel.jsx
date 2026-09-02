@@ -11,6 +11,7 @@ export default function StudyLevel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [savingCover, setSavingCover] = useState(false)
   const modulesRef = useRef(null)
 
   const [title, setTitle] = useState('')
@@ -111,6 +112,49 @@ export default function StudyLevel() {
           <button type="button" className="sl-btn-primary" onClick={() => setShowForm((v) => !v)}>
             {showForm ? 'Cancel' : 'New module'}
           </button>
+
+          {/* The cover picture every card of this topic shows. A label wrapping
+              a hidden input rather than a button plus a ref: the file dialog
+              has to be opened by the input itself, and this is the one control
+              that gets that for free.
+
+              `title` rides along because the endpoint requires it on every
+              save — sending only the file would 422. */}
+          <label className="sl-btn-quiet">
+            {savingCover ? 'Uploading…' : level.image_url ? 'Change picture' : 'Add picture'}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              disabled={savingCover}
+              onChange={async (e) => {
+                const image = e.target.files?.[0]
+                // Clear it immediately so picking the SAME file twice still
+                // fires a change event — the browser suppresses it otherwise.
+                e.target.value = ''
+                if (!image) return
+                setSavingCover(true)
+                setError(null)
+                try {
+                  const updated = await api.updateStudyLevel(token, level.id, {
+                    title: level.title,
+                    description: level.description,
+                    level_label: level.level_label,
+                    image,
+                  })
+                  /* Merge rather than replace: `update` returns the bare model
+                     with no relations, so assigning it wholesale would wipe the
+                     `units` this page is rendering. Same trap the culture save
+                     on StudyUnit hit. */
+                  setLevel((prev) => ({ ...prev, ...updated }))
+                } catch (err) {
+                  setError(err.message)
+                } finally {
+                  setSavingCover(false)
+                }
+              }}
+            />
+          </label>
         </div>
       )}
 

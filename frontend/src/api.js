@@ -501,9 +501,16 @@ export const api = {
   // Multipart: a level carries a carousel cover plus a module-page banner.
   createStudyLevel: (token, level) =>
     requestMultipart('/study-levels', studyLevelFormData(level), token),
-  // No `updateStudyLevel()`: levels are created but never edited from the UI —
-  // there is no edit affordance on the Study page. `PUT /study-levels/{id}`
-  // is still routed, so restoring this is one line if that changes.
+  /* Restored — a topic's cover picture is now settable from its own page.
+     `_method=PUT` because a browser cannot send a real multipart PUT, the same
+     spoofing `updateArticle` uses. The endpoint requires `title` on every save
+     even when only the picture changed, so the caller resends what the topic
+     already has. */
+  updateStudyLevel: (token, id, level) => {
+    const form = studyLevelFormData(level)
+    form.append('_method', 'PUT')
+    return requestMultipart(`/study-levels/${id}`, form, token)
+  },
   createStudyUnit: (token, levelId, unit) =>
     request(`/study-levels/${levelId}/units`, { method: 'POST', body: unit, token }),
   getStudyUnit: (token, id) => request(`/study-units/${id}`, { token }),
