@@ -6,23 +6,9 @@ import { isBookingLive } from "../bookings";
 import BookingDialog from "../components/BookingDialog";
 import ImageCropper from "../components/ImageCropper";
 import PageTools from "../components/PageTools";
+import FilterSelect from "../components/FilterSelect";
+import PriceRange from "../components/PriceRange";
 import "./FindTutor.css";
-
-function ChevronDown() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
 
 function PlayIcon() {
   return (
@@ -75,27 +61,6 @@ function VerifiedIcon() {
    experience are still stand-ins — neither has a backend, and both would need
    new tracking rather than a new query. */
 const PLACEHOLDER_STATS = { students: "268", experience: "5y" };
-
-/* Hourly-rate bands for the price filter.
-   Open-ended at the top so the list never needs revisiting when someone prices
-   above the last bracket — a fixed "$40-$50" would quietly hide a $60 tutor.
-   `match` takes the raw column, which arrives as a string from SQLite and is
-   null for a tutor who has not set a rate; both are handled here rather than at
-   each call site. */
-const PRICE_BANDS = [
-  { key: "0-15", label: "Under $15/hr", match: (r) => r != null && Number(r) < 15 },
-  {
-    key: "15-30",
-    label: "$15 - $30/hr",
-    match: (r) => r != null && Number(r) >= 15 && Number(r) < 30,
-  },
-  {
-    key: "30-50",
-    label: "$30 - $50/hr",
-    match: (r) => r != null && Number(r) >= 30 && Number(r) < 50,
-  },
-  { key: "50+", label: "$50+/hr", match: (r) => r != null && Number(r) >= 50 },
-];
 
 function TutorPreview({ tutor, isSelf, alreadySent, onBook }) {
   if (!tutor) {
@@ -391,7 +356,7 @@ export default function FindTutor() {
   const [selectedId, setSelectedId] = useState(null);
   const [learnFilter, setLearnFilter] = useState("");
   const [availFilter, setAvailFilter] = useState("");
-  const [priceFilter, setPriceFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState(null);
   // The tutor whose booking dialog is open, or null. The message field lives
   // in that dialog now, so the cards collect nothing themselves.
   const [bookingTutor, setBookingTutor] = useState(null);
@@ -492,11 +457,13 @@ export default function FindTutor() {
       if (avail && !(t.availability || "").toLowerCase().includes(avail))
         return false;
       if (priceFilter) {
-        const band = PRICE_BANDS.find((b) => b.key === priceFilter);
         /* A tutor who has not set a rate is excluded while a price filter is
            active. They are not "cheap" — their price is simply unknown, and
-           showing them under a band would state something the data does not. */
-        if (band && !band.match(t.hourly_rate)) return false;
+           putting them inside a band would state something the data does not.
+           Number() again: SQLite hands the rate over as a string. */
+        if (t.hourly_rate == null) return false;
+        const rate = Number(t.hourly_rate);
+        if (rate < priceFilter.min || rate > priceFilter.max) return false;
       }
       return true;
     });
@@ -514,18 +481,28 @@ export default function FindTutor() {
     [tutors],
   );
 
-  /* Price is the one filter whose options are NOT read off the tutors: a list
-     of every distinct rate ($12, $15, $22, $42…) is a price list, not a filter.
-     Bands are the useful shape. But the page's rule still holds — only bands
-     that actually contain somebody are offered, so no choice leads to an empty
-     list. A tutor with no rate set counts toward none of them. */
-  const priceOptions = useMemo(
-    () =>
-      PRICE_BANDS.filter((band) =>
-        tutors.some((t) => band.match(t.hourly_rate)),
-      ),
-    [tutors],
-  );
+  /* The ends of the price slider, taken from the rates that actually exist.
+     Derived rather than fixed, which is what let the old "$50+" bracket go:
+     with a real maximum there is no "and above" left to catch.
+
+     `Number()` because the column arrives as a STRING from SQLite, and
+     Math.min on strings compares them lexically — "9" would beat "42". Null is
+     dropped rather than counted as 0: an unpriced tutor is not free.
+
+     Null when there is nothing to drag across, so the control can be hidden
+     rather than rendered as a slider with both ends in the same place. */
+  const priceBounds = useMemo(() => {
+    const rates = tutors
+      .map((t) => (t.hourly_rate == null ? null : Number(t.hourly_rate)))
+      .filter((r) => r != null && Number.isFinite(r));
+
+    if (!rates.length) return null;
+
+    const min = Math.floor(Math.min(...rates));
+    const max = Math.ceil(Math.max(...rates));
+
+    return max > min ? { min, max } : null;
+  }, [tutors]);
 
   const previewTutor =
     filteredTutors.find((t) => t.id === selectedId) ||
@@ -566,53 +543,32 @@ export default function FindTutor() {
       <div className="ft-filterbar">
         <span className="ft-filterbar-label">Filter by:</span>
 
-        <label className="ft-pill">
-          <select
-            value={learnFilter}
-            onChange={(e) => setLearnFilter(e.target.value)}
-          >
-            <option value="">Chinese ( Mandarin )</option>
-            {languageOptions.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </select>
-          <ChevronDown />
-        </label>
+        <FilterSelect
+          value={learnFilter}
+          onChange={setLearnFilter}
+          options={languageOptions}
+          placeholder="Chinese ( Mandarin )"
+          anyLabel="All subjects"
+        />
 
-        <label className="ft-pill">
-          <select
-            value={availFilter}
-            onChange={(e) => setAvailFilter(e.target.value)}
-          >
-            <option value="">Availability</option>
-            {availabilityOptions.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          <ChevronDown />
-        </label>
+        <FilterSelect
+          value={availFilter}
+          onChange={setAvailFilter}
+          options={availabilityOptions}
+          placeholder="Availability"
+          anyLabel="Any availability"
+        />
 
-        {/* Hidden entirely when no tutor has a rate set — an empty price filter
-            is a control that can only disappoint. */}
-        {priceOptions.length > 0 && (
-          <label className="ft-pill">
-            <select
-              value={priceFilter}
-              onChange={(e) => setPriceFilter(e.target.value)}
-            >
-              <option value="">Price</option>
-              {priceOptions.map((band) => (
-                <option key={band.key} value={band.key}>
-                  {band.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown />
-          </label>
+        {/* Hidden when there is no spread to drag across — every tutor on the
+            same rate, or none priced at all, makes a slider that cannot say
+            anything. */}
+        {priceBounds && (
+          <PriceRange
+            min={priceBounds.min}
+            max={priceBounds.max}
+            value={priceFilter}
+            onChange={setPriceFilter}
+          />
         )}
       </div>
 

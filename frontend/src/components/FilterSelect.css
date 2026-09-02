@@ -1,0 +1,152 @@
+/* Filter dropdown. Prefix `dd-`.
+   Palette is the app's own: #a89ce3 fills, #6a6191 emphasis, #f1edfc pale,
+   #2b2643 stroke — so this reads as part of Verbo rather than as a widget. */
+
+.dd {
+  position: relative;
+  /* The menu escapes this box, so anything with a stacking context above it
+     would clip or bury the list. */
+  z-index: 20;
+}
+
+.dd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  min-width: 160px;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #1c1730;
+  background: #f1edfc;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dd-btn:hover {
+  border-color: #cfc4f0;
+}
+
+/* Open and "has a value" are different facts and look different: the open pill
+   is outlined so it reads as attached to the list below it, while a pill
+   carrying a filter is filled so you can see at a glance which filters are on
+   without opening anything. */
+.dd-btn.open {
+  border-color: #a89ce3;
+  background: #fff;
+}
+
+.dd-btn.set {
+  background: #a89ce3;
+  color: #fff;
+}
+
+.dd-btn:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+.dd-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dd-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* The chevron points the other way while open — the direction is the state, so
+   it is a static transform and the transition only softens the trip. A stalled
+   transition still leaves it pointing correctly. */
+.dd-btn.open svg {
+  transform: rotate(180deg);
+}
+
+.dd-btn svg {
+  transition: transform 0.15s ease;
+}
+
+/* ---- the list ---- */
+
+@keyframes dd-in {
+  from {
+    transform: translateY(-4px);
+  }
+}
+
+.dd-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  /* Wider than the pill when a label needs it, but never wider than the
+     column — a filter list that runs off the page is worse than one that
+     wraps. */
+  max-width: min(320px, 90vw);
+  max-height: 280px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #e7e3f6;
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(28, 23, 48, 0.14);
+  /* Transform-only, fully opaque at frame 0: a menu that fades in is invisible
+     when the frames never arrive. */
+  animation: dd-in 0.13s ease-out;
+}
+
+.dd-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  font-family: 'Hellix', sans-serif;
+  font-weight: 500;
+  font-size: 0.88rem;
+  color: #1c1730;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  /* Asymmetric: Hellix reserves more ascent than these labels use, so
+     symmetric padding centres the line box and leaves the text sitting low. */
+  padding: 8px 0.7rem 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* One highlight, driven by `cursor`, which the pointer and the arrow keys both
+   move — so hovering and arrowing can never light two different rows. Static,
+   not transitioned: it IS the state. */
+.dd-opt.cursor {
+  background: #f1edfc;
+}
+
+.dd-opt.selected {
+  color: #6a6191;
+  font-weight: 700;
+}
+
+.dd-opt svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: #6a6191;
+}
+
+.dd-opt-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

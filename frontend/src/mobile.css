@@ -886,3 +886,28 @@
     flex-wrap: wrap;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Filter popovers on a phone.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* Both popovers hang from `left: 0` of their pill, which is right for a pill
+     near the left edge and wrong for the last one in the row — the Price panel
+     is 260px and ran off the right side of the screen, taking its max thumb
+     and the "$42" end label with it.
+
+     Anchored to the pill's RIGHT edge instead, so the panel opens inward from
+     wherever the pill happens to sit. Nothing can leave the screen as long as
+     the pill is on it. */
+  .dd-menu,
+  .pr-pop {
+    left: auto;
+    right: 0;
+  }
+
+  /* And a floor for the narrowest phones, where even an inward-opening 260px
+     panel would be wider than the viewport's usable width. */
+  .pr-pop {
+    width: min(260px, calc(100vw - 32px));
+  }
+}
