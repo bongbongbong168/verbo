@@ -670,14 +670,6 @@
     scroll-snap-align: start;
   }
 
-  /* The search field takes the whole row and the topic select drops beneath it.
-     Side by side at this width the field shrank to about eight characters,
-     which is not enough to see what you typed. */
-  .rd-search {
-    flex: 1 1 100%;
-    max-width: none;
-  }
-
   /* Seven topic pills wrap to THREE rows on a 375px screen — 230px of controls
      before a single article, which put the first shelf 338px down. One row that
      scrolls sideways instead, the same gesture the shelves beneath it use.

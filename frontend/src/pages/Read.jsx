@@ -63,22 +63,6 @@ function topicKey(category) {
   return TOPIC_ART[category] ? category.toLowerCase().replace(/\s+/g, "-") : "default";
 }
 
-function SearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
 function ChevronIcon() {
   return (
     <svg
@@ -95,7 +79,7 @@ function ChevronIcon() {
   );
 }
 
-/* One card everywhere — recommended, shelves, search results — so the same
+/* One card everywhere — recommended, shelves, filtered results — so the same
    article never looks like two different things depending on where you met it.
    Cover, then format + topic + level, then the title, then how long it takes.
    Deliberately NO excerpt: this page is for choosing what to read, and four
@@ -159,7 +143,6 @@ export default function Read() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [query, setQuery] = useState("");
   const [recommended, setRecommended] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
@@ -219,7 +202,7 @@ export default function Read() {
   }
 
   /* Only the topics that have something published, in the order above. The
-     dropdown and the shelves read from this one list, so they can never offer
+     pills and the shelves read from this one list, so they can never offer
      different sets. */
   const topics = useMemo(() => {
     const present = [
@@ -230,26 +213,16 @@ export default function Read() {
     return [...known, ...extra];
   }, [articles]);
 
-  /* Searching or picking a topic drops the shelves for one flat grid. Shelves
-     answer "show me around"; a search answers "find me this", and three-at-a-
-     time shelving actively hides matches from someone who has already said what
-     they want. */
-  const searching = query.trim().length > 0 || activeCategory !== "all";
+  /* Picking a topic drops the shelves for one flat grid. Shelves answer "show
+     me around"; a chosen topic answers "show me these", and three-at-a-time
+     shelving would hide the rest from someone who has already said which they
+     want. */
+  const filtering = activeCategory !== "all";
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return articles.filter((a) => {
-      if (activeCategory !== "all" && a.category !== activeCategory) {
-        return false;
-      }
-      if (!q) return true;
-      // Excerpt included: half of remembering an article is remembering a line
-      // out of it rather than its title.
-      return [a.title, a.category, a.hsk_level, a.excerpt]
-        .filter(Boolean)
-        .some((f) => String(f).toLowerCase().includes(q));
-    });
-  }, [articles, activeCategory, query]);
+  const results = useMemo(
+    () => articles.filter((a) => a.category === activeCategory),
+    [articles, activeCategory],
+  );
 
   const shelves = useMemo(
     () =>
@@ -355,18 +328,27 @@ export default function Read() {
           Saved sits at the far right with the search: it is a DESTINATION, not
           a filter, and it has no business among controls that narrow in place. */}
       <div className="rd-bar">
-        <div className="rd-bar-right">
-          <label className="rd-search">
-            <SearchIcon />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search articles"
-              aria-label="Search articles"
-            />
-          </label>
+        <div className="rd-pills">
+          <button
+            type="button"
+            className={"rd-pill" + (activeCategory === "all" ? " active" : "")}
+            onClick={() => setActiveCategory("all")}
+          >
+            All
+          </button>
+          {topics.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={"rd-pill" + (activeCategory === t ? " active" : "")}
+              onClick={() => setActiveCategory(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
+        <div className="rd-bar-right">
           {/* Soft at rest, filled on hover — the same treatment the Dashboard's
               "View all" gets, so a link out of a list looks the same wherever
               it appears. The count is real: it comes off the articles already
@@ -397,47 +379,18 @@ export default function Read() {
             </button>
           )}
         </div>
-
-        <div className="rd-pills">
-          <button
-            type="button"
-            className={"rd-pill" + (activeCategory === "all" ? " active" : "")}
-            onClick={() => setActiveCategory("all")}
-          >
-            All
-          </button>
-          {topics.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={"rd-pill" + (activeCategory === t ? " active" : "")}
-              onClick={() => setActiveCategory(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
       </div>
 
       {loading ? (
         <p className="rd-empty">Loading...</p>
-      ) : searching ? (
+      ) : filtering ? (
         <section className="rd-shelf">
           <div className="rd-shelf-head">
-            {/* A typed query wins the heading. The topic is still applied and
-                still shown in the dropdown, but naming the shelf after it while
-                someone is searching reads as though the search had been
-                ignored. */}
-            <h2 className="rd-shelf-title">
-              {query.trim() ? `Results for “${query.trim()}”` : activeCategory}
-            </h2>
+            <h2 className="rd-shelf-title">{activeCategory}</h2>
             <button
               type="button"
               className="rd-viewall"
-              onClick={() => {
-                setActiveCategory("all");
-                setQuery("");
-              }}
+              onClick={() => setActiveCategory("all")}
             >
               Back to browsing
             </button>
