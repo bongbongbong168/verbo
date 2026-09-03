@@ -34,9 +34,13 @@
 
 /* ---- header card: cover + title + player ---- */
 
+/* The app's card stroke, not the pale hairline. Every other content card in
+   Verbo — the Read tiles, the Daily Use situations — is defined by a 1px
+   #2b2643 outline, and these two were the only ones wearing --pe-border
+   instead, which read as edgeless against the lavender ground. */
 .pe-card {
   background: var(--pe-card);
-  border: 1px solid var(--pe-border);
+  border: 1px solid var(--pe-outline);
   border-radius: 20px;
   padding: 1.8rem;
   box-shadow: 0 4px 18px rgba(28, 23, 48, 0.06);
@@ -282,9 +286,11 @@
   margin: 0 0 0.8rem;
 }
 
+/* Same stroke as the episode card above it — the two are the page's only
+   cards and must read as the same kind of object. */
 .pe-transcript-panel {
   background: var(--pe-card);
-  border: 1px solid var(--pe-border);
+  border: 1px solid var(--pe-outline);
   border-radius: 20px;
   padding: 2rem 2.2rem 2.4rem;
 }
