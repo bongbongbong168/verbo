@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PodcastController extends Controller
@@ -43,64 +42,11 @@ class PodcastController extends Controller
 
     public function show(Podcast $podcast, DictionaryService $dictionary)
     {
-        $podcast->load('user:id,name', 'cues');
+        $podcast->load('user:id,name');
 
-        $payload = $podcast->toArray();
-
-        /* Each cue is annotated on its own, exactly as study conversation lines
-           are — so a word inside a timed line still gets its pinyin popover and
-           its Alt+1 save. Annotated PER LINE rather than over the joined text
-           because the segmenter would otherwise run words together across a
-           line break and invent vocabulary that spans two sentences. */
-        foreach ($payload['cues'] ?? [] as $i => $cue) {
-            $payload['cues'][$i]['tokens'] = filled($cue['text'])
-                ? $dictionary->annotate($cue['text'])
-                : [];
-        }
-
-        return array_merge($payload, [
-            /* Still sent, and still the whole transcript. An episode with no
-               cues renders from this exactly as it did before syncing existed,
-               and the admin editor edits this text rather than the lines. */
+        return array_merge($podcast->toArray(), [
             'tokens' => $dictionary->annotate($podcast->transcript),
         ]);
-    }
-
-    /**
-     * Replace an episode's timed lines wholesale.
-     *
-     * A whole-list replace rather than per-cue edits, the same shape the
-     * tutor's weekly hours use: the client holds the entire transcript while
-     * timing it, and sending one request per line would put the episode in a
-     * half-timed state whenever one of them failed.
-     *
-     * Sending an empty array is how an episode is UNSYNCED — it drops back to
-     * the plain transcript, which is a thing an author needs to be able to do
-     * after re-recording the audio.
-     */
-    public function saveCues(Request $request, Podcast $podcast)
-    {
-        abort_unless($request->user()->is_admin, 403);
-
-        $data = $request->validate([
-            'cues' => ['present', 'array'],
-            'cues.*.start_ms' => ['required', 'integer', 'min:0'],
-            'cues.*.text' => ['required', 'string'],
-        ]);
-
-        DB::transaction(function () use ($podcast, $data) {
-            $podcast->cues()->delete();
-
-            foreach ($data['cues'] as $i => $cue) {
-                $podcast->cues()->create([
-                    'position' => $i + 1,
-                    'start_ms' => $cue['start_ms'],
-                    'text' => $cue['text'],
-                ]);
-            }
-        });
-
-        return response()->json($podcast->load('cues')->cues);
     }
 
     public function store(Request $request)

@@ -493,10 +493,6 @@ export const api = {
     return requestMultipart(`/podcasts/${id}`, formData, token)
   },
   deletePodcast: (token, id) => request(`/podcasts/${id}`, { method: 'DELETE', token }),
-  /* Replaces an episode's timed transcript lines in one call. An empty array
-     unsyncs the episode, dropping it back to the plain transcript. */
-  savePodcastCues: (token, id, cues) =>
-    request(`/podcasts/${id}/cues`, { method: 'POST', body: { cues }, token }),
   /* The Daily Use shelves in one call — recommended, popular and
      grouped topics are slices of the same small set. */
   getDailyUse: (token) => request('/study-levels/daily', { token }),
