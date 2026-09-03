@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\StudyLevel;
+use App\Models\StudyUnit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class StudyLevelController extends Controller
@@ -119,19 +121,44 @@ class StudyLevelController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         // Natural sort by title so the carousel runs HSK 1..5 in order,
         // regardless of the order the levels were created in. SORT_NATURAL
         // also keeps "HSK 10" after "HSK 9" rather than after "HSK 1".
         // units_count lets the Dashboard pick the level with the most content
         // to feature, instead of whichever happens to sort first.
-        return StudyLevel::query()
+        $levels = StudyLevel::query()
             ->select(['id', 'title', 'description', 'level_label', 'image_path', 'banner_path', 'accent_color', 'category'])
             ->withCount('units')
             ->get()
             ->sortBy('title', SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
+
+        /* How far into each level this learner has got, counted as units they
+           have OPENED — which is the only thing the app actually records.
+           Nothing marks a unit finished, so this can never be called
+           "complete" without claiming more than the data knows. The Profile
+           page derives its progress the same way; the two must agree.
+
+           One grouped query for every level rather than one per card, and
+           `recent_views` is unique on (user, type, id), so a plain count is
+           already a count of DISTINCT units. */
+        $opened = DB::table('recent_views')
+            ->join('study_units', 'study_units.id', '=', 'recent_views.viewable_id')
+            ->where('recent_views.viewable_type', StudyUnit::class)
+            ->where('recent_views.user_id', $request->user()->id)
+            ->selectRaw('study_units.study_level_id as level_id, count(*) as opened')
+            ->groupBy('study_units.study_level_id')
+            ->pluck('opened', 'level_id');
+
+        foreach ($levels as $level) {
+            // (int) because SQLite hands aggregates back as strings, and the
+            // client divides with this.
+            $level->units_opened = (int) ($opened[$level->id] ?? 0);
+        }
+
+        return $levels;
     }
 
     /**

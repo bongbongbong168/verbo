@@ -369,6 +369,47 @@ export default function Study() {
             {visible[active]?.description && (
               <p className="st-active-description">{visible[active].description}</p>
             )}
+
+            {/* How far into this level the learner has got.
+
+                It counts units OPENED, and the label says so. Nothing in the
+                app records a unit as finished, so a bar labelled "complete"
+                would be asserting something the data cannot support — the
+                Profile page states its progress the same way, and the two are
+                derived from the same `recent_views` rows so they cannot
+                disagree.
+
+                Hidden entirely on a level with no units: a bar over nothing
+                is not 0% progress, it is an empty syllabus. */}
+            {Number(visible[active]?.units_count) > 0 && (
+              <div className="st-progress">
+                <div
+                  className="st-progress-track"
+                  role="progressbar"
+                  aria-valuenow={Number(visible[active].units_opened) || 0}
+                  aria-valuemin={0}
+                  aria-valuemax={Number(visible[active].units_count)}
+                  aria-label={`${visible[active].title} units opened`}
+                >
+                  <span
+                    className="st-progress-fill"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        ((Number(visible[active].units_opened) || 0) /
+                          Number(visible[active].units_count)) *
+                          100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <p className="st-progress-label">
+                  {Number(visible[active].units_opened) || 0} of{' '}
+                  {Number(visible[active].units_count)}{' '}
+                  {Number(visible[active].units_count) === 1 ? 'unit' : 'units'} opened
+                </p>
+              </div>
+            )}
           </div>
         </>
       )}

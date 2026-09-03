@@ -284,6 +284,41 @@
   margin: 0;
 }
 
+/* ---- level progress ----
+   Units OPENED over the level total. The label carries the word "opened"
+   because that is all the app records — see StudyLevelController::index. */
+
+.st-progress {
+  margin-top: 0.9rem;
+}
+
+.st-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: #ece8f8;
+  overflow: hidden;
+}
+
+/* No transition on the width. It is a value, not an animation, and a
+   transition that never gets a frame would leave the bar reading empty on a
+   level the learner has already worked through. */
+.st-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  /* --st-accent-light (#a89ce3), not --st-accent (#6a6191). The palette
+     reserves the lighter value for FILLED elements and the deeper one for
+     text and emphasis; a filled bar takes the fill. */
+  background: var(--st-accent-light);
+}
+
+.st-progress-label {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--st-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---- admin ---- */
 
 .st-admin {
