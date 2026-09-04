@@ -523,47 +523,6 @@
   color: var(--pe-text);
 }
 
-/* ---- admin form ---- */
-
-.pe-form {
-  background: var(--pe-card);
-  border: 1px solid var(--pe-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  max-width: 620px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.pe-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--pe-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.pe-form input[type='text'],
-.pe-form input:not([type]),
-.pe-form select,
-.pe-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--pe-text);
-  border: 1px solid var(--pe-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.pe-form input:focus,
-.pe-form select:focus,
-.pe-form textarea:focus {
-  border-color: var(--pe-accent-light);
-}
-
 .pe-btn-primary {
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
@@ -614,31 +573,41 @@
   }
 }
 
-/* Preview of the cropped cover waiting to be uploaded */
-.pe-photo-chosen {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: var(--pe-text-muted);
-  margin-top: 0.5rem;
+/* ---- the player, waiting for a recording ----
+   Same controls in the same places as the real player, dimmed and inert, so
+   the header keeps its shape whether or not audio exists and the slot reads as
+   "not yet" rather than collapsing to a line of text.
+
+   Opacity on the whole block rather than restyling each control: it keeps the
+   proportions and spacing exactly, and there is only one number to change if
+   it wants to be fainter. */
+.pe-player-empty {
+  opacity: 0.45;
 }
 
-.pe-photo-chosen img {
-  width: 61px;
-  height: 35px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid var(--pe-border);
+/* Cancels the real player's hover and active states — without this the dead
+   buttons still lift and darken under the pointer, which is precisely the
+   promise the placeholder exists to avoid making. */
+.pe-player-empty .pe-play,
+.pe-player-empty .pe-skip,
+.pe-player-empty .pe-progress {
+  cursor: default;
 }
 
-.pe-photo-chosen button {
-  font: inherit;
-  font-weight: 600;
-  color: var(--pe-accent);
+.pe-player-empty .pe-play:hover,
+.pe-player-empty .pe-skip:hover {
+  background: var(--pe-outline);
+  transform: none;
+}
+
+.pe-player-empty .pe-skip:hover {
   background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
+}
+
+/* Sits OUTSIDE .pe-player-empty, so it is not inside that block's opacity
+   group and renders at full strength — see the note in the JSX. */
+.pe-player-note {
+  margin: 0.7rem 0 0;
+  font-size: 0.82rem;
+  color: var(--pe-text-muted);
 }

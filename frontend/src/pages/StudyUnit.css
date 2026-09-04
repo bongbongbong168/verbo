@@ -122,80 +122,6 @@
   border-color: rgba(0, 0, 0, 0.35);
 }
 
-/* ---- after the conversation ---- */
-
-.un-outro {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: 1.6rem;
-  padding-top: 1.4rem;
-  border-top: 1px solid var(--un-tab-edge, #e7e3f6);
-}
-
-/* The one action here, so it is the only filled thing in the row. */
-.un-outro-cta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.75rem 1.4rem;
-  border-radius: 12px;
-  background: #a89ce3;
-  color: #fff;
-  font-family: 'Hellix', sans-serif;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.un-outro-sub {
-  font-size: 0.76rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.un-outro-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  margin-left: auto;
-}
-
-.un-outro-next,
-.un-outro-back {
-  padding: 0.6rem 1.1rem;
-  border: 1px solid #a89ce3;
-  border-radius: 10px;
-  background: #fff;
-  color: #6a6191;
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-/* Leaving is the quieter of the two ways out — continuing is the expected one. */
-.un-outro-back {
-  border-color: var(--un-tab-edge, #e7e3f6);
-  color: #726c88;
-}
-
-.un-outro-next:hover,
-.un-outro-back:hover {
-  background: #f1edfc;
-}
-
-@media (max-width: 767px) {
-  .un-outro-nav {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .un-outro-cta {
-    width: 100%;
-  }
-}
-
 .un-hero-title {
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
@@ -436,6 +362,54 @@
   cursor: not-allowed;
 }
 
+/* Saves the word to the flashcard bank. Sized and shaped exactly like the
+   pronounce button beside it — they are the same kind of thing (one action on
+   one word), and a row of controls that disagree on size reads as a mistake. */
+.un-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--un-control-border);
+  border-radius: 10px;
+  background: var(--un-card);
+  color: var(--un-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.un-save-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.un-save-btn:hover:not(.saved) {
+  border-color: var(--un-accent-light);
+  color: var(--un-accent);
+}
+
+/* Already in the bank. STATIC, never transitioned into — the state is what the
+   button is for, and a transition that never gets a frame would leave a saved
+   word looking unsaved. `disabled` alone would grey it into looking broken, so
+   it takes the accent instead: this is a success, not a dead control. */
+.un-save-btn.saved {
+  border-color: var(--un-accent-light);
+  background: #f1edfc;
+  color: var(--un-accent);
+  cursor: default;
+}
+
+.un-save-btn:focus-visible,
+.un-speak-btn:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+}
+
 .un-speak-btn {
   display: flex;
   align-items: center;
@@ -467,14 +441,6 @@
 .un-speak-btn svg {
   width: 19px;
   height: 19px;
-}
-
-.un-vocab-explanation {
-  color: var(--un-text-muted);
-  font-size: 0.92rem;
-  line-height: 1.55;
-  margin: 0;
-  padding: 0 1.6rem 1.15rem 4.6rem;
 }
 
 .un-panel > .un-hint,
@@ -860,9 +826,6 @@
     order: 5;
   }
 
-  .un-vocab-explanation {
-    padding-left: 1.6rem;
-  }
 }
 
 /* ================= Reading tab: conversation view =================
@@ -1238,4 +1201,117 @@
   overflow: visible;
   background: none;
   border: none;
+}
+/* ---- lesson to lesson ----
+   Built to the supplied reference: a white bar on the app's navy card stroke,
+   with the way back as plain text and the way forward as the one filled
+   control. Moves within THIS topic only — progression belongs inside a topic,
+   and nothing here should push a learner into an unrelated situation.
+
+   The asymmetry is the point. Going on is the expected move and gets the only
+   button in the row; going back is a correction and should not compete with
+   it. Two matching buttons would make them read as equal choices. */
+
+.un-lessonnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.4rem;
+  padding: 0.85rem 1.1rem;
+  box-sizing: border-box;
+  background: var(--un-card);
+  /* The same navy every card in the app is stroked with, not the lighter
+     --un-panel-border: the reference draws a dark hairline here. */
+  border: 1px solid var(--un-outline);
+  border-radius: 16px;
+}
+
+/* Holds Next on the right at lesson 1, where there is no Previous.
+   `space-between` with a single child would pull it left instead. */
+.un-lessonnav-spacer {
+  flex: 1;
+}
+
+/* No box, no fill — text on the bar's own ground, exactly as drawn. */
+.un-lessonnav-prev {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  color: var(--un-text);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.un-lessonnav-prev:hover {
+  color: var(--un-accent);
+}
+
+.un-lessonnav-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 10px;
+  /* Filled AND stroked: the reference outlines the pill in the same navy as
+     the bar, which is what keeps it from floating on the white. */
+  background: var(--un-accent-light);
+  border: 1px solid var(--un-outline);
+  color: #fff;
+  text-decoration: none;
+  /* Static fill — the colour IS the state, and this app never transitions one.
+     Only the hover deepening is eased. */
+  transition: background 0.15s ease;
+}
+
+.un-lessonnav-next:hover {
+  background: var(--un-accent);
+}
+
+/* One line, clipped rather than wrapped: a name that wrapped would make the
+   pill two rows tall and pull the bar out of shape. */
+.un-lessonnav-name {
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.un-lessonnav-chev {
+  flex: none;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.un-lessonnav-prev .un-lessonnav-chev {
+  color: var(--un-text-muted);
+}
+
+.un-lessonnav-prev:focus-visible,
+.un-lessonnav-next:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .un-lessonnav {
+    gap: 0.6rem;
+    padding: 0.7rem;
+  }
+
+  .un-lessonnav-next {
+    padding: 0.55rem 0.85rem;
+  }
+
+  /* The names give up room before the direction words do — "Next" plus the
+     chevron is what makes the control usable at this width. */
+  .un-lessonnav-name {
+    font-size: 0.86rem;
+  }
 }

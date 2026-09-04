@@ -30,6 +30,40 @@ class StudyUnitController extends Controller
 
         $payload = $studyUnit->toArray();
 
+        /* What each character of a word contributes, from the same CC-CEDICT
+           index the hover translations use — no external service, no key, and
+           it works offline like the rest of the dictionary.
+           机场 = 机 (machine) + 场 (place), which is most of what makes a
+           compound memorable rather than arbitrary.
+           Only for words of two characters or more: the "breakdown" of a
+           single character is the word itself, which explains nothing. And a
+           character is only included when the dictionary actually knows it —
+           a row of blanks would be worse than no breakdown at all. */
+        foreach ($payload['vocabulary'] ?? [] as $i => $word) {
+            $characters = [];
+
+            if (mb_strlen($word['hanzi']) > 1) {
+                foreach (preg_split('//u', $word['hanzi'], -1, PREG_SPLIT_NO_EMPTY) as $char) {
+                    $meaning = $dictionary->lookup($char);
+
+                    if (! $meaning) {
+                        continue;
+                    }
+
+                    $characters[] = [
+                        'char' => $char,
+                        'pinyin' => $dictionary->pinyinForTerm($char),
+                        'meaning' => $meaning,
+                    ];
+                }
+            }
+
+            // All or nothing: a partial breakdown implies the missing
+            // characters mean nothing, which is not what it would mean.
+            $payload['vocabulary'][$i]['characters'] =
+                count($characters) === mb_strlen($word['hanzi']) ? $characters : [];
+        }
+
         /* Every conversation line gets the same token treatment Read, Podcast
            and Scan already give their text, so a word in a dialogue can be
            hovered for pinyin + meaning and saved with Alt+1.
@@ -65,18 +99,38 @@ class StudyUnitController extends Controller
            inside a topic; nothing here should push someone from Ordering Food
            into an unrelated situation. */
         $siblings = $studyUnit->level
-            ? $studyUnit->level->units()->orderBy('id')->pluck('title', 'id')
+            ? $studyUnit->level->units()->orderBy('id')->get(['id', 'title', 'lesson_label'])
             : collect();
 
-        $ids = $siblings->keys()->all();
-        $index = array_search($studyUnit->id, $ids, true);
-        $nextId = $index !== false ? ($ids[$index + 1] ?? null) : null;
+        /* (int) on both sides: SQLite hands ids back as strings on list reads
+           while the model's own id is an int, and a strict search would then
+           never match — leaving the page with no position and no neighbours. */
+        $ids = $siblings->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $index = array_search((int) $studyUnit->id, $ids, true);
+
+        $neighbour = function (?int $offset) use ($siblings, $index) {
+            if ($index === false || $offset === null) {
+                return null;
+            }
+            $row = $siblings[$offset] ?? null;
+
+            return $row ? [
+                'id' => (int) $row->id,
+                'title' => $row->title,
+                'lesson_label' => $row->lesson_label,
+            ] : null;
+        };
 
         return array_merge($payload, [
             'reading_tokens' => $studyUnit->reading ? $dictionary->annotate($studyUnit->reading) : [],
             'lesson_position' => $index === false ? null : $index + 1,
             'lesson_total' => count($ids),
-            'next_unit' => $nextId ? ['id' => $nextId, 'title' => $siblings[$nextId]] : null,
+            /* Both neighbours, so the page can carry a footer that moves either
+               way. Null at the ends of the topic rather than wrapping around —
+               lesson 1 has nothing before it, and looping back to the last
+               lesson would misrepresent where the learner is. */
+            'previous_unit' => $index > 0 ? $neighbour($index - 1) : null,
+            'next_unit' => $neighbour($index === false ? null : $index + 1),
         ]);
     }
 

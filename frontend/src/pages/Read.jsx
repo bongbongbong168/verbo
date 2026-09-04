@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
+import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import { BookmarkIcon } from "../components/ArticleIcons";
 import "./Read.css";
 
@@ -33,7 +34,10 @@ const TOPIC_ORDER = [
   "Business",
 ];
 
-const SHELF_SIZE = 3;
+/* Four to a shelf, matching the Daily Use rows. Also what `auto-fill` settles
+   on at the content column's width, so a full shelf fills its row exactly
+   rather than leaving one empty track at the end. */
+const SHELF_SIZE = 4;
 
 /* A cover for every article without anyone uploading one.
  *
@@ -146,13 +150,6 @@ export default function Read() {
   const [recommended, setRecommended] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("article");
-  const [body, setBody] = useState("");
-  const [bodyEn, setBodyEn] = useState("");
-  const [image, setImage] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
   useEffect(() => {
     loadArticles();
 
@@ -175,30 +172,14 @@ export default function Read() {
       .finally(() => setLoading(false));
   }
 
-  async function handleCreate(e) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await api.createArticle(token, {
-        title,
-        type,
-        body,
-        body_en: bodyEn,
-        image,
-      });
-      setTitle("");
-      setType("article");
-      setBody("");
-      setBodyEn("");
-      setImage(null);
-      setShowForm(false);
-      loadArticles();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  /* The drawer owns the fields, the busy flag and the error; this only has to
+     say what happens on success. It rethrows so the drawer can show the
+     message against the form the admin is still looking at, rather than
+     behind it on the page. */
+  async function handleCreate(values) {
+    await api.createArticle(token, values);
+    setShowForm(false);
+    loadArticles();
   }
 
   /* Only the topics that have something published, in the order above. The
@@ -260,59 +241,12 @@ export default function Read() {
 
       {error && <p className="rd-error">{error}</p>}
 
+      {/* The publish form is the shared drawer now, not an inline block that
+          pushed the whole library down the page while it was open. Same shell
+          the tutor and study-unit editors use, so an admin meets one editing
+          surface across the app rather than five. */}
       {showForm && user?.is_admin && (
-        <form className="rd-form" onSubmit={handleCreate}>
-          <div>
-            <label>Title</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Type</label>
-            <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="article">Article</option>
-              <option value="story">Story</option>
-              <option value="funfact">Fun fact</option>
-            </select>
-          </div>
-          <div>
-            <label>Body (Chinese text)</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={6}
-              required
-            />
-          </div>
-          <div>
-            <label>
-              English translation (optional — enables the EN toggle)
-            </label>
-            <textarea
-              value={bodyEn}
-              onChange={(e) => setBodyEn(e.target.value)}
-              rows={6}
-            />
-          </div>
-          <div>
-            <label>Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImage(e.target.files[0])}
-            />
-          </div>
-          <button
-            type="submit"
-            className="rd-btn-primary"
-            disabled={submitting}
-          >
-            {submitting ? "Publishing..." : "Publish"}
-          </button>
-        </form>
+        <ArticleEditDrawer onSave={handleCreate} onClose={() => setShowForm(false)} />
       )}
 
       {/* Categories left, search right.
@@ -387,13 +321,6 @@ export default function Read() {
         <section className="rd-shelf">
           <div className="rd-shelf-head">
             <h2 className="rd-shelf-title">{activeCategory}</h2>
-            <button
-              type="button"
-              className="rd-viewall"
-              onClick={() => setActiveCategory("all")}
-            >
-              Back to browsing
-            </button>
           </div>
           {results.length > 0 && (
             <p className="rd-shelf-note">

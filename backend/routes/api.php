@@ -233,6 +233,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/study-culture-images/{studyCultureImage}', [StudyUnitController::class, 'destroyCultureImage']);
 
     Route::post('/study-units/{studyUnit}/vocabulary', [StudyVocabularyController::class, 'store']);
+    /* Everything the word's explanation panel shows. Its own request rather
+       than part of the unit payload: finding examples means LIKE scans across
+       four tables, and doing that for every word on every page load would be
+       almost entirely wasted — the same reason the flashcard bank fetches its
+       examples on open. Declared BEFORE the {studyVocabulary} delete route is
+       not needed here (different verb), but keep it above any future GET on
+       that prefix. */
+    Route::get('/study-vocabulary/{studyVocabulary}/explain', [StudyVocabularyController::class, 'explain']);
     Route::delete('/study-vocabulary/{studyVocabulary}', [StudyVocabularyController::class, 'destroy']);
 
     Route::post('/study-units/{studyUnit}/texts', [StudyTextController::class, 'store']);

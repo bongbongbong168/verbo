@@ -5,6 +5,10 @@
   --st-outline: #2b2643;
   --st-accent: #6a6191;
   --st-accent-light: #a89ce3;
+  /* The deeper cut of --st-accent-light, for the selected toggle's stroke.
+     Same value the unit tabs (--un-tab-edge) and the Dashboard's Unit tag
+     (--db-tag-unit-edge) already use for exactly this job. */
+  --st-toggle-edge: #7d76a1;
   --st-text: #1c1730;
   --st-text-muted: #726c88;
 
@@ -73,17 +77,28 @@
   font-size: 1rem;
   color: var(--st-text-muted);
   background: transparent;
-  border: none;
-  border-radius: 11px;
+  /* A border on EVERY item, transparent while inactive. Adding it only to the
+     selected one would widen that item by 2px the moment it is chosen and
+     shunt its neighbour sideways — the same reason .un-tab carries its 2px on
+     all four tabs. */
+  border: 1px solid transparent;
+  /* Outer radius minus the container's padding (14 - 4). An inner box in a
+     rounded box needs this or the gap around the curve is uneven — it was 11,
+     which left the corners a pixel tight against the shell. */
+  border-radius: 10px;
   padding: 0.65rem 1.8rem;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
 }
 
+/* Static, never transitioned: the fill IS the selection, and a transition that
+   never gets a frame would leave the chosen tab looking unchosen. The stroke is
+   a deeper cut of the fill's own family (#7d76a1 against #a89ce3) rather than
+   the page navy — the same pairing the unit tabs and the Dashboard's "Unit"
+   tag use, which is what keeps it reading as one filled control instead of a
+   lavender block sitting inside an unrelated outline. */
 .st-toggle-item.active {
   background: var(--st-accent-light);
+  border-color: var(--st-toggle-edge);
   color: #fff;
 }
 
@@ -284,41 +299,6 @@
   margin: 0;
 }
 
-/* ---- level progress ----
-   Units OPENED over the level total. The label carries the word "opened"
-   because that is all the app records — see StudyLevelController::index. */
-
-.st-progress {
-  margin-top: 0.9rem;
-}
-
-.st-progress-track {
-  height: 6px;
-  border-radius: 999px;
-  background: #ece8f8;
-  overflow: hidden;
-}
-
-/* No transition on the width. It is a value, not an animation, and a
-   transition that never gets a frame would leave the bar reading empty on a
-   level the learner has already worked through. */
-.st-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  /* --st-accent-light (#a89ce3), not --st-accent (#6a6191). The palette
-     reserves the lighter value for FILLED elements and the deeper one for
-     text and emphasis; a filled bar takes the fill. */
-  background: var(--st-accent-light);
-}
-
-.st-progress-label {
-  margin: 0.4rem 0 0;
-  font-size: 0.8rem;
-  color: var(--st-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---- admin ---- */
 
 .st-admin {
@@ -343,46 +323,6 @@
 .st-btn-primary:disabled {
   opacity: 0.6;
   cursor: default;
-}
-
-.st-form {
-  background: var(--st-card);
-  border: 1px solid var(--st-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  margin: 0 auto 1.6rem;
-  max-width: 520px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.st-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--st-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.st-form input[type='text'],
-.st-form input:not([type]),
-.st-form select,
-.st-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--st-text);
-  border: 1px solid var(--st-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.st-form input:focus,
-.st-form select:focus,
-.st-form textarea:focus {
-  border-color: var(--st-accent-light);
 }
 
 .st-book:focus-visible,

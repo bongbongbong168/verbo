@@ -150,23 +150,6 @@
   background: #a89ce3;
 }
 
-.du-clear {
-  flex: none;
-  font-family: 'Hellix', sans-serif;
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: #6a6191;
-  background: #f1edfc;
-  border: none;
-  border-radius: 999px;
-  padding: 7px 0.9rem 9px;
-  cursor: pointer;
-}
-
-.du-clear:hover {
-  background: #a89ce3;
-  color: #fff;
-}
 
 /* auto-fill, not a fixed column count: the shelves hold anywhere from one topic
    to a dozen, and a fixed grid would leave a lone card stretched across the
@@ -174,7 +157,11 @@
    wider than its share. */
 .du-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  /* 240, not 248 — see the matching note on `.rd-row` in Read.css. At 1440
+     four 248px tracks miss by half a pixel and the row drops to three. These
+     two values must stay in step, or the Read shelves and these situation
+     rows stop being the same size. */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
   /* Every card in a row the same height, whatever its description does. */
   grid-auto-rows: 1fr;

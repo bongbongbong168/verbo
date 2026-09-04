@@ -9,6 +9,7 @@ import PageTools from "../components/PageTools";
 import ArticleActions from "../components/ArticleActions";
 import ArticleComments from "../components/ArticleComments";
 import RecommendedArticles from "../components/RecommendedArticles";
+import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import "./Read.css";
 
 function formatDate(value) {
@@ -47,13 +48,10 @@ export default function ReadArticle() {
      ref trick as `hoveredWordRef`, for the same reason. */
   const articleRef = useRef(null);
 
+  /* The drawer holds the fields now — it is seeded from `article` when it
+     opens, so there is no second copy of the article on this page to keep in
+     step with the one being displayed behind it. */
   const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("article");
-  const [body, setBody] = useState("");
-  const [bodyEn, setBodyEn] = useState("");
-  const [image, setImage] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadArticle();
@@ -66,10 +64,6 @@ export default function ReadArticle() {
       .then((data) => {
         setArticle(data);
         articleRef.current = data;
-        setTitle(data.title);
-        setType(data.type);
-        setBody(data.body);
-        setBodyEn(data.body_en || "");
         /* Reading history feeds the recommender. Fire-and-forget: failing to
            record a view must never stop the article rendering. */
         api.recordArticleView(token, id).catch(() => {});
@@ -131,26 +125,12 @@ export default function ReadArticle() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [token]);
 
-  async function handleUpdate(e) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await api.updateArticle(token, id, {
-        title,
-        type,
-        body,
-        body_en: bodyEn,
-        image,
-      });
-      setEditing(false);
-      setImage(null);
-      loadArticle();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  /* Throws on failure rather than swallowing: the drawer stays open and shows
+     the message against the fields that caused it. Reloading afterwards is
+     what re-runs the annotation, so the hover tokens match the new body. */
+  async function handleUpdate(values) {
+    await api.updateArticle(token, id, values);
+    loadArticle();
   }
 
   async function handleDelete() {
@@ -257,60 +237,7 @@ export default function ReadArticle() {
           </div>
         </div>
 
-        {editing ? (
-          <form className="rd-form" onSubmit={handleUpdate}>
-            <div>
-              <label>Title</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label>Type</label>
-              <select value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="article">Article</option>
-                <option value="story">Story</option>
-                <option value="funfact">Fun fact</option>
-              </select>
-            </div>
-            <div>
-              <label>Body (Chinese text)</label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={6}
-                required
-              />
-            </div>
-            <div>
-              <label>
-                English translation (optional — enables the EN toggle)
-              </label>
-              <textarea
-                value={bodyEn}
-                onChange={(e) => setBodyEn(e.target.value)}
-                rows={6}
-              />
-            </div>
-            <div>
-              <label>Replace image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImage(e.target.files[0])}
-              />
-            </div>
-            <button
-              type="submit"
-              className="rd-btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? "Saving..." : "Save changes"}
-            </button>
-          </form>
-        ) : (
+        {(
           <>
             {/* Two switches, each independent. The Chinese never leaves the
                 page — turning an aid on adds to it rather than replacing it. */}
@@ -439,6 +366,20 @@ export default function ReadArticle() {
 
           <RecommendedArticles exclude={article.id} limit={3} />
         </>
+      )}
+
+      {/* Editing happens OVER the article rather than in place of it: the
+          admin can see what they are changing while they change it, which the
+          old inline form — which replaced the whole reading view — could not
+          do. `key` seeds the drawer from the article each time it opens, so a
+          cancelled edit leaves no stale draft behind. */}
+      {editing && user?.is_admin && (
+        <ArticleEditDrawer
+          key={article.updated_at || article.id}
+          article={article}
+          onSave={handleUpdate}
+          onClose={() => setEditing(false)}
+        />
       )}
 
       <WordPopover

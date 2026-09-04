@@ -74,6 +74,17 @@
   gap: 0.7rem;
 }
 
+/* Topics get the full width on their own row rather than sharing one with the
+   levels: six of them plus "All topics" cannot fit beside three levels without
+   wrapping AROUND them, which strands a pill or two on a line of their own —
+   the same measurement that split the Read page's control bar in two. */
+.pc-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
 .pc-filter {
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
@@ -109,66 +120,6 @@
   padding: 0.55rem 1.2rem;
   cursor: pointer;
   flex-shrink: 0;
-}
-
-/* ---- admin form ---- */
-
-.pc-form {
-  background: var(--pc-card);
-  border: 1px solid var(--pc-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  margin-bottom: 1.6rem;
-  max-width: 560px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.pc-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--pc-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.pc-form input[type='text'],
-.pc-form input:not([type]),
-.pc-form select,
-.pc-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--pc-text);
-  border: 1px solid var(--pc-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.pc-form input:focus,
-.pc-form select:focus,
-.pc-form textarea:focus {
-  border-color: var(--pc-accent-light);
-}
-
-.pc-btn-primary {
-  font-family: 'Hellix', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #fff;
-  background: var(--pc-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 0.6rem 1.3rem;
-  cursor: pointer;
-  width: fit-content;
-}
-
-.pc-btn-primary:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 /* ---- sections ---- */
@@ -433,6 +384,7 @@
   transform: translateY(-1px);
 }
 
+
 .pc-play-btn svg {
   width: 18px;
   height: 18px;
@@ -443,33 +395,4 @@
 .pc-new-btn:focus-visible {
   outline: 2px solid var(--pc-accent);
   outline-offset: 2px;
-}
-
-/* Preview of the cropped cover waiting to be uploaded */
-.pc-photo-chosen {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: var(--pc-text-muted);
-  margin-top: 0.5rem;
-}
-
-.pc-photo-chosen img {
-  width: 61px;
-  height: 35px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid var(--pc-border);
-}
-
-.pc-photo-chosen button {
-  font: inherit;
-  font-weight: 600;
-  color: var(--pc-accent);
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
 }

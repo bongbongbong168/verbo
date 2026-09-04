@@ -44,6 +44,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # the connection details) rather than a rebuild of the image. It costs a few MB
 # and removes the one step that would otherwise block that migration.
 
+# Upload limits. WITHOUT THIS the image runs on PHP's defaults —
+# upload_max_filesize=2M and post_max_size=8M — which is far under what this app
+# actually uploads: podcast audio runs to tens of megabytes, and classroom
+# submissions and chat attachments are not small either. Nothing in the app
+# would say why; a request over post_max_size arrives with $_POST and $_FILES
+# EMPTY, so Laravel reports "the title field is required" for a file that is
+# merely too big.
+#
+# post_max_size must stay ABOVE upload_max_filesize — it caps the whole request,
+# text fields and multipart boundaries included, so setting them equal makes a
+# file at exactly the upload limit fail on the total.
+# Laravel's own `max:` rule on the audio field is the value the user sees; keep
+# it below upload_max_filesize so the failure is a clean 422 with a readable
+# message rather than a truncated request.
+RUN { \
+        echo 'upload_max_filesize=64M'; \
+        echo 'post_max_size=72M'; \
+        echo 'memory_limit=256M'; \
+        echo 'max_execution_time=120'; \
+    } > /usr/local/etc/php/conf.d/verbo-uploads.ini
+
 # Laravel's front controller lives in public/, and its .htaccess needs
 # AllowOverride to be honoured or every route but "/" returns 404.
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public

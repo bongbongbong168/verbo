@@ -1171,21 +1171,83 @@
   margin: 0;
 }
 
-.td-review-remove {
+/* ---- review options ⋮ ----
+   Replaces a bare ✕. A cross beside a review reads as "dismiss this", and the
+   action behind it is permanent — so it sits in a menu and confirms in place.
+   `position: relative` anchors the popup; it is the wrapper that is positioned
+   rather than the button, so the menu does not move when the button does. */
+.td-review-actions {
+  position: relative;
   flex: none;
   align-self: flex-start;
-  width: 26px;
-  height: 26px;
+}
+
+.td-review-menu {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 50%;
+  border-radius: 8px;
   background: none;
   color: var(--td-text-muted);
-  font-size: 1.15rem;
-  line-height: 1;
   cursor: pointer;
 }
 
-.td-review-remove:hover {
-  background: #fdecea;
+.td-review-menu svg {
+  width: 16px;
+  height: 16px;
+}
+
+.td-review-menu:hover {
+  background: var(--td-bg, #f9f8fe);
+  color: var(--td-text, #1c1730);
+}
+
+.td-review-menu:focus-visible {
+  outline: 2px solid var(--td-accent, #6a6191);
+  outline-offset: 2px;
+}
+
+/* Right-aligned: the trigger sits at the row's right edge, so a menu growing
+   rightwards would leave the panel. */
+.td-review-menu-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 150px;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid var(--td-border, #e7e3f6);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(28, 23, 48, 0.14);
+}
+
+.td-review-menu-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--td-text, #1c1730);
+  cursor: pointer;
+}
+
+.td-review-menu-item:hover {
+  background: var(--td-bg, #f9f8fe);
+}
+
+.td-review-menu-danger {
   color: #b02a2a;
+}
+
+.td-review-menu-danger:hover {
+  background: #fdecea;
 }

@@ -28,6 +28,7 @@ import Classroom from "./pages/Classroom";
 import Profile from "./pages/Profile";
 import SavedArticles from "./pages/SavedArticles";
 import Settings from "./pages/Settings";
+import Upgrade from "./pages/Upgrade";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -93,6 +94,10 @@ function App() {
         <Route path="/classes/:id" element={<Classroom />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+        {/* Inside Layout like every other content page — the rail stays put,
+            which is what makes this read as part of the app rather than a
+            marketing page bolted on beside it. */}
+        <Route path="/upgrade" element={<Upgrade />} />
       </Route>
     </Routes>
   );

@@ -171,16 +171,6 @@ export default function DailyUseList() {
             <h2 className="du-shelf-title">
               {query.trim() ? `Results for “${query.trim()}”` : level}
             </h2>
-            <button
-              type="button"
-              className="du-clear"
-              onClick={() => {
-                setQuery('')
-                setLevel('all')
-              }}
-            >
-              Back to browsing
-            </button>
           </div>
           {results.length === 0 ? (
             <p className="du-empty">

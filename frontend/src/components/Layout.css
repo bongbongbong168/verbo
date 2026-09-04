@@ -368,9 +368,16 @@
   padding: 0.55rem 1.2rem;
 }
 
-.sb-promo-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.75;
+/* It is a link now, not a button — it goes to /upgrade. `text-decoration` and
+   the pointer have to be set explicitly because the rule above was written for
+   a <button>, which needs neither. */
+.sb-promo-btn {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sb-promo-btn:hover {
+  filter: brightness(1.06);
 }
 
 .sb-shell {

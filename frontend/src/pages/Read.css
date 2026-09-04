@@ -108,48 +108,6 @@
   margin: 0 0 1rem;
 }
 
-/* ---- admin form ---- */
-
-.rd-form {
-  background: var(--rd-card);
-  border: 1px solid var(--rd-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  margin-bottom: 1.4rem;
-  max-width: 560px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.rd-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--rd-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.rd-form input[type="text"],
-.rd-form input:not([type]),
-.rd-form select,
-.rd-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--rd-text);
-  border: 1px solid var(--rd-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.rd-form input:focus,
-.rd-form select:focus,
-.rd-form textarea:focus {
-  border-color: var(--rd-accent-light);
-}
-
 .rd-btn-primary {
   font-family: "Hellix", sans-serif;
   font-weight: 600;
@@ -334,10 +292,24 @@
    this page is for CHOOSING, and body text on every card is what turned the
    old grid into a wall of paragraphs. */
 
+/* Identical to `.du-grid` on the Daily Use list — same track sizing, same gap —
+   so a card is the same card whichever library you are browsing. It was
+   `repeat(3, minmax(0, 1fr))` at a 1.1rem gap, which made Read's cards visibly
+   wider than the situation cards next door.
+
+   `auto-fill` rather than a fixed 4: with four items to a shelf it settles at
+   four on a wide screen and wraps on a narrow one, instead of squeezing four
+   columns into a width that cannot hold them. */
 .rd-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.1rem;
+  /* 240, not 248. At 1440 the content column comes to 1039.46 CSS px and four
+     248px tracks need exactly 1040 — half a pixel short, so the row silently
+     dropped to three. 240 clears it with room (4x240 + 3x16 = 1008) and still
+     holds at four up to ~1690, where a fifth track would finally fit.
+     `.du-grid` carries the same value; change them together or the two
+     libraries stop matching. */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
   /* Every row the same height, not just the cards within one row — grid sizes
      each row to its own tallest card otherwise, so a second row stood taller
      than the first. */

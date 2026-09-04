@@ -6,52 +6,84 @@ import logo from "../assets/sidebar/logo.png";
 import logoMark from "../assets/sidebar/logo-mark.png";
 import "./Layout.css";
 
-function NavIcon({ children }) {
+/* Optical normalisation, measured with getBBox() rather than guessed.
+ *
+ * Every glyph below is drawn on the same 24 grid, but their INK boxes were not
+ * the same size and did not share a centre. Measured: Settings spanned 23.7
+ * units against Tools' 16.7 — a 42% spread — and Tools sat 1.11 left and 1.09
+ * above the centre every other icon lands on. In a narrow column of unlabelled
+ * glyphs that reads as the icons being misaligned with each other, which is
+ * exactly how it was reported.
+ *
+ * `fit` is [scale, dx, dy], taking each icon's measured ink box to a common
+ * 17.6-unit extent centred on (12, 12) — 17.6 being the median of the set, so
+ * most icons barely move and only the two outliers travel far. The paths are
+ * left untouched, so these numbers can be re-derived from them at any time.
+ *
+ * The stroke is divided by the scale on the way in, so it still RENDERS at 1.7
+ * whatever the transform does — without that, shrinking Settings would also
+ * make it a lighter line than the rest and trade one mismatch for another.
+ * (stroke-width inherits; vector-effect does not, which is why it is done this
+ * way round.)
+ */
+const STROKE = 1.7;
+
+function NavIcon({ children, fit }) {
+  const [s, dx, dy] = fit || [1, 0, 0];
   return (
     <svg
       className="sb-nav-icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {children}
+      <g
+        transform={`translate(${dx} ${dy}) translate(12 12) scale(${s}) translate(-12 -12)`}
+        strokeWidth={STROKE / s}
+      >
+        {children}
+      </g>
     </svg>
   );
 }
 
+/* ink 18.7 x 18.7, centred — the largest in the set, which is what made it
+   read as sitting proud of the icons under it. */
 function HomeIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[0.9412, 0, 0]}>
       <path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-3.5v-6h-7v6H5A1.5 1.5 0 0 1 3.5 19z" />
     </NavIcon>
   );
 }
 
+/* ink 18.7 x 17.6, centre y 11.95 */
 function LearnIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[0.9412, 0, 0.047]}>
       <path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h5.5a2 2 0 0 1 1.5.7 2 2 0 0 1 1.5-.7H19a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 19 19h-5.2a2 2 0 0 0-1.8.9 2 2 0 0 0-1.8-.9H5a1.5 1.5 0 0 1-1.5-1.5z" />
       <path d="M12 4.7v15.2" />
     </NavIcon>
   );
 }
 
+/* ink 18.7 x 18.7, centred */
 function ExploreIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[0.9412, 0, 0]}>
       <circle cx="12" cy="12" r="8.5" />
       <path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5z" />
     </NavIcon>
   );
 }
 
+/* ink 19.7 x 16.9 — the widest — and sitting 0.40 low */
 function TutorIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[0.8934, 0, -0.357]}>
       <circle cx="9" cy="8" r="3.2" />
       <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
       <path d="M16 5.6a3.2 3.2 0 0 1 0 5.8" />
@@ -60,17 +92,21 @@ function TutorIcon() {
   );
 }
 
+/* ink 16.7 x 16.7 centred on (10.89, 10.91) — the only icon in the set that
+   was not on the grid centre at all, and the one the active pill sits behind. */
 function ToolsIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[1.0539, 1.17, 1.149]}>
       <path d="M14.8 3.6a5 5 0 0 0-6 6.6l-5 5a2 2 0 0 0 2.8 2.8l5-5a5 5 0 0 0 6.6-6l-3 3-2.4-2.4z" />
     </NavIcon>
   );
 }
 
+/* ink 23.7 x 23.7 — drawn 1..23 on the 24 grid, so 42% larger than Tools and
+   the most obviously out-of-family glyph in the rail. */
 function SettingsIcon() {
   return (
-    <NavIcon>
+    <NavIcon fit={[0.7426, 0, 0]}>
       <circle cx="12" cy="12" r="3.2" />
       <path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9.5a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88v.09a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1.03z" />
     </NavIcon>
@@ -400,14 +436,14 @@ export default function Layout() {
         <div className="sb-promo">
           <p className="sb-promo-title">Upgrade to PRO</p>
           <p className="sb-promo-text">Unlock premium features for free.</p>
-          <button
-            type="button"
-            className="sb-promo-btn"
-            disabled
-            title="Coming soon"
-          >
-            TRY NOW
-          </button>
+          {/* Was a disabled button with a "Coming soon" title and nowhere to
+              go. It has somewhere to go now — the plan comparison — so it is a
+              link. What is still not built is the payment step, and the
+              upgrade page says that itself rather than the rail implying the
+              whole feature is absent. */}
+          <NavLink to="/upgrade" className="sb-promo-btn">
+            SEE PLANS
+          </NavLink>
         </div>
       </nav>
       <main className="sb-main">

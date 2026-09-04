@@ -7,17 +7,22 @@ use App\Models\Podcast;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PodcastController extends Controller
 {
     public function index()
     {
-        // image_path is selected so the image_url accessor resolves on list
-        // rows; user:id,name feeds the author line on the episode cards.
+        /* image_path is selected so the image_url accessor resolves on list
+           rows; user:id,name feeds the author line on the episode cards.
+           `category` rides along so the page can shelve by topic, and
+           `audio_path` so a card can say an episode has no recording yet —
+           the raw column rather than audio_url, which would build a streaming
+           URL for a file that is not there. */
         return Podcast::query()
             ->with('user:id,name')
             ->latest()
-            ->get(['id', 'title', 'level', 'bio', 'image_path', 'user_id', 'created_at']);
+            ->get(['id', 'title', 'level', 'category', 'bio', 'host', 'image_path', 'audio_path', 'user_id', 'created_at']);
     }
 
     /**
@@ -49,6 +54,23 @@ class PodcastController extends Controller
         ]);
     }
 
+    /**
+     * How large an episode may be, in kilobytes.
+     *
+     * 20480 (20MB) was the old value and it was too small to be usable: a
+     * twenty-minute episode at 128kbps is already ~19MB, so most real uploads
+     * were rejected. 61440 (60MB) covers about an hour at that bitrate.
+     *
+     * Keep this BELOW php's upload_max_filesize (64M, set in the Dockerfile) —
+     * a file that clears this rule but not php's never reaches validation at
+     * all: php discards the body and Laravel sees an empty request, so the
+     * error it reports is "the title field is required" for what is really a
+     * file size problem. `guardPostSize` below is what catches that case.
+     */
+    private const AUDIO_MAX_KB = 61440;
+
+    private const AUDIO_MIMES = 'mp3,wav,m4a,ogg,aac,flac,mp4';
+
     public function store(Request $request)
     {
         abort_unless($request->user()->is_admin, 403);
@@ -58,12 +80,26 @@ class PodcastController extends Controller
             'transcript' => ['required', 'string'],
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
+            'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
             'bio' => ['nullable', 'string'],
-            'audio' => ['required', 'file', 'mimes:mp3,wav,m4a,ogg,aac,flac,mp4', 'max:20480'],
+            'host' => ['nullable', 'string', 'max:120'],
+            /* Nullable, not required: an episode can be written before it is
+               recorded. The column allows it now, the episode page already
+               renders "No audio uploaded for this episode" rather than an
+               empty player, and forcing a file here meant a transcript could
+               not be drafted at all without one. */
+            'audio' => ['nullable', 'file', 'mimes:'.self::AUDIO_MIMES, 'max:'.self::AUDIO_MAX_KB],
             'image' => ['nullable', 'image', 'max:10240'],
+        ], [
+            // The default reads "must not be greater than 61440 kilobytes",
+            // which nobody can convert at a glance.
+            'audio.max' => 'The audio file must be under '.(self::AUDIO_MAX_KB / 1024).'MB.',
+            'audio.mimes' => 'The audio must be one of: '.str_replace(',', ', ', self::AUDIO_MIMES).'.',
         ]);
 
-        $data['audio_path'] = $request->file('audio')->store('podcasts', 'public');
+        if ($request->hasFile('audio')) {
+            $data['audio_path'] = $request->file('audio')->store('podcasts', 'public');
+        }
         unset($data['audio']);
 
         if ($request->hasFile('image')) {
@@ -85,9 +121,14 @@ class PodcastController extends Controller
             'transcript' => ['required', 'string'],
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
+            'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
             'bio' => ['nullable', 'string'],
-            'audio' => ['nullable', 'file', 'mimes:mp3,wav,m4a,ogg,aac,flac,mp4', 'max:20480'],
+            'host' => ['nullable', 'string', 'max:120'],
+            'audio' => ['nullable', 'file', 'mimes:'.self::AUDIO_MIMES, 'max:'.self::AUDIO_MAX_KB],
             'image' => ['nullable', 'image', 'max:10240'],
+        ], [
+            'audio.max' => 'The audio file must be under '.(self::AUDIO_MAX_KB / 1024).'MB.',
+            'audio.mimes' => 'The audio must be one of: '.str_replace(',', ', ', self::AUDIO_MIMES).'.',
         ]);
 
         if ($request->hasFile('audio')) {

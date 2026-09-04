@@ -219,6 +219,19 @@ function MessageIcon() {
  * against, three looked like a short row rather than a mediocre score. The
  * empty ones are what make the rating readable at a glance.
  */
+/* The same three dots the Scan documents table uses, so one gesture means one
+   thing across the app. Filled circles rather than a stroked glyph — at 16px a
+   stroked dot is mostly its own outline. */
+function MenuDotsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </svg>
+  )
+}
+
 function Stars({ count = 4 }) {
   return (
     <span className="td-stars" aria-label={`${count} out of 5`}>
@@ -291,6 +304,11 @@ export default function TutorProfileDetail() {
   const [justSent, setJustSent] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  /* Which review's ⋮ menu is open, and which one is armed for deletion. Two
+     values rather than one: closing the menu must not leave a review still
+     armed, waiting to be deleted by the next click that reopens it. */
+  const [reviewMenuFor, setReviewMenuFor] = useState(null)
+  const [confirmingReview, setConfirmingReview] = useState(null)
   const [opening, setOpening] = useState(false)
   const [resumeTab, setResumeTab] = useState('Education')
   const [playing, setPlaying] = useState(false)
@@ -378,8 +396,45 @@ export default function TutorProfileDetail() {
     }
   }
 
+  /* Close the menu on a click anywhere outside it, and on Escape. Without this
+     it can only be dismissed by clicking the same ⋮ again, which is not where
+     anyone reaches next. Closing also disarms — see the note on the state. */
+  useEffect(() => {
+    if (reviewMenuFor === null) return
+
+    function onDocClick(e) {
+      if (!e.target.closest('.td-review-actions')) {
+        setReviewMenuFor(null)
+        setConfirmingReview(null)
+      }
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setReviewMenuFor(null)
+        setConfirmingReview(null)
+      }
+    }
+
+    document.addEventListener('click', onDocClick)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [reviewMenuFor])
+
+  /* Arms on the first click and acts on the second — the pattern Scan's delete
+     and the Bookings "clear past" button both use. A review is gone for good,
+     so it should not go on a single click landing in the wrong place. */
   async function handleDeleteReview(id) {
+    if (confirmingReview !== id) {
+      setConfirmingReview(id)
+      return
+    }
+
     setError(null)
+    setConfirmingReview(null)
+    setReviewMenuFor(null)
     try {
       await api.deleteReview(token, id)
       setTutor((prev) => {
@@ -650,16 +705,40 @@ export default function TutorProfileDetail() {
                   <p className="td-review-text">{r.body}</p>
                 </div>
                 {/* The author can remove their own; an admin can remove any,
-                    which is the only moderation this app has. */}
+                    which is the only moderation this app has.
+
+                    Behind a ⋮ rather than a bare ✕: a naked cross beside a
+                    review reads as "dismiss this", and destructive actions
+                    should take a deliberate second step. Same menu the Scan
+                    documents table uses, and it confirms in place — the first
+                    click arms it, the second deletes. */}
                 {(myReview?.id === r.id || user?.is_admin) && (
-                  <button
-                    type="button"
-                    className="td-review-remove"
-                    onClick={() => handleDeleteReview(r.id)}
-                    aria-label="Delete review"
-                  >
-                    &times;
-                  </button>
+                  <div className="td-review-actions">
+                    <button
+                      type="button"
+                      className="td-review-menu"
+                      aria-label={`Options for ${r.user?.name || 'this'} review`}
+                      aria-expanded={reviewMenuFor === r.id}
+                      onClick={() => {
+                        setReviewMenuFor((cur) => (cur === r.id ? null : r.id))
+                        setConfirmingReview(null)
+                      }}
+                    >
+                      <MenuDotsIcon />
+                    </button>
+
+                    {reviewMenuFor === r.id && (
+                      <div className="td-review-menu-list">
+                        <button
+                          type="button"
+                          className="td-review-menu-item td-review-menu-danger"
+                          onClick={() => handleDeleteReview(r.id)}
+                        >
+                          {confirmingReview === r.id ? 'Confirm delete' : 'Delete'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </article>
             ))}

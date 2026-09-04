@@ -166,6 +166,64 @@ class DictionaryService
         file_put_contents($cacheFile, '<?php return '.var_export(self::$index, true).';');
     }
 
+    /**
+     * Senses that describe the ENTRY rather than the meaning.
+     *
+     * CEDICT lists a headword once per sense-group, and for a great many
+     * single characters the surname or the dynasty comes FIRST — 机 opens with
+     * "surname Ji", 明 with "Ming Dynasty", 时 with "old variant of 時". Taking
+     * the first line therefore taught the wrong meaning for exactly the words
+     * a learner is most likely to look up one character at a time.
+     *
+     * These are skipped only while a better sense remains; a character whose
+     * every sense looks like this still gets one, because a surname is better
+     * than nothing.
+     */
+    private const WEAK_SENSE = [
+        '/^surname\s/i',
+        '/^(old\s+)?variant of/i',
+        /* A CROSS-REFERENCE, which in CEDICT is always "see" followed by
+           Chinese: "see 會同縣|会同县[...]". The \p{Han} is load-bearing — a
+           bare /^see/ also matches "see you tomorrow", and 明天见 duly lost its
+           meaning to the joke sense that follows it. */
+        '/^see\s+\p{Han}/u',
+        '/^abbr\. for/i',
+        '/^used in/i',
+        '/Dynasty/i',
+        // "Robam (brand)" beat "boss" for 老板 — a brand is never the sense a
+        // learner is after.
+        '/\(brand\)/i',
+        // Proper nouns carrying a date: "Ming (c. 2000 BC), fourth of the
+        // legendary Flame Emperors". Without this the emperor displaced
+        // "bright" for 明, which is worse than the dynasty it replaced.
+        '/\d{3,4}\s*(BC|AD|–|—)/u',
+        '/legendary/i',
+        '/^name of /i',
+    ];
+
+    /**
+     * Register and grammar labels CEDICT prefixes to a sense. They describe
+     * how a word is USED, not what it means, and every sense of 机's real
+     * entry carries one — treating those as weak senses left the character on
+     * "surname Ji". Stripped, "(bound form) machine; mechanism" becomes the
+     * answer a learner wants.
+     *
+     * A KNOWN LIST, not "any leading bracket". Stripping every parenthetical
+     * also ate the meaning-bearing ones — "(business) card" became "card" and
+     * "(cooked) rice" became "rice", which is a quiet downgrade of a gloss
+     * that was already right.
+     */
+    private const ANNOTATIONS = '(?:bound form|literary|coll\.|colloquial|slang|dialect|onom\.|archaic|old|Tw|PRC|fig\.|idiom|usu\.|often|also|esp\.)';
+
+    private function stripAnnotations(string $sense): string
+    {
+        return trim(preg_replace(
+            '/^(\(\s*'.self::ANNOTATIONS.'[^)]*\)\s*,?\s*)+/iu',
+            '',
+            $sense
+        ));
+    }
+
     protected function buildIndex(): array
     {
         $sourceFile = storage_path('dict/cedict_ts.u8');
@@ -183,17 +241,56 @@ class DictionaryService
             }
 
             $simplified = $m[1];
+            $definitions = array_values(array_filter(array_map('trim', explode('/', $m[2]))));
 
-            if (isset($index[$simplified])) {
+            if ($definitions === []) {
                 continue;
             }
 
-            $definitions = array_values(array_filter(explode('/', $m[2])));
-            $index[$simplified] = trim($definitions[0] ?? '');
+            $best = $this->bestSense($definitions);
+
+            /* A headword appears on several lines. Previously the first line
+               won outright; now a STRONG sense can displace a weak one that
+               got there first, which is what moves 机 off "surname Ji". Two
+               strong senses still resolve to the earlier line — CEDICT orders
+               those by frequency, so first is the right answer. */
+            if (! isset($index[$simplified])) {
+                $index[$simplified] = $best;
+
+                continue;
+            }
+
+            if ($this->isWeakSense($index[$simplified]) && ! $this->isWeakSense($best)) {
+                $index[$simplified] = $best;
+            }
         }
 
         fclose($handle);
 
         return $index;
+    }
+
+    /** The first sense that actually describes a meaning, else the first. */
+    private function bestSense(array $definitions): string
+    {
+        foreach ($definitions as $sense) {
+            $clean = $this->stripAnnotations($sense);
+            if ($clean !== '' && ! $this->isWeakSense($clean)) {
+                return $clean;
+            }
+        }
+
+        return $this->stripAnnotations($definitions[0]) ?: $definitions[0];
+    }
+
+    private function isWeakSense(string $sense): bool
+    {
+        foreach (self::WEAK_SENSE as $pattern) {
+            if (preg_match($pattern, $sense)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

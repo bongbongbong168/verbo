@@ -4,14 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { exampleFor } from '../sentence'
 import WordPopover from '../components/WordPopover'
-import ImageCropper from '../components/ImageCropper'
+import PodcastEditDrawer from '../components/PodcastEditDrawer'
 import './PodcastEpisode.css'
 
-/* Cover art ratio, shared by the list card (261x150) and this page (290x167).
-   Both render the same file, so the crop has to satisfy both. */
-const COVER_ASPECT = 261 / 150
-
-const LEVELS = ['Beginner', 'Intermediate', 'Advanced']
+/* The cover ratio and the level list moved into PodcastEditDrawer along with
+   the form that used them — the crop has to satisfy both the list card
+   (261x150) and this page (290x167), and that constraint now lives next to the
+   cropper it configures. */
 
 function PlayIcon() {
   return (
@@ -80,28 +79,15 @@ export default function PodcastEpisode() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
 
+  /* Only "is the editor open" lives here now. The episode's fields, the audio
+     and cover pickers, the cropper and its object-URL lifecycle all moved into
+     PodcastEditDrawer, which seeds itself from `podcast` — so this page no
+     longer keeps a second copy of the episode alongside the one it renders. */
   const [editing, setEditing] = useState(false)
-  const [title, setTitle] = useState('')
-  const [level, setLevel] = useState('Beginner')
-  const [bio, setBio] = useState('')
-  const [transcript, setTranscript] = useState('')
-  const [transcriptEn, setTranscriptEn] = useState('')
   /* Two independent switches, mirroring the reader: the Chinese never leaves
      the page — turning an aid on ADDS to it rather than replacing it. */
   const [showPinyin, setShowPinyin] = useState(false)
   const [showTranslation, setShowTranslation] = useState(false)
-  const [audio, setAudio] = useState(null)
-  const [image, setImage] = useState(null)
-  const [cropSource, setCropSource] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
-
-  useEffect(() => {
-    if (!image) return setImagePreview(null)
-    const url = URL.createObjectURL(image)
-    setImagePreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [image])
-  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     loadPodcast()
@@ -114,11 +100,6 @@ export default function PodcastEpisode() {
       .then((data) => {
         setPodcast(data)
         podcastRef.current = data
-        setTitle(data.title)
-        setLevel(data.level || 'Beginner')
-        setBio(data.bio || '')
-        setTranscript(data.transcript)
-        setTranscriptEn(data.transcript_en || '')
         // Record the visit so the Dashboard's "Pick up where you left off"
         // row can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
@@ -203,21 +184,11 @@ export default function PodcastEpisode() {
     el.currentTime = ratio * el.duration
   }
 
-  async function handleUpdate(e) {
-    e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-    try {
-      await api.updatePodcast(token, id, { title, level, bio, transcript, transcriptEn, audio, image })
-      setEditing(false)
-      setAudio(null)
-      setImage(null)
-      loadPodcast()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+  /* The drawer owns the fields, the busy flag and the error. Reloading is what
+     re-runs the transcript annotation, so the hover tokens match the new text. */
+  async function handleUpdate(values) {
+    await api.updatePodcast(token, id, values)
+    loadPodcast()
   }
 
   async function handleDelete() {
@@ -233,7 +204,10 @@ export default function PodcastEpisode() {
   if (error && !podcast) return <p className="pe-error">{error}</p>
   if (!podcast) return null
 
-  const author = podcast.user?.name || ''
+  /* The PRESENTER first, and only then the account that uploaded it. This page
+     was still showing `user.name`, which is why it read "admin" and
+     "BannerVerify" — the same thing the cards were fixed for. */
+  const author = podcast.host || podcast.user?.name || ''
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
   /* Chinese-only episodes stay valid: the Translation switch renders disabled
      with a reason rather than opening onto a blank pane. */
@@ -309,7 +283,49 @@ export default function PodcastEpisode() {
                 </div>
               </div>
             ) : (
-              <p className="pe-empty">No audio uploaded for this episode.</p>
+              /* The player as a PLACEHOLDER: the same controls in the same
+                 places, dimmed and inert, with an empty track and a dash where
+                 the running time goes. The header keeps its shape whether or
+                 not a recording exists, and the slot is visibly waiting for one
+                 rather than collapsing to a line of text.
+
+                 Buttons carry `disabled` rather than being spans — they are
+                 real controls that do not work YET, which is exactly what
+                 `disabled` means, and it keeps them out of the tab order
+                 without needing aria-hidden. The line underneath says why. */
+              <>
+                <div className="pe-player pe-player-empty">
+                  <div className="pe-controls">
+                    <button type="button" className="pe-skip" disabled aria-hidden="true">
+                      <Replay10Icon />
+                    </button>
+                    <button type="button" className="pe-play" disabled aria-label="No audio to play yet">
+                      <PlayIcon />
+                    </button>
+                    <button type="button" className="pe-skip" disabled aria-hidden="true">
+                      <Forward10Icon />
+                    </button>
+                  </div>
+
+                  <div className="pe-progress-wrap">
+                    <div className="pe-progress" aria-hidden="true">
+                      <span className="pe-progress-fill" style={{ width: '0%' }} />
+                    </div>
+                    <div className="pe-times">
+                      <span>0:00</span>
+                      <span>--:--</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* OUTSIDE the dimmed block on purpose. `opacity` on a parent
+                    creates a group its children cannot exceed, so a note nested
+                    inside would render at the same 45% as the dead controls —
+                    and this is the one line that has to be readable. */}
+                <p className="pe-player-note">
+                  Audio for this episode has not been uploaded yet.
+                </p>
+              </>
             )}
           </div>
         </div>
@@ -338,70 +354,7 @@ export default function PodcastEpisode() {
 
       {lastSaved && <p className="pe-saved-note">Saved &ldquo;{lastSaved}&rdquo; to flashcards.</p>}
 
-      {editing ? (
-        <form className="pe-form" onSubmit={handleUpdate}>
-          <div>
-            <label>Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} required />
-          </div>
-          <div>
-            <label>Level</label>
-            <select value={level} onChange={(e) => setLevel(e.target.value)}>
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label>Bio</label>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} />
-          </div>
-          <div>
-            <label>Transcript (Chinese text)</label>
-            <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={8} required />
-          </div>
-          <div>
-            {/* Optional, exactly like an article's English body: without it the
-                episode is Chinese-only and the Translation switch stays off. */}
-            <label>English transcript (optional)</label>
-            <textarea
-              value={transcriptEn}
-              onChange={(e) => setTranscriptEn(e.target.value)}
-              rows={6}
-            />
-          </div>
-          <div>
-            <label>Replace audio</label>
-            <input type="file" accept="audio/*" onChange={(e) => setAudio(e.target.files[0])} />
-          </div>
-          <div>
-            <label>Replace cover image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const picked = e.target.files[0]
-                if (picked) setCropSource(picked)
-                e.target.value = ''
-              }}
-            />
-            {image && imagePreview && (
-              <span className="pe-photo-chosen">
-                <img src={imagePreview} alt="" />
-                Ready to upload
-                <button type="button" onClick={() => setCropSource(image)}>
-                  Adjust
-                </button>
-              </span>
-            )}
-          </div>
-          <button type="submit" className="pe-btn-primary" disabled={submitting}>
-            {submitting ? 'Saving...' : 'Save changes'}
-          </button>
-        </form>
-      ) : (
+      {(
         <div className="pe-transcript-panel">
           {/* The same two switches the reader has. Neither replaces the
               Chinese — pinyin stacks above each word and the English sits
@@ -494,18 +447,17 @@ export default function PodcastEpisode() {
 
       <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
 
-      {cropSource && (
-        <ImageCropper
-          file={cropSource}
-          aspect={COVER_ASPECT}
-          outputWidth={720}
-          onCancel={() => setCropSource(null)}
-          onCrop={(cropped) => {
-            setImage(cropped)
-            setCropSource(null)
-          }}
+      {/* Editing sits OVER the episode rather than replacing it, so the
+          transcript being changed stays on screen while it is changed. */}
+      {editing && user?.is_admin && (
+        <PodcastEditDrawer
+          key={podcast.updated_at || podcast.id}
+          podcast={podcast}
+          onSave={handleUpdate}
+          onClose={() => setEditing(false)}
         />
       )}
+
     </div>
   )
 }

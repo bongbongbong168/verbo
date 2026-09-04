@@ -1,0 +1,452 @@
+/* Verbo Pro — upgrade page. Prefix `up-`.
+
+   Every colour here is one the app already uses. The page reads as colder than
+   the rest of Verbo through arrangement rather than new hues: more negative
+   space, one dark surface, hairline borders instead of the heavy navy stroke,
+   and shadows tinted with the app's own navy rather than neutral black —
+   neutral black greys the lavender ground, which is what makes a purple UI look
+   dirty. */
+
+.up {
+  --up-bg: #f9f8fe;
+  --up-card: #ffffff;
+  --up-line: #e7e3f6;
+  --up-edge: #2b2643;
+  --up-fill: #a89ce3;
+  --up-accent: #6a6191;
+  --up-pale: #f1edfc;
+  --up-text: #1c1730;
+  --up-muted: #726c88;
+  /* The sidebar's own navy family — the one darker surface on the page. */
+  --up-deep-1: #2b2643;
+  --up-deep-2: #3d3860;
+  --up-deep-3: #6a6191;
+
+  background: var(--up-bg);
+  min-height: var(--app-vh);
+  box-sizing: border-box;
+  /* The 90px side gutter every other content page uses. */
+  padding: 2.4rem 90px 4rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--up-text);
+}
+
+/* ---- header ---- */
+
+.up-head {
+  max-width: 640px;
+  margin: 0 auto 2.2rem;
+  text-align: center;
+}
+
+.up-title {
+  margin: 0 0 0.6rem;
+  font-size: clamp(2rem, 4vw, 2.85rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.up-lede {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--up-muted);
+}
+
+/* ---- billing toggle ---- */
+
+.up-billing {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.up-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+}
+
+.up-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.3rem 0.68rem;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--up-muted);
+  cursor: pointer;
+}
+
+/* Static, never transitioned — the fill IS the selection, and a transition
+   that never gets a frame would leave the chosen period looking unchosen.
+   Same rule every stateful control in this app follows. */
+.up-toggle-btn.active {
+  background: var(--up-accent);
+  color: #fff;
+}
+
+.up-toggle-btn:focus-visible {
+  outline: 2px solid var(--up-accent);
+  outline-offset: 2px;
+}
+
+/* ---- plans ----
+   Two columns that hold their proportion rather than splitting evenly: the
+   plan being sold gets the wider one. `minmax(0, …)` floors both so a long
+   feature line cannot push a column past its share. */
+
+.up-plans {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: 22px;
+  /* Stretch, not `start`: the two lists are different lengths (7 features
+     against 8), so left to their natural heights the cards ended 12px apart
+     and the two CTAs sat off each other. Equal heights plus `flex: 1` on the
+     feature list puts both buttons on one line, which is what makes the plans
+     read as a comparison rather than two unrelated cards. */
+  align-items: stretch;
+  max-width: 940px;
+  margin: 0 auto 3.4rem;
+}
+
+.up-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 1.9rem 1.8rem 1.8rem;
+  border-radius: 20px;
+}
+
+.up-free {
+  background: var(--up-card);
+  /* The hairline, not the app's navy card stroke: the free plan should recede
+     so the eye lands on the other card first. */
+  border: 1px solid var(--up-line);
+}
+
+/* The one dark surface on the page, and the reason it reads as premium. The
+   gradient is the sidebar's navy family, already used on the onboarding finish
+   panel — cold and unmistakably Verbo rather than a new colour. */
+.up-pro {
+  background: linear-gradient(155deg, var(--up-deep-1) 0%, var(--up-deep-2) 58%, var(--up-deep-3) 140%);
+  border: 1px solid var(--up-deep-1);
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(43, 38, 67, 0.22);
+}
+
+/* A quiet chip rather than a filled pill. White on #a89ce3 measured 2.5:1 —
+   unreadable — and going back to navy text would give the badge more weight
+   than the CTA under it. Translucent white over the dark card keeps the text
+   white, keeps the contrast high, and leaves the one SOLID light block on this
+   card to the button, which is where the eye should land. */
+.up-badge {
+  position: absolute;
+  top: 1.9rem;
+  right: 1.8rem;
+  padding: 0.3rem 0.7rem 0.36rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.up-card-head {
+  margin-bottom: 1.3rem;
+}
+
+.up-plan-name {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.up-plan-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--up-muted);
+  max-width: 34ch;
+}
+
+.up-pro .up-plan-sub {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ---- price ---- */
+
+.up-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.24rem;
+  margin: 0 0 0.3rem;
+}
+
+.up-currency {
+  font-size: 1.35rem;
+  font-weight: 600;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  color: var(--up-muted);
+}
+
+.up-pro .up-currency {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.up-amount {
+  font-size: clamp(2.3rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  /* The price changes between two lengths ("6.99" / "59.99"); lining figures
+     keep the digits from reflowing the row as it swaps. */
+  font-variant-numeric: tabular-nums;
+}
+
+.up-per {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--up-muted);
+}
+
+.up-pro .up-per {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Pinned to one line's height so both cards' feature lists start level, even
+   though only one card has anything to say here. */
+.up-price-note {
+  min-height: 1.4em;
+  margin: 0 0 1.5rem;
+  font-size: 0.83rem;
+  color: var(--up-muted);
+}
+
+.up-pro .up-price-note {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+/* ---- features ---- */
+
+.up-features {
+  list-style: none;
+  margin: 0 0 1.7rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.72rem;
+  /* Pushes the button to the card's foot, so the two CTAs sit level despite
+     the lists being different lengths. */
+  flex: 1;
+}
+
+.up-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.up-tick {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  color: var(--up-fill);
+}
+
+.up-pro .up-tick {
+  color: var(--up-fill);
+}
+
+/* ---- buttons ---- */
+
+.up-btn {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1.2rem 0.92rem;
+  border-radius: 12px;
+  font-family: 'Hellix', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+/* The light-on-dark treatment, and the reason is contrast, not taste: on the
+   card's #a89ce3 fill white text measured 2.5:1, which fails WCAG AA (4.5:1)
+   and is exactly as hard to read as it looked. Inverting it — the app's pale
+   lavender carrying the navy text — measures over 13:1 and is also the
+   stronger move on a dark card: one solid light block is unmistakably the
+   primary action, where a mid-lavender button sat too close to the gradient
+   it was painted on. Both colours are already in the palette. */
+.up-btn-primary {
+  background: var(--up-pale);
+  color: var(--up-deep-1);
+}
+
+.up-btn-primary:hover {
+  background: #fff;
+}
+
+.up-btn-quiet {
+  background: var(--up-bg);
+  border-color: var(--up-line);
+  color: var(--up-muted);
+}
+
+/* Disabled because there is nothing to do — this IS the current plan. */
+.up-btn-quiet:disabled {
+  cursor: default;
+}
+
+.up-btn:focus-visible {
+  outline: 2px solid var(--up-fill);
+  outline-offset: 3px;
+}
+
+.up-notice {
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  text-align: center;
+}
+
+/* ---- sections ---- */
+
+.up-section {
+  max-width: 940px;
+  margin: 0 auto 3.2rem;
+}
+
+.up-section-title {
+  margin: 0 0 1.3rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.up-benefits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.up-benefit {
+  padding: 1.3rem 1.25rem 1.4rem;
+  background: var(--up-card);
+  border: 1px solid var(--up-line);
+  border-radius: 16px;
+}
+
+.up-benefit-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.9rem;
+  border-radius: 12px;
+  background: var(--up-pale);
+  color: var(--up-accent);
+}
+
+.up-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.up-benefit-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.up-benefit-body {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--up-muted);
+}
+
+/* ---- fine print ---- */
+
+.up-fine {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.up-fine p {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--up-muted);
+}
+
+.up-fine a {
+  color: var(--up-accent);
+  font-weight: 600;
+}
+
+/* ---- narrower ---- */
+
+@media (max-width: 900px) {
+  .up-plans {
+    /* One column, and the plan being sold leads — on a phone the first card is
+       the one that gets read, so the order flips from "compare" to "here is
+       the offer". */
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .up-pro {
+    order: -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .up {
+    padding: 1.6rem 1.1rem 3rem;
+  }
+
+  .up-card {
+    padding: 1.5rem 1.3rem 1.4rem;
+  }
+
+  .up-badge {
+    top: 1.5rem;
+    right: 1.3rem;
+  }
+
+  /* The toggle keeps both options readable rather than shrinking them — it is
+     the one control on the page. */
+  .up-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .up-toggle-btn {
+    /* Equal halves, so the pill does not resize as the selection moves. */
+    flex: 1;
+    justify-content: center;
+    padding: 0.6rem 0.9rem 0.68rem;
+    font-size: 0.88rem;
+  }
+
+  }

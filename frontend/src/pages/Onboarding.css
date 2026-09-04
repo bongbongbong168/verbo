@@ -151,9 +151,21 @@
   padding-bottom: 2.1px;
 }
 
+/* The padding above is a CAP-BAND correction for the DIGIT, and it must not
+   reach the tick. A numeral's ink sits low inside its line box, so the mark
+   lifts it; an SVG's box IS its ink, so the same lift pushed the check 2.1px
+   (2.30 device px at this zoom) above the circle's centre — measured 6.55px of
+   clearance above against 8.84px below on the completed steps.
+   Equal-and-opposite margins rather than `position: relative`: they shift it
+   identically without moving it into the positioned paint layer. */
 .ob-step-mark svg {
   width: 13px;
   height: 13px;
+  /* HALF the padding, not all of it: shrinking the content box by 2.1px at the
+     bottom moves its centre up by 1.05px, so 1.05px is what hands it back.
+     Applying the full 2.1 overshoots to exactly the same error mirrored. */
+  margin-top: 1.05px;
+  margin-bottom: -1.05px;
 }
 
 .ob-step.done .ob-step-mark {
@@ -434,29 +446,260 @@
   box-shadow: 0 2px 8px rgba(168, 156, 227, 0.4);
 }
 
+/* Same trap as the stepper's tick. The chip's padding is asymmetric by 3px
+   (6.82 top against 9.82 bottom) to seat the LABEL's cap band, which shifts
+   the content box — and therefore everything `align-items: center` centres in
+   it — up by half that. The label wants the shift; this glyph does not, so it
+   landed 1.5px (1.65 device px) above the chip's centre. Half the padding
+   difference, handed back. */
 .ob-chip svg {
   width: 15px;
   height: 15px;
   flex: none;
   opacity: 0.85;
+  margin-top: 1.5px;
+  margin-bottom: -1.5px;
 }
 
 /* ---- summary ---- */
 
-.ob-done-mark {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  background: #e7f2ec;
-  color: #1f7a45;
+/* ---- the finish panel ----
+   Register's dark gradient, so sign-up and the end of onboarding read as one
+   flow, with the celebration art on the right. */
+
+/* Kept deliberately shallow. The card is `max-width: 620px` on every step and
+   its height is whatever the content makes it, so anything tall here makes the
+   final screen tower over the five questions that led to it. A fixed height on
+   the panel — rather than padding plus whatever the art wants — is what stops
+   the illustration setting the card's size. */
+.ob-done-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  position: relative;
+  overflow: hidden;
+  height: 104px;
+  box-sizing: border-box;
+  margin-bottom: 1.2rem;
+  padding: 0 1.15rem;
+  border-radius: 16px;
+  background: linear-gradient(110deg, #2b2643 0%, #3d3860 55%, #6a6191 100%);
+  color: #fff;
 }
 
-.ob-done-mark svg {
-  width: 22px;
-  height: 22px;
+.ob-done-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.ob-done-title {
+  margin: 0 0 0.2rem;
+  font-family: 'Hellix', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.ob-done-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+/* Anchored to the panel's floor and allowed to overrun its top, so the thrown
+   cap and the confetti break the edge instead of being boxed in. `height`
+   rather than `width`, because the panel's height is the fixed dimension here
+   and sizing off it is what keeps the art in proportion to the band it sits in
+   at every card width. */
+/* Exactly the panel's height, so it seats on the floor without overrunning the
+   top — at 118px in a 104px band the thrown cap was being sliced off by the
+   panel's own `overflow: hidden`. `height: 100%` off a panel with a fixed
+   height keeps it in proportion and makes its width predictable, which is what
+   the copy's reserve below depends on. */
+.ob-done-art {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  pointer-events: none;
+}
+
+/* The reserve has to be the art's real WIDTH, not a guess: at 104px tall and
+   its native 321x225 the art is 104 x 1.427 = 148px, plus its 0.4rem inset.
+   Reserving 132px is what let the headline run under the graduate. */
+.ob-done-copy {
+  padding-right: 162px;
+}
+
+/* ---- the tick ---- */
+
+.ob-done-mark {
+  display: block;
+  flex: none;
+  width: 54px;
+  height: 54px;
+}
+
+.ob-done-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---- the arrival ----
+   Staged rather than simultaneous: the panel rises, the tick lands in it, the
+   bar runs to the end and the rows follow. Sequencing is what makes a subtle
+   move noticeable — each part is small, but they arrive in an order the eye
+   can follow, so the screen reads as arriving rather than as already there.
+
+   Every one of these is TRANSFORM-ONLY and starts from a state that is fully
+   opaque and fully legible — a 12px offset or a 0.86 scale, never 0. A tab
+   that never composites shows the finished screen slightly out of position,
+   which is the trade this codebase always makes: movement is ornament, and
+   nothing here is readable only after a frame arrives. */
+
+@keyframes ob-rise {
+  from {
+    transform: translateY(12px);
+  }
+}
+
+/* Not scale(0): a disc that starts at zero is an invisible disc if the frames
+   never come, and this one carries the "done" reading. 0.86 is enough to be
+   felt without ever being absent. */
+@keyframes ob-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  62% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.ob-done-hero {
+  animation: ob-rise 420ms cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+}
+
+.ob-count-done {
+  animation: ob-rise 420ms cubic-bezier(0.22, 0.8, 0.3, 1) 200ms backwards;
+}
+
+/* The rows follow the bar, 45ms apart. Enough to read as a cascade, short
+   enough that the last one is not still arriving when the eye reaches it. */
+.ob-summary > div {
+  animation: ob-rise 380ms cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+}
+.ob-summary > div:nth-child(1) { animation-delay: 260ms; }
+.ob-summary > div:nth-child(2) { animation-delay: 305ms; }
+.ob-summary > div:nth-child(3) { animation-delay: 350ms; }
+.ob-summary > div:nth-child(4) { animation-delay: 395ms; }
+.ob-summary > div:nth-child(5) { animation-delay: 440ms; }
+
+/* The disc's fill is STATIC and fully painted — it is the part that reads as
+   "done" at a glance, so its VISIBILITY never depends on a frame arriving.
+   Only its scale moves. #a89ce3, the app's fill lavender, in place of the
+   reference's saturated violet. */
+.ob-done-mark {
+  animation: ob-pop 420ms cubic-bezier(0.34, 1.4, 0.5, 1) 90ms backwards;
+}
+
+.ob-done-disc {
+  /* --ob-fill (#a89ce3), NOT --ob-accent (#6a6191): the palette reserves the
+     lighter value for filled shapes and the deeper one for text. This replaces
+     the reference's saturated violet, which appears nowhere in the app. */
+  fill: var(--ob-fill);
+}
+
+/* The check draws itself: dasharray is the path's own length, and the offset
+   runs from that to 0. Only this line is animated — see DoneMark's comment for
+   why a non-final start state is allowed on this one element. */
+.ob-done-check {
+  stroke: #fff;
+  /* The path's own length: two segments, 10.97 + 20.86 = 31.83. Rounded up to
+     32 so the line is fully hidden at the start; setting it much higher would
+     spend the tail of the animation doing nothing visible. */
+  stroke-dasharray: 32;
+  stroke-dashoffset: 0;
+  animation: ob-draw 460ms cubic-bezier(0.65, 0, 0.35, 1) 160ms backwards;
+}
+
+@keyframes ob-draw {
+  from {
+    stroke-dashoffset: 32;
+  }
+}
+
+/* ---- the finished bar ----
+   One continuous bar in place of the five segments. This is the one bar in the
+   app that animates its width, and only because it can no longer be wrong: on
+   this screen it is always 100%, so the worst a stalled animation can do is
+   leave it short of a value that the word "Completed" underneath already
+   states in full. Everywhere else, a fill level is data and stays static. */
+.ob-progress-full {
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ob-well);
+}
+
+.ob-progress-fill {
+  display: block;
+  height: 5px;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--ob-fill);
+  transform-origin: left center;
+  animation: ob-fill 720ms cubic-bezier(0.22, 0.8, 0.3, 1) 60ms backwards;
+}
+
+@keyframes ob-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.ob-count-done {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ob-text, #1c1730);
+}
+
+/* Every end state here is a static style except the two above, and both of
+   those finish at the value their surrounding text already states — so cutting
+   the motion changes nothing that can be read. */
+@media (prefers-reduced-motion: reduce) {
+  .ob-done-check,
+  .ob-progress-fill,
+  .ob-done-hero,
+  .ob-done-mark,
+  .ob-count-done,
+  .ob-summary > div {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .ob-done-hero {
+    gap: 0.8rem;
+    padding: 1.1rem 1.1rem;
+  }
+
+  /* The art is the first thing to go: on a narrow card the words and the tick
+     are what carry the screen. */
+  .ob-done-art {
+    display: none;
+  }
+
+  .ob-done-title {
+    font-size: 1.05rem;
+  }
 }
 
 .ob-summary {
@@ -480,9 +723,12 @@
   border-top: 1px solid var(--ob-line);
 }
 
+/* Regular weight, and the same size as the value beside it — the label is told
+   apart by its colour and its column, which is enough. At 700 and a smaller
+   size it read as a heading competing with the answer it introduces. */
 .ob-summary dt {
-  font-size: 0.83rem;
-  font-weight: 700;
+  font-size: 0.89rem;
+  font-weight: 500;
   color: var(--ob-muted);
 }
 

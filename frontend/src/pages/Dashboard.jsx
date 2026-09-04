@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import PageTools from '../components/PageTools'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
+import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import iconStreak from '../assets/dashboard/icon-streak.png'
 import './Dashboard.css'
 
@@ -28,7 +29,12 @@ const PICKUP_SLOTS = 3
  * actually holds Han characters, so an English title containing a hyphen is
  * left alone.
  */
-function shapeStudyTile(level, unit) {
+/* `progress` is the matching row from GET /study-levels, which carries
+   units_count and units_opened. It is optional: the recent-views payload does
+   not include them, so a tile whose level is missing from that list simply
+   renders without a bar rather than with an empty one, which would read as
+   "you have done none of this" when the truth is "we do not know". */
+function shapeStudyTile(level, unit, progress) {
   if (!level || !unit) return null
 
   const raw = unit.title || ''
@@ -36,6 +42,10 @@ function shapeStudyTile(level, unit) {
   const isSplit = Boolean(parts) && HAN.test(parts[1])
   const chinese = isSplit ? parts[1].trim() : HAN.test(raw) ? raw : ''
   const english = isSplit ? parts[2].trim() : ''
+
+  // Number(): SQLite hands these back as strings, and they are divided below.
+  const total = Number(progress?.units_count ?? 0)
+  const opened = Math.min(Number(progress?.units_opened ?? 0), total)
 
   return {
     kind: 'study_unit',
@@ -46,6 +56,18 @@ function shapeStudyTile(level, unit) {
     levelTag: level.title,
     title: unit.description || english || raw,
     chinese,
+    /* Only when the level actually has units — 0/0 is not a progress bar.
+       `pct` drives the bar's width and stays exact; `percent` is the rounded
+       figure on the label, floored at 1 whenever anything has been opened so a
+       long level cannot report a real visit as "0%". */
+    progress: total > 0
+      ? {
+          opened,
+          total,
+          pct: (opened / total) * 100,
+          percent: opened === 0 ? 0 : Math.max(1, Math.round((opened / total) * 100)),
+        }
+      : null,
   }
 }
 
@@ -278,6 +300,12 @@ export default function Dashboard() {
   const [articles, setArticles] = useState([])
   const [podcasts, setPodcasts] = useState([])
   const [studyUnit, setStudyUnit] = useState(null)
+  /* The level list was already being fetched on every load and thrown away
+     after the fallback tile picked one out of it. Kept now because it is the
+     only place units_count / units_opened arrive — the recent-views payload
+     carries neither, and re-deriving them there would be a query per row for
+     numbers already on the wire. */
+  const [levels, setLevels] = useState([])
   const [recents, setRecents] = useState([])
   const [activity, setActivity] = useState(null)
   const [learning, setLearning] = useState([])
@@ -329,6 +357,7 @@ export default function Dashboard() {
           setTutors(tutorData.slice(0, 3))
           setArticles(articleData)
           setPodcasts(podcastData)
+          setLevels(Array.isArray(levelData) ? levelData : [])
           const recentRows = Array.isArray(recentData) ? recentData : []
           setRecents(recentRows)
           setActivity(activityData || null)
@@ -401,6 +430,9 @@ export default function Dashboard() {
   const pickup = useMemo(() => {
     const tiles = []
     const seen = new Set()
+    // Number() on both sides: SQLite returns ids as strings on list endpoints,
+    // so a bare === silently never matches and every bar would go missing.
+    const levelById = (id) => levels.find((l) => Number(l.id) === Number(id))
     /* Everything added in the FIRST loop is something this person actually
        opened; everything after it is a suggestion. The count is kept so the
        heading can tell the truth — "Pick up where you left off" over a row of
@@ -410,7 +442,7 @@ export default function Dashboard() {
 
     for (const row of recents) {
       if (row.kind === 'study_unit') {
-        const tile = shapeStudyTile(row.level, row.unit)
+        const tile = shapeStudyTile(row.level, row.unit, levelById(row.level?.id))
         if (tile) {
           tiles.push(tile)
           seen.add(tile.key)
@@ -426,7 +458,11 @@ export default function Dashboard() {
 
     // Unit 1 of the most-populated level, for someone who has not opened one.
     if (tiles.length < PICKUP_SLOTS && studyUnit) {
-      const tile = shapeStudyTile(studyUnit.level, studyUnit.unit)
+      const tile = shapeStudyTile(
+        studyUnit.level,
+        studyUnit.unit,
+        levelById(studyUnit.level?.id),
+      )
       if (tile && !seen.has(tile.key)) {
         tiles.push(tile)
         seen.add(tile.key)
@@ -442,7 +478,7 @@ export default function Dashboard() {
     }
 
     return { tiles: tiles.slice(0, PICKUP_SLOTS), fromHistory }
-  }, [recents, studyUnit, podcasts])
+  }, [recents, studyUnit, podcasts, levels])
 
   const visibleReads = useMemo(
     () => articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3),
@@ -506,6 +542,14 @@ export default function Dashboard() {
 
       <div className="db-hero">
         <img className="db-hero-swoosh" src={heroSwoosh} alt="" />
+        {/* 学 is its OWN element rather than part of the swoosh above it. The
+            swoosh strip is 1500x281 and the hero is roughly 875x305, so
+            `object-fit: fill` squeezes it to 58% of its width while stretching
+            it to 109% of its height — fine for an abstract curve, ruinous for
+            a character, which came out visibly narrow and tall. Split out, it
+            scales uniformly off the hero's height and keeps its shape at every
+            width. */}
+        <img className="db-hero-hanzi" src={heroHanzi} alt="" />
         <span
           className={'db-streak-badge' + (streak > 0 ? '' : ' idle')}
           title={
@@ -617,6 +661,39 @@ export default function Dashboard() {
                       <span className="db-study-rule" />
                       {tile.chinese && (
                         <span className="db-study-quote">&ldquo;{tile.chinese}&rdquo;</span>
+                      )}
+                      {/* Units OPENED over the level's total — the same figure
+                          the Study page shows, and worded the same way, because
+                          nothing in the app records a unit as finished and
+                          "complete" would claim more than the data knows.
+                          role="img" rather than "progressbar": this sits inside
+                          a link, and a progressbar role here would announce an
+                          interactive widget that cannot be operated. */}
+                      {tile.progress && (
+                        <span
+                          className="db-study-progress"
+                          role="img"
+                          aria-label={`${tile.progress.opened} of ${tile.progress.total} ${
+                            tile.progress.total === 1 ? 'unit' : 'units'
+                          } opened`}
+                        >
+                          {/* Label row over a full-width bar, the value picked
+                              out in the accent — the arrangement and the
+                              percentage both from the supplied reference. The
+                              exact counts stay on the aria-label, which is the
+                              more useful thing to hear read aloud and keeps
+                              "3 of 8 units opened" on the record. */}
+                          <span className="db-study-progress-head" aria-hidden="true">
+                            <span className="db-study-progress-label">Progress</span>
+                            <span className="db-study-progress-value">{tile.progress.percent}%</span>
+                          </span>
+                          <span className="db-study-track">
+                            <span
+                              className="db-study-fill"
+                              style={{ width: `${tile.progress.pct}%` }}
+                            />
+                          </span>
+                        </span>
                       )}
                     </span>
                   </Link>

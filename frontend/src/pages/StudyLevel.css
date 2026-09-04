@@ -327,43 +327,6 @@
   cursor: default;
 }
 
-.sl-form {
-  background: var(--sl-card);
-  border: 1px solid var(--sl-border);
-  border-radius: 16px;
-  padding: 1.4rem;
-  margin-bottom: 1.4rem;
-  max-width: 620px;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.sl-form label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--sl-text-muted);
-  margin-bottom: 0.3rem;
-}
-
-.sl-form input,
-.sl-form textarea {
-  width: 100%;
-  font-family: inherit;
-  font-size: 0.92rem;
-  color: var(--sl-text);
-  border: 1px solid var(--sl-border);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  box-sizing: border-box;
-  outline: none;
-}
-
-.sl-form input:focus,
-.sl-form textarea:focus {
-  border-color: var(--sl-accent-light);
-}
-
 .sl-hero-btn:focus-visible,
 .sl-module:focus-visible,
 .sl-btn-primary:focus-visible {

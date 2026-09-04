@@ -12,6 +12,15 @@ async function parseResponse(res) {
       message = 'Too many requests. Please wait a moment and try again.'
     }
 
+    /* 413 is the one status whose body cannot be relied on. php rejects an
+       oversized request before the app runs, and with display_errors on (the
+       dev server's default) it prepends a raw HTML warning to the JSON — so
+       `res.json()` fails, `data` is null, and the real message is lost behind
+       a generic "Request failed". Say what actually happened instead. */
+    if (res.status === 413 && !data?.message) {
+      message = 'That file is too large for the server to accept. Try a shorter or more compressed file.'
+    }
+
     // Preserve the status so callers can tell an expired session (401)
     // apart from rate limiting (429) or a server fault (5xx).
     const error = new Error(message)
@@ -51,12 +60,20 @@ async function requestMultipart(path, formData, token) {
   return parseResponse(res)
 }
 
-function articleFormData({ title, type, body, body_en, image }) {
+function articleFormData({ title, type, category, hsk_level, body, body_en, image }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('type', type)
   formData.append('body', body)
   if (body_en != null) formData.append('body_en', body_en)
+  /* `category` is the TOPIC the Read page shelves by, and it was missing here:
+     the controller has always accepted it, but nothing sent it, so an article
+     published through the UI arrived unfiled and could only reach a shelf by
+     being edited afterwards. Sent even when empty, or clearing a topic back to
+     "Unfiled" would be impossible — the same reason podcastFormData always
+     sends transcript_en. */
+  if (category !== undefined) formData.append('category', category ?? '')
+  if (hsk_level !== undefined) formData.append('hsk_level', hsk_level ?? '')
   if (image) formData.append('image', image)
   return formData
 }
@@ -81,7 +98,7 @@ function studyLevelFormData({
   return formData
 }
 
-function podcastFormData({ title, transcript, transcriptEn, level, bio, audio, image }) {
+function podcastFormData({ title, transcript, transcriptEn, level, category, host, bio, audio, image }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('transcript', transcript)
@@ -89,6 +106,10 @@ function podcastFormData({ title, transcript, transcriptEn, level, bio, audio, i
   // impossible, since the server only sees the fields that arrive.
   formData.append('transcript_en', transcriptEn ?? '')
   if (level) formData.append('level', level)
+  // Same rule as transcript_en: sent even when empty, so a topic can be
+  // cleared back to Unfiled rather than being stuck once set.
+  if (category !== undefined) formData.append('category', category ?? '')
+  if (host !== undefined) formData.append('host', host ?? '')
   if (bio) formData.append('bio', bio)
   if (audio) formData.append('audio', audio)
   if (image) formData.append('image', image)
@@ -534,6 +555,11 @@ export const api = {
     request(`/study-units/${unitId}/vocabulary`, { method: 'POST', body: word, token }),
   deleteStudyVocabulary: (token, id) =>
     request(`/study-vocabulary/${id}`, { method: 'DELETE', token }),
+  /* Meaning, character breakdown and real example sentences for one word.
+     Its own request, made when the panel opens — finding examples means LIKE
+     scans across four tables, so doing it for every word on every page load
+     would be almost entirely wasted work. */
+  explainVocabulary: (token, id) => request(`/study-vocabulary/${id}/explain`, { token }),
   addStudyGrammarPoint: (token, unitId, point) =>
     request(`/study-units/${unitId}/grammar`, { method: 'POST', body: point, token }),
   updateStudyGrammarPoint: (token, id, point) =>

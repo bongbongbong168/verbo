@@ -21,6 +21,8 @@
   --db-section-bar: #8d87ad; /* the leading bar on section titles */
   --db-filter-edge: #7d76a0;
   --db-viewall: #a89ce3; /* "View all" pill */
+  --db-progress: #a89ce3; /* study card progress fill — the palette's FILL lavender */
+  --db-progress-track: #ece8f8; /* its unfilled groove */
   --db-bar: #d5c6ff; /* activity bar */
   --db-bar-peak: #7d76a0; /* the highlighted day */
 
@@ -76,6 +78,30 @@
   object-fit: fill;
   opacity: 1;
   pointer-events: none;
+  z-index: 0;
+}
+
+/* The 学 watermark, lifted out of the swoosh raster so it is never scaled
+   non-uniformly. Every number here is measured from where it sat in the
+   original 1500x281 export, expressed against the hero instead of the strip:
+     height  205x176 glyph, 176/281 of the strip's height  = 62.6%
+     right   49px clear of a 1500-wide strip                = 3.27%
+     centre  y 49..224 of 281 -> midpoint 48.6%, so centred
+   `width: auto` off a percentage height is what holds its 1.165 aspect at any
+   hero size. */
+.db-hero-hanzi {
+  position: absolute;
+  top: 50%;
+  right: 3.27%;
+  height: 62.6%;
+  width: auto;
+  transform: translateY(-50%);
+  /* The glyph ships pure white; this is the 16.9% it was baked at, solved from
+     all three channels of the original tint. Kept in CSS rather than in the
+     file so the strength can be tuned without re-exporting. */
+  opacity: 0.169;
+  pointer-events: none;
+  /* Above the swoosh, below the copy and the streak badge. */
   z-index: 0;
 }
 
@@ -606,6 +632,74 @@
   overflow: hidden;
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+}
+
+/* ---- study card progress ----
+   Units OPENED over the level's total, matching the bar on the Study page and
+   reading off the same two numbers (StudyLevelController::index). Sits under
+   the Chinese line, at the foot of the card.
+
+   `margin-top: auto` pins it to the bottom of the body rather than letting it
+   float directly under the quote: the title above is pinned to two lines but
+   the quote is optional, so without this the bar sat at a different height on
+   a unit with no Chinese in its name. */
+/* Label row over a full-width bar, per the supplied reference — not a bar with
+   a figure beside it. The row gives the number somewhere to sit without taking
+   width off the bar, so the bar reads as a proportion of the whole card rather
+   than of whatever was left over. */
+.db-study-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.db-study-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.db-study-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--db-progress-track);
+  overflow: hidden;
+}
+
+/* No transition on the width. It is a value, not an animation — a transition
+   that never gets a frame would leave the bar reading empty on a level the
+   learner has already worked through. Same rule as .st-progress-fill, and the
+   same colour: the palette reserves the lighter lavender for FILLED elements. */
+.db-study-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--db-progress);
+}
+
+.db-study-progress-label {
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--db-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The value is the one figure on the card worth picking out, so it takes the
+   accent — --db-accent (#6a6191), not the fill lavender, because the palette
+   reserves the lighter value for filled shapes and the deeper one for text. */
+.db-study-progress-value {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--db-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- podcast card ---- */

@@ -5,7 +5,7 @@ import { api } from '../api'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
 import WordPopover from '../components/WordPopover'
-import { buildVocabQuestions } from '../studyQuiz'
+import WordExplainer from '../components/WordExplainer'
 import sectionIcon from '../assets/study/section-icon.png'
 import './StudyUnit.css'
 
@@ -30,6 +30,41 @@ function PencilIcon() {
     >
       <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
       <path d="m14.5 6.5 3 3" />
+    </svg>
+  )
+}
+
+/* The 24-grid, 1.7-stroke set the rest of the app uses. A plus for "add this",
+   a tick once it is in — the state is the GLYPH, not a colour, so it survives
+   being looked at in greyscale or by someone who cannot tell the two fills
+   apart. */
+function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5.5v13M5.5 12h13" />
+    </svg>
+  )
+}
+
+function TickIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m5 12.5 4.5 4.5L19 7" />
     </svg>
   )
 }
@@ -86,7 +121,11 @@ export default function StudyUnit() {
   const playingAllRef = useRef(false)
 
   const [activeTab, setActiveTab] = useState('vocabulary')
-  const [openExplanations, setOpenExplanations] = useState({})
+  /* Which word's explanation dialog is open, or null. Replaced a map of
+     expanded rows: the panel now carries a paragraph, a character table and
+     three example sentences, which pushed every word below it down the page
+     when it opened inline. */
+  const [explaining, setExplaining] = useState(null)
   const [speakingId, setSpeakingId] = useState(null)
 
   const [showEdit, setShowEdit] = useState(false)
@@ -211,10 +250,6 @@ export default function StudyUnit() {
     sayFrom(0)
   }
 
-  function toggleExplanation(wordId) {
-    setOpenExplanations((prev) => ({ ...prev, [wordId]: !prev[wordId] }))
-  }
-
   async function handleSaveWord(word) {
     try {
       await api.addFlashcard(token, {
@@ -280,19 +315,24 @@ export default function StudyUnit() {
      is perfectly valid, so the toggle greys out rather than opening a blank
      pane — the same rule a Chinese-only podcast episode follows. */
   const hasEnglish = (currentText?.lines || []).some((l) => l.english)
-  const quizCount = unit.quiz_questions?.length || 0
-  /* What the quiz would ACTUALLY offer, which is not the same as the number of
-     admin-authored questions: rounds are also generated from the vocabulary.
-     The outro used the raw count, so a Daily Use lesson with five words and no
-     hand-written questions hid its "Quick practice" link while the Quiz tab
-     next to it happily built a real run out of those same five words.
-     Counted by running the generator, exactly as StudyQuizLauncher does. */
-  const practiceCount = quizCount + buildVocabQuestions(unit.vocabulary || []).length
   /* A Daily Use topic is a situation, an HSK level is a rung. The wording of
      the way out should say which one you came from rather than a generic
      "Back". */
   const isDaily = unit.level?.category === 'daily'
   const backTo = unit.level ? `/study/${unit.level.id}` : '/study'
+
+  /* The short name for a neighbouring lesson. Titles are authored as
+     `中文 - English`, which is far too long for a footer button, so the lesson
+     label (第三课) is preferred and the English half is the fallback for a
+     topic whose lessons carry no labels — Daily Use situations mostly do not.
+     The split only counts when the left side actually holds Han characters, or
+     an English title with a hyphen in it would be cut in half. */
+  const shortName = (u) => {
+    if (!u) return ''
+    if (u.lesson_label) return u.lesson_label
+    const parts = (u.title || '').match(/^(.*?)\s*[-–—]\s*(.+)$/)
+    return parts && /[一-鿿]/.test(parts[1]) ? parts[2].trim() : u.title || ''
+  }
 
   /* Same panel, different word for it. In an HSK lesson the passage is a
      reading exercise; in a Daily Use situation it is a conversation you are
@@ -380,14 +420,50 @@ export default function StudyUnit() {
                       <button
                         type="button"
                         className="un-explain-btn"
-                        onClick={() => toggleExplanation(w.id)}
-                        disabled={!w.explanation}
-                        aria-expanded={!!openExplanations[w.id]}
-                        title={
-                          w.explanation ? 'Show explanation' : 'No explanation for this word yet'
-                        }
+                        /* Always available now. It used to be disabled unless
+                           an admin had written an explanation — which nobody
+                           had, so every word on the page was greyed out. The
+                           dialog it opens always has something real to say:
+                           the meaning, what the characters contribute, and
+                           sentences the word appears in. */
+                        onClick={() => setExplaining(w)}
+                        title="What it means and how it is used"
                       >
                         Explain
+                      </button>
+
+                      {/* Straight into the flashcard bank, through the same
+                          handler Alt+1 uses on the conversation — so a word
+                          saved here is deduped against one saved there, keeps
+                          whichever source it was FIRST met in, and lands in the
+                          same place. The shape it expects is {text, pinyin,
+                          translation}, which is not what a vocabulary row is
+                          called, hence the mapping. */}
+                      <button
+                        type="button"
+                        className={
+                          'un-save-btn' + (savedWords[w.hanzi] ? ' saved' : '')
+                        }
+                        onClick={() =>
+                          handleSaveWord({
+                            text: w.hanzi,
+                            pinyin: w.pinyin,
+                            translation: w.translation,
+                          })
+                        }
+                        disabled={!!savedWords[w.hanzi]}
+                        aria-label={
+                          savedWords[w.hanzi]
+                            ? `${w.hanzi} is in your flashcards`
+                            : `Save ${w.hanzi} to your flashcards`
+                        }
+                        title={
+                          savedWords[w.hanzi]
+                            ? 'Saved to your flashcards'
+                            : 'Save to your flashcards'
+                        }
+                      >
+                        {savedWords[w.hanzi] ? <TickIcon /> : <PlusIcon />}
                       </button>
 
                       <button
@@ -400,9 +476,6 @@ export default function StudyUnit() {
                       </button>
                     </div>
 
-                    {openExplanations[w.id] && w.explanation && (
-                      <p className="un-vocab-explanation">{w.explanation}</p>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -579,36 +652,11 @@ export default function StudyUnit() {
             </aside>
           </div>
 
-          {/* ---------- after the conversation ----------
-              The conversation is the lesson; this is what follows it. Kept
-              inside the Reading panel rather than made a tab of its own,
-              because the point is that finishing the dialogue leads somewhere
-              — a tab would just be another thing to notice and ignore. */}
-          <div className="un-outro">
-            {practiceCount > 0 && (
-              <Link className="un-outro-cta" to={`/study/units/${unit.id}/quiz`}>
-                Quick practice
-                <span className="un-outro-sub">
-                  {practiceCount} {practiceCount === 1 ? 'question' : 'questions'} from this
-                  lesson
-                </span>
-              </Link>
-            )}
-
-            <div className="un-outro-nav">
-              {/* Next stays INSIDE this topic. Nothing pushes a learner from
-                  Ordering Food into an unrelated situation — the topic is the
-                  only place progression means anything. */}
-              {unit.next_unit && (
-                <Link className="un-outro-next" to={`/study/units/${unit.next_unit.id}`}>
-                  Next lesson: {unit.next_unit.title}
-                </Link>
-              )}
-              <Link className="un-outro-back" to={backTo}>
-                {isDaily ? 'Back to Daily Use' : 'Back to lessons'}
-              </Link>
-            </div>
-          </div>
+          {/* The end-of-reading block that used to sit here is gone. Both of
+              its jobs already had a home: practice is the Quiz tab at the top
+              of this page, and the way back is the breadcrumb — plus the
+              lesson footer below, which carries "Back to lessons" once there
+              is no next lesson to offer. */}
         </div>
       )}
 
@@ -743,6 +791,51 @@ export default function StudyUnit() {
         </div>
       )}
 
+      {/* ---------- lesson to lesson ----------
+           Page-level, below whichever tab is open, because moving to the next
+           lesson is a fact about the LESSON rather than about the panel you
+           happen to be reading — burying it in one tab would hide it from
+           someone who came for the vocabulary and finished there.
+
+           Only rendered when the topic actually has more than one lesson, and
+           each side only when that neighbour exists: the ends of a topic get a
+           single button rather than a disabled one, since a control that
+           cannot ever do anything is worse than its absence. `justify-content:
+           space-between` on one child would pull it left, so the empty side
+           holds a spacer and Next stays on the right at lesson 1. */}
+      {(unit.previous_unit || unit.next_unit) && (
+        <nav className="un-lessonnav" aria-label="Lessons in this topic">
+          {unit.previous_unit ? (
+            <Link className="un-lessonnav-prev" to={`/study/units/${unit.previous_unit.id}`}>
+              <span className="un-lessonnav-chev" aria-hidden="true">
+                &lsaquo;
+              </span>
+              <span className="un-lessonnav-name">Previous: {shortName(unit.previous_unit)}</span>
+            </Link>
+          ) : (
+            <span className="un-lessonnav-spacer" />
+          )}
+
+          {unit.next_unit ? (
+            <Link className="un-lessonnav-next" to={`/study/units/${unit.next_unit.id}`}>
+              <span className="un-lessonnav-name">Next: {shortName(unit.next_unit)}</span>
+              <span className="un-lessonnav-chev" aria-hidden="true">
+                &rsaquo;
+              </span>
+            </Link>
+          ) : (
+            <Link className="un-lessonnav-next" to={backTo}>
+              <span className="un-lessonnav-name">
+                {isDaily ? 'Back to Daily Use' : 'Back to lessons'}
+              </span>
+              <span className="un-lessonnav-chev" aria-hidden="true">
+                &rsaquo;
+              </span>
+            </Link>
+          )}
+        </nav>
+      )}
+
       {showEdit && user?.is_admin && (
         <StudyUnitEditDrawer
           token={token}
@@ -750,6 +843,14 @@ export default function StudyUnit() {
           initialTab={activeLabel}
           onChange={(updated) => setUnit((prev) => ({ ...prev, ...updated }))}
           onClose={() => setShowEdit(false)}
+        />
+      )}
+
+      {explaining && (
+        <WordExplainer
+          token={token}
+          word={explaining}
+          onClose={() => setExplaining(null)}
         />
       )}
 

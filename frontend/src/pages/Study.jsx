@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import DailyUseList from '../components/DailyUseList'
+import StudyEditDrawer from '../components/StudyEditDrawer'
 import './Study.css'
 
 const CATEGORIES = [
@@ -46,11 +47,8 @@ export default function Study() {
   const [active, setActive] = useState(0)
   const [showForm, setShowForm] = useState(false)
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [newCategory, setNewCategory] = useState('hsk')
-  const [image, setImage] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
+  /* The new-level fields live in StudyEditDrawer now — this page only tracks
+     whether it is open. */
 
   useEffect(() => {
     loadLevels()
@@ -65,22 +63,11 @@ export default function Study() {
       .finally(() => setLoading(false))
   }
 
-  async function handleCreate(e) {
-    e.preventDefault()
-    setError(null)
-    setSubmitting(true)
-    try {
-      await api.createStudyLevel(token, { title, description, category: newCategory, image })
-      setTitle('')
-      setDescription('')
-      setImage(null)
-      setShowForm(false)
-      loadLevels()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+  /* Throws on failure so the drawer keeps the message beside the fields. */
+  async function handleCreate(values) {
+    await api.createStudyLevel(token, values)
+    setShowForm(false)
+    loadLevels()
   }
 
   const visible = useMemo(
@@ -226,39 +213,10 @@ export default function Study() {
         </div>
       )}
 
+      {/* The shared drawer, not an inline block that pushed the carousel
+          down the page while it was open. */}
       {showForm && user?.is_admin && (
-        <form className="st-form" onSubmit={handleCreate}>
-          <div>
-            <label>Title</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. HSK 3" required />
-          </div>
-          <div>
-            <label>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="e.g. Master 600 words and intermediate communication skills."
-            />
-          </div>
-          <div>
-            <label>Category</label>
-            <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>
-              {CATEGORIES.map((c) => (
-                <option key={c.key} value={c.key}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label>Cover image</label>
-            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
-          </div>
-          <button type="submit" className="st-btn-primary" disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create level'}
-          </button>
-        </form>
+        <StudyEditDrawer kind="level" onSave={handleCreate} onClose={() => setShowForm(false)} />
       )}
 
       {/* Daily Use gets its own arrangement rather than the carousel. HSK is a
@@ -368,47 +326,6 @@ export default function Study() {
             <h2 className="st-active-title">{visible[active]?.title}</h2>
             {visible[active]?.description && (
               <p className="st-active-description">{visible[active].description}</p>
-            )}
-
-            {/* How far into this level the learner has got.
-
-                It counts units OPENED, and the label says so. Nothing in the
-                app records a unit as finished, so a bar labelled "complete"
-                would be asserting something the data cannot support — the
-                Profile page states its progress the same way, and the two are
-                derived from the same `recent_views` rows so they cannot
-                disagree.
-
-                Hidden entirely on a level with no units: a bar over nothing
-                is not 0% progress, it is an empty syllabus. */}
-            {Number(visible[active]?.units_count) > 0 && (
-              <div className="st-progress">
-                <div
-                  className="st-progress-track"
-                  role="progressbar"
-                  aria-valuenow={Number(visible[active].units_opened) || 0}
-                  aria-valuemin={0}
-                  aria-valuemax={Number(visible[active].units_count)}
-                  aria-label={`${visible[active].title} units opened`}
-                >
-                  <span
-                    className="st-progress-fill"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        ((Number(visible[active].units_opened) || 0) /
-                          Number(visible[active].units_count)) *
-                          100,
-                      )}%`,
-                    }}
-                  />
-                </div>
-                <p className="st-progress-label">
-                  {Number(visible[active].units_opened) || 0} of{' '}
-                  {Number(visible[active].units_count)}{' '}
-                  {Number(visible[active].units_count) === 1 ? 'unit' : 'units'} opened
-                </p>
-              </div>
             )}
           </div>
         </>

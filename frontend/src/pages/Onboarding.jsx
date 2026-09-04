@@ -4,6 +4,13 @@ import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/sidebar/logo.png";
 import feather from "../assets/signup/feather.png";
+/* The quiz launcher's celebration art, recoloured for this screen: its purples
+   already sat on the app's hue (246-259 against the app's 258), but ~28% of it
+   was gold, a colour the app uses nowhere. That family alone was rotated onto
+   #fe916a, the warm accent the level tags already wear — hue only, so every
+   highlight and shadow in the confetti survives. The quiz launcher keeps the
+   original, which is correct there. */
+import celebrate from "../assets/onboarding/celebrate.png";
 import "./Onboarding.css";
 
 function CheckIcon() {
@@ -19,6 +26,39 @@ function CheckIcon() {
     >
       <path d="m5 12.5 5 5 9-11" />
     </svg>
+  );
+}
+
+/**
+ * The completion tick: a filled disc with a check that strokes itself on.
+ *
+ * The check is drawn with `stroke-dasharray` equal to its own length and an
+ * offset that runs to 0, which is the only way to "draw" a line in CSS.
+ *
+ * READ THIS BEFORE CHANGING IT: unlike every other animation in this codebase,
+ * this one starts from a state that is not the finished one, so a tab that
+ * never composites would hold the check half-drawn. That is allowed HERE and
+ * nowhere else, because this mark is pure celebration — the heading beside it
+ * says "Your learning profile is ready" and the summary below states every
+ * answer, so nothing on the screen depends on the tick to be understood. The
+ * disc, which is the part that reads as "done" at a glance, is static and
+ * fully painted at frame 0; only the check line moves.
+ */
+function DoneMark() {
+  return (
+    <span className="ob-done-mark" aria-hidden="true">
+      <svg viewBox="0 0 52 52" className="ob-done-svg">
+        <circle className="ob-done-disc" cx="26" cy="26" r="26" />
+        <path
+          className="ob-done-check"
+          d="M15 26.5 L23 34 L37.5 19"
+          fill="none"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -277,21 +317,45 @@ export default function Onboarding() {
       {/* ---- right: one question at a time ---- */}
       <main className="ob-main">
         <div className="ob-card">
+          {/* The finish line. Only on the last step, and above the progress
+              bar so the eye lands on the result before the meter that reports
+              it. */}
+          {last && (
+            <div className="ob-done-hero">
+              <DoneMark />
+              <div className="ob-done-copy">
+                <h2 className="ob-done-title">Your learning profile is ready</h2>
+                <p className="ob-done-sub">
+                  Verbo will use it to pick the reading, listening and tutors it
+                  puts in front of you.
+                </p>
+              </div>
+              <img className="ob-done-art" src={celebrate} alt="" />
+            </div>
+          )}
+
           {/* Segmented rather than one sliding bar: five questions, five
               segments, so "how much is left" is countable at a glance. The
               fill is a STATIC class per segment, never a transition — a bar
-              that only fills while frames arrive would read as stuck. */}
-          <div className="ob-progress" aria-hidden="true">
-            {STEPS.map((s, i) => (
-              <span
-                className={"ob-seg" + (i <= step - (last ? 0 : 1) ? " on" : "")}
-                key={s.key}
-              />
-            ))}
-          </div>
+              that only fills while frames arrive would read as stuck.
 
-          <p className="ob-count">
-            {last ? "All done" : `Step ${step + 1} of ${STEPS.length}`}
+              The last step swaps to ONE continuous bar, because at that point
+              the count no longer matters: there is nothing left to do and the
+              only thing worth saying is that it is full. */}
+          {last ? (
+            <div className="ob-progress ob-progress-full" aria-hidden="true">
+              <span className="ob-progress-fill" />
+            </div>
+          ) : (
+            <div className="ob-progress" aria-hidden="true">
+              {STEPS.map((s, i) => (
+                <span className={"ob-seg" + (i <= step - 1 ? " on" : "")} key={s.key} />
+              ))}
+            </div>
+          )}
+
+          <p className={"ob-count" + (last ? " ob-count-done" : "")}>
+            {last ? "Completed" : `Step ${step + 1} of ${STEPS.length}`}
           </p>
 
           {/* Keyed on the step so the content re-mounts and the entrance plays
@@ -515,15 +579,17 @@ function Summary({ values }) {
 
   return (
     <>
-      <span className="ob-done-mark" aria-hidden="true">
-        <CheckIcon />
-      </span>
-      <h2 className="ob-title">Your learning profile is ready.</h2>
-      <p className="ob-lede">
-        {anything
-          ? "Verbo will use this to pick the reading, listening and tutors it puts in front of you."
-          : "You skipped the questions, which is fine — Verbo will show you everything until you tell it more."}
-      </p>
+      {/* The tick and the headline moved up into `.ob-done-hero`, which sits
+          above the progress bar — they are the result, and the meter reports
+          it, so the result reads first. Only the "you skipped everything" case
+          still needs saying here, since the hero's line assumes there are
+          answers to use. */}
+      {!anything && (
+        <p className="ob-lede">
+          You skipped the questions, which is fine — Verbo will show you
+          everything until you tell it more.
+        </p>
+      )}
 
       <dl className="ob-summary">
         {lines.map((l) => (
