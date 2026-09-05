@@ -748,6 +748,14 @@
     backdrop-filter: saturate(180%) blur(20px);
     border-top: 1px solid #e7e3f6;
     padding-bottom: env(safe-area-inset-bottom);
+    /* The HORIZONTAL insets too, not just the bottom one. `html` already takes
+       these so the page content clears the notch, but a `position: fixed` bar is
+       laid out against the initial containing block and never sees that padding
+       — so in landscape on a notched iPhone the five tabs spread edge to edge
+       while the content above them sat inset, and the leftmost tab went under
+       the notch. Both are zero in portrait, so this changes nothing there. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   .mb-tab {
