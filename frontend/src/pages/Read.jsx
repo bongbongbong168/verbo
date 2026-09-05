@@ -16,6 +16,11 @@ import "./Read.css";
    every render. */
 const EMPTY = [];
 
+/* The filter row's non-topic value, kept as a constant so it can never collide
+   with a real `articles.category` — if someone ever publishes a topic called
+   "Trending", the pill and the topic would otherwise be the same string. */
+const TRENDING = "__trending";
+
 /* FORMAT, not topic. An article can be about culture and a story can be about
    travel, so the two answer different questions and are shown differently: the
    format is a small badge on the cover, the topic is the shelf the card sits
@@ -165,11 +170,31 @@ export default function Read() {
      shelving would hide the rest from someone who has already said which they
      want. */
   const filtering = activeCategory !== "all";
+  const isTrending = activeCategory === TRENDING;
 
-  const results = useMemo(
-    () => articles.filter((a) => a.category === activeCategory),
-    [articles, activeCategory],
-  );
+  const results = useMemo(() => {
+    /* Trending is the one pill that is not a topic. It is a different CUT of
+       the same library — "what are people actually reading" rather than "what
+       is this about" — which is why it sits beside All, the other pill that is
+       not a topic, instead of among the six that are.
+
+       Only articles with at least one like qualify. Ordering the whole library
+       by a column that is zero for most of it would just be the default list
+       under a heading that claims otherwise. Number() because a COUNT comes
+       back as a string from SQLite, and '10' - '9' would sort as strings. */
+    if (isTrending) {
+      return articles
+        .filter((a) => Number(a.likes_count ?? 0) > 0)
+        .sort(
+          (a, b) =>
+            Number(b.likes_count) - Number(a.likes_count) ||
+            // Equal likes: the newer one first, so the order is stable and
+            // does not fall back to whatever the database happened to return.
+            new Date(b.created_at) - new Date(a.created_at),
+        );
+    }
+    return articles.filter((a) => a.category === activeCategory);
+  }, [articles, activeCategory, isTrending]);
 
   const shelves = useMemo(
     () =>
@@ -236,6 +261,14 @@ export default function Read() {
           >
             All
           </button>
+          {/* Beside All, not among the topics — see the note on `results`. */}
+          <button
+            type="button"
+            className={"rd-pill" + (isTrending ? " active" : "")}
+            onClick={() => setActiveCategory(TRENDING)}
+          >
+            Trending
+          </button>
           {topics.map((t) => (
             <button
               key={t}
@@ -298,17 +331,24 @@ export default function Read() {
       ) : filtering ? (
         <section className="rd-shelf">
           <div className="rd-shelf-head">
-            <h2 className="rd-shelf-title">{activeCategory}</h2>
+            <h2 className="rd-shelf-title">
+              {isTrending ? "Trending" : activeCategory}
+            </h2>
           </div>
           {results.length > 0 && (
             <p className="rd-shelf-note">
               {results.length} {results.length === 1 ? "article" : "articles"}
-              {activeCategory !== "all" && ` in ${activeCategory}`}
+              {/* The ordering is stated, because it is not visible: the card
+                  carries no like count, so without this the grid is just a
+                  list in an order the reader cannot account for. */}
+              {isTrending ? " · most liked first" : ` in ${activeCategory}`}
             </p>
           )}
           {results.length === 0 ? (
             <p className="rd-empty">
-              Nothing here yet. Try another topic or a different word.
+              {isTrending
+                ? "No likes yet. Once readers start liking articles, the most liked appear here."
+                : "Nothing here yet. Try another topic or a different word."}
             </p>
           ) : (
             <div className="rd-row">
