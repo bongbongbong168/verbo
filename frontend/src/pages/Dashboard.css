@@ -1399,9 +1399,39 @@ a.db-course:hover {
 }
 
 @media (max-width: 820px) {
+  /* A SWIPE ROW, not a stack. One column meant three 380px teacher cards
+     stacked 658px deep, each with a big empty cover — you scrolled past the
+     section rather than choosing from it. Cards at 74% leave the next one
+     peeking, and that peek is the affordance: it is the same shape the Read
+     shelves take on a phone, so the two pages behave the same way under a
+     thumb.
+
+     No fade mask here, for that reason — a gradient over the edge would hide
+     the very peek that says the row moves. */
   .db-grid3 {
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* The cards carry a hover lift; scrolling clips to this box, so the row
+       needs the room back or the shadow is shaved off the bottom. */
+    padding-bottom: 6px;
   }
+
+  .db-grid3::-webkit-scrollbar {
+    display: none;
+  }
+
+  .db-grid3 > * {
+    flex: 0 0 74%;
+    scroll-snap-align: start;
+  }
+
+  /* The pick-up row is NOT touched here. mobile.css already turns it into a
+     real swipe strip below 767px with per-card widths worked out against the
+     study card's fixed 135px cover — a second implementation at a second
+     breakpoint is how the two would drift apart. */
 }
 
 .db-activity-empty {

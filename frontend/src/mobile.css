@@ -425,7 +425,8 @@
   }
 
   .db-pickup > .db-study,
-  .db-pickup > .db-pod {
+  .db-pickup > .db-pod,
+  .db-pickup > .db-read-tile {
     scroll-snap-align: start;
   }
 
@@ -442,6 +443,18 @@
   }
 
   .db-pickup > .db-pod {
+    flex: 0 0 190px;
+    width: 190px;
+    min-width: 190px;
+  }
+
+  /* The read tile is the same shape as the podcast card — cover over a short
+     meta stack — so it takes the same 190px. Without a rule of its own it fell
+     through to the desktop 3-up formula, `calc((100% - 40px) / 3)`, which on a
+     390px phone is a 113px card: narrower than its own cover, with the title
+     broken to four lines. Any new card type added to this row needs a width
+     here, or it inherits that same 3-up maths. */
+  .db-pickup > .db-read-tile {
     flex: 0 0 190px;
     width: 190px;
     min-width: 190px;

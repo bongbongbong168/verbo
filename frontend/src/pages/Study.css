@@ -125,7 +125,12 @@
 
 .st-stage {
   position: relative;
-  height: 420px;
+  /* The height follows the width, so a stage narrowed by a small screen does
+     not leave the shrunken books floating in a 420px box. Capped so it never
+     grows past the design's height once the width hits its 760px maximum. */
+  aspect-ratio: 760 / 420;
+  height: auto;
+  max-height: 420px;
   margin: 1rem auto 1.5rem;
   max-width: 760px;
   perspective: 1400px;
@@ -136,11 +141,28 @@
 
 .st-book {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 250px;
-  height: 355px;
-  margin: -177px 0 0 -125px;
+
+  /* Sized against the STAGE, not in fixed pixels.
+     The two neighbours are thrown out by a percentage of the card's OWN width
+     (62% plus an 11deg rotation, set in Study.jsx), so the whole fan is a
+     multiple of this one number: measured, the three cards span 2.95x the card
+     width. Fixed at 190px inside a 442px stage that came to 559.7px of books —
+     clipped by 58.8px on each side, which is the slice taken off HSK 1 and
+     HSK 3 on a narrow screen.
+     33% keeps the fan at 0.97 of the stage, so it always fits, and `min()`
+     holds the design's exact 250px everywhere the stage is at its 760px
+     maximum. Change the 62%/11deg in cardStyle() and this 33% has to move
+     with it. */
+  width: min(250px, 33%);
+  aspect-ratio: 250 / 355;
+  height: auto;
+
+  /* Centred by auto margins against zeroed insets, which needs no knowledge of
+     the rendered size. The old `top/left: 50%` with a hardcoded `-177px 0 0
+     -125px` was half of 355x250 written out by hand, and could not survive a
+     width that changes with the viewport. */
+  inset: 0;
+  margin: auto;
   padding: 0;
   border: none;
   background: none;
@@ -342,14 +364,7 @@
   }
 }
 
-@media (max-width: 720px) {
-  .st-stage {
-    height: 340px;
-  }
-
-  .st-book {
-    width: 190px;
-    height: 270px;
-    margin: -135px 0 0 -95px;
-  }
-}
+/* The old phone breakpoint here set a smaller fixed book (190x270) and a
+   shorter fixed stage. Both are gone: sizing the card against the stage covers
+   every width continuously, and a second hardcoded pair was exactly what made
+   474px — between the breakpoints — clip. */
