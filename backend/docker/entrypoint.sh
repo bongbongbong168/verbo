@@ -49,6 +49,35 @@ php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 
+# One-shot publish of the bundled content library (database/content/), OFF
+# unless CONTENT_IMPORT=1 is set on the service.
+#
+# It has to run HERE rather than through `railway run`, and the reason is not
+# convenience: `railway run` executes on the operator's own machine with these
+# env vars injected, so the rows would reach Postgres while the 34 images went
+# to their laptop's disk — leaving production with covers that 404. In here,
+# both land in the right place, because storage/app/public is already symlinked
+# onto the mounted volume by the block above.
+#
+# Gated rather than unconditional because the import upserts by id: left on, a
+# redeploy would quietly revert anything edited through the admin UI in
+# production. Set it, deploy once, then remove the variable.
+#
+# `|| echo` is load-bearing under `set -e`. A refusal — no admin account to own
+# the content, say — must never take the whole site down with it; the API is
+# more important than the library, and an empty shelf is recoverable while a
+# crash-looping container is not.
+if [ "${CONTENT_IMPORT:-0}" = "1" ]; then
+  echo "[verbo] CONTENT_IMPORT=1 — importing the bundled content library"
+  if [ -n "${CONTENT_OWNER:-}" ]; then
+    php artisan content:import --owner="${CONTENT_OWNER}" \
+      || echo "[verbo] content import did not complete; continuing boot"
+  else
+    php artisan content:import \
+      || echo "[verbo] content import did not complete; continuing boot"
+  fi
+fi
+
 # Railway assigns the port at run time, so Apache is pointed at it here rather
 # than in the image.
 sed -ri "s/^Listen [0-9]+/Listen ${PORT}/" /etc/apache2/ports.conf
