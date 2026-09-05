@@ -342,6 +342,9 @@
 }
 
 @media (max-width: 820px) {
+  /* The page gutter is NOT reduced here. Every page container in the app is in
+     one list in mobile.css for exactly that — `.sl` was simply missing from it,
+     which is where the fix belongs rather than in a 22nd private copy. */
   .sl-hero {
     flex-direction: column;
     align-items: flex-start;
@@ -351,12 +354,16 @@
     max-width: 100%;
   }
 
+  /* Smaller, and sitting closer under the copy. Stacked below the button at 70%
+     it was the biggest thing in the card and pushed the hero to 425px — most of
+     a phone screen spent before the first module. It is decoration standing in
+     for the level's cover, so it gives way to the text rather than the reverse. */
   .sl-hero-art {
     position: static;
     height: auto;
-    width: 70%;
-    max-width: 320px;
-    margin-top: 1.2rem;
+    width: 48%;
+    max-width: 170px;
+    margin-top: 0.15rem;
     align-self: flex-end;
   }
 

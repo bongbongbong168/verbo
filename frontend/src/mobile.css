@@ -105,6 +105,11 @@
   .se,
   .cl,
   .st,
+  /* The level page, and the same omission as `.td` above: left off this list it
+     kept the 90px desktop gutter on a 352px screen, so 180px of padding left
+     the hero 172px to stand in — a portrait sliver with its title broken to one
+     word a line. */
+  .sl,
   .un,
   .qp,
   .ss {
