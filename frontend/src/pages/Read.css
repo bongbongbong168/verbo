@@ -1653,6 +1653,25 @@
     align-items: flex-start;
   }
 
+  /* Once the card stacks, the cover is no longer a thumbnail BESIDE the text —
+     it is a band under it, and at a fixed 132px it read as a stray square
+     dropped below the chips rather than as the article's image. Full width on
+     the 16:9 every other cover in the app uses.
+
+     `!important` and the extra specificity are both needed: mobile.css pins the
+     width with `!important` of its own for the row layout at 721-767px, which
+     is still correct there — this only overrides it once the card is a column.
+     `.rd-featured .rd-thumb` is 0,2,0 against that rule's 0,1,0, so specificity
+     breaks the tie between the two importants. */
+  .rd-featured .rd-thumb,
+  .rd-featured .rd-thumb-lg {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
   .rd-topbar {
     justify-content: flex-start;
   }

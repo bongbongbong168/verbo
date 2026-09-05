@@ -831,14 +831,22 @@
    The mask only bites where the text actually reaches the right edge, so a
    short title is left completely untouched — no JS overflow detection needed,
    and nothing to get out of step with the real text width. */
+/* TWO LINES with a downward fade, replacing a single nowrap line that faded
+   sideways. Episode titles are authored "中文 - English" now — "在咖啡店点单 -
+   Ordering at the Coffee Shop" — and on one line the English half was always
+   the half that got cut, which is the half saying what the episode is about.
+   3.3em is 2.6em of text plus the 0.7em the fade needs below it, so a two-line
+   title is crisp and the softening only appears on a third. Both podcast cards
+   take this rule, so the pick-up tile and the one in the Podcasts grid stay the
+   same height as each other. */
 .db-pod-title {
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
-  white-space: nowrap;
+  height: 3.3em;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
 }
 
 .db-pod-author {
@@ -926,6 +934,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  /* The podcast and read cards both have this; the teacher card did not, and
+     that is the whole reason the sections did not line up. Given the same
+     `flex-basis: 74%`, content-box added its 20px of padding and 2px of border
+     ON TOP: the card rendered 272.9px against the podcast card's 250.9 in a row
+     of the same width, so every section edge below Recommend Teachers sat 22px
+     further right. */
+  box-sizing: border-box;
   padding: 10px 10px 12px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
@@ -1519,6 +1534,12 @@ a.db-course:hover {
   .db-grid3 > * {
     flex: 0 0 74%;
     scroll-snap-align: start;
+    /* `min-width: auto` is a flex item's default, so a card whose content is
+       wider than the basis simply ignores it: the teacher card measured 272.9
+       against the podcast card's 250.9 in the same row, which is why the two
+       sections did not line up. Flooring at 0 makes 74% mean 74% for every
+       card type. Same trap `.db-pickup > *` already carries a note about. */
+    min-width: 0;
   }
 
   /* The pick-up row is NOT touched here. mobile.css already turns it into a
