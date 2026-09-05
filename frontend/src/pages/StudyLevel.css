@@ -345,9 +345,39 @@
   /* The page gutter is NOT reduced here. Every page container in the app is in
      one list in mobile.css for exactly that — `.sl` was simply missing from it,
      which is where the fix belongs rather than in a 22nd private copy. */
+  /* The whole hero comes down a size on a narrow screen. Every value here is
+     the desktop one scaled, not a redesign: at full size the title alone was
+     35px and the card ran 339px tall — nearly half a phone screen spent on a
+     name and one line of description before the first module. `min-height` goes
+     with them, since a 256px floor on a card that no longer needs it is just
+     more empty orange. */
   .sl-hero {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1.5rem 1.4rem;
+    min-height: 0;
+  }
+
+  .sl-hero-pill {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.85rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .sl-hero-title {
+    font-size: 1.85rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .sl-hero-subtitle {
+    font-size: 0.88rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .sl-hero-btn {
+    font-size: 0.92rem;
+    padding: 0.55rem 1.25rem;
+    box-shadow: 0 4px 0 0 #000;
   }
 
   .sl-hero-content {
@@ -362,8 +392,17 @@
     position: static;
     height: auto;
     width: 48%;
-    max-width: 170px;
-    margin-top: 0.15rem;
+    /* Pulled UP into the button's row rather than stacking under it. The two
+       are on opposite sides — button left, art right — so they share the line,
+       which is what stops the card being so tall.
+
+       Sharing a line means they can now COLLIDE, and at 320px they did: the art
+       overlapped the button by 8.1px. So the cap is not a flat 170px but
+       whichever is smaller, 170 or the space left once the button has its own
+       130px plus a 20px gap. No extra breakpoint — the art simply cannot grow
+       into the button at any width. */
+    max-width: min(170px, calc(100% - 150px));
+    margin-top: -2.6rem;
     align-self: flex-end;
   }
 
