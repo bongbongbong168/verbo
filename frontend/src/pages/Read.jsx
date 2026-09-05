@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { useApiData } from "../useApiData";
 import { invalidate } from "../dataCache";
+import { TRENDING, byTrending } from "../trending";
 import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
@@ -15,11 +16,6 @@ import "./Read.css";
 /* Stable identity for an absent list, so dependent `useMemo`s do not re-run on
    every render. */
 const EMPTY = [];
-
-/* The filter row's non-topic value, kept as a constant so it can never collide
-   with a real `articles.category` — if someone ever publishes a topic called
-   "Trending", the pill and the topic would otherwise be the same string. */
-const TRENDING = "__trending";
 
 /* FORMAT, not topic. An article can be about culture and a story can be about
    travel, so the two answer different questions and are shown differently: the
@@ -173,26 +169,12 @@ export default function Read() {
   const isTrending = activeCategory === TRENDING;
 
   const results = useMemo(() => {
-    /* Trending is the one pill that is not a topic. It is a different CUT of
-       the same library — "what are people actually reading" rather than "what
-       is this about" — which is why it sits beside All, the other pill that is
-       not a topic, instead of among the six that are.
-
-       Only articles with at least one like qualify. Ordering the whole library
-       by a column that is zero for most of it would just be the default list
-       under a heading that claims otherwise. Number() because a COUNT comes
-       back as a string from SQLite, and '10' - '9' would sort as strings. */
-    if (isTrending) {
-      return articles
-        .filter((a) => Number(a.likes_count ?? 0) > 0)
-        .sort(
-          (a, b) =>
-            Number(b.likes_count) - Number(a.likes_count) ||
-            // Equal likes: the newer one first, so the order is stable and
-            // does not fall back to whatever the database happened to return.
-            new Date(b.created_at) - new Date(a.created_at),
-        );
-    }
+    /* Trending is the one pill here that is not a topic. It is a different CUT
+       of the same library — "what are people actually reading" rather than
+       "what is this about" — which is why it sits beside All, the other pill
+       that is not a topic, instead of among the six that are. The ordering
+       itself lives in src/trending.js, shared with the Dashboard. */
+    if (isTrending) return byTrending(articles);
     return articles.filter((a) => a.category === activeCategory);
   }, [articles, activeCategory, isTrending]);
 

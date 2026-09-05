@@ -5,6 +5,7 @@ import { api } from '../api'
 import { useApiData } from '../useApiData'
 import Skeleton, { SkeletonCards } from '../components/Skeleton'
 import ArticleCover from '../components/ArticleCover'
+import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
@@ -79,8 +80,13 @@ function shapeStudyTile(level, unit, progress) {
   }
 }
 
+/* FORMAT filters, plus Trending. The three formats are `articles.type` values;
+   All and Trending are not — they are the two entries that cut the list a
+   different way, which is why Trending sits next to All rather than after the
+   formats. Same arrangement as the Read page's topic row. */
 const READ_FILTERS = [
   { key: 'all', label: 'All' },
+  { key: TRENDING, label: 'Trending' },
   { key: 'article', label: 'Article' },
   { key: 'story', label: 'Story' },
   { key: 'funfact', label: 'Fun fact' },
@@ -519,10 +525,12 @@ export default function Dashboard() {
     return { tiles: tiles.slice(0, PICKUP_SLOTS), fromHistory }
   }, [recents, studyUnit, podcasts, levels])
 
-  const visibleReads = useMemo(
-    () => articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3),
-    [articles, readFilter],
-  )
+  const visibleReads = useMemo(() => {
+    // Shared with the Read page, so the same three articles lead in the same
+    // order on both — see src/trending.js.
+    if (readFilter === TRENDING) return byTrending(articles).slice(0, 3)
+    return articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3)
+  }, [articles, readFilter])
 
   /* The chart scales to the busiest day, so the tallest bar always fills it and
      the dashed average sits in proportion to the real bars. An earlier version
@@ -861,7 +869,13 @@ export default function Dashboard() {
                   <Skeleton style={{ height: 74 }} />
                 </>
               ) : visibleReads.length === 0 ? (
-                <p className="db-empty">No reads match that filter.</p>
+                /* Trending gets its own wording: "no reads match that filter"
+                   is untrue here — every read matches, none has been liked. */
+                <p className="db-empty">
+                  {readFilter === TRENDING
+                    ? 'No likes yet — the most liked reads will show up here.'
+                    : 'No reads match that filter.'}
+                </p>
               ) : (
                 visibleReads.map((a) => (
                   <Link className="db-read" key={a.id} to={`/read/${a.id}`}>
