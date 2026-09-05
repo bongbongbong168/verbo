@@ -31,7 +31,9 @@ use Illuminate\Support\Facades\Storage;
  */
 class ExportContent extends Command
 {
-    protected $signature = 'content:export {--out= : Directory to write to (default database/content)}';
+    protected $signature = 'content:export
+        {--out= : Directory to write to (default database/content)}
+        {--skip-level-category=* : study_levels.category values to leave out, with everything beneath them}';
 
     protected $description = 'Export the admin-authored library and its images for import elsewhere';
 
@@ -67,6 +69,30 @@ class ExportContent extends Command
         'study_culture_images' => ['path'],
     ];
 
+    /**
+     * Each study table's parent: [foreign key on this table, table it points at].
+     *
+     * This is what lets an exclusion CASCADE. Leaving out a level has to leave
+     * out its units, and their vocabulary, texts, lines, grammar, examples,
+     * quiz questions and culture images with it — a row kept behind its missing
+     * parent is a foreign key pointing at nothing, which the importer would
+     * either reject or, worse, quietly attach to whatever now holds that id.
+     *
+     * Since TABLES is walked parents-first, each entry only has to know its own
+     * parent; the ids that survived above are already resolved by the time a
+     * child is reached.
+     */
+    public const PARENTS = [
+        'study_units' => ['study_level_id', 'study_levels'],
+        'study_vocabularies' => ['study_unit_id', 'study_units'],
+        'study_texts' => ['study_unit_id', 'study_units'],
+        'study_text_lines' => ['study_text_id', 'study_texts'],
+        'study_grammar_points' => ['study_unit_id', 'study_units'],
+        'study_grammar_examples' => ['study_grammar_point_id', 'study_grammar_points'],
+        'study_quiz_questions' => ['study_unit_id', 'study_units'],
+        'study_culture_images' => ['study_unit_id', 'study_units'],
+    ];
+
     public function handle(): int
     {
         $out = $this->option('out') ?: database_path('content');
@@ -74,13 +100,45 @@ class ExportContent extends Command
 
         File::ensureDirectoryExists($filesDir);
 
-        $payload = ['exported_at' => now()->toIso8601String(), 'tables' => []];
+        $skip = array_filter((array) $this->option('skip-level-category'));
+
+        $payload = [
+            'exported_at' => now()->toIso8601String(),
+            // Recorded in the payload so a later reader can see what this
+            // export deliberately leaves out, rather than wondering whether
+            // the missing levels were a bug.
+            'skipped_level_categories' => array_values($skip),
+            'tables' => [],
+        ];
         $files = [];
 
+        // table => ids that survived, so each child can be narrowed to its
+        // surviving parents as the walk goes down.
+        $kept = [];
+
         foreach (self::TABLES as $table) {
-            $rows = DB::table($table)->orderBy('id')->get()
-                ->map(fn ($r) => (array) $r)
-                ->all();
+            $query = DB::table($table)->orderBy('id');
+
+            if ($table === 'study_levels' && $skip) {
+                $query->where(function ($q) use ($skip) {
+                    $q->whereNotIn('category', $skip)->orWhereNull('category');
+                });
+            }
+
+            if (isset(self::PARENTS[$table])) {
+                [$foreignKey, $parent] = self::PARENTS[$table];
+                // Only when the parent was actually narrowed — an unfiltered
+                // parent means nothing to carry down.
+                if (array_key_exists($parent, $kept)) {
+                    $query->whereIn($foreignKey, $kept[$parent] ?: [0]);
+                }
+            }
+
+            $rows = $query->get()->map(fn ($r) => (array) $r)->all();
+
+            if ($skip) {
+                $kept[$table] = array_column($rows, 'id');
+            }
 
             $payload['tables'][$table] = $rows;
             $this->line(sprintf('  %-26s %d', $table, count($rows)));
