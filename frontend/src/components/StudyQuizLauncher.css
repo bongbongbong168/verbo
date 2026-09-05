@@ -124,8 +124,18 @@
     height: 150px;
   }
 
+  /* NOT full width. `width: 100%` was here to stop the 250px min-width
+     overflowing a narrow card, but it overshot: a button stretched across the
+     whole card reads as a banner, and next to a centred illustration and two
+     centred lines of text it was the one element fighting the column. Dropping
+     the min-width alone solves the overflow — the label plus its padding is
+     already a comfortable target, and `max-width` keeps it inside the card at
+     any width. */
   .ql-start {
     min-width: 0;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    padding-left: 2.4rem;
+    padding-right: 2.4rem;
   }
 }

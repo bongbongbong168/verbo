@@ -176,6 +176,18 @@
   margin-bottom: 1.8rem;
 }
 
+/* A FIXED 289px track is right where several of them fit and line up on a
+   left edge, but it does not give the remainder back: in a 443px grid one
+   column left 154px of empty space beside every card, so the section read as
+   half-drawn. Below the phone boundary the tracks stretch instead — one column
+   fills the width, two share it once there is room for two. Desktop keeps the
+   exact 289px the design is drawn at. */
+@media (max-width: 767px) {
+  .pc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
 /* ---- episode card ---- */
 
 /* The 1px navy outline every other card in the app wears. Without it these

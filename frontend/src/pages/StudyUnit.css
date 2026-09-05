@@ -159,6 +159,12 @@
   -webkit-mask: radial-gradient(circle 87px at center, transparent 67.5px, #000 68.5px);
   mask: radial-gradient(circle 87px at center, transparent 67.5px, #000 68.5px);
   pointer-events: none;
+  /* It is texture on the banner, not an element of it. At full strength the
+     peach read as a solid object sitting in front of the subtitle rather than
+     behind it — and the title has to win that contest. Opacity rather than a
+     paler pair of stops so it stays one adjustment, whatever accent colour the
+     level behind it happens to be. */
+  opacity: 0.38;
 }
 
 /* ---- tab bar ---- */
@@ -1300,6 +1306,48 @@
 }
 
 @media (max-width: 767px) {
+  /* A fixed 174px ring is over half the width of a 320px banner, so it stopped
+     being a decoration in the corner and became a shape sitting across the
+     subtitle and the lesson pill. Smaller, and pushed further off the right
+     edge so only its curve shows — the same role it plays at full width. */
+  .un-hero-ring {
+    width: 116px;
+    height: 116px;
+    right: -34px;
+    -webkit-mask: radial-gradient(circle 58px at center, transparent 44px, #000 45px);
+    mask: radial-gradient(circle 58px at center, transparent 44px, #000 45px);
+  }
+
+  /* ---- vocabulary rows ----
+     Each row ran 154.8px tall, so ten words was 1,500px of scrolling. The type
+     comes down a step, but the real cost was the min-widths: 44 + 120 + 90 =
+     254px reserved across index, hanzi and pinyin, which on a 320px row left
+     the translation nothing and forced the line to wrap. They are floors for
+     the desktop table's columns and mean nothing once the row is this narrow. */
+  .un-vocab-row {
+    gap: 0.55rem;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .un-vocab-index {
+    font-size: 0.9rem;
+    min-width: 24px;
+  }
+
+  .un-vocab-hanzi {
+    font-size: 1.4rem;
+    min-width: 0;
+  }
+
+  .un-vocab-pinyin {
+    font-size: 0.82rem;
+    min-width: 0;
+  }
+
+  .un-vocab-translation {
+    font-size: 0.9rem;
+  }
+
   .un-lessonnav {
     gap: 0.6rem;
     padding: 0.7rem;
