@@ -403,32 +403,17 @@
   }
 
   /* ---- Dashboard: the pick-up row ----
-     `.db-study` is a fixed 327px — wider than the whole 296px row on a 390px
-     phone, so one card filled the strip and the rest were unreachable behind
-     the fade. On a phone the row becomes a real swipe strip: cards sized to the
-     screen, and touch scrolling so the ones past the edge can be reached.
+     The SCROLLING is not here any more. `.db-study` is a fixed 327px — wider
+     than the whole 296px row on a 390px phone — but that is true of every width
+     where the panel has dropped to one column, not just phones, so Dashboard.css
+     turns the row into a swipe strip from 1150px down and this layer would only
+     be repeating it. What stays here are the phone's own card widths, which are
+     narrower than the 190px floor the wider band uses.
 
-     `overflow-x: auto` forces `overflow-y` to compute to `auto` as well, which
-     would normally clip the cards' hover shadow — but the row already carries
-     14px/28px of vertical padding with a matching negative margin for exactly
-     that reason, so the shadow still has its room. */
-  .db-pickup {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-  }
-
-  .db-pickup::-webkit-scrollbar {
-    display: none;
-  }
-
-  .db-pickup > .db-study,
-  .db-pickup > .db-pod,
-  .db-pickup > .db-read-tile {
-    scroll-snap-align: start;
-  }
+     (For the record, since the reasoning is easy to lose: `overflow-x: auto`
+     forces `overflow-y` to compute to `auto` as well, which would normally clip
+     the cards' hover shadow — the row carries 14px/28px of vertical padding with
+     a matching negative margin for exactly that reason.) */
 
   /* 310, not 250. The cover is a fixed 135px and the card has 14px padding
      plus a 14px gap, so at 250 the text column was left with 73px — narrower

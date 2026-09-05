@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Verbo — design elements</title>
+<style>
+  @page { margin: 0; }
+  body {
+    margin: 0;
+    padding: 46px 54px 54px;
+    background: #fff;
+    color: #000;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    width: 980px;
+    box-sizing: border-box;
+  }
+  h1 {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 26px;
+    letter-spacing: 0.01em;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 30px;
+    column-gap: 8px;
+  }
+  .cell { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .ico { display: block; width: 30px; height: 30px; }
+  .ico svg { width: 100%; height: 100%; display: block; }
+  figcaption { font-size: 11.5px; color: #111; text-align: center; line-height: 1.2; }
+</style>
+<body>
+  <h1>Design elements:</h1>
+  <div class="grid">
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0) translate(12 12) scale(0.9412) translate(-12 -12)" stroke-width="1.806"> <path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-3.5v-6h-7v6H5A1.5 1.5 0 0 1 3.5 19z" /> </g></svg></span><figcaption>Home</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0.047) translate(12 12) scale(0.9412) translate(-12 -12)" stroke-width="1.806"> <path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h5.5a2 2 0 0 1 1.5.7 2 2 0 0 1 1.5-.7H19a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 19 19h-5.2a2 2 0 0 0-1.8.9 2 2 0 0 0-1.8-.9H5a1.5 1.5 0 0 1-1.5-1.5z" /> <path d="M12 4.7v15.2" /> </g></svg></span><figcaption>Learn</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0) translate(12 12) scale(0.9412) translate(-12 -12)" stroke-width="1.806"> <circle cx="12" cy="12" r="8.5" /> <path d="m15.2 8.8-1.9 4.5-4.5 1.9 1.9-4.5z" /> </g></svg></span><figcaption>Explore</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 -0.357) translate(12 12) scale(0.8934) translate(-12 -12)" stroke-width="1.903"> <circle cx="9" cy="8" r="3.2" /> <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /> <path d="M16 5.6a3.2 3.2 0 0 1 0 5.8" /> <path d="M18 14.9c1.8.9 3 2.7 3 4.6" /> </g></svg></span><figcaption>Tutor</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1.17 1.149) translate(12 12) scale(1.0539) translate(-12 -12)" stroke-width="1.613"> <path d="M14.8 3.6a5 5 0 0 0-6 6.6l-5 5a2 2 0 0 0 2.8 2.8l5-5a5 5 0 0 0 6.6-6l-3 3-2.4-2.4z" /> </g></svg></span><figcaption>Tools</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0) translate(12 12) scale(0.7426) translate(-12 -12)" stroke-width="2.289"> <circle cx="12" cy="12" r="3.2" /> <path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9.5a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88v.09a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1.03z" /> </g></svg></span><figcaption>Settings</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"> <circle cx="11" cy="11" r="6.5" /> <path d="m16 16 4.5 4.5" /> </svg></span><figcaption>Search</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"> <path d="M12 3 2.5 7.5 12 12l9.5-4.5L12 3z" /> <path d="M2.5 12 12 16.5 21.5 12" fill="none" /> <path d="M2.5 16.5 12 21l9.5-4.5" fill="none" /> </svg></span><figcaption>Study</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"> <rect x="9" y="3" width="6" height="11" rx="3" /> <path d="M5.5 11a6.5 6.5 0 0 0 13 0" /> <line x1="12" y1="17.5" x2="12" y2="21" /> </svg></span><figcaption>Podcast</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" > <line x1="4" y1="9" x2="16" y2="9" /> <line x1="8" y1="15" x2="20" y2="15" /> </svg></span><figcaption>Scan</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2.5 2.5 0 0 1 2 1 2.5 2.5 0 0 1 2-1h4.5A1.5 1.5 0 0 1 20 5.5v12a1.5 1.5 0 0 1-1.5 1.5H14a2.5 2.5 0 0 0-2 1 2.5 2.5 0 0 0-2-1H5.5A1.5 1.5 0 0 1 4 17.5z" /> <path d="M12 5v14" /> </svg></span><figcaption>Course</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /> <path d="M14 3v5h5" /> </svg></span><figcaption>Document</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M3.5 11.2V4.5a1 1 0 0 1 1-1h6.7a1 1 0 0 1 .7.3l8 8a1 1 0 0 1 0 1.4l-6.7 6.7a1 1 0 0 1-1.4 0l-8-8a1 1 0 0 1-.3-.7z" /> <circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none" /> </svg></span><figcaption>Topic</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" > <line x1="4" y1="7" x2="14" y2="7" /> <circle cx="17" cy="7" r="2" /> <line x1="10" y1="17" x2="20" y2="17" /> <circle cx="7" cy="17" r="2" /> </svg></span><figcaption>Filter</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 20.3 4.9 13a4.6 4.6 0 0 1 6.5-6.5l.6.6.6-.6A4.6 4.6 0 0 1 19.1 13z" /> </svg></span><figcaption>Save</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 20.3 4.9 13a4.6 4.6 0 0 1 6.5-6.5l.6.6.6-.6A4.6 4.6 0 0 1 19.1 13z" /> </svg></span><figcaption>Saved</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M6.8 3.8h10.4a1.3 1.3 0 0 1 1.3 1.3v15.1l-6.5-4.3-6.5 4.3V5.1a1.3 1.3 0 0 1 1.3-1.3z" /> </svg></span><figcaption>Bookmark</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M6.8 3.8h10.4a1.3 1.3 0 0 1 1.3 1.3v15.1l-6.5-4.3-6.5 4.3V5.1a1.3 1.3 0 0 1 1.3-1.3z" /> </svg></span><figcaption>Bookmarked</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M20.5 11.7a7.7 7.7 0 0 1-11.2 6.9L4 20l1.4-4.6a7.7 7.7 0 1 1 15.1-3.7z" /> </svg></span><figcaption>Comment</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M12 15.2V3.8" /> <path d="m8.3 7.5 3.7-3.7 3.7 3.7" /> <path d="M5 13.4v5.3a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-5.3" /> </svg></span><figcaption>Share</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" /> <path d="m14.5 6.5 3 3" /> </svg></span><figcaption>Edit</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"> <path d="M8.73 6.5v11c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L10.33 5.6c-.7-.4-1.6.1-1.6.9z" /> </svg></span><figcaption>Play</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"> <rect x="7" y="5" width="3.6" height="14" rx="1.2" /> <rect x="13.4" y="5" width="3.6" height="14" rx="1.2" /> </svg></span><figcaption>Pause</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 5a7.5 7.5 0 1 1-7.3 9.2" /> <polyline points="4.2 4.6 4.5 8.4 8.3 8.1" /> <text x="12" y="15.4" text-anchor="middle" font-size="7" fill="currentColor" stroke="none" font-weight="700">10</text> </svg></span><figcaption>Back 10s</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 5a7.5 7.5 0 1 0 7.3 9.2" /> <polyline points="19.8 4.6 19.5 8.4 15.7 8.1" /> <text x="12" y="15.4" text-anchor="middle" font-size="7" fill="currentColor" stroke="none" font-weight="700">10</text> </svg></span><figcaption>Forward 10s</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" > <path d="M11 5 6.5 9H3v6h3.5L11 19z" /> <path d="M15.5 8.5a5 5 0 0 1 0 7" /> <path d="M18 6a8.5 8.5 0 0 1 0 12" /> </svg></span><figcaption>Pronounce</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"> <path d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9z" /> </svg></span><figcaption>Rating</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg class="db-verified" viewBox="0 0 24 24" aria-label="Verified"> <path fill="currentColor" d="M12.00 1.00 L9.64 3.21 L6.50 2.47 L5.57 5.57 L2.47 6.50 L3.21 9.64 L1.00 12.00 L3.21 14.36 L2.47 17.50 L5.57 18.43 L6.50 21.53 L9.64 20.79 L12.00 23.00 L14.36 20.79 L17.50 21.53 L18.43 18.43 L21.53 17.50 L20.79 14.36 L23.00 12.00 L20.79 9.64 L21.53 6.50 L18.43 5.57 L17.50 2.47 L14.36 3.21 Z" /> <path d="M7.6 12.1 10.5 15 16.4 9.1" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /> </svg></span><figcaption>Verified</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" > <path d="M20 12a7.5 7.5 0 0 1-10.9 6.7L4 20l1.3-4.1A7.5 7.5 0 1 1 20 12z" /> </svg></span><figcaption>Message</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" > <rect x="3" y="5" width="18" height="16" rx="3" /> <path d="M8 3v4M16 3v4M3 10h18" /> </svg></span><figcaption>Schedule</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" > <circle cx="12" cy="12" r="8.5" /> <path d="M12 7.5V12l3 1.8" /> </svg></span><figcaption>Duration</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" /> <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" /> </svg></span><figcaption>Password</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M15 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v2" /> <path d="M19 12H10m9 0-3-3m3 3-3 3" /> </svg></span><figcaption>Log out</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" > <path d="M4 6.5h16M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7" /> <path d="M6.5 6.5 7.4 19a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.5" /> <path d="M10.5 10v6.5M13.5 10v6.5" /> </svg></span><figcaption>Delete</figcaption></figure>
+      <figure class="cell"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"> <circle cx="12" cy="5" r="1.6" /> <circle cx="12" cy="12" r="1.6" /> <circle cx="12" cy="19" r="1.6" /> </svg></span><figcaption>More</figcaption></figure>
+  </div>
+</body>

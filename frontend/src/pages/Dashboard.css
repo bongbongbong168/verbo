@@ -507,8 +507,13 @@
    takes that section's width rather than the pick-up row's own 209 — same
    formula as `.db-grid3` (three columns, 20px gaps) against the same panel
    width, so the two stay identical at any size instead of only matching here. */
+/* `max()` gives the design's three-up width on a full-width panel and a 190px
+   FLOOR everywhere else. Without the floor the fraction follows the panel down:
+   once the body drops to one column the panel is ~410px, and (100% - 40) / 3 is
+   a 102px card — narrower than its own cover, with the title in a 81px column.
+   190 is the same width the phone layer settled on for this card. */
 .db-pickup > .db-pod {
-  flex: 0 0 calc((100% - 40px) / 3);
+  flex: 0 0 max(190px, calc((100% - 40px) / 3));
 }
 
 /* A read tile takes the same width as a podcast tile — they are both a cover
@@ -518,7 +523,7 @@
    happens to put it, or the same article would look different depending on
    what you had clicked last. */
 .db-pickup > .db-read-tile {
-  flex: 0 0 calc((100% - 40px) / 3);
+  flex: 0 0 max(190px, calc((100% - 40px) / 3));
 }
 
 /* ---- study card (first "pick up" tile) ---- */
@@ -579,18 +584,34 @@
    the design and sit at one size whatever word is in them. `flex: none` is what
    holds it — as a flex child the box would otherwise shrink under a tight row.
    `place-items: center` keeps the label centred once the padding is gone. */
+/* 60px is a FLOOR now, not a fixed width.
+   The pair was sized for "Unit 1" and "HSK 3", and at a set 60px they stay
+   identical — which is the point of them, and still true, because both labels
+   sit inside 40px of content box. But a Daily Use level is named for its
+   situation, and "Ordering Food" needs 78px: at a fixed width the text simply
+   ran out of the pill and was sliced off by the card's edge mid-word.
+   Growing instead lets `.db-study-tags`, which already wraps, drop the longer
+   tag onto its own line rather than cut it. `text-overflow` is the backstop for
+   a name too long even for that. */
 .db-tag {
-  display: grid;
-  place-items: center;
+  display: block;
   flex: none;
   box-sizing: border-box;
-  width: 60px;
+  min-width: 60px;
+  max-width: 100%;
   height: 30px;
+  padding: 0 10px;
+  /* Vertical centring by line-height rather than `place-items`, because a grid
+     item cannot take `text-overflow`. Single-line by definition here. */
+  line-height: 30px;
+  text-align: center;
   border-radius: 8px;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Both tags carry a 2px stroke, each in a deeper cut of its own fill rather
@@ -882,7 +903,12 @@
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
-  height: 2.6em;
+  /* 3.3em for a TWO-line title: 2.6em of text plus the 0.7em the bottom fade
+     needs below it. Sized to the text exactly, the second line sits inside the
+     fade's ramp and comes out visibly greyer than the first — which is what
+     made a title that fits look like a title that had been cut. The phone card
+     does the same thing one line further down. */
+  height: 3.3em;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
@@ -1436,6 +1462,32 @@ a.db-course:hover {
 
   .db-grid3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* From here down the panel is one column and can no longer hold the row, so
+     the overflow has to be REACHABLE rather than merely hinted at. On a wide
+     screen the fade is enough — it says "there is more" beside a row you can
+     see most of — but at 410px the study card alone nearly fills the strip and
+     everything after it was unreachable.
+
+     The mask comes off with the same rule: a gradient over the edge hides the
+     peek of the next card, which is the thing that says the row moves. This is
+     where the phone layer's scrolling now comes from too. */
+  .db-pickup {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .db-pickup::-webkit-scrollbar {
+    display: none;
+  }
+
+  .db-pickup > * {
+    scroll-snap-align: start;
   }
 }
 
