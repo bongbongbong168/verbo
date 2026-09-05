@@ -460,6 +460,21 @@
     min-width: 190px;
   }
 
+  /* Three lines here, not the two it gets on a wide card. Read titles now
+     carry an English half as well as the Chinese, and at 190px two lines was
+     enough for about four words — "Why Chinese films happen at the 饭桌" faded
+     out mid-phrase. The card is in a scrolling row with `align-items:
+     flex-start`, so the extra line costs nothing but its own height. */
+  .db-read-tile-title {
+    /* 4.6em, not the 3.9 that three lines actually measure. The title fades
+       out over its bottom 10px, so a box sized to exactly three lines puts the
+       last one INSIDE the fade — "(dinner table)" came out visibly dimmer than
+       the two lines above it. The extra 0.7em is that ramp, moved below the
+       text, so three lines are crisp and the softening only appears when there
+       is genuinely a fourth. */
+    height: 4.65em;
+  }
+
   /* ---- Dashboard: hero ----
      253px of an 844px screen was going on the greeting before any content. */
   .db-hero {

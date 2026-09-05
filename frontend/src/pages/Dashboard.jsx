@@ -767,8 +767,26 @@ export default function Dashboard() {
               <div className="db-grid3">
                 {tutors.map((t) => (
                   <Link className="db-teacher" key={t.id} to={`/find-tutor/${t.id}`}>
-                    <span className="db-teacher-cover">
-                      {t.photo_url && <img src={t.photo_url} alt="" />}
+                    {/* A tutor with no photo used to be a plain grey block —
+                        the largest thing on the card, saying nothing. It gets
+                        a generated cover instead, the same answer the article
+                        shelves already use: a tone and the initial, oversized
+                        as texture rather than as something to read.
+
+                        The tone is keyed to the tutor's OWN id, not to the
+                        card's position, so a tutor looks the same on the
+                        Dashboard as anywhere else they appear. Number()
+                        because SQLite hands ids back as strings on list
+                        endpoints, and '3' % 5 would work by coercion while
+                        reading as a mistake. */}
+                    <span className="db-teacher-cover" data-tone={Number(t.id) % 5}>
+                      {t.photo_url ? (
+                        <img src={t.photo_url} alt="" />
+                      ) : (
+                        <span className="db-teacher-cover-mark" aria-hidden="true">
+                          {t.user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
                     </span>
                     <span className="db-teacher-head">
                       <span className="db-teacher-avatar">
