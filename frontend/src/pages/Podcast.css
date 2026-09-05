@@ -186,6 +186,53 @@
   .pc-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
+
+  /* ---- filters: one swipe row each, not four wrapped lines ----
+     Seven topics and four levels wrapped to four lines on a phone, which put
+     the first episode most of a screen down — the filters took more room than
+     the thing they filter. Each group is a single scrolling line now, the same
+     gesture the shelves and card rows on this page already use.
+
+     Pills stay pills rather than becoming a dropdown: the whole point of them
+     is that the list of what Verbo publishes is visible without a click, and
+     that is as true on a phone as it is on a desktop. */
+  .pc-topics,
+  .pc-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0.5rem;
+  }
+
+  .pc-topics::-webkit-scrollbar,
+  .pc-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* FULL BLEED to the page gutter, so the row runs to the screen edge and the
+     next pill is visibly cut by it — that peek is what says the row moves. A
+     row that stops neatly at the gutter just looks like a list that ends.
+     Only the topics row can do this: the levels row shares its line with the
+     admin button, so bleeding it would drag that off the edge too. */
+  .pc-topics {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Without `min-width: 0` the row's content floor is its full unwrapped width,
+     so it would push the button out of the card instead of scrolling. */
+  .pc-filters {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pc-filter {
+    flex: none;
+    font-size: 0.82rem;
+    padding: 0.44rem 0.85rem;
+  }
 }
 
 /* ---- episode card ---- */
