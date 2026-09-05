@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { fetchThrough, hasCache, isFresh, readCache } from '../dataCache'
+import Skeleton from './Skeleton'
 import './DailyUseList.css'
 
 /**
@@ -57,21 +59,33 @@ function SearchIcon() {
 
 export default function DailyUseList() {
   const { token } = useAuth()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  /* Seeded from the shared cache during the first render. This tab sits behind
+     a toggle on the Study page, so it mounts and unmounts every time the
+     reader flips between HSK and Daily Use — refetching the whole library on
+     each flip is exactly the waste the cache exists to remove. */
+  const [data, setData] = useState(() => readCache('daily-use') ?? null)
+  const [loading, setLoading] = useState(() => !hasCache('daily-use'))
   const [query, setQuery] = useState('')
   const [level, setLevel] = useState('all')
 
   useEffect(() => {
-    if (!token) return
+    if (!token) return undefined
     let live = true
-    setLoading(true)
-    api
-      .getDailyUse(token)
+
+    if (isFresh('daily-use')) {
+      setData(readCache('daily-use'))
+      setLoading(false)
+      return () => {
+        live = false
+      }
+    }
+
+    fetchThrough('daily-use', () => api.getDailyUse(token), { force: true })
       .then((d) => live && setData(d))
       // A failed shelf must not blank the page — the tab still renders its
-      // header and says there is nothing to show.
-      .catch(() => live && setData(null))
+      // header and says there is nothing to show. Only when we have nothing
+      // cached to fall back on, though.
+      .catch(() => live && !readCache('daily-use') && setData(null))
       .finally(() => live && setLoading(false))
     return () => {
       live = false
@@ -113,7 +127,16 @@ export default function DailyUseList() {
     })
   }, [all, query, level])
 
-  if (loading) return <p className="du-empty">Loading situations…</p>
+  if (loading)
+    return (
+      <div aria-busy="true">
+        <Skeleton style={{ height: 44, borderRadius: 12, marginBottom: '1.2rem' }} />
+        <Skeleton style={{ height: 18, width: 200, marginBottom: '0.9rem' }} />
+        <Skeleton style={{ height: 96, borderRadius: 14, marginBottom: '1.4rem' }} />
+        <Skeleton style={{ height: 18, width: 180, marginBottom: '0.9rem' }} />
+        <Skeleton style={{ height: 96, borderRadius: 14 }} />
+      </div>
+    )
 
   if (!groups.length) {
     return (

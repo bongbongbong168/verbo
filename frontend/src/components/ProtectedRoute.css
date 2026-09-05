@@ -1,0 +1,35 @@
+/* The app-boot gate. Prefix `pr-`.
+ *
+ * This is the FIRST thing anyone sees on a cold load, and it stays up until
+ * GET /user answers — which on the deployed API can stall for several seconds.
+ * It used to be a bare unstyled `<p>Loading...</p>` in the top-left corner of a
+ * white page, which reads as a broken site rather than a loading one.
+ *
+ * Static, like every other loading state in this app: no spinner, no pulse. An
+ * animation only advances while the tab composites frames, so a spinner that
+ * freezes says "hung" more loudly than no spinner at all. */
+
+.pr-boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: var(--app-vh);
+  background: #f9f8fe;
+  font-family: 'Hellix', system-ui, sans-serif;
+}
+
+.pr-boot-logo {
+  height: 38px;
+  width: auto;
+  /* Nudged up a touch: optical centre sits above geometric centre when the
+     only other element is a short line of text beneath it. */
+  margin-top: -2rem;
+}
+
+.pr-boot-note {
+  margin: 0;
+  color: #726c88;
+  font-size: 0.88rem;
+}

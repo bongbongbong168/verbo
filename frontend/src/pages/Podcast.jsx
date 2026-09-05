@@ -2,10 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import { useApiData } from "../useApiData";
+import { invalidate } from "../dataCache";
 import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
 import PodcastEditDrawer from "../components/PodcastEditDrawer";
+import { SkeletonCards } from "../components/Skeleton";
 import "./Podcast.css";
+
+/* Stable identity for an absent list — a fresh [] each render would re-run
+   every dependent useMemo. */
+const EMPTY = [];
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
@@ -75,9 +82,13 @@ function EpisodeCard({ episode }) {
 
 export default function Podcast() {
   const { token, user } = useAuth();
-  const [podcasts, setPodcasts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  /* Same cache key the Dashboard uses for this list, so arriving from there
+     paints instantly rather than refetching what is already in hand. */
+  const podcastQuery = useApiData("podcasts", () => api.getPodcasts(token));
+  const podcasts = podcastQuery.data || EMPTY;
+  const loading = podcastQuery.loading;
+  const error = podcastQuery.error?.message || null;
+
   const [activeLevel, setActiveLevel] = useState("all");
   const [activeTopic, setActiveTopic] = useState("all");
   /* The episode fields, the cropper and the object-URL lifecycle all moved
@@ -85,25 +96,15 @@ export default function Podcast() {
      the drawer is open. */
   const [showForm, setShowForm] = useState(false);
 
-  useEffect(() => {
-    loadPodcasts();
-  }, [token]);
-
-  function loadPodcasts() {
-    setLoading(true);
-    api
-      .getPodcasts(token)
-      .then(setPodcasts)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }
-
   /* Throws on failure so the drawer keeps the message next to the fields that
      caused it, rather than putting it on the page behind an open panel. */
   async function handleCreate(values) {
     await api.createPodcast(token, values);
     setShowForm(false);
-    loadPodcasts();
+    // Drop the list and every cached episode, so nothing still holds a
+    // pre-publish copy of the library.
+    invalidate("podcasts", "podcast:");
+    podcastQuery.refresh();
   }
 
   // Only offer level filters that actually have episodes.
@@ -222,7 +223,7 @@ export default function Podcast() {
       )}
 
       {loading ? (
-        <p className="pc-empty">Loading...</p>
+        <SkeletonCards className="pc-grid" count={6} mediaHeight={128} />
       ) : visible.length === 0 ? (
         <p className="pc-empty">No episodes yet.</p>
       ) : (

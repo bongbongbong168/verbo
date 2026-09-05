@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
+import Skeleton, { SkeletonText } from '../components/Skeleton'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
 import WordPopover from '../components/WordPopover'
@@ -139,32 +141,66 @@ export default function StudyUnit() {
     loadUnit()
   }, [token, id])
 
+  /* Seeded from the shared cache rather than converted to `useApiData`: the
+     unit lives in BOTH state and a ref (the Alt+1 listener reads the ref to
+     dodge a stale closure) and is rewritten by the edit drawer, so priming the
+     initial value is the surgical change. Reopening a lesson then paints
+     immediately instead of waiting on a request that may stall for seconds. */
   function loadUnit() {
-    setLoading(true)
+    const key = `study-unit:${id}`
+    const cached = readCache(key)
+
+    /* A Daily Use lesson opens on its CONVERSATION, not on the word list. The
+       situation is the point — you came here to learn how the exchange goes,
+       and the vocabulary is what you pick up on the way. An HSK lesson is the
+       other way round: the words are the syllabus and the passage is practice,
+       so it keeps Vocabulary first.
+
+       Applied at most ONCE per load, which is why the flag exists: on the
+       stale-cache path the unit arrives twice (cache, then the refetch), and
+       setting the tab again on the second arrival would yank the reader off a
+       tab they had since chosen for themselves. */
+    let tabApplied = false
+    const applyTab = (data) => {
+      if (tabApplied) return
+      tabApplied = true
+      if (data.level?.category === 'daily' && (data.texts || []).length) {
+        setActiveTab('reading')
+      }
+    }
+
+    if (cached) {
+      setUnit(cached)
+      unitRef.current = cached
+      applyTab(cached)
+      setLoading(false)
+      if (isFresh(key)) {
+        // Opening it again is a real visit, and the Dashboard's recency row is
+        // built from exactly this — so record it and drop that cached row.
+        api.recordView(token, 'study_unit', id).catch(() => {})
+        invalidate('recent-views:3')
+        return
+      }
+    } else {
+      setLoading(true)
+    }
+
     api
       .getStudyUnit(token, id)
       .then((data) => {
         setUnit(data)
         // Mirrored for the Alt+1 listener, which cannot see this state.
         unitRef.current = data
-
-        /* A Daily Use lesson opens on its CONVERSATION, not on the word list.
-           The situation is the point — you came here to learn how the exchange
-           goes, and the vocabulary is what you pick up on the way. An HSK
-           lesson is the other way round: the words are the syllabus and the
-           passage is practice, so it keeps Vocabulary first.
-
-           Set here rather than in an effect so it happens once, on load, and
-           cannot fight a tab the reader has since chosen for themselves. */
-        if (data.level?.category === 'daily' && (data.texts || []).length) {
-          setActiveTab('reading')
-        }
+        writeCache(key, data)
+        applyTab(data)
         // Record the visit so the Dashboard's "Pick up where you left off"
         // tile can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
         api.recordView(token, 'study_unit', id).catch(() => {})
+        invalidate('recent-views:3')
       })
-      .catch((err) => setError(err.message))
+      // Only a failure that leaves the page with nothing is worth showing.
+      .catch((err) => !unitRef.current && setError(err.message))
       .finally(() => setLoading(false))
   }
 
@@ -299,7 +335,15 @@ export default function StudyUnit() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [token])
 
-  if (loading) return <p className="un-empty">Loading...</p>
+  if (loading)
+    return (
+      <div className="un">
+        <Skeleton style={{ height: 15, width: 210, marginBottom: '1.3rem' }} />
+        <Skeleton style={{ height: 32, width: '52%', marginBottom: '1.2rem' }} />
+        <Skeleton style={{ height: 40, borderRadius: 10, marginBottom: '1.4rem' }} />
+        <SkeletonText lines={8} />
+      </div>
+    )
   if (error && !unit) return <p className="un-error">{error}</p>
   if (!unit) return null
 
@@ -841,7 +885,19 @@ export default function StudyUnit() {
           token={token}
           unit={unit}
           initialTab={activeLabel}
-          onChange={(updated) => setUnit((prev) => ({ ...prev, ...updated }))}
+          /* Merged into the cache as well as the state, or leaving the page and
+             coming back inside the freshness window would restore the
+             pre-edit unit. `StudyUnitController::update` returns the bare
+             model with no relations, which is why this merges rather than
+             replaces — assigning it wholesale would wipe vocabulary/texts. */
+          onChange={(updated) => {
+            setUnit((prev) => {
+              const next = { ...prev, ...updated }
+              unitRef.current = next
+              writeCache(`study-unit:${id}`, next)
+              return next
+            })
+          }}
           onClose={() => setShowEdit(false)}
         />
       )}

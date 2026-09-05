@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import graduateIllustration from '../assets/login/graduate-illustration.png'
 import verboLogo from '../assets/sidebar/logo.png'
+import feather from '../assets/signup/feather.png'
 import EyeIcon from '../components/EyeIcon'
 import GoogleSignInButton, { googleConfigured } from '../components/GoogleSignInButton'
 import './Login.css'
@@ -34,7 +34,7 @@ export default function Login() {
     <div className="lg">
       <div className="lg-panel">
         <img className="lg-panel-logo" src={verboLogo} alt="Verbo" />
-        <img className="lg-illustration" src={graduateIllustration} alt="" />
+        <img className="lg-feather" src={feather} alt="" />
         <div className="lg-panel-text">
           <h1 className="lg-welcome">Welcome !</h1>
           <p className="lg-welcome-subtitle">Sign in to continue your journey.</p>

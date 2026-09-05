@@ -2,9 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { useApiData } from '../useApiData'
+import { invalidate } from '../dataCache'
 import DailyUseList from '../components/DailyUseList'
 import StudyEditDrawer from '../components/StudyEditDrawer'
+import Skeleton from '../components/Skeleton'
 import './Study.css'
+
+/* Stable identity for an absent list — a fresh [] each render would re-run
+   every dependent useMemo. */
+const EMPTY = []
 
 const CATEGORIES = [
   { key: 'hsk', label: 'HSK' },
@@ -40,9 +47,12 @@ export default function Study() {
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
-  const [levels, setLevels] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  /* Same cache key the Dashboard uses for this list. */
+  const levelQuery = useApiData('study-levels', () => api.getStudyLevels(token))
+  const levels = levelQuery.data || EMPTY
+  const loading = levelQuery.loading
+  const error = levelQuery.error?.message || null
+
   const [category, setCategory] = useState('hsk')
   const [active, setActive] = useState(0)
   const [showForm, setShowForm] = useState(false)
@@ -50,24 +60,14 @@ export default function Study() {
   /* The new-level fields live in StudyEditDrawer now — this page only tracks
      whether it is open. */
 
-  useEffect(() => {
-    loadLevels()
-  }, [token])
-
-  function loadLevels() {
-    setLoading(true)
-    api
-      .getStudyLevels(token)
-      .then(setLevels)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }
-
   /* Throws on failure so the drawer keeps the message beside the fields. */
   async function handleCreate(values) {
     await api.createStudyLevel(token, values)
     setShowForm(false)
-    loadLevels()
+    // The list and every cached level detail, since a new level changes which
+    // one the Dashboard's fallback tile features.
+    invalidate('study-levels', 'study-level:')
+    levelQuery.refresh()
   }
 
   const visible = useMemo(
@@ -228,7 +228,9 @@ export default function Study() {
       {category === 'daily' ? (
         <DailyUseList />
       ) : loading ? (
-        <p className="st-empty">Loading...</p>
+        /* One block the height of the carousel, so the page does not collapse
+           and then jump when the levels land. */
+        <Skeleton style={{ height: 300, borderRadius: 18 }} />
       ) : count === 0 ? (
         <p className="st-empty">No levels in HSK yet.</p>
       ) : (

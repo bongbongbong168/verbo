@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { fetchThrough, isFresh, readCache, writeCache } from '../dataCache'
 /* The dot-free variant of the export. The original bakes in a lavender
    notification dot AND cuts a notch out of the bell to seat it, so it could
    never turn off — it would claim unread items at zero. The red count badge
@@ -15,6 +16,10 @@ import './NotificationMenu.css'
    and a tight poll would burn the shared 300/min bucket for a number that is
    only ever a few minutes stale. */
 const POLL_MS = 60000
+
+/* Shared with nothing else, but held in the app-wide cache so the count
+   survives the remount that every page navigation causes. */
+const UNREAD_KEY = 'notifications:unread'
 
 /** The number of rows the dropdown shows before "View all". */
 const PREVIEW = 5
@@ -30,19 +35,30 @@ export default function NotificationMenu() {
   const wrapRef = useRef(null)
   const buttonRef = useRef(null)
 
-  const loadCount = useCallback(() => {
-    api
-      .getUnreadNotifications(token)
-      .then((d) => setUnread(d.unread))
-      // A failed count must never surface — the bell just keeps its last value.
-      .catch(() => {})
-  }, [token])
+  /* Cached, because this bell renders on EVERY page and therefore remounts on
+     every navigation — which restarted the interval and refired the request,
+     turning a one-minute poll into one request per page switch. Reusing a count
+     younger than the poll interval also stops the badge blinking off and back
+     on as you move between pages. */
+  const loadCount = useCallback(
+    (force = false) => {
+      if (!force && isFresh(UNREAD_KEY, POLL_MS)) {
+        setUnread(readCache(UNREAD_KEY)?.unread ?? 0)
+        return
+      }
+      fetchThrough(UNREAD_KEY, () => api.getUnreadNotifications(token), { force: true })
+        .then((d) => setUnread(d.unread))
+        // A failed count must never surface — the bell keeps its last value.
+        .catch(() => {})
+    },
+    [token],
+  )
 
   // The badge is the only thing polled. The list itself loads on open.
   useEffect(() => {
     if (!token) return
     loadCount()
-    const id = setInterval(loadCount, POLL_MS)
+    const id = setInterval(() => loadCount(true), POLL_MS)
     return () => clearInterval(id)
   }, [token, loadCount])
 
@@ -117,9 +133,13 @@ export default function NotificationMenu() {
     setItems((list) => list.map((x) => (x.read_at ? x : { ...x, read_at: new Date() })))
     try {
       await api.markAllNotificationsRead(token)
+      // Through the cache too, or navigating away and back inside the poll
+      // window would restore the count we just cleared.
+      writeCache(UNREAD_KEY, { unread: 0 })
     } catch {
       // Put the real number back rather than leaving a cleared badge that lies.
-      loadCount()
+      // Forced: the cached count is precisely what cannot be trusted here.
+      loadCount(true)
     }
   }
 
@@ -139,11 +159,12 @@ export default function NotificationMenu() {
     setUnread(0)
     try {
       await api.clearAllNotifications(token)
+      writeCache(UNREAD_KEY, { unread: 0 })
     } catch {
       // Put the list back rather than leaving an empty panel that lies about
       // what the server holds.
       setItems(previous)
-      loadCount()
+      loadCount(true)
     }
   }
 

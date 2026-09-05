@@ -1,11 +1,24 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import verboLogo from '../assets/sidebar/logo.png'
+import './ProtectedRoute.css'
 
 export default function ProtectedRoute({ children }) {
   const { token, user, loading } = useAuth()
   const { pathname } = useLocation()
 
-  if (loading) return <p>Loading...</p>
+  /* Held here until GET /user answers, which is the one request nothing can be
+     rendered ahead of — we do not yet know whether this person is signed in.
+     On the deployed API that call can stall for seconds, so it is worth being
+     a branded panel rather than the bare `<p>Loading...</p>` this replaced. */
+  if (loading) {
+    return (
+      <div className="pr-boot">
+        <img className="pr-boot-logo" src={verboLogo} alt="Verbo" />
+        <p className="pr-boot-note">Signing you in…</p>
+      </div>
+    )
+  }
   if (!token) return <Navigate to="/login" replace />
 
   /* A brand-new account has not answered the onboarding questions yet, so it

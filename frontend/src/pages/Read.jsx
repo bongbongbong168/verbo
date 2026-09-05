@@ -1,23 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import { useApiData } from "../useApiData";
+import { invalidate } from "../dataCache";
 import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import { BookmarkIcon } from "../components/ArticleIcons";
+import ArticleCover from "../components/ArticleCover";
+import Skeleton, { SkeletonCards } from "../components/Skeleton";
 import "./Read.css";
+
+/* Stable identity for an absent list, so dependent `useMemo`s do not re-run on
+   every render. */
+const EMPTY = [];
 
 /* FORMAT, not topic. An article can be about culture and a story can be about
    travel, so the two answer different questions and are shown differently: the
    format is a small badge on the cover, the topic is the shelf the card sits
    on. Collapsing them into one list is what put "Grammar" beside
    "Entertainment" as if a reader were choosing between them. */
-const TYPE_LABELS = {
-  article: "Article",
-  story: "Story",
-  funfact: "Fun fact",
-};
+/* TYPE_LABELS moved to components/ArticleCover.jsx along with the badge that
+   renders it. */
 
 /* The shelf order. Everyday Chinese leads because it is the one that answers
    "how is this language actually used", which is the reason most people are
@@ -39,33 +44,10 @@ const TOPIC_ORDER = [
    rather than leaving one empty track at the end. */
 const SHELF_SIZE = 4;
 
-/* A cover for every article without anyone uploading one.
- *
- * Photography is the one part of this page that cannot be derived from the
- * text, and 15 of 18 articles had none — so every shelf was a column of the
- * same lavender block and the page read as unfinished. These are not fake
- * photos: each topic gets its own gradient and the character it turns on, so a
- * cover says which shelf you are looking at rather than pretending to depict
- * something.
- *
- * An uploaded image still wins wherever one exists. This is the floor, not a
- * replacement — the moment a real photo is attached to an article it takes
- * over.
- *
- * The key is the topic, so a topic with no entry here still gets the default
- * pairing rather than a blank cover. */
-const TOPIC_ART = {
-  "Everyday Chinese": "日",
-  Culture: "文",
-  Entertainment: "乐",
-  Stories: "事",
-  Travel: "行",
-  Business: "商",
-};
-
-function topicKey(category) {
-  return TOPIC_ART[category] ? category.toLowerCase().replace(/\s+/g, "-") : "default";
-}
+/* The generated cover moved to components/ArticleCover.jsx, so the Dashboard's
+   "Pick up where you left off" tile can wear the same one. Its glyph placement
+   is still overridden here — see the `.rd-tile:nth-child` rules in Read.css —
+   because alternating the offset only means anything inside a shelf. */
 
 function ChevronIcon() {
   return (
@@ -92,20 +74,7 @@ function ChevronIcon() {
 function ArticleCard({ a }) {
   return (
     <Link className="rd-tile" to={`/read/${a.id}`}>
-      <div className="rd-tile-media" data-topic={topicKey(a.category)}>
-        {a.image_url ? (
-          <img src={a.image_url} alt="" />
-        ) : (
-          /* aria-hidden: it is a texture standing in for a photograph, and a
-             screen reader announcing a lone character here would be noise. */
-          <span className="rd-tile-glyph" aria-hidden="true">
-            {TOPIC_ART[a.category] || "读"}
-          </span>
-        )}
-        <span className="rd-tile-format">
-          {TYPE_LABELS[a.type] || a.type}
-        </span>
-      </div>
+      <ArticleCover article={a} />
       <div className="rd-tile-body">
         <p className="rd-tile-meta">
           {[a.category, a.hsk_level].filter(Boolean).join(" · ")}
@@ -143,34 +112,26 @@ function Shelf({ title, items, onViewAll, note }) {
 
 export default function Read() {
   const { token, user } = useAuth();
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("all");
-  const [recommended, setRecommended] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
-  useEffect(() => {
-    loadArticles();
+  /* Deliberately the SAME cache key the Dashboard uses for this list, so
+     arriving here from the Dashboard paints instantly instead of refetching a
+     list already in hand. */
+  const articleQuery = useApiData("articles", () => api.getArticles(token));
 
-    /* Fails soft and silently. The recommender needs learning preferences to
-       score against, so a brand-new account legitimately gets nothing back —
-       that is an empty shelf, not an error worth putting on screen above a page
-       full of other things to read. */
-    api
-      .getRecommendedArticles(token, { limit: SHELF_SIZE })
-      .then(setRecommended)
-      .catch(() => setRecommended([]));
-  }, [token]);
+  /* Fails soft and silently. The recommender needs learning preferences to
+     score against, so a brand-new account legitimately gets nothing back —
+     that is an empty shelf, not an error worth putting on screen above a page
+     full of other things to read. */
+  const recommendedQuery = useApiData(`articles:recommended:${SHELF_SIZE}`, () =>
+    api.getRecommendedArticles(token, { limit: SHELF_SIZE }).catch(() => []),
+  );
 
-  function loadArticles() {
-    setLoading(true);
-    api
-      .getArticles(token)
-      .then(setArticles)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }
+  const articles = articleQuery.data || EMPTY;
+  const recommended = recommendedQuery.data || EMPTY;
+  const loading = articleQuery.loading;
+  const error = articleQuery.error?.message || null;
 
   /* The drawer owns the fields, the busy flag and the error; this only has to
      say what happens on success. It rethrows so the drawer can show the
@@ -179,7 +140,12 @@ export default function Read() {
   async function handleCreate(values) {
     await api.createArticle(token, values);
     setShowForm(false);
-    loadArticles();
+    /* Drop every cached view of the article library — the list, the
+       recommendations and any single article — so the new piece cannot be
+       missing from a page that still holds a pre-publish copy. */
+    invalidate("articles", `articles:recommended:${SHELF_SIZE}`, "article:");
+    articleQuery.refresh();
+    recommendedQuery.refresh();
   }
 
   /* Only the topics that have something published, in the order above. The
@@ -316,7 +282,19 @@ export default function Read() {
       </div>
 
       {loading ? (
-        <p className="rd-empty">Loading...</p>
+        /* Two shelves' worth of card shapes rather than the word "Loading" —
+           the page keeps its height and rhythm, so nothing jumps when the real
+           cards arrive in their place. */
+        <>
+          {[0, 1].map((i) => (
+            <section className="rd-shelf" key={i}>
+              <div className="rd-shelf-head">
+                <Skeleton className="rd-shelf-title" style={{ width: 168, height: 20 }} />
+              </div>
+              <SkeletonCards className="rd-row" count={4} mediaHeight={132} />
+            </section>
+          ))}
+        </>
       ) : filtering ? (
         <section className="rd-shelf">
           <div className="rd-shelf-head">

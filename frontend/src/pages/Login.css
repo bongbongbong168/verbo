@@ -16,13 +16,17 @@
   box-sizing: border-box;
 }
 
+/* The same shell Register and Onboarding wear — one gradient and one feather
+   across all three, so signing in, signing up and setting up read as one flow.
+   Login used to carry its own pair of radial gradients over #060508 and a
+   graduate illustration centred in the panel, which made it the odd screen out.
+   `overflow: hidden` is what keeps the feather inside the 24px corners. */
 .lg-panel {
   position: relative;
+  overflow: hidden;
   flex: 0 0 42%;
   max-width: 520px;
-  background:
-    radial-gradient(65% 35% at 28% 0%, #2a0049 0%, transparent 65%),
-    radial-gradient(70% 45% at 95% 100%, rgba(43, 38, 67, 0.9) 0%, transparent 70%), #060508;
+  background: linear-gradient(180deg, #0d0d0d 0%, #060506 50%, #1a0230 75%, #2a004b 100%);
   border-radius: 24px;
   padding: 2.4rem;
   display: flex;
@@ -39,19 +43,22 @@
   width: auto;
 }
 
-.lg-illustration {
-  position: relative;
-  z-index: 1;
-  width: 115%;
-  max-width: 600px;
-  height: auto;
-  align-self: center;
-  margin-bottom: 1rem;
+.lg-feather {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  max-width: 55%;
+  object-fit: cover;
+  pointer-events: none;
 }
 
+/* Held off the feather, exactly as Register holds its own. */
 .lg-panel-text {
   position: relative;
   z-index: 1;
+  max-width: 60%;
 }
 
 .lg-welcome {
@@ -249,7 +256,21 @@
     flex-direction: column;
   }
 
+  /* Same as Register: stacked, `flex: 0 0 42%` resolves against the height and
+     reserves 42% of the viewport, so the panel sizes to its content instead. */
   .lg-panel {
+    flex: none;
     max-width: none;
+    justify-content: flex-start;
+  }
+
+  /* And the logo leaves the absolute layer, or the short panel brings the
+     content up underneath it. `align-self: flex-start` is load-bearing — a flex
+     item stretches by default, which beats `width: auto` and squashes it. */
+  .lg-panel-logo {
+    position: static;
+    align-self: flex-start;
+    flex: none;
+    margin-bottom: 1.2rem;
   }
 }

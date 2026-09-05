@@ -335,110 +335,25 @@
   box-shadow: 0 8px 20px rgba(28, 23, 48, 0.1);
 }
 
-.rd-tile-media {
-  position: relative;
-  /* A ratio, not a height: the cover is the one part of the card that can be
-     sized proportionally, so it holds its shape at every column width. */
-  aspect-ratio: 16 / 9;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: linear-gradient(135deg, #cfc6ef, #a99ce0);
-}
-
 /* ---- generated covers ----
-   Every topic has its own gradient and character, so an article with no
-   uploaded photo still gets a cover that says which shelf it is on. Six pairs
-   drawn from the app's own palette rather than six arbitrary colours — each is
-   a two-stop ramp in one hue family, and none of them stray from the lavender
-   the rest of the page is built on far enough to read as a different product.
+   The cover itself now lives in components/ArticleCover.css (`.ac`), so the
+   Read shelves and the Dashboard's pick-up tile draw it from one set of rules
+   rather than two copies of six gradients.
 
-   An uploaded image is absolutely positioned over the top, so it covers this
-   completely wherever one exists. */
-.rd-tile-media[data-topic="everyday-chinese"] {
-  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
-}
-
-.rd-tile-media[data-topic="culture"] {
-  background: linear-gradient(135deg, #eba98f, #d1734f);
-}
-
-.rd-tile-media[data-topic="entertainment"] {
-  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
-}
-
-.rd-tile-media[data-topic="stories"] {
-  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
-}
-
-.rd-tile-media[data-topic="travel"] {
-  background: linear-gradient(135deg, #92c9c0, #5c9c92);
-}
-
-.rd-tile-media[data-topic="business"] {
-  background: linear-gradient(135deg, #a8a2c4, #6f6893);
-}
-
-/* Oversized and cropped by the cover's own overflow, so it reads as a texture
-   rather than as a character someone is meant to read. Hellix carries NO CJK
-   glyphs, so the stack has to fall through to a font that does — listing
-   Hellix first here would silently hand every cover to the browser's default
-   CJK face instead of Douyin Sans. */
-.rd-tile-glyph {
-  font-family: "Douyin Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
-    sans-serif;
-  font-size: 5.6rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.34);
-  user-select: none;
-  transform: translate(18%, 6%);
-}
-
-/* Three placements cycling across the row. A single fixed offset was not
-   enough: a shelf whose cards share a topic — which Recommended often is —
-   showed the same glyph in the same spot three times and read as one image
-   repeated. Positional, not derived from the article, because the point is
-   only to break the repetition; keying it to the id would make the same
-   article look different depending on which shelf you met it on. */
-.rd-tile:nth-child(3n + 2) .rd-tile-glyph {
+   What stays here is the ONE part that is genuinely Read's: the glyph's
+   alternating placement. A single fixed offset was not enough — a shelf whose
+   cards share a topic, which Recommended often is, showed the same character
+   in the same spot three times and read as one image repeated. It is
+   positional rather than derived from the article, because the point is only
+   to break the repetition; keying it to the id would make the same article
+   look different depending on which shelf you met it on. None of that means
+   anything outside a shelf, which is why it did not move. */
+.rd-tile:nth-child(3n + 2) .ac-glyph {
   transform: translate(-20%, -10%) rotate(-8deg);
 }
 
-.rd-tile:nth-child(3n) .rd-tile-glyph {
+.rd-tile:nth-child(3n) .ac-glyph {
   transform: translate(24%, -14%) rotate(6deg);
-}
-
-/* Taken OUT OF FLOW, not just sized. `height: 100%` resolves against a parent
-   whose height comes from `aspect-ratio`, which is not a definite height — so
-   it fell back to `auto` and the image rendered at its own intrinsic ratio,
-   growing the box it was supposed to fill. A shelf holding one photographed
-   article measured 505px against its neighbours' 292px. Absolute positioning
-   is what makes the cover unable to size its own container.
-   (Same family as the profile avatar's `aspect-ratio: 1` fix.) */
-.rd-tile-media img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* The FORMAT — article / story / fun fact — sits on the cover rather than in
-   the text block, because the line beneath is the topic and level, and running
-   all three together read as one long undifferentiated string. */
-.rd-tile-format {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--rd-text);
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 7px;
-  padding: 4px 8px 5px;
 }
 
 .rd-tile-body {

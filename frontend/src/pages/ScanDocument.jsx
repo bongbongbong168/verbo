@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { exampleFor } from "../sentence";
+import { invalidate, isFresh, readCache, writeCache } from "../dataCache";
+import Skeleton, { SkeletonText } from "../components/Skeleton";
 import WordPopover from "../components/WordPopover";
 import swooshLarge from "../assets/scan/swoosh-large.png";
 import swooshSmall from "../assets/scan/swoosh-small.png";
@@ -103,15 +105,31 @@ export default function ScanDocument() {
   const scanRef = useRef(null);
   const [hovered, setHovered] = useState(null);
 
+  /* Seeded from the shared cache: the scan lives in both state and a ref (the
+     Alt+1 listener reads the ref to dodge a stale closure), and reopening a
+     document you have already viewed should not wait on a request that may
+     stall for seconds. A scan's text never changes after OCR, so a cached copy
+     cannot go stale in the way a list can. */
   useEffect(() => {
-    setLoading(true);
+    const key = `scan:${id}`;
+    const cached = readCache(key);
+    if (cached) {
+      setScan(cached);
+      scanRef.current = cached;
+      setLoading(false);
+      if (isFresh(key)) return;
+    } else {
+      setLoading(true);
+    }
+
     api
       .getScan(token, id)
       .then((data) => {
         setScan(data);
         scanRef.current = data;
+        writeCache(key, data);
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => !scanRef.current && setError(err.message))
       .finally(() => setLoading(false));
   }, [token, id]);
 
@@ -213,6 +231,8 @@ export default function ScanDocument() {
     setError(null);
     try {
       await api.deleteScan(token, id);
+      // Neither this document nor the history list may keep serving it.
+      invalidate(`scan:${id}`, "scans");
       navigate("/scan");
     } catch (err) {
       setError(err.message);
@@ -231,7 +251,14 @@ export default function ScanDocument() {
     }
   }
 
-  if (loading) return <p className="sd-empty">Loading...</p>;
+  if (loading)
+    return (
+      <div className="sd">
+        <Skeleton style={{ height: 15, width: 190, marginBottom: "1.3rem" }} />
+        <Skeleton style={{ height: 120, borderRadius: 14, marginBottom: "1.4rem" }} />
+        <SkeletonText lines={8} />
+      </div>
+    );
   if (error && !scan) return <p className="sd-error">{error}</p>;
   if (!scan) return null;
 

@@ -2,6 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
+import {
+  fetchIfStale,
+  fetchThrough,
+  hasCache,
+  invalidate,
+  readCache,
+  writeCache,
+} from "../dataCache";
+import Skeleton from "../components/Skeleton";
 import swooshSmall from "../assets/scan/swoosh-small.png";
 import swooshLarge from "../assets/scan/swoosh-large.png";
 import fileIcon from "../assets/scan/file-icon.png";
@@ -148,10 +157,13 @@ export default function Scan() {
   const [queue, setQueue] = useState([]);
   const [dragging, setDragging] = useState(false);
   const [uploaderOpen, setUploaderOpen] = useState(false);
-  const [scans, setScans] = useState([]);
+  // Seeded during the first render, so a revisit never flashes a loading state.
+  const [scans, setScans] = useState(() => readCache("scans") || []);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  // False from the first render when the history is already cached, or a
+  // revisit would flash the skeleton over a table we can already draw.
+  const [historyLoading, setHistoryLoading] = useState(() => !hasCache("scans"));
   const [search, setSearch] = useState("");
   const [menuFor, setMenuFor] = useState(null);
   // Which scan's share panel is open, plus the link and a transient "Copied!".
@@ -185,13 +197,30 @@ export default function Scan() {
     return () => document.removeEventListener("click", onDocClick);
   }, [menuFor]);
 
-  function loadHistory() {
-    setHistoryLoading(true);
-    api
-      .getScans(token)
+  /* `force` is passed after a scan completes: a new document has definitely
+     just been created, so the freshness window must not hide it. */
+  function loadHistory({ force = false } = {}) {
+    if (!hasCache("scans")) setHistoryLoading(true);
+    const request = force
+      ? fetchThrough("scans", () => api.getScans(token), { force: true })
+      : fetchIfStale("scans", () => api.getScans(token));
+    request
       .then(setScans)
-      .catch((err) => setError(err.message))
+      // Only a failure that leaves the table empty is worth showing; a stalled
+      // refresh behind a list already on screen is not.
+      .catch((err) => !scans.length && setError(err.message))
       .finally(() => setHistoryLoading(false));
+  }
+
+  /* Every local edit to the list goes through here so the shared cache cannot
+     drift from what is on screen — a share, an unshare or a delete must not
+     leave a stale copy that the next visit paints from. */
+  function updateScans(fn) {
+    setScans((prev) => {
+      const next = fn(prev);
+      writeCache("scans", next);
+      return next;
+    });
   }
 
   /* Every way of adding a photo — browse, drag-and-drop, paste — funnels
@@ -315,7 +344,7 @@ export default function Scan() {
     }
 
     setLoading(false);
-    loadHistory();
+    loadHistory({ force: true });
 
     // One photo lands straight on its document page, the way it did before.
     // Several would be ambiguous, so those stay here against a refreshed list.
@@ -336,7 +365,7 @@ export default function Scan() {
     setCopied(false);
     try {
       const { share_token } = await api.shareScan(token, scanId);
-      setScans((prev) =>
+      updateScans((prev) =>
         prev.map((s) => (s.id === scanId ? { ...s, share_token } : s)),
       );
       setShareLink(`${window.location.origin}/shared/scan/${share_token}`);
@@ -354,7 +383,7 @@ export default function Scan() {
     setSharing(true);
     try {
       await api.unshareScan(token, scanId);
-      setScans((prev) =>
+      updateScans((prev) =>
         prev.map((s) => (s.id === scanId ? { ...s, share_token: null } : s)),
       );
       setShareFor(null);
@@ -386,7 +415,9 @@ export default function Scan() {
     setError(null);
     try {
       await api.deleteScan(token, scanId);
-      setScans((prev) => prev.filter((s) => s.id !== scanId));
+      updateScans((prev) => prev.filter((s) => s.id !== scanId));
+      // The document page for that scan must not keep serving it either.
+      invalidate(`scan:${scanId}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -661,7 +692,14 @@ export default function Scan() {
       </div>
 
       {historyLoading ? (
-        <p className="sc-empty">Loading...</p>
+        /* Table-shaped rows, so the page keeps its height rather than
+           collapsing and jumping when the history lands. */
+        <div className="sc-table-wrap" aria-busy="true">
+          <Skeleton style={{ height: 38, marginBottom: 8 }} />
+          <Skeleton style={{ height: 52, marginBottom: 6 }} />
+          <Skeleton style={{ height: 52, marginBottom: 6 }} />
+          <Skeleton style={{ height: 52 }} />
+        </div>
       ) : sortedScans.length === 0 ? (
         <p className="sc-empty">No scans yet.</p>
       ) : (

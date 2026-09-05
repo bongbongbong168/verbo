@@ -685,10 +685,18 @@
   }
 }
 
-@media (max-width: 767px) {
+/* 900, not 767. The card is a column inside a two-panel layout, so it runs out
+   of room well before the viewport reaches phone width — at ~800 the art was
+   still showing and the headline had been squeezed into a four-word-wide
+   column beside it. */
+@media (max-width: 900px) {
   .ob-done-hero {
     gap: 0.8rem;
-    padding: 1.1rem 1.1rem;
+    padding: 1.1rem;
+    /* Fixed 104px was for a single-line headline. Once the copy wraps it needs
+       the room, and a fixed height just clipped it. */
+    height: auto;
+    min-height: 96px;
   }
 
   /* The art is the first thing to go: on a narrow card the words and the tick
@@ -697,8 +705,19 @@
     display: none;
   }
 
+  /* And the space it was holding goes with it. Without this the copy kept
+     reserving 162px for art that is no longer there, which is most of why the
+     headline was wrapping every two words. */
+  .ob-done-copy {
+    padding-right: 0;
+  }
+
   .ob-done-title {
-    font-size: 1.05rem;
+    font-size: 1rem;
+  }
+
+  .ob-done-sub {
+    font-size: 0.78rem;
   }
 }
 
@@ -754,6 +773,17 @@
   margin-top: 1.6rem;
   padding-top: 1.2rem;
   border-top: 1px solid var(--ob-line);
+}
+
+/* None of the three may wrap or shrink.
+   They are flex items with text, so their default `min-width: auto` lets them
+   be squeezed until the label breaks across lines — on a narrow card "Skip for
+   now" came apart into three stacked words and "Back" was crushed beside it.
+   `flex: none` keeps each at its natural width and `nowrap` keeps each label
+   on one line; the row tightens its own gap and padding below instead. */
+.ob-foot > * {
+  flex: none;
+  white-space: nowrap;
 }
 
 .ob-back {
@@ -859,28 +889,112 @@
     padding: 1rem;
   }
 
-  /* The stepper is orientation, not content — on a narrow screen the question
-     has to come first, so the panel shrinks to a banner and the step list is
-     dropped in favour of the card's own counter. */
+  /* The panel shrinks to a banner so the question comes first. */
   .ob-side {
     flex: none;
     max-width: none;
     padding: 1.4rem 1.6rem;
   }
 
-  .ob-steps,
   .ob-side-foot,
   .ob-feather {
     display: none;
   }
 
+  /* ---- the stepper, turned on its side ----
+     It used to be dropped here entirely, on the grounds that the card carries
+     its own counter. The counter says "2 of 5"; the row says it in a shape you
+     can see without reading, which is the part that was missing. So it comes
+     back below the title as a line of marks rather than the tall labelled list
+     — the labels are what there is no room for, not the progress. */
+  .ob-steps {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 0.95rem 0 0;
+  }
+
+  .ob-step {
+    /* Equal shares, so the marks land at even intervals whatever the panel
+       width — no gap value to keep in step with the connector's length. */
+    flex: 1;
+    align-items: center;
+    gap: 0;
+    padding-bottom: 0;
+  }
+
+  /* The last mark ENDS the row. Left at `flex: 1` it would take an equal share
+     and strand its circle at the left of a trailing empty cell. */
+  .ob-step:last-child {
+    flex: none;
+  }
+
+  /* The connector turns with the row: from this mark's right edge to the step
+     box's own right edge, which — the steps being equal-width — is exactly the
+     next mark's left edge. `top: 13px` centres the 1px line on a 27px circle
+     (13 to 14, centre 13.5). */
+  .ob-step:not(:last-child)::before {
+    left: 27px;
+    right: 0;
+    top: 13px;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+  }
+
+  /* Hidden from the EYE, not from the screen reader. The marks are
+     `aria-hidden` (they are decorative numerals), so `display: none` here would
+     leave the whole list announcing nothing at all — the names are the only
+     thing in it carrying meaning. Absolute, so it costs no layout. */
+  .ob-step-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Dropping out of `absolute` makes the logo a FLEX ITEM of the column panel,
+     and a flex item's default `align-self: stretch` overrides `width: auto` —
+     the image was pulled to the full panel width against its fixed 38px height
+     and rendered squashed. `flex-start` is what keeps it at its own aspect. */
   .ob-logo {
     position: static;
+    align-self: flex-start;
+    flex: none;
     margin-bottom: 1rem;
   }
 
   .ob-side-title {
     margin-bottom: 0;
     font-size: 1.4rem;
+  }
+}
+
+/* The card gets narrow long before the phone breakpoint does — it is a column
+   inside a two-panel layout — so the footer tightens on its own container
+   width rather than waiting for a viewport media query. Padding and gap give
+   way first; the labels never do. */
+@media (max-width: 900px) {
+  .ob-foot {
+    gap: 0.4rem;
+  }
+
+  .ob-back {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .ob-skip {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .ob-next {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }

@@ -1,0 +1,121 @@
+/* The generated cover an article wears wherever it appears. Prefix `ac-`.
+ *
+ * Extracted from Read.css so the Read shelves and the Dashboard's "Pick up
+ * where you left off" tile draw the same cover from the same rules. Two copies
+ * of six gradients is exactly how the Podcast and Read toggles silently drifted
+ * apart before SectionToggle was pulled out — the same mistake, avoided.
+ *
+ * The one thing that did NOT move is the glyph's alternating placement: that is
+ * keyed to a card's position in a shelf (`.rd-tile:nth-child`), which only
+ * means anything on the Read page, so it stays there as an override. */
+
+.ac {
+  position: relative;
+  /* A ratio, not a height: the cover is the one part of the card that can be
+     sized proportionally, so it holds its shape at every column width. */
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #cfc6ef, #a99ce0);
+}
+
+/* ---- generated covers ----
+   Every topic has its own gradient and character, so an article with no
+   uploaded photo still gets a cover that says which shelf it is on. Six pairs
+   drawn from the app's own palette rather than six arbitrary colours — each is
+   a two-stop ramp in one hue family, and none of them stray from the lavender
+   the rest of the page is built on far enough to read as a different product.
+
+   An uploaded image is absolutely positioned over the top, so it covers this
+   completely wherever one exists. */
+.ac[data-topic="everyday-chinese"] {
+  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
+}
+
+.ac[data-topic="culture"] {
+  background: linear-gradient(135deg, #eba98f, #d1734f);
+}
+
+.ac[data-topic="entertainment"] {
+  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
+}
+
+.ac[data-topic="stories"] {
+  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
+}
+
+.ac[data-topic="travel"] {
+  background: linear-gradient(135deg, #92c9c0, #5c9c92);
+}
+
+.ac[data-topic="business"] {
+  background: linear-gradient(135deg, #a8a2c4, #6f6893);
+}
+
+/* Oversized and cropped by the cover's own overflow, so it reads as a texture
+   rather than as a character someone is meant to read. Hellix carries NO CJK
+   glyphs, so the stack has to fall through to a font that does — listing
+   Hellix first here would silently hand every cover to the browser's default
+   CJK face instead of Douyin Sans. */
+.ac-glyph {
+  font-family: "Douyin Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
+    sans-serif;
+  font-size: 5.6rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.34);
+  user-select: none;
+  transform: translate(18%, 6%);
+}
+
+/* Taken OUT OF FLOW, not just sized. `height: 100%` resolves against a parent
+   whose height comes from `aspect-ratio`, which is not a definite height — so
+   it fell back to `auto` and the image rendered at its own intrinsic ratio,
+   growing the box it was supposed to fill. A shelf holding one photographed
+   article measured 505px against its neighbours' 292px. Absolute positioning
+   is what makes the cover unable to size its own container. */
+.ac img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The FORMAT — article / story / fun fact — sits on the cover rather than in
+   the text block, because the line beneath is the topic and level, and running
+   all three together read as one long undifferentiated string. */
+.ac-format {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #1c1730;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 7px;
+  padding: 4px 8px 5px;
+}
+
+/* The Dashboard's pick-up tile is a good deal smaller than a Read shelf card,
+   so the glyph and the badge are scaled down with it — at full size the
+   character swallowed the whole cover instead of sitting behind it. */
+.ac.ac-sm {
+  aspect-ratio: auto;
+  height: 112px;
+  border-radius: 10px;
+}
+
+.ac-sm .ac-glyph {
+  font-size: 3.6rem;
+}
+
+.ac-sm .ac-format {
+  left: 8px;
+  top: 8px;
+  font-size: 0.62rem;
+  padding: 3px 6px 4px;
+}

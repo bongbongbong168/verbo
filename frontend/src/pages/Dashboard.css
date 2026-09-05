@@ -511,6 +511,16 @@
   flex: 0 0 calc((100% - 40px) / 3);
 }
 
+/* A read tile takes the same width as a podcast tile — they are both a cover
+   over a short meta stack, so giving them different widths would make the row
+   look ragged for no reason. Still declared BY TYPE rather than by slot, like
+   the other two: a card must be the same size wherever the recency order
+   happens to put it, or the same article would look different depending on
+   what you had clicked last. */
+.db-pickup > .db-read-tile {
+  flex: 0 0 calc((100% - 40px) / 3);
+}
+
 /* ---- study card (first "pick up" tile) ---- */
 
 .db-study {
@@ -817,6 +827,69 @@
 }
 
 .db-pod-lang {
+  font-size: 0.72rem;
+  color: var(--db-text-muted);
+}
+
+/* ---- read card (pick-up row) ----
+   Deliberately the podcast card's shell: same padding, radius, stroke, shadow
+   and hover, because the two sit side by side in one row and a second card
+   style there would read as a second kind of product. What differs is only
+   what is actually different about a read — the generated topic cover it
+   already wears on the Read page, a format badge instead of a duration, no
+   play button, and a reading time instead of an author. */
+
+.db-read-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
+  padding: 10px 10px 12px;
+  background: var(--db-card);
+  border: 1px solid var(--db-edge);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--db-text);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.db-read-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(28, 23, 48, 0.14);
+}
+
+/* The cover is `.ac.ac-sm` from ArticleCover.css; only the gap below it
+   belongs to this card. */
+.db-read-tile .ac {
+  margin-bottom: 6px;
+}
+
+.db-read-tile-meta {
+  font-size: 0.74rem;
+  color: var(--db-text-muted);
+}
+
+/* Two lines, then FADE — not an ellipsis. Read titles are longer than podcast
+   titles (they now carry an English half as well as the Chinese), so the
+   single nowrap line the podcast card uses would cut most of them off. Pinned
+   to exactly two lines like the study card's title, so the card height cannot
+   move with the length of the title in it, and the downward mask lands on
+   nothing when a title only needs one. */
+.db-read-tile-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
+  height: 2.6em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+}
+
+.db-read-tile-time {
+  margin-top: 2px;
   font-size: 0.72rem;
   color: var(--db-text-muted);
 }

@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { hasLiveBookingWith, isBookingLive } from '../bookings'
+import { fetchIfStale, hasCache, readCache, writeCache } from '../dataCache'
+import Skeleton, { SkeletonText } from '../components/Skeleton'
 import BookingDialog from '../components/BookingDialog'
 import CourseDialog from '../components/CourseDialog'
 import TutorLessonsCard from '../components/TutorLessonsCard'
@@ -296,11 +298,27 @@ export default function TutorProfileDetail() {
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
-  const [tutor, setTutor] = useState(null)
-  const [others, setOthers] = useState([])
+  // Seeded during the first render, so a revisit never flashes a loading state.
+  const [tutor, setTutor] = useState(() => readCache(`tutor:${id}`) ?? null)
+  const [others, setOthers] = useState(() => {
+    const all = readCache('tutors')
+    return all ? all.filter((t) => Number(t.id) !== Number(id)).slice(0, 6) : []
+  })
   const [alreadyBooked, setAlreadyBooked] = useState(false)
   const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !hasCache(`tutor:${id}`))
+
+  /* Every local edit to the profile goes through here so the shared cache
+     cannot drift from what is on screen. Defined at component scope on
+     purpose: the review handlers below take their own `id` parameter, which
+     would shadow the route's, and the cache key must be the PROFILE's. */
+  function updateTutor(fn) {
+    setTutor((prev) => {
+      const next = fn(prev)
+      writeCache(`tutor:${id}`, next)
+      return next
+    })
+  }
   const [justSent, setJustSent] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
@@ -323,25 +341,44 @@ export default function TutorProfileDetail() {
     loadTutor()
   }, [token, id])
 
+  /* Three independent reads rather than one Promise.all behind a single gate:
+     the profile is what the page is FOR, so it must not wait on the caller's
+     bookings or on the "Teacher you may like" strip. `tutors` and `bookings`
+     are the same cache keys Find Tutor and the Dashboard use, so arriving from
+     either usually costs nothing. */
   function loadTutor() {
-    setLoading(true)
-    // "Teacher you may like" is the one genuinely real block here — it comes
-    // from the tutor list with this profile filtered out.
-    Promise.all([api.getTutor(token, id), api.getBookings(token), api.getTutors(token)])
-      .then(([tutorData, bookingData, allTutors]) => {
+    const key = `tutor:${id}`
+    if (!hasCache(key)) setLoading(true)
+
+    const tutorPromise = fetchIfStale(key, () => api.getTutor(token, id))
+
+    tutorPromise
+      .then((tutorData) => {
         setTutor(tutorData)
         setPlaying(false)
-        /* Up to 6, not 3. The grid auto-fills, so this is a ceiling rather
-           than a target — with only a handful of tutors on the platform it
-           still shows however many exist, and it fills out on its own as more
-           sign up instead of needing this number revisited. */
-        setOthers(allTutors.filter((t) => Number(t.id) !== Number(id)).slice(0, 6))
-        // Only *live* bookings block the button. Counting every row meant a
-        // cancelled booking left this reading "Request sent" permanently.
-        setAlreadyBooked(hasLiveBookingWith(bookingData.sent, tutorData.user_id))
       })
-      .catch((err) => setError(err.message))
+      // Only a failure that leaves the page blank is worth showing.
+      .catch((err) => !readCache(key) && setError(err.message))
       .finally(() => setLoading(false))
+
+    // "Teacher you may like" is the one genuinely real block here — it comes
+    // from the tutor list with this profile filtered out.
+    fetchIfStale("tutors", () => api.getTutors(token))
+      /* Up to 6, not 3. The grid auto-fills, so this is a ceiling rather than
+         a target — with only a handful of tutors on the platform it still
+         shows however many exist, and it fills out on its own as more sign up
+         instead of needing this number revisited. */
+      .then((all) => setOthers(all.filter((t) => Number(t.id) !== Number(id)).slice(0, 6)))
+      .catch(() => {})
+
+    /* This one needs BOTH — it compares the bookings against this tutor's
+       user_id — so it waits on the pair rather than reading whichever happened
+       to land first. It still does not gate the render. */
+    Promise.all([tutorPromise, fetchIfStale("bookings", () => api.getBookings(token))])
+      // Only *live* bookings block the button. Counting every row meant a
+      // cancelled booking left this reading "Request sent" permanently.
+      .then(([t, b]) => setAlreadyBooked(hasLiveBookingWith(b.sent, t.user_id)))
+      .catch(() => {})
   }
 
   /* Booking now needs a time, so it happens in the dialog rather than here —
@@ -377,7 +414,7 @@ export default function TutorProfileDetail() {
       })
       // Replace your existing review if you had one, otherwise prepend — the
       // endpoint is an upsert, so the same call covers both.
-      setTutor((prev) => {
+      updateTutor((prev) => {
         const rest = (prev.reviews || []).filter((r) => r.id !== saved.id)
         const reviews = [saved, ...rest]
         return {
@@ -437,7 +474,7 @@ export default function TutorProfileDetail() {
     setReviewMenuFor(null)
     try {
       await api.deleteReview(token, id)
-      setTutor((prev) => {
+      updateTutor((prev) => {
         const reviews = (prev.reviews || []).filter((r) => r.id !== id)
         return {
           ...prev,
@@ -453,7 +490,14 @@ export default function TutorProfileDetail() {
     }
   }
 
-  if (loading) return <p className="td-empty">Loading...</p>
+  if (loading)
+    return (
+      <div className="td">
+        <Skeleton style={{ height: 15, width: 200, marginBottom: '1.3rem' }} />
+        <Skeleton style={{ height: 190, borderRadius: 16, marginBottom: '1.3rem' }} />
+        <SkeletonText lines={6} />
+      </div>
+    )
   if (error && !tutor) return <p className="td-error">{error}</p>
   if (!tutor) return null
 
@@ -886,7 +930,9 @@ export default function TutorProfileDetail() {
         <TutorEditDrawer
           token={token}
           tutor={tutor}
-          onChange={(updated) => setTutor((prev) => ({ ...prev, ...updated }))}
+          /* Through the cache as well, or leaving and returning inside the
+             freshness window would restore the pre-edit profile. */
+          onChange={(updated) => updateTutor((prev) => ({ ...prev, ...updated }))}
           onClose={() => setShowEdit(false)}
         />
       )}

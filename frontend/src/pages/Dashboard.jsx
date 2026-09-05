@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { useApiData } from '../useApiData'
+import Skeleton, { SkeletonCards } from '../components/Skeleton'
+import ArticleCover from '../components/ArticleCover'
 import PageTools from '../components/PageTools'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
@@ -15,6 +18,11 @@ const HAN = /[一-鿿]/
 
 /* Three tiles, as the design draws them: one wide then two narrow. */
 const PICKUP_SLOTS = 3
+
+/* One shared empty array, so a section with no data keeps a STABLE identity
+   between renders. A fresh `[]` each time would change on every render and
+   re-run every `useMemo` that depends on it. */
+const EMPTY = []
 
 /**
  * A study unit as a pick-up tile: the level's book cover, a unit tag and a
@@ -293,24 +301,75 @@ function PodcastCard({ podcast }) {
   )
 }
 
+/* The read tile, for "Pick up where you left off".
+ *
+ * Same shell as the podcast card beside it — white card, the page's navy
+ * stroke, 14px radius, the same lift on hover — because they sit in one row and
+ * a second card style would read as a second kind of product.
+ *
+ * What makes it a READ rather than an episode is all real, none of it invented:
+ * the generated topic cover it already wears on the Read page (so the same
+ * article looks like itself in both places), the FORMAT badge in place of the
+ * podcast's duration, no play button, and the derived reading time where the
+ * podcast card carries its author. Notably it does NOT get a duration badge —
+ * that figure is a placeholder on the podcast card, and copying a placeholder
+ * onto a new card is how a stand-in turns into a fact. */
+function ReadCard({ article }) {
+  return (
+    <Link className="db-read-tile" to={`/read/${article.id}`}>
+      <ArticleCover article={article} small />
+      <span className="db-read-tile-meta">
+        {[article.category, article.hsk_level].filter(Boolean).join(' · ')}
+      </span>
+      <span className="db-read-tile-title">{article.title}</span>
+      <span className="db-read-tile-time">{article.reading_minutes || 1} min read</span>
+    </Link>
+  )
+}
+
 export default function Dashboard() {
   const { token, user } = useAuth()
-  const [quote, setQuote] = useState(null)
-  const [tutors, setTutors] = useState([])
-  const [articles, setArticles] = useState([])
-  const [podcasts, setPodcasts] = useState([])
-  const [studyUnit, setStudyUnit] = useState(null)
-  /* The level list was already being fetched on every load and thrown away
-     after the fallback tile picked one out of it. Kept now because it is the
-     only place units_count / units_opened arrive — the recent-views payload
-     carries neither, and re-deriving them there would be a query per row for
-     numbers already on the wire. */
-  const [levels, setLevels] = useState([])
-  const [recents, setRecents] = useState([])
-  const [activity, setActivity] = useState(null)
-  const [learning, setLearning] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+
+  /* ONE REQUEST PER SECTION, each painting the moment its own data lands.
+     This was a single `Promise.all` over eight calls behind one
+     `if (loading) return <p>Loading...</p>`, so the entire page waited on the
+     slowest of the eight — and the deployed API answers most requests in
+     ~200ms but stalls for seconds on roughly one in three, which meant the
+     Dashboard almost always waited on a straggler. Split up, a stalled request
+     costs one late section instead of a blank screen; cached, a revisit paints
+     immediately and refreshes behind. See `dataCache.js`. */
+  const quoteQuery = useApiData('quote', () => api.getQuote(token))
+  const tutorQuery = useApiData('tutors', () => api.getTutors(token))
+  const articleQuery = useApiData('articles', () => api.getArticles(token))
+  const podcastQuery = useApiData('podcasts', () => api.getPodcasts(token))
+  /* The level list is also the only place units_count / units_opened arrive —
+     the recent-views payload carries neither, and re-deriving them there would
+     be a query per row for numbers already on the wire. */
+  const levelQuery = useApiData('study-levels', () => api.getStudyLevels(token))
+  const recentQuery = useApiData('recent-views:3', () => api.getRecentViews(token, 3))
+  const activityQuery = useApiData('activity:7', () => api.getActivitySummary(token, 7))
+  const learningQuery = useApiData('my-learning:3', () => api.getMyLearning(token, 3))
+
+  const quote = quoteQuery.data ?? null
+  const activity = activityQuery.data ?? null
+  const asList = (v) => (Array.isArray(v) ? v : EMPTY)
+  const tutors = useMemo(() => asList(tutorQuery.data).slice(0, 3), [tutorQuery.data])
+  const articles = asList(articleQuery.data)
+  const podcasts = asList(podcastQuery.data)
+  const levels = asList(levelQuery.data)
+  const recents = asList(recentQuery.data)
+  const learning = asList(learningQuery.data)
+
+  /* Only a failure that leaves a section with NOTHING is worth a banner —
+     `useApiData` swallows a background refresh that fails behind data already
+     on screen, since replacing a good page with an error because a revalidation
+     stalled is strictly worse than leaving it alone. */
+  const [actionError, setActionError] = useState(null)
+  const error =
+    actionError ||
+    [quoteQuery, tutorQuery, articleQuery, podcastQuery, levelQuery].find((q) => q.error)?.error
+      ?.message ||
+    null
 
   const [readFilter, setReadFilter] = useState('all')
 
@@ -320,89 +379,62 @@ export default function Dashboard() {
   const [quoteEnglish, setQuoteEnglish] = useState('')
   const [savingQuote, setSavingQuote] = useState(false)
 
+  /* The quote form mirrors the loaded quote, but must NOT stamp over what is
+     being typed — so it re-syncs only while the form is closed. */
   useEffect(() => {
-    loadDashboard()
-  }, [token])
+    if (editingQuote) return
+    setQuoteChinese(quote?.chinese || '')
+    setQuotePinyin(quote?.pinyin || '')
+    setQuoteEnglish(quote?.english || '')
+  }, [quote, editingQuote])
 
-  function loadDashboard() {
-    setLoading(true)
-    Promise.all([
-      api.getQuote(token),
-      api.getTutors(token),
-      api.getArticles(token),
-      api.getPodcasts(token),
-      api.getStudyLevels(token),
-      // Empty until the user has actually opened something.
-      api.getRecentViews(token, 3).catch(() => []),
-      api.getActivitySummary(token, 7).catch(() => null),
-      /* Upcoming private lessons + group classes, merged. Empty for a student
-         who has booked nothing, which the section renders as its own state. */
-      api.getMyLearning(token, 3).catch(() => []),
-    ])
-      .then(
-        ([
-          quoteData,
-          tutorData,
-          articleData,
-          podcastData,
-          levelData,
-          recentData,
-          activityData,
-          learningData,
-        ]) => {
-          setQuote(quoteData)
-          setQuoteChinese(quoteData?.chinese || '')
-          setQuotePinyin(quoteData?.pinyin || '')
-          setQuoteEnglish(quoteData?.english || '')
-          setTutors(tutorData.slice(0, 3))
-          setArticles(articleData)
-          setPodcasts(podcastData)
-          setLevels(Array.isArray(levelData) ? levelData : [])
-          const recentRows = Array.isArray(recentData) ? recentData : []
-          setRecents(recentRows)
-          setActivity(activityData || null)
-          setLearning(Array.isArray(learningData) ? learningData : [])
+  /* The study fallback only exists to fill a row real history cannot fill, so
+     the extra request is skipped once there are three real tiles — or once a
+     study unit is already among them, since that is the slot it would take. */
+  const needsStudyFallback =
+    recents.length < PICKUP_SLOTS && !recents.some((r) => r.kind === 'study_unit')
 
-          // The fallback only exists to fill a row real history cannot fill,
-          // so skip the extra lookup once there are three real tiles — or once
-          // a study unit is already among them, since that is the slot it
-          // would take.
-          if (recentRows.length >= 3 || recentRows.some((r) => r.kind === 'study_unit')) {
-            return
-          }
+  /* GET /study-levels returns levels WITHOUT their units, so reaching unit 1
+     needs the detail call. It stays dependent rather than parallel because
+     which level to open is only known once the list arrives — but it is now its
+     own query, so it no longer holds up the rest of the page.
 
-          // GET /study-levels returns levels without their units, so the study
-          // tile needs the detail call to reach unit 1. Chained rather than
-          // parallel because which level to open is only known once the list
-          // arrives; a failure here leaves the tile out, not the whole page.
-          //
-          // Feature the level with the most units rather than whichever sorts
-          // first — with no progress tracking, "the course with the most content
-          // authored" is the closest honest stand-in for the one being worked
-          // through, and it keeps empty levels out of the tile. `reduce` keeps
-          // the natural sort order as the tie-break, since it only replaces on a
-          // strictly greater count.
-          const featured = levelData.reduce(
-            (best, l) => ((l.units_count ?? 0) > (best?.units_count ?? 0) ? l : best),
-            levelData[0],
-          )
-          if (featured) {
-            return api
-              .getStudyLevel(token, featured.id)
-              .then((full) =>
-                setStudyUnit(full.units?.[0] ? { level: full, unit: full.units[0] } : null),
-              )
-              .catch(() => setStudyUnit(null))
-          }
-        },
-      )
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }
+     Feature the level with the most units rather than whichever sorts first —
+     with no progress tracking, "the course with the most content authored" is
+     the closest honest stand-in for the one being worked through, and it keeps
+     empty levels out of the tile. `reduce` keeps the natural sort order as the
+     tie-break, since it only replaces on a strictly greater count. */
+  const featuredLevel = useMemo(() => {
+    if (!needsStudyFallback || levels.length === 0) return null
+    return levels.reduce(
+      (best, l) => ((l.units_count ?? 0) > (best?.units_count ?? 0) ? l : best),
+      levels[0],
+    )
+  }, [needsStudyFallback, levels])
+
+  const featuredQuery = useApiData(featuredLevel ? `study-level:${featuredLevel.id}` : null, () =>
+    api.getStudyLevel(token, featuredLevel.id),
+  )
+
+  // A failure here leaves the tile out, not the whole page.
+  const studyUnit = useMemo(() => {
+    const full = featuredQuery.data
+    return full?.units?.[0] ? { level: full, unit: full.units[0] } : null
+  }, [featuredQuery.data])
+
+  /* Nothing is known yet for the pick-up row while its three inputs are still
+     in flight. Distinct from "there is genuinely nothing here", which is what
+     the row's own empty state says — showing that first and then filling it in
+     would tell a new user they have nothing before checking. */
+  const pickupLoading =
+    recentQuery.loading ||
+    podcastQuery.loading ||
+    levelQuery.loading ||
+    (Boolean(featuredLevel) && featuredQuery.loading)
 
   async function handleSaveQuote(e) {
     e.preventDefault()
-    setError(null)
+    setActionError(null)
     setSavingQuote(true)
     try {
       const updated = await api.saveQuote(token, {
@@ -410,10 +442,12 @@ export default function Dashboard() {
         pinyin: quotePinyin,
         english: quoteEnglish,
       })
-      setQuote(updated)
+      // Written THROUGH the cache, so the new quote survives leaving the page
+      // and coming back rather than being replaced by the stale cached copy.
+      quoteQuery.setData(updated)
       setEditingQuote(false)
     } catch (err) {
-      setError(err.message)
+      setActionError(err.message)
     } finally {
       setSavingQuote(false)
     }
@@ -451,6 +485,11 @@ export default function Dashboard() {
       } else if (row.kind === 'podcast' && row.podcast) {
         const key = `p${row.podcast.id}`
         tiles.push({ kind: 'podcast', key, podcast: row.podcast })
+        seen.add(key)
+        fromHistory++
+      } else if (row.kind === 'article' && row.article) {
+        const key = `a${row.article.id}`
+        tiles.push({ kind: 'article', key, article: row.article })
         seen.add(key)
         fromHistory++
       }
@@ -526,8 +565,9 @@ export default function Dashboard() {
     return `${Math.max(1, Math.round(seconds / 60))} min`
   }
 
-  if (loading) return <p className="db-empty">Loading...</p>
-
+  /* No page-wide loading gate. The hero, the rail and every section frame are
+     known before any request returns, so they paint immediately and each
+     section fills itself in. */
   return (
     <div className="db">
       <div className="db-topbar">
@@ -697,20 +737,31 @@ export default function Dashboard() {
                       )}
                     </span>
                   </Link>
+                ) : tile.kind === 'article' ? (
+                  <ReadCard key={tile.key} article={tile.article} />
                 ) : (
                   <PodcastCard key={tile.key} podcast={tile.podcast} />
                 ),
               )}
-              {pickup.tiles.length === 0 && (
-                <p className="db-empty">Nothing to study yet — check back soon.</p>
-              )}
+              {pickup.tiles.length === 0 &&
+                (pickupLoading ? (
+                  <>
+                    <Skeleton className="db-study" style={{ height: 226 }} />
+                    <Skeleton className="db-pod" style={{ height: 220 }} />
+                    <Skeleton className="db-pod" style={{ height: 220 }} />
+                  </>
+                ) : (
+                  <p className="db-empty">Nothing to study yet — check back soon.</p>
+                ))}
             </div>
           </section>
 
           {/* ---- Recommend Teachers ---- */}
           <section className="db-section">
             <SectionHead title="Recommend Teachers" to="/find-tutor" />
-            {tutors.length === 0 ? (
+            {tutorQuery.loading ? (
+              <SkeletonCards className="db-grid3" count={3} mediaHeight={96} />
+            ) : tutors.length === 0 ? (
               <p className="db-empty">No tutors yet.</p>
             ) : (
               <div className="db-grid3">
@@ -753,7 +804,9 @@ export default function Dashboard() {
           {/* ---- Podcasts ---- */}
           <section className="db-section">
             <SectionHead title="Podcasts" to="/podcast" />
-            {podcasts.length === 0 ? (
+            {podcastQuery.loading ? (
+              <SkeletonCards className="db-grid3" count={3} mediaHeight={96} />
+            ) : podcasts.length === 0 ? (
               <p className="db-empty">No podcasts yet.</p>
             ) : (
               <div className="db-grid3">
@@ -783,7 +836,13 @@ export default function Dashboard() {
             </div>
 
             <div className="db-reads">
-              {visibleReads.length === 0 ? (
+              {articleQuery.loading ? (
+                <>
+                  <Skeleton style={{ height: 74 }} />
+                  <Skeleton style={{ height: 74 }} />
+                  <Skeleton style={{ height: 74 }} />
+                </>
+              ) : visibleReads.length === 0 ? (
                 <p className="db-empty">No reads match that filter.</p>
               ) : (
                 visibleReads.map((a) => (
@@ -814,7 +873,12 @@ export default function Dashboard() {
                 is a time. */}
             <SectionHead title="My Learning" />
 
-            {learning.length === 0 ? (
+            {learningQuery.loading ? (
+              <>
+                <Skeleton style={{ height: 62, marginBottom: '0.6rem' }} />
+                <Skeleton style={{ height: 62 }} />
+              </>
+            ) : learning.length === 0 ? (
               <div className="db-course-empty">
                 <p>No upcoming lessons</p>
                 <Link to="/find-tutor">Explore tutors →</Link>

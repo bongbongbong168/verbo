@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { fetchThrough, isFresh, readCache } from '../dataCache'
 import './MessagesButton.css'
+
+const POLL_MS = 60000
+const UNREAD_KEY = 'conversations:unread'
 
 /**
  * Messages, as the first of the three top-right controls.
@@ -26,18 +30,27 @@ export default function MessagesButton() {
      300/min bucket on a number that is only ever a few minutes stale.
      Failures are swallowed — the button must still work as a link when the
      count cannot be fetched. */
+  /* Cached for the same reason as the bell beside it: this button renders on
+     every page, so it remounted on every navigation and refired immediately —
+     a one-minute poll that actually cost one request per page switch. Reusing a
+     count younger than the interval also keeps the badge from blinking off and
+     back on as you move around. */
   useEffect(() => {
     if (!token) return undefined
 
     let live = true
-    const load = () =>
-      api
-        .getUnreadMessages(token)
+    const load = (force) => {
+      if (!force && isFresh(UNREAD_KEY, POLL_MS)) {
+        setUnread(readCache(UNREAD_KEY)?.unread ?? 0)
+        return
+      }
+      fetchThrough(UNREAD_KEY, () => api.getUnreadMessages(token), { force: true })
         .then((d) => live && setUnread(d.unread ?? 0))
         .catch(() => {})
+    }
 
     load()
-    const id = setInterval(load, 60000)
+    const id = setInterval(() => load(true), POLL_MS)
     return () => {
       live = false
       clearInterval(id)

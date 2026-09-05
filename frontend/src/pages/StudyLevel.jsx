@@ -1,40 +1,42 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { useApiData } from '../useApiData'
+import { invalidate } from '../dataCache'
 import StudyEditDrawer from '../components/StudyEditDrawer'
+import Skeleton from '../components/Skeleton'
 import './StudyLevel.css'
 
 export default function StudyLevel() {
   const { id } = useParams()
   const { token, user } = useAuth()
-  const [level, setLevel] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [savingCover, setSavingCover] = useState(false)
+  // Its own state, not the page's load error: a failed cover upload must not
+  // replace a level that is on screen and perfectly readable.
+  const [coverError, setCoverError] = useState(null)
   const modulesRef = useRef(null)
 
+  /* Deliberately the SAME cache key the Dashboard uses for its featured level,
+     so reopening a level you have already visited paints immediately instead of
+     waiting on a request that may stall for seconds. */
+  const levelQuery = useApiData(`study-level:${id}`, () => api.getStudyLevel(token, id))
+  const level = levelQuery.data ?? null
+  const loading = levelQuery.loading
+  const error = levelQuery.error?.message || null
+  const setLevel = levelQuery.setData
+
   /* The new-module fields live in StudyEditDrawer now. */
-
-  useEffect(() => {
-    loadLevel()
-  }, [token, id])
-
-  function loadLevel() {
-    setLoading(true)
-    api
-      .getStudyLevel(token, id)
-      .then(setLevel)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }
 
   /* Throws on failure so the drawer keeps the message beside the fields. */
   async function handleCreate(values) {
     await api.createStudyUnit(token, id, values)
     setShowForm(false)
-    loadLevel()
+    // The unit count changed, so the Study list and the Dashboard's tile are
+    // both stale now — not just this page.
+    invalidate('study-levels')
+    levelQuery.refresh()
   }
 
   // "Start now" drops the reader straight into the first lesson card.
@@ -42,7 +44,18 @@ export default function StudyLevel() {
     modulesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  if (loading) return <p className="sl-empty">Loading...</p>
+  /* A skeleton in the page's own shape rather than the word "Loading", so the
+     header and module list do not appear to jump into existence. */
+  if (loading)
+    return (
+      <div className="sl">
+        <Skeleton style={{ height: 18, width: 220, marginBottom: '1.2rem' }} />
+        <Skeleton style={{ height: 210, borderRadius: 18, marginBottom: '1.4rem' }} />
+        <Skeleton style={{ height: 74, marginBottom: '0.7rem' }} />
+        <Skeleton style={{ height: 74, marginBottom: '0.7rem' }} />
+        <Skeleton style={{ height: 74 }} />
+      </div>
+    )
   if (error && !level) return <p className="sl-error">{error}</p>
   if (!level) return null
 
@@ -59,7 +72,7 @@ export default function StudyLevel() {
         <span className="sl-breadcrumb-current">{level.title}</span>
       </nav>
 
-      {error && <p className="sl-error">{error}</p>}
+      {(coverError || error) && <p className="sl-error">{coverError || error}</p>}
 
       <section className="sl-hero" style={{ '--hero-accent': accent }}>
         <div className="sl-hero-content">
@@ -117,7 +130,7 @@ export default function StudyLevel() {
                 e.target.value = ''
                 if (!image) return
                 setSavingCover(true)
-                setError(null)
+                setCoverError(null)
                 try {
                   const updated = await api.updateStudyLevel(token, level.id, {
                     title: level.title,
@@ -130,8 +143,10 @@ export default function StudyLevel() {
                      `units` this page is rendering. Same trap the culture save
                      on StudyUnit hit. */
                   setLevel((prev) => ({ ...prev, ...updated }))
+                  // The cover is on the Study list and the Dashboard tile too.
+                  invalidate('study-levels')
                 } catch (err) {
-                  setError(err.message)
+                  setCoverError(err.message)
                 } finally {
                   setSavingCover(false)
                 }

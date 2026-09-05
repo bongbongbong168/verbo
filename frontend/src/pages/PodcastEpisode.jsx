@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { exampleFor } from '../sentence'
+import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
+import Skeleton, { SkeletonText } from '../components/Skeleton'
 import WordPopover from '../components/WordPopover'
 import PodcastEditDrawer from '../components/PodcastEditDrawer'
 import './PodcastEpisode.css'
@@ -93,19 +95,43 @@ export default function PodcastEpisode() {
     loadPodcast()
   }, [token, id])
 
+  /* Seeded from the shared cache rather than converted to `useApiData`: the
+     episode lives in BOTH state and a ref (the Alt+1 listener reads the ref to
+     dodge a stale closure), so priming the initial value is the surgical
+     change. Reopening an episode then paints immediately. */
   function loadPodcast() {
-    setLoading(true)
+    const key = `podcast:${id}`
+    const cached = readCache(key)
+    if (cached) {
+      setPodcast(cached)
+      podcastRef.current = cached
+      setLoading(false)
+      if (isFresh(key)) {
+        // Still record the visit — opening it again is a real visit, and the
+        // Dashboard's recency row is built from exactly this.
+        api.recordView(token, 'podcast', id).catch(() => {})
+        // The recency order changed, so the Dashboard's cached copy is stale.
+        invalidate('recent-views:3')
+        return
+      }
+    } else {
+      setLoading(true)
+    }
+
     api
       .getPodcast(token, id)
       .then((data) => {
         setPodcast(data)
         podcastRef.current = data
+        writeCache(key, data)
         // Record the visit so the Dashboard's "Pick up where you left off"
         // row can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
         api.recordView(token, 'podcast', id).catch(() => {})
+        invalidate('recent-views:3')
       })
-      .catch((err) => setError(err.message))
+      // Only a failure that leaves the page with nothing is worth showing.
+      .catch((err) => !podcastRef.current && setError(err.message))
       .finally(() => setLoading(false))
   }
 
@@ -188,19 +214,32 @@ export default function PodcastEpisode() {
      re-runs the transcript annotation, so the hover tokens match the new text. */
   async function handleUpdate(values) {
     await api.updatePodcast(token, id, values)
+    /* Drop the cached copies BEFORE reloading, or the freshness window would
+       hand back the pre-edit episode. The library list carries the title and
+       level, so it is stale too. */
+    invalidate(`podcast:${id}`, 'podcasts')
     loadPodcast()
   }
 
   async function handleDelete() {
     try {
       await api.deletePodcast(token, id)
+      invalidate(`podcast:${id}`, 'podcasts', 'recent-views:3')
       navigate('/podcast')
     } catch (err) {
       setError(err.message)
     }
   }
 
-  if (loading) return <p className="pe-empty">Loading...</p>
+  if (loading)
+    return (
+      <div className="pe">
+        <Skeleton style={{ height: 15, width: 170, marginBottom: '1.4rem' }} />
+        <Skeleton style={{ height: 200, borderRadius: 16, marginBottom: '1.4rem' }} />
+        <Skeleton style={{ height: 30, width: '55%', marginBottom: '1.2rem' }} />
+        <SkeletonText lines={10} />
+      </div>
+    )
   if (error && !podcast) return <p className="pe-error">{error}</p>
   if (!podcast) return null
 

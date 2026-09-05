@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { exampleFor } from "../sentence";
+import { invalidate, isFresh, readCache, writeCache } from "../dataCache";
+import Skeleton, { SkeletonText } from "../components/Skeleton";
 import SectionToggle from "../components/SectionToggle";
 import WordPopover from "../components/WordPopover";
 import PageTools from "../components/PageTools";
@@ -57,18 +59,57 @@ export default function ReadArticle() {
     loadArticle();
   }, [token, id]);
 
+  /* Opening an article is recorded TWICE, into two tables that answer two
+     different questions, and both calls belong here:
+       - article_views  feeds the recommender ("has this person read things
+                        like this?") — one row per user per article, counted.
+       - recent_views   feeds the Dashboard's "Pick up where you left off"
+                        ("what did I touch most recently?") — one recency order
+                        shared with study units and podcasts.
+     Neither can answer the other's question, which is why the second is not a
+     duplicate of the first. Both are fire-and-forget: failing to record a visit
+     must never stop the article rendering, and there is nothing useful to tell
+     the reader about it. */
+  function recordVisit() {
+    api.recordArticleView(token, id).catch(() => {});
+    api.recordView(token, 'article', id).catch(() => {});
+    // The recency order just changed, so the Dashboard's cached row is stale.
+    invalidate('recent-views:3');
+  }
+
+  /* Seeded from the shared cache rather than converted to `useApiData`: this
+     page keeps the article in BOTH state and a ref (the Alt+1 listener reads
+     the ref to dodge a stale closure) and rewrites it from half a dozen places,
+     so the surgical change is to prime the initial value and write through on
+     load. Reopening an article you have already read then paints immediately
+     instead of waiting on a request that may stall for seconds. */
   function loadArticle() {
-    setLoading(true);
+    const cached = readCache(`article:${id}`);
+    if (cached) {
+      setArticle(cached);
+      articleRef.current = cached;
+      setLoading(false);
+      // Fresh enough that refetching buys nothing — but the VIEW is still
+      // recorded, because opening it again is a real read.
+      if (isFresh(`article:${id}`)) {
+        recordVisit();
+        return;
+      }
+    } else {
+      setLoading(true);
+    }
+
     api
       .getArticle(token, id)
       .then((data) => {
         setArticle(data);
         articleRef.current = data;
-        /* Reading history feeds the recommender. Fire-and-forget: failing to
-           record a view must never stop the article rendering. */
-        api.recordArticleView(token, id).catch(() => {});
+        writeCache(`article:${id}`, data);
+        recordVisit();
       })
-      .catch((err) => setError(err.message))
+      // Only surface a failure that leaves the reader with nothing — a stalled
+      // refresh behind an article already on screen is not worth an error.
+      .catch((err) => !articleRef.current && setError(err.message))
       .finally(() => setLoading(false));
   }
 
@@ -130,19 +171,36 @@ export default function ReadArticle() {
      what re-runs the annotation, so the hover tokens match the new body. */
   async function handleUpdate(values) {
     await api.updateArticle(token, id, values);
+    /* Drop every cached copy BEFORE reloading, or the freshness window would
+       hand back the pre-edit article. The list and recommendations carry the
+       title and excerpt, so they are stale now too. */
+    invalidate(`article:${id}`, "articles", "articles:recommended:");
     loadArticle();
   }
 
   async function handleDelete() {
     try {
       await api.deleteArticle(token, id);
+      // The article is gone; nothing may keep serving it from cache.
+      invalidate(`article:${id}`, "articles", "articles:recommended:");
       navigate("/read");
     } catch (err) {
       setError(err.message);
     }
   }
 
-  if (loading) return <p className="rd-empty">Loading...</p>;
+  /* A skeleton shaped like the article, so the reader's eye lands where the
+     text will actually be. */
+  if (loading)
+    return (
+      <div className="rd-panel">
+        <Skeleton style={{ height: 15, width: 180, marginBottom: "1.4rem" }} />
+        <Skeleton style={{ height: 34, width: "70%", marginBottom: "0.8rem" }} />
+        <Skeleton style={{ height: 15, width: 240, marginBottom: "1.6rem" }} />
+        <Skeleton style={{ height: 220, borderRadius: 14, marginBottom: "1.6rem" }} />
+        <SkeletonText lines={9} />
+      </div>
+    );
   if (error && !article) return <p className="rd-error">{error}</p>;
   if (!article) return null;
 

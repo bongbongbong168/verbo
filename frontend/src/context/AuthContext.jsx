@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../api'
+import { clearCache } from '../dataCache'
 
 const AuthContext = createContext(null)
 
@@ -22,38 +23,44 @@ export function AuthProvider({ children }) {
         if (err.status === 401) {
           setToken(null)
           localStorage.removeItem('token')
+          clearCache()
         }
       })
       .finally(() => setLoading(false))
   }, [token])
 
-  async function register(name, email, password) {
-    const data = await api.register(name, email, password)
+  /* Establishing a session, in one place. However you got here — register,
+     password, Google — "signed in" must mean exactly one thing, or the ways in
+     drift and one of them ends up half-establishing a session.
+
+     `clearCache()` is the load-bearing line and is NOT optional: the response
+     cache behind `useApiData` is keyed by resource, not by account, so a second
+     person signing in on this browser would paint the previous person's
+     dashboard from cache before their own data arrived. Any new way to become a
+     different user must come through here. */
+  function startSession(data) {
+    clearCache()
     localStorage.setItem('token', data.token)
     setToken(data.token)
     setUser(data.user)
+  }
+
+  async function register(name, email, password) {
+    startSession(await api.register(name, email, password))
   }
 
   async function login(email, password) {
-    const data = await api.login(email, password)
-    localStorage.setItem('token', data.token)
-    setToken(data.token)
-    setUser(data.user)
+    startSession(await api.login(email, password))
   }
 
-  /* Sign in with a Google ID token. Deliberately the same three lines as
-     `login` rather than a different path into the session: however you got
-     here, "signed in" must mean exactly one thing, or the two ways in drift
-     and one of them ends up half-establishing a session. */
+  /** Sign in with a Google ID token. */
   async function loginWithGoogle(credential) {
-    const data = await api.googleSignIn(credential)
-    localStorage.setItem('token', data.token)
-    setToken(data.token)
-    setUser(data.user)
+    startSession(await api.googleSignIn(credential))
   }
 
   async function logout() {
     if (token) await api.logout(token).catch(() => {})
+    clearCache()
     localStorage.removeItem('token')
     setToken(null)
     setUser(null)

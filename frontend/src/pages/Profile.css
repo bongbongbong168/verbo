@@ -66,6 +66,14 @@
   align-items: center;
   gap: 1.5rem;
   padding: 1.6rem 1.8rem;
+  /* ROOM FOR THE ARTWORK. It is absolutely positioned, so it reserves no
+     layout space of its own and the text simply grew underneath it — a long
+     name ran 206px into the figure, straight through the graduate's robe.
+     This is the reserve, and it is released together with the art at the
+     narrow breakpoint below; the two must always change together, exactly like
+     the onboarding finish panel, where hiding the art without dropping its
+     padding left the copy crushed into a column beside an empty gap. */
+  padding-right: 232px;
   border-radius: 20px;
   background: linear-gradient(100deg, #46406a 0%, #6f679b 55%, #8a82b4 100%);
   color: #fff;
@@ -85,11 +93,16 @@
   right: 1.4rem;
   top: 50%;
   transform: translateY(-50%);
-  /* 96%, up from 84%: it fills the banner's height with just enough clearance
-     that the cap and the owl's feet never touch the rounded edge. Still under
-     100% on purpose — the banner clips, so anything at or over it would crop
-     the figure again, which is the thing that was wrong to begin with. */
-  height: 96%;
+  /* A FIXED height, not the 96% this used to be — and the reason is the
+     reserve above, not the look. At 96% the art's width tracked the hero's
+     height, which tracks the text, which is sized by whatever the reserve
+     leaves: a loop with no stable answer, so the padding could not be stated
+     as a number. Pinned, the width is a constant (135 x 1.427 = 193px), and
+     232px of padding clears it plus its 22px inset with room to spare.
+     135px also lands inside the hero's own natural height, which the 104px
+     avatar and the padding put at ~141px — so the cap and the owl's feet still
+     clear the rounded edge, which is what 96% was protecting. */
+  height: 135px;
   width: auto;
   pointer-events: none;
   user-select: none;
@@ -167,10 +180,25 @@
   align-items: center;
   gap: 0.7rem;
   margin: 0;
-  font-size: 2rem;
+  /* FLUID rather than a fixed 2rem with breakpoint overrides. A long name is
+     the widest single thing in the banner, and fixing the size meant patching
+     it at each width the overflow reappeared — it still broke at 900 and again
+     at 325. Scaling with the viewport removes the chase; 2rem is the design
+     size and is what any normal desktop gets, since 3.2vw passes it at 1000px. */
+  font-size: clamp(1.25rem, 3.2vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.015em;
   color: #fff;
+  /* A flex ITEM defaults to `min-width: auto`, so this row could not shrink
+     below its own min-content width and pushed straight out of the hero's
+     content box — `min-width: 0` on `.pf-ident` alone does not reach it. */
+  min-width: 0;
+  /* The pill drops under the name rather than having to share its line. */
+  flex-wrap: wrap;
+  /* The last-resort guarantee. Even at the clamp's floor a name can be one
+     long unbreakable word in a very narrow column ("Sereyvuth" needed 108px in
+     102px at 320), and nothing else here can break it. */
+  overflow-wrap: anywhere;
 }
 
 .pf-sub {
@@ -181,6 +209,13 @@
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
+  min-width: 0;
+  /* This line falls back to the EMAIL when no level has been opened yet, and an
+     address is one unbreakable token — no spaces and no hyphens for the line
+     breaker to use. Without this it simply ran off the banner rather than
+     wrapping. `anywhere` rather than `break-word` so it also shrinks the box's
+     min-content width, which is what stops it forcing the hero wider. */
+  overflow-wrap: anywhere;
 }
 
 .pf-admin {
@@ -700,6 +735,23 @@
   .pf-counts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  /* The art goes HERE, at the same width the body drops to one column — not at
+     the phone breakpoint. Its 232px reserve has to come out of a hero that is
+     already losing width, and below about 1100 there is not enough left for
+     both: the name wrapped down a narrow column and drove the banner to 285px
+     tall, which is worse than simply not showing the figure.
+
+     The padding is released in the SAME rule, never separately. Leaving the
+     reserve behind for a figure that is no longer drawn is exactly what
+     crushed the onboarding finish panel into a column beside an empty gap. */
+  .pf-hero {
+    padding-right: 1.8rem;
+  }
+
+  .pf-hero-art {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -709,5 +761,22 @@
 
   .pf-hero {
     flex-wrap: wrap;
+  }
+
+  /* Seven fixed 34px chips plus six 8px gaps need 286px, and a 320px phone
+     leaves about 232 inside the card — so the week strip, alone on the whole
+     page, pushed it into horizontal scroll. They shrink evenly here instead,
+     staying circular through `aspect-ratio` rather than a matching fixed
+     height, and never grow past the 34px they are drawn at everywhere else. */
+  .pf-week-days {
+    gap: 6px;
+  }
+
+  .pf-day {
+    flex: 1 1 0;
+    width: auto;
+    height: auto;
+    max-width: 34px;
+    aspect-ratio: 1;
   }
 }

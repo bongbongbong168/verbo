@@ -14,8 +14,10 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  // ONE visibility state for both fields. The second field exists to be checked
+  // against the first, so revealing one while the other stays masked defeats
+  // the only reason to look — either eye now shows or hides the pair.
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -99,7 +101,7 @@ export default function Register() {
                 type="button"
                 className="su-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? 'Hide passwords' : 'Show passwords'}
               >
                 <EyeIcon shown={showPassword} />
               </button>
@@ -112,7 +114,7 @@ export default function Register() {
               <input
                 id="su-confirm-password"
                 className="su-input"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -122,10 +124,10 @@ export default function Register() {
               <button
                 type="button"
                 className="su-password-toggle"
-                onClick={() => setShowConfirmPassword((v) => !v)}
-                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide passwords' : 'Show passwords'}
               >
-                <EyeIcon shown={showConfirmPassword} />
+                <EyeIcon shown={showPassword} />
               </button>
             </div>
 

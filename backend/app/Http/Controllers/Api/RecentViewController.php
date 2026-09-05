@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Article;
 use App\Models\Podcast;
 use App\Models\StudyUnit;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -21,6 +22,7 @@ class RecentViewController extends Controller
     private const TYPES = [
         'study_unit' => StudyUnit::class,
         'podcast' => Podcast::class,
+        'article' => Article::class,
     ];
 
     /**
@@ -90,7 +92,7 @@ class RecentViewController extends Controller
     }
 
     /**
-     * One row as a tile, or null when its target is gone. The two kinds carry
+     * One row as a tile, or null when its target is gone. The three kinds carry
      * different fields on purpose — the Dashboard renders a different card for
      * each — so `kind` is what the client switches on.
      */
@@ -131,6 +133,27 @@ class RecentViewController extends Controller
                     'id' => $thing->level->id,
                     'title' => $thing->level->title,
                     'image_url' => $thing->level->image_url,
+                ],
+            ];
+        }
+
+        if ($thing instanceof Article) {
+            return $base + [
+                'article' => [
+                    'id' => $thing->id,
+                    'title' => $thing->title,
+                    // FORMAT (article/story/funfact) and TOPIC are different
+                    // questions — the card shows the first as a badge on the
+                    // cover and the second in the line beneath, exactly as the
+                    // Read shelves do.
+                    'type' => $thing->type,
+                    'category' => $thing->category,
+                    'hsk_level' => $thing->hsk_level,
+                    'image_url' => $thing->image_url,
+                    // Derived from the body, never stored — the accessor has
+                    // the body here because the morph load selects the whole
+                    // row, so no extra query and no `body` on the wire.
+                    'reading_minutes' => $thing->reading_minutes,
                 ],
             ];
         }

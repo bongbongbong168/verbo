@@ -1,0 +1,70 @@
+/* Loading placeholders. Prefix `sk-`.
+ *
+ * DELIBERATELY NOT ANIMATED — no shimmer, no pulse. The rule holds across this
+ * whole codebase: a CSS animation only advances while the tab composites
+ * frames, so anything whose legibility depends on motion is stranded at
+ * keyframe 0 in a backgrounded tab. A shimmer that freezes reads as a broken
+ * page, and a skeleton's entire job is to say "this is coming" — it has to say
+ * it in a single static frame.
+ *
+ * These are also intentionally low-contrast. A skeleton that is too dark
+ * competes with the real content painting in beside it, and on a page where
+ * half the sections are cached and half are not, the placeholders should
+ * recede rather than announce which half is late. */
+
+.sk {
+  background: #ece9f6;
+  border-radius: 8px;
+  /* Nothing inside these ever means anything, so keep them off the
+     accessibility tree and out of text selection. */
+  user-select: none;
+  pointer-events: none;
+}
+
+.sk-text {
+  height: 0.72em;
+  margin: 0.36em 0;
+  border-radius: 4px;
+}
+
+/* A last line that stops short reads as a paragraph rather than a block. */
+.sk-text:last-child {
+  width: 62%;
+}
+
+.sk-title {
+  height: 1em;
+  border-radius: 5px;
+}
+
+.sk-media {
+  width: 100%;
+  border-radius: 12px;
+  background: #e7e3f4;
+}
+
+/* A card-shaped placeholder that matches the app's card stroke, so a loading
+   row keeps the same rhythm as the row it becomes. */
+.sk-card {
+  border: 1px solid #e7e3f6;
+  border-radius: 14px;
+  background: #fff;
+  padding: 0.9rem;
+  box-sizing: border-box;
+}
+
+.sk-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.sk-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.sk-circle {
+  border-radius: 50%;
+  flex: none;
+}

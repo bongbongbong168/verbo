@@ -6,14 +6,16 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "cwd": "frontend",
-      "port": 5173
+      "port": 5173,
+      "autoPort": false
     },
     {
       "name": "backend",
       "runtimeExecutable": "php",
       "runtimeArgs": ["artisan", "serve"],
       "cwd": "backend",
-      "port": 8000
+      "port": 8000,
+      "autoPort": false
     }
   ]
 }

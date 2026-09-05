@@ -242,7 +242,25 @@
     flex-direction: column;
   }
 
+  /* Stacked, the panel is a banner rather than a column beside the form, so it
+     sizes to its own content. `flex: 0 0 42%` resolves against the HEIGHT once
+     the container turns vertical, which reserved 42% of the viewport for a
+     couple of lines of text. */
   .su-panel {
+    flex: none;
     max-width: none;
+    justify-content: flex-start;
+  }
+
+  /* The logo has to leave the absolute layer here: the panel is short, and
+     `justify-content: flex-end` brings the heading up underneath a logo pinned
+     at 2.4rem, so the two overlapped. In flow it needs `align-self: flex-start`
+     as well — a flex item stretches by default, which overrides `width: auto`
+     and squashes the image against its fixed height. */
+  .su-panel-logo {
+    position: static;
+    align-self: flex-start;
+    flex: none;
+    margin-bottom: 1.2rem;
   }
 }

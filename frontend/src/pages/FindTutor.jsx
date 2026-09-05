@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { isBookingLive } from "../bookings";
+import { fetchIfStale, hasCache, readCache, writeCache } from "../dataCache";
+import Skeleton, { SkeletonCards } from "../components/Skeleton";
 import BookingDialog from "../components/BookingDialog";
 import ImageCropper from "../components/ImageCropper";
 import PageTools from "../components/PageTools";
@@ -317,11 +319,16 @@ export default function FindTutor() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
 
-  const [tutors, setTutors] = useState([]);
-  const [myProfile, setMyProfile] = useState(null);
-  const [bookings, setBookings] = useState({ sent: [], received: [] });
+  /* Seeded from the shared cache during the FIRST render, not in an effect —
+     an effect runs after paint, which would flash the loading state for a
+     frame on a revisit and lose the point of caching at all. */
+  const [tutors, setTutors] = useState(() => readCache("tutors") || []);
+  const [myProfile, setMyProfile] = useState(() => readCache("tutor-profile:me") ?? null);
+  const [bookings, setBookings] = useState(
+    () => readCache("bookings") || { sent: [], received: [] },
+  );
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !hasCache("tutors"));
 
   const [bio, setBio] = useState("");
   const [subjects, setSubjects] = useState("");
@@ -377,28 +384,38 @@ export default function FindTutor() {
     loadAll();
   }, [token]);
 
+  /* The "become a tutor" form mirrors the loaded profile. Its own effect now
+     that the profile arrives on its own schedule rather than inside a combined
+     `.then` — and it must NOT stamp over what is being typed, so it only syncs
+     while the form is closed. */
+  useEffect(() => {
+    if (!myProfile || showProfileForm) return;
+    setBio(myProfile.bio || "");
+    setSubjects(myProfile.subjects || "");
+    setHourlyRate(myProfile.hourly_rate ?? "");
+    setLanguagesSpoken(myProfile.languages_spoken || "");
+    setAvailability(myProfile.availability || "");
+    setVideoUrl(myProfile.video_url || "");
+  }, [myProfile, showProfileForm]);
+
+  /* Three independent reads rather than one Promise.all behind a single
+     loading gate, so the tutor grid is not held up by the caller's own profile
+     or their bookings. `tutors` is deliberately the SAME cache key the
+     Dashboard uses, so arriving from there paints immediately. */
   function loadAll() {
     setLoading(true);
-    Promise.all([
-      api.getTutors(token),
-      api.getMyTutorProfile(token),
-      api.getBookings(token),
-    ])
-      .then(([tutorList, profile, bookingData]) => {
-        setTutors(tutorList);
-        setMyProfile(profile);
-        if (profile) {
-          setBio(profile.bio || "");
-          setSubjects(profile.subjects || "");
-          setHourlyRate(profile.hourly_rate ?? "");
-          setLanguagesSpoken(profile.languages_spoken || "");
-          setAvailability(profile.availability || "");
-          setVideoUrl(profile.video_url || "");
-        }
-        setBookings(bookingData);
-      })
-      .catch((err) => setError(err.message))
+    fetchIfStale("tutors", () => api.getTutors(token))
+      .then(setTutors)
+      .catch((err) => !tutors.length && setError(err.message))
       .finally(() => setLoading(false));
+
+    fetchIfStale("tutor-profile:me", () => api.getMyTutorProfile(token))
+      .then(setMyProfile)
+      .catch(() => {});
+
+    fetchIfStale("bookings", () => api.getBookings(token))
+      .then(setBookings)
+      .catch(() => {});
   }
 
   async function handleSaveProfile(e) {
@@ -422,7 +439,12 @@ export default function FindTutor() {
         const withoutMine = prev.filter(
           (t) => Number(t.user_id) !== Number(profile.user_id),
         );
-        return [profile, ...withoutMine];
+        const next = [profile, ...withoutMine];
+        // Through the cache too, or the Dashboard's "Recommend Teachers" row
+        // and a revisit to this page would both show the pre-edit profile.
+        writeCache("tutors", next);
+        writeCache("tutor-profile:me", profile);
+        return next;
       });
     } catch (err) {
       setError(err.message);
@@ -509,7 +531,13 @@ export default function FindTutor() {
     filteredTutors[0] ||
     null;
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div className="ft">
+        <Skeleton style={{ height: 40, marginBottom: "1.4rem" }} />
+        <SkeletonCards className="ft-list" count={6} mediaHeight={120} />
+      </div>
+    );
 
   return (
     <div className="ft">
@@ -853,6 +881,8 @@ export default function FindTutor() {
               await api.setTutorPhoto(token, photoTargetId, cropped);
               const fresh = await api.getTutors(token);
               setTutors(fresh);
+              // The photo shows on the Dashboard's teacher cards too.
+              writeCache("tutors", fresh);
             } catch (err) {
               setError(err.message);
             } finally {
