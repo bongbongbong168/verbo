@@ -197,7 +197,11 @@ export default function Read() {
 
   return (
     <div className="rd">
+      {/* In the topbar, not under it — that row already exists for the tools,
+          so the page gets a name for no extra vertical space. See the note
+          below the divider for why a heading of its own was refused. */}
       <div className="rd-topbar">
+        <h1 className="rd-title">Read</h1>
         <div className="rd-topbar-icons">
           <PageTools />
         </div>

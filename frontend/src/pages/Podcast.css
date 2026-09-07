@@ -18,15 +18,39 @@
 
 /* ---- top bar: Podcast / Reads toggle (mirror of Read.css) ---- */
 
-/* End-aligned: the Podcast/Reads toggle that used to sit centred here is gone,
-   leaving the tools cluster as the row's only child. It has to stay in normal
-   flow — an absolutely positioned only child leaves the row zero-high. */
+/* Page title left, tools right — mirror of `.rd-topbar`. The Podcast/Reads
+   toggle that used to sit centred here is gone and the title took its place.
+   The icons have to stay in normal flow — an absolutely positioned only child
+   leaves the row zero-high. */
 .pc-topbar {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.4rem;
+}
+
+/* Matches `.rd-title` and the app's other page titles. */
+.pc-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.pc-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--pc-accent-light);
 }
 
 /* Same as `.rd-topbar-icons`: keep the `position` + `z-index` even unpinned, or

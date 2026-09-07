@@ -144,7 +144,12 @@ export default function Podcast() {
 
   return (
     <div className="pc">
+      {/* The title sits IN the topbar rather than under it. That row already
+          exists to carry the tools, so naming the page here costs no vertical
+          space — which was the whole objection to giving these pages a heading
+          in the first place. */}
       <div className="pc-topbar">
+        <h1 className="pc-title">Podcast</h1>
         <div className="pc-topbar-icons">
           <PageTools />
         </div>

@@ -21,17 +21,42 @@
 
 /* ---- top bar: Podcast / Reads toggle ---- */
 
-/* The tools cluster is the only thing in this row now that the Reads/Podcast
-   toggle is gone, so the row aligns it right rather than centring a toggle and
-   pinning the tools beside it. The icons must stay in normal flow — an
-   absolutely positioned only child would leave the row zero-high and drop the
-   tools onto the divider. */
+/* Page title left, tools right. The Reads/Podcast toggle that used to be
+   centred here is gone; the title took its place rather than leaving the row
+   half empty. The icons must stay in normal flow — an absolutely positioned
+   only child would leave the row zero-high and drop the tools onto the
+   divider. */
 .rd-topbar {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.4rem;
+}
+
+/* The app's page-title treatment, same as Vocabulary Bank and Notifications:
+   a leading accent rule drawn as a `::before` so it tracks the text's own cap
+   band via `em` insets rather than a hard-coded height. */
+.rd-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.rd-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--rd-accent-light);
 }
 
 /* KEEP the `position` + `z-index` even though this box is no longer pinned.
