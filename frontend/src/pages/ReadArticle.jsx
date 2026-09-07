@@ -5,7 +5,6 @@ import { api } from "../api";
 import { exampleFor } from "../sentence";
 import { invalidate, isFresh, readCache, writeCache } from "../dataCache";
 import Skeleton, { SkeletonText } from "../components/Skeleton";
-import SectionToggle from "../components/SectionToggle";
 import WordPopover from "../components/WordPopover";
 import PageTools from "../components/PageTools";
 import ArticleActions from "../components/ArticleActions";
@@ -209,7 +208,6 @@ export default function ReadArticle() {
   return (
     <div className="rd">
       <div className="rd-topbar">
-        <SectionToggle active="read" />
         <div className="rd-topbar-icons">
           <PageTools />
         </div>

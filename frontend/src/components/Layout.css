@@ -54,10 +54,10 @@
   min-width: 0;
 }
 
-/* The real chevron mark, lifted out of logo.png. The full wordmark is a solid
-   176x42 pill that cannot be cropped without slicing its rounded edge, so the
-   mark was extracted to its own transparent PNG (assets/sidebar/logo-mark.png)
-   rather than masked at runtime. Width-driven so it keeps its 40:27 aspect. */
+/* The chevron alone (assets/sidebar/logo-mark.svg). The full wordmark is a
+   pill that cannot be cropped without slicing its rounded edge, so the mark is
+   its own file rather than being masked at runtime. Width-driven so it keeps
+   its own aspect. */
 .sb-badge {
   display: block;
   width: 36px;
@@ -213,6 +213,9 @@
     /* Collapses out with the label rather than snapping — it is part of the
        same row of text, so it has to leave on the same schedule. */
     max-width var(--sb-dur) var(--sb-ease),
+    /* The auto margin has to travel with it; see the collapsed rule below for
+       why it cannot simply stay. */
+    margin-left var(--sb-dur) var(--sb-ease),
     opacity 0.16s ease;
 }
 
@@ -469,6 +472,21 @@
 .sb.collapsed .sb-caret {
   max-width: 0;
   opacity: 0;
+}
+
+/* ZERO THE CARET'S AUTO MARGIN when collapsed, or the four section headers sit
+   off-centre against Home and Settings.
+
+   `margin-left: auto` is what pushes the caret to the right-hand end of an
+   expanded row. Shrinking the caret to `max-width: 0` does NOT retire that
+   margin: it still resolves to a real length (measured 10.64px) and still
+   counts as content, so `justify-content: center` centres `icon + 10.64` and
+   leaves the icon half that margin to the left. Measured before the fix: Home
+   and Settings — plain <a>, no caret — sat dead on the rail's centre at 41.79,
+   while Learn, Explore, Tutor and Tools sat at 35.95. Same box, same padding,
+   same zero gap; the whole 5.84px was this margin. */
+.sb.collapsed .sb-caret {
+  margin-left: 0;
 }
 
 /* The footer block collapses by height rather than disappearing, or the rail

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import verboLogo from '../assets/sidebar/logo.png'
+import verboLogo from '../assets/sidebar/logo.svg'
 import feather from '../assets/signup/feather.png'
 import EyeIcon from '../components/EyeIcon'
 import GoogleSignInButton, { googleConfigured } from '../components/GoogleSignInButton'

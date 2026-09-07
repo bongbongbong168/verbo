@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
-import logo from "../assets/sidebar/logo.png";
-import logoMark from "../assets/sidebar/logo-mark.png";
+import logo from "../assets/sidebar/logo.svg";
+import logoMark from "../assets/sidebar/logo-mark.svg";
 import "./Layout.css";
 
 /* Optical normalisation, measured with getBBox() rather than guessed.

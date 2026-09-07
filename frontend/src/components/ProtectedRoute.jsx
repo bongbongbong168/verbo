@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import verboLogo from '../assets/sidebar/logo.png'
+import verboLogo from '../assets/sidebar/logo.svg'
 import './ProtectedRoute.css'
 
 export default function ProtectedRoute({ children }) {

@@ -5,7 +5,6 @@ import { api } from "../api";
 import { useApiData } from "../useApiData";
 import { invalidate } from "../dataCache";
 import { TRENDING, byTrending } from "../trending";
-import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import { BookmarkIcon } from "../components/ArticleIcons";
@@ -199,7 +198,6 @@ export default function Read() {
   return (
     <div className="rd">
       <div className="rd-topbar">
-        <SectionToggle active="read" />
         <div className="rd-topbar-icons">
           <PageTools />
         </div>
@@ -207,10 +205,13 @@ export default function Read() {
 
       <hr className="rd-divider" />
 
-      {/* No page title. The section toggle directly above already says Reads,
-          and a heading that repeats it — with a line of copy under it telling
-          the reader what a reading page is for — pushed the first article most
-          of a screen down to say nothing they did not know. */}
+      {/* Still no page title, though the reason has changed: it used to be that
+          the section toggle above already said Reads. The toggle is gone, so
+          the sidebar — which keeps Explore > Read lit while you are here — is
+          now what names the page. The original objection stands on its own
+          anyway: a heading repeating the nav, with a line of copy under it
+          telling the reader what a reading page is for, pushed the first
+          article most of a screen down to say nothing they did not know. */}
 
       {error && <p className="rd-error">{error}</p>}
 

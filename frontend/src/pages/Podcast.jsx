@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { useApiData } from "../useApiData";
 import { invalidate } from "../dataCache";
-import SectionToggle from "../components/SectionToggle";
 import PageTools from "../components/PageTools";
 import PodcastEditDrawer from "../components/PodcastEditDrawer";
 import { SkeletonCards } from "../components/Skeleton";
@@ -146,7 +145,6 @@ export default function Podcast() {
   return (
     <div className="pc">
       <div className="pc-topbar">
-        <SectionToggle active="podcast" />
         <div className="pc-topbar-icons">
           <PageTools />
         </div>

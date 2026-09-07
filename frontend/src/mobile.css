@@ -257,14 +257,10 @@
    "this is a website" tell on a phone, so every page must measure
    scrollWidth === clientWidth. */
 @media (max-width: 767px) {
-  /* Read: the toggle and the bell/account pair could not both fit on one line,
-     and the row had no way to break. Read.css already un-pins the icons at
-     720px; it is the ROW that needed permission to wrap. */
-  .rd-topbar,
-  .pc-topbar {
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
+  /* The toggle and the bell/account pair could not both fit on one line here,
+     so the row was given permission to wrap. The toggle is gone and the tools
+     cluster fits on its own at any width, so the wrap rule came out — it can
+     only cost a wasted line now. */
 
   /* Podcast: the row's -24px side margins are a desktop bleed that lets the
      card shadows breathe past the page gutter. Against a 16px gutter they
@@ -730,56 +726,21 @@
    three of these.
    --------------------------------------------------------------------------- */
 @media (max-width: 767px) {
-  /* ---- Podcast / Read: the icons were sitting ON the section toggle ----
-     `.pc-topbar-icons` and `.rd-topbar-icons` are `position: absolute; right: 0`
-     so they can sit beside the toggle on a wide screen. On a phone the toggle
-     fills the row and the icons landed on top of it, covering the word "Reads".
+  /* ---- Podcast / Read topbar ----
+     This block used to do a lot: the icons were `position: absolute` so they
+     could sit beside the centred Reads/Podcast toggle, and on a phone they
+     landed ON the toggle, covering the word "Reads". Un-pinning them, forcing
+     nowrap and shrinking the toggle's padding, label and glyph bought back the
+     68px that made the row fit at 375px.
 
-     Taken out of absolute flow so they sit in the row instead. Podcast never
-     had a mobile rule at all — Read had one, but only at 720px and only
-     un-pinning its own copy. */
-  .pc-topbar-icons,
-  .rd-topbar-icons {
-    position: static !important;
-    transform: none !important;
-    margin-left: auto;
-  }
-
+     The toggle is gone from all three pages, so the row is just the tools
+     cluster and the desktop rule already end-aligns it in normal flow. Nothing
+     is left to fit, and the `.tg` overrides went with it. Only the gutter
+     reservation still needs clearing — it was there to leave room for the
+     absolute icons, and now only pushes the row off its own right edge. */
   .pc-topbar,
   .rd-topbar {
-    display: flex;
-    /* NOWRAP. Wrapping is what dropped the three tools onto a line of their
-       own — a 42px band plus its gap, spent on nothing, at the top of every
-       page. Measured at 375px: the toggle was 276 and the tools 145, needing
-       432 in a 343 bar. The two rules below buy that back. */
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.7rem;
-    /* The absolute icons needed room reserved on the right; static ones do not,
-       and the leftover padding just pushed the toggle off-centre. */
     padding-right: 0 !important;
-  }
-
-  /* The toggle gives up 68px: tighter padding, a smaller label and a smaller
-     glyph. It is still the biggest thing in the row and still reads clearly —
-     a phone-sized control rather than a desktop one shrunk in place. */
-  .rd-topbar .tg,
-  .pc-topbar .tg {
-    gap: 0.4rem;
-    flex: none;
-  }
-
-  .rd-topbar .tg-item,
-  .pc-topbar .tg-item {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.92rem;
-    gap: 0.35rem;
-  }
-
-  .rd-topbar .tg-item svg,
-  .pc-topbar .tg-item svg {
-    width: 17px;
-    height: 17px;
   }
 
   /* ---- the tools cluster, everywhere it appears on a phone ----

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/sidebar/logo.png";
+import logo from "../assets/sidebar/logo.svg";
 import feather from "../assets/signup/feather.png";
 /* The quiz launcher's celebration art, recoloured for this screen: its purples
    already sat on the app's hue (246-259 against the app's 258), but ~28% of it

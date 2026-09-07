@@ -18,22 +18,22 @@
 
 /* ---- top bar: Podcast / Reads toggle (mirror of Read.css) ---- */
 
+/* End-aligned: the Podcast/Reads toggle that used to sit centred here is gone,
+   leaving the tools cluster as the row's only child. It has to stay in normal
+   flow — an absolutely positioned only child leaves the row zero-high. */
 .pc-topbar {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   margin-bottom: 1.4rem;
 }
 
-/* Same as `.rd-topbar-icons`: the transform creates a stacking context that
-   traps the bell and account popovers inside it, so this needs a z-index of
-   its own or positioned page content paints over an open popover. */
+/* Same as `.rd-topbar-icons`: keep the `position` + `z-index` even unpinned, or
+   the bell and account popovers (z-index 40) paint in the `auto` band and
+   positioned page content lands on top of them. */
 .pc-topbar-icons {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   z-index: 50;
   display: flex;
   align-items: center;

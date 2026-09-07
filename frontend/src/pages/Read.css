@@ -21,28 +21,30 @@
 
 /* ---- top bar: Podcast / Reads toggle ---- */
 
+/* The tools cluster is the only thing in this row now that the Reads/Podcast
+   toggle is gone, so the row aligns it right rather than centring a toggle and
+   pinning the tools beside it. The icons must stay in normal flow — an
+   absolutely positioned only child would leave the row zero-high and drop the
+   tools onto the divider. */
 .rd-topbar {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   margin-bottom: 1.4rem;
 }
 
-/* The `transform` here CREATES A STACKING CONTEXT, which traps the bell and
-   account popovers inside it — their own `z-index: 40` is then measured against
-   each other, not against the page. Without a z-index of its own this whole
-   box paints in the `z-index: auto` band, so any positioned element further
-   down the page (the Saved-articles bookmark did exactly this) lands on top of
-   an open popover.
+/* KEEP the `position` + `z-index` even though this box is no longer pinned.
+   The bell and account popovers inside it are `z-index: 40`, and without a
+   positioned ancestor lifted above the page they paint in the `auto` band —
+   where any positioned element further down (the Saved-articles bookmark did
+   exactly this) lands on top of an open popover.
 
-   50 sits above the page and below the modals — the word popover is 60, the
-   dialogs 60-95. Do not remove it while the transform is here. */
+   50 sits above the page and below the modals: the word popover is 60, the
+   dialogs 60-95. `relative` rather than the old `absolute` + `translateY`,
+   since the row is a plain flex end-aligned box now. */
 .rd-topbar-icons {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   z-index: 50;
   display: flex;
   align-items: center;
