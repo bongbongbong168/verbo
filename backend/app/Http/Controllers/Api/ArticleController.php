@@ -12,6 +12,105 @@ use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
+    /**
+     * A weekly reading target.
+     *
+     * NOT read from `learning_preferences` — `daily_goal` there is a duration
+     * ("30 minutes"), and converting minutes into a number of articles would be
+     * a made-up exchange rate presented as the learner's own goal. This is an
+     * app default instead, and the banner says so on screen rather than
+     * implying the learner set it. Same footing as `Flashcard::MASTERED_STREAK`:
+     * a stated rule that can be defended, not a felt one.
+     */
+    public const WEEKLY_READ_GOAL = 5;
+
+    /**
+     * Everything the Read page's banner needs, in ONE request.
+     *
+     * Four slides would otherwise be three or four calls on every visit to the
+     * page, against a 300/min bucket that React StrictMode doubles in dev. It
+     * also keeps the banner atomic: the slides describe one moment rather than
+     * three fetches that landed at slightly different times.
+     *
+     * Declared BEFORE `/articles/{article}` — "highlights" would otherwise bind
+     * as an id, the same trap `articles/recommended` sits next to.
+     */
+    public function highlights(Request $request, RecommendationService $recommender)
+    {
+        $user = $request->user();
+
+        /* Two picks, so the "continue" slide has something to fall back to
+           without a second scoring pass. */
+        $scored = $recommender->forUser($user, 2);
+        $recommended = $scored[0]['article'] ?? null;
+
+        /* "Continue learning" is the last thing they actually opened, which is
+           real resume state rather than a second recommendation wearing a
+           different label. Articles have no notion of being finished, so this
+           is deliberately "pick up where you left off", not "you are 60%
+           through". Excludes whatever the slide above is already showing. */
+        $lastRead = DB::table('article_views')
+            ->where('user_id', $user->id)
+            ->when($recommended, fn ($q) => $q->where('article_id', '!=', $recommended->id))
+            ->orderByDesc('last_viewed_at')
+            ->first();
+
+        $continue = null;
+        $continueKind = null;
+        if ($lastRead) {
+            $continue = Article::find($lastRead->article_id);
+            $continueKind = 'resume';
+        }
+        if (! $continue) {
+            // A learner who has read nothing has nothing to continue. Offer the
+            // runner-up recommendation and let the client word it differently,
+            // rather than showing an empty slide or repeating slide one.
+            $continue = $scored[1]['article'] ?? null;
+            $continueKind = $continue ? 'suggestion' : null;
+        }
+
+        $weekStart = now()->startOfWeek();
+
+        return [
+            'recommended' => $recommended ? array_merge($this->heroCard($recommended), [
+                // The same self-explaining sentence the Read page already uses,
+                // so the pick reads as reasoned rather than promoted.
+                'why' => RecommendationService::explain($scored[0]['reasons']),
+            ]) : null,
+            'continue' => $continue ? array_merge($this->heroCard($continue), [
+                'kind' => $continueKind,
+                'last_read_at' => $lastRead->last_viewed_at ?? null,
+            ]) : null,
+            'week' => [
+                // One row per (user, article), so this counts DISTINCT articles
+                // opened this week — which is what "you've read 4" means.
+                'articles_read' => DB::table('article_views')
+                    ->where('user_id', $user->id)
+                    ->where('last_viewed_at', '>=', $weekStart)
+                    ->count(),
+                'goal' => self::WEEKLY_READ_GOAL,
+                'words_saved' => $user->flashcards()
+                    ->where('created_at', '>=', $weekStart)
+                    ->count(),
+            ],
+        ];
+    }
+
+    /** The fields a banner slide renders. Mirrors the list card's shape. */
+    private function heroCard(Article $a): array
+    {
+        return [
+            'id' => $a->id,
+            'title' => $a->title,
+            'type' => $a->type,
+            'category' => $a->category,
+            'hsk_level' => $a->hsk_level,
+            'difficulty' => $a->difficulty,
+            'image_url' => $a->image_url,
+            'reading_minutes' => $a->reading_minutes,
+        ];
+    }
+
     public function index(Request $request)
     {
         // The excerpt is trimmed in the database so full article bodies never

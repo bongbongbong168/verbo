@@ -275,6 +275,10 @@ export const api = {
   deleteArticleComment: (token, commentId) =>
     request(`/article-comments/${commentId}`, { method: 'DELETE', token }),
   // `exclude` keeps the article you are reading out of its own list.
+  /* The Read banner's four slides in one request — a recommendation, the
+     last article opened, this week's reading counts. One call rather than
+     three, against a shared 300/min bucket. */
+  getReadHighlights: (token) => request("/articles/highlights", { token }),
   getRecommendedArticles: (token, { limit = 3, exclude } = {}) => {
     const qs = new URLSearchParams({ limit })
     if (exclude) qs.set('exclude', exclude)

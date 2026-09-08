@@ -1,0 +1,398 @@
+/* The Read page's banner.
+   Composition follows the supplied reference — compact dark panel, text and CTA
+   left, the thing being pointed at as a card on the right. Colours are Verbo's:
+   #2b2643 is the app's own dark surface (the sidebar is this exact colour) and
+   #a89ce3 is the accent every filled control here already uses. */
+
+.rh {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  align-items: center;
+  gap: 2rem;
+  /* A FIXED height, not a minimum. The four slides need different amounts of
+     room — measured 272.7, 230.8, 215.6 and 230.8 — and letting the banner size
+     to each one made the whole page below it jump by up to 57px every time it
+     rotated, which is precisely the distracting movement the design direction
+     rules out. 240 clears the tallest slide (a two-line title, meta, one-line
+     note and the button) with the content centred inside it.
+
+     Compact on purpose too: reading content stays the focus, so this must not
+     push the first shelf off the fold. */
+  height: 240px;
+  box-sizing: border-box;
+  padding: 1.35rem 1.7rem;
+  margin: 0 0 1.8rem;
+  border-radius: 20px;
+  background: #2b2643;
+  color: #fff;
+  overflow: hidden;
+}
+
+.rh-slide {
+  display: contents;
+}
+
+/* Ornament only, and TRANSFORM ONLY. It must never start at `opacity: 0`: an
+   animation stalls at frame 0 in a tab that is not compositing, which would
+   leave the whole banner invisible rather than merely unmoved. */
+@keyframes rh-in {
+  from {
+    transform: translateX(10px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.rh-in > .rh-text {
+  animation: rh-in 0.32s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rh-in > .rh-text {
+    animation: none;
+  }
+}
+
+/* ---- left: the text block ---- */
+
+.rh-text {
+  min-width: 0;
+}
+
+.rh-eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a89ce3;
+}
+
+/* Two lines, then fade. `-webkit-line-clamp` is avoided deliberately: it makes
+   `scrollHeight > clientHeight` always true, so nothing downstream can test
+   whether the text was actually cut. A mask fades only where text really
+   reaches the edge, and leaves a shorter title untouched.
+
+   The box is sized to the lines PLUS ~0.7em of clearance. Pinning it to exactly
+   two lines puts the second line inside the fade's ramp, so a title that fits
+   comes out visibly greyer and reads as truncated. */
+.rh-title {
+  margin: 0 0 0.4rem;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: clamp(1.35rem, 2.1vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  max-height: 3.2em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 10px), transparent);
+}
+
+/* The progress and Pro headlines are authored and always fit, so they need no
+   fade — and a mask on a one-line heading only risks greying its descenders. */
+.rh-title-plain {
+  max-height: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.rh-meta {
+  margin: 0 0 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ONE line. This is the recommender's "because…" sentence, whose length
+   depends on how many reasons scored — so left to wrap it is the one thing on
+   the banner that can change its height between slides. Ellipsis rather than a
+   fade mask because the box has an independent width (46ch) to clip against;
+   the mask rule elsewhere applies where a box shrinks to its own content. */
+.rh-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 46ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rh-meta + .rh-cta,
+.rh-title + .rh-cta {
+  margin-top: 0.75rem;
+}
+
+/* ---- the call to action ---- */
+
+.rh-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Asymmetric by the same rule as the rest of the app: Hellix reserves more
+     ascent than a short label uses, so symmetric padding centres the line box
+     and leaves the glyphs sitting low. The pair sums to the original value, so
+     the button's height is unchanged. */
+  padding: calc(0.6rem - 1px) 1.15rem calc(0.6rem + 1px);
+  border-radius: 999px;
+  background: #a89ce3;
+  color: #1c1730;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  /* Only the arrow eases. The fill is state and stays static. */
+  transition: background 0.15s ease;
+}
+
+.rh-cta:hover {
+  background: #b9afe9;
+}
+
+.rh-cta svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.rh-cta:hover svg {
+  transform: translateX(2px);
+}
+
+.rh-cta:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* The progress slide's action is secondary — that slide is meant to be calm,
+   and a filled button there would compete with the number it is about. */
+.rh-cta-ghost {
+  background: transparent;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.rh-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- right: the visual ---- */
+
+.rh-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* The article cover, sized to the panel. `.ac` sets its own aspect ratio, so
+   only the width is given here. */
+.rh-visual-cover .ac {
+  width: 232px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.rh-visual-progress {
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 100%;
+}
+
+/* A plain counter, not a gauge. A ring with a sweep would be the gamified
+   treatment the brief rules out, and would need an animation to read at all. */
+.rh-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(168, 156, 227, 0.45);
+}
+
+.rh-ring-num {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.rh-ring-of {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.rh-bar {
+  width: 100%;
+  max-width: 200px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.rh-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #a89ce3;
+}
+
+/* Pro: the benefits as a quiet list. No badges, no pricing, no glow — the
+   Upgrade page is where the offer lives; this only says what it is. */
+.rh-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.rh-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.rh-tick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 0.1rem;
+  border-radius: 50%;
+  background: rgba(168, 156, 227, 0.22);
+  color: #a89ce3;
+}
+
+.rh-tick svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* ---- controls ---- */
+
+.rh-controls {
+  position: absolute;
+  right: 1.7rem;
+  bottom: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.rh-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Static, never transitioned — the width IS which slide you are on, and a
+   transition stalled by a hidden tab would show every dot the same. */
+.rh-dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+
+.rh-dot.on {
+  width: 18px;
+  background: #a89ce3;
+}
+
+.rh-dot:focus-visible,
+.rh-arrow:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.rh-arrows {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.rh-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.rh-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.rh-arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- narrow ----
+   The visual is the first thing to go: on a phone the text and its CTA are the
+   whole point, and a 232px cover beside them would leave the title in a column
+   too narrow to read. The controls come back into flow so they cannot sit on
+   top of the button. */
+@media (max-width: 900px) {
+  /* Height goes back to auto here: the visual is hidden and the text stacks,
+     so a fixed 240 would either clip a wrapped title or leave dead space. The
+     slides differ by a line or two at this width, which is a far smaller jump
+     than the desktop one and not worth reserving space for. */
+  .rh {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.2rem;
+    height: auto;
+    padding-bottom: 1.3rem;
+  }
+
+  .rh-visual-cover {
+    display: none;
+  }
+
+  .rh-visual-progress {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .rh-ring {
+    width: 76px;
+    height: 76px;
+  }
+
+  .rh-ring-num {
+    font-size: 1.6rem;
+  }
+
+  .rh-controls {
+    position: static;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+  }
+}

@@ -121,6 +121,8 @@ Route::middleware('auth:sanctum')->group(function () {
     /* Declared BEFORE /articles/{article}, or "recommended" binds as an id —
        the same trap bookings/clear-past and notifications/read-all hit. */
     Route::get('/articles/recommended', [ArticleController::class, 'recommended']);
+    // Same rule: before /articles/{article}, or it binds as an id.
+    Route::get('/articles/highlights', [ArticleController::class, 'highlights']);
     Route::get('/articles/{article}', [ArticleController::class, 'show']);
 
     /* Reader interactions. Each toggle returns the article's fresh counts plus

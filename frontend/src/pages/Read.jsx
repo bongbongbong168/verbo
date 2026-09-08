@@ -9,6 +9,7 @@ import PageTools from "../components/PageTools";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import { BookmarkIcon } from "../components/ArticleIcons";
 import ArticleCover from "../components/ArticleCover";
+import ReadHero from "../components/ReadHero";
 import Skeleton, { SkeletonCards } from "../components/Skeleton";
 import "./Read.css";
 
@@ -128,6 +129,14 @@ export default function Read() {
     api.getRecommendedArticles(token, { limit: SHELF_SIZE }).catch(() => []),
   );
 
+  /* The banner's four slides in one call. Fails soft for the same reason the
+     recommender does — the page is full of things to read either way, and a
+     banner that could not load is a banner that simply does not appear. */
+  const highlightsQuery = useApiData("articles:highlights", () =>
+    api.getReadHighlights(token).catch(() => null),
+  );
+  const highlights = highlightsQuery.data;
+
   const articles = articleQuery.data || EMPTY;
   const recommended = recommendedQuery.data || EMPTY;
   const loading = articleQuery.loading;
@@ -239,6 +248,14 @@ export default function Read() {
 
           Saved sits at the far right with the search: it is a DESTINATION, not
           a filter, and it has no business among controls that narrow in place. */}
+      {/* Banner first, then the controls, then the shelves — the hierarchy the
+          brief asks for. It sits ABOVE the topic pills rather than between them
+          and the shelves, so filtering the library never appears to filter the
+          banner too. Rendered only once its data has arrived: a skeleton here
+          would be a 208px grey slab pushing the reading content down, which is
+          exactly what the banner is meant not to do. */}
+      {highlights && <ReadHero data={highlights} />}
+
       <div className="rd-bar">
         <div className="rd-pills">
           <button
