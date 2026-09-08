@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ArticleCover from './ArticleCover'
+/* The app's own 3D illustrations, already used on Profile and Login. Reused
+   rather than newly sourced so the banner carries the same cast as the rest of
+   Verbo — the reference banners all lean on one illustration each, and a
+   character the learner has already met on sign-up does that job here. */
+import graduateArt from '../assets/profile/graduate.png'
+import scholarArt from '../assets/login/graduate-illustration.png'
 import './ReadHero.css'
 
 /**
@@ -111,28 +117,24 @@ function ProgressSlide({ week }) {
             told in a motivational voice. */}
         <p className="rh-meta">
           {read} of {goal} · Verbo's weekly reading goal
+          {week.words_saved > 0 && ` · ${week.words_saved} word${week.words_saved === 1 ? '' : 's'} saved`}
         </p>
-        {week.words_saved > 0 && (
-          <p className="rh-note">
-            {week.words_saved} word{week.words_saved === 1 ? '' : 's'} saved to your bank this week
-          </p>
-        )}
+        {/* Static width, never transitioned — the width IS the state, and a
+            transition that never gets a frame would show every week at 0%.
+            The ring that used to sit on the right is gone: a counter and a bar
+            said the same thing twice, and the pair read as a dashboard widget
+            rather than a banner. */}
+        <div className="rh-bar" role="img" aria-label={`${read} of ${goal} articles read this week`}>
+          <span className="rh-bar-fill" style={{ width: `${pct}%` }} />
+        </div>
         <Link to="/vocabulary" className="rh-cta rh-cta-ghost">
           Your vocabulary
           <Arrow />
         </Link>
       </div>
 
-      <div className="rh-visual rh-visual-progress">
-        <div className="rh-ring" role="img" aria-label={`${read} of ${goal} articles read this week`}>
-          <span className="rh-ring-num">{read}</span>
-          <span className="rh-ring-of">of {goal}</span>
-        </div>
-        {/* Static width, never transitioned — the width IS the state, and a
-            transition that never gets a frame would show every week at 0%. */}
-        <div className="rh-bar">
-          <span className="rh-bar-fill" style={{ width: `${pct}%` }} />
-        </div>
+      <div className="rh-visual rh-visual-art">
+        <img src={graduateArt} alt="" className="rh-art rh-art-graduate" />
       </div>
     </>
   )
@@ -144,14 +146,10 @@ function ProSlide() {
       <div className="rh-text">
         <p className="rh-eyebrow">Verbo Pro</p>
         <h2 className="rh-title rh-title-plain">Scan without limits, read the whole library</h2>
-        <p className="rh-meta">Everything in Verbo, with nothing held back.</p>
-        <Link to="/upgrade" className="rh-cta">
-          Upgrade to Pro
-          <Arrow />
-        </Link>
-      </div>
-
-      <div className="rh-visual rh-visual-pro">
+        {/* The benefits moved into the text column so the illustration can have
+            the right side to itself. Two columns of two — a single stacked list
+            beside a headline and a button does not fit the banner's height, and
+            shortening the list to make it fit would drop a real benefit. */}
         <ul className="rh-points">
           {PRO_POINTS.map((p) => (
             <li key={p}>
@@ -160,6 +158,14 @@ function ProSlide() {
             </li>
           ))}
         </ul>
+        <Link to="/upgrade" className="rh-cta">
+          Upgrade to Pro
+          <Arrow />
+        </Link>
+      </div>
+
+      <div className="rh-visual rh-visual-art">
+        <img src={scholarArt} alt="" className="rh-art rh-art-scholar" />
       </div>
     </>
   )
@@ -177,6 +183,7 @@ export default function ReadHero({ data }) {
   if (data?.recommended) {
     slides.push({
       key: 'recommended',
+      tone: 'rh-t1',
       label: 'Recommended',
       render: () => (
         <ArticleSlide
@@ -192,6 +199,7 @@ export default function ReadHero({ data }) {
     const resuming = data.continue.kind === 'resume'
     slides.push({
       key: 'continue',
+      tone: 'rh-t2',
       label: resuming ? 'Continue' : 'Start here',
       render: () => (
         <ArticleSlide
@@ -205,9 +213,9 @@ export default function ReadHero({ data }) {
     })
   }
   if (data?.week) {
-    slides.push({ key: 'week', label: 'This week', render: () => <ProgressSlide week={data.week} /> })
+    slides.push({ key: 'week', tone: 'rh-t3', label: 'This week', render: () => <ProgressSlide week={data.week} /> })
   }
-  slides.push({ key: 'pro', label: 'Verbo Pro', render: () => <ProSlide /> })
+  slides.push({ key: 'pro', tone: 'rh-t4', label: 'Verbo Pro', render: () => <ProSlide /> })
 
   const count = slides.length
   const active = Math.min(index, count - 1)
@@ -229,7 +237,7 @@ export default function ReadHero({ data }) {
 
   return (
     <section
-      className="rh"
+      className={"rh " + slides[active].tone}
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Reading highlights"
