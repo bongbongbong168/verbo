@@ -70,7 +70,11 @@ Measured over six page switches: **5 requests on a fresh boot**, every page rend
 
 One stylesheet, everything inside `@media (max-width: 767px)`, imported after `fonts.css` so it wins on equal specificity. It exists for what a phone does not get for free: `100dvh`, fields that do not zoom on focus, notch and home-indicator clearance, and navigation under a thumb.
 
-**The trap worth knowing about**: it holds ONE list of every page container that drops to a 16px gutter, so twenty-odd stylesheets cannot drift. A page left off that list keeps its **90px desktop gutter on a phone** — 180px of padding — and renders as a sliver. This has now happened twice, to `.td` and then to `.sl`, where it left the level hero 172px wide with its title broken to one word a line. **When a page looks like a narrow column on a phone, check that list before anything else.** Adding a new page means adding its prefix there.
+**The trap worth knowing about**: it holds ONE list of every page container that drops to a 16px gutter, so twenty-odd stylesheets cannot drift. A page left off that list keeps its **90px desktop gutter on a phone** — 180px of padding — and renders as a sliver. **When a page looks like a narrow column on a phone, check that list before anything else.**
+
+**It has two failure modes, and the second one hid five broken pages.** The obvious one is omission: `.td`, then `.sl`, then `.pe` — the episode page, whose card measured 195px inside a 375px viewport and whose title ran out past the card's edge. The subtle one is a listed selector that **matches nothing**: `.bo`, `.ms` and `.qp` were all present and looked handled, but those pages render `bo-page`, `ms-page` and `qp-page`, and no stylesheet defines the short forms at all. A dead selector is indistinguishable from a working one by reading — the file looked complete while Bookings, Messages, the quiz page, PodcastEpisode and Upgrade were all still at 90px.
+
+So **audit it with a script, not by eye**: read the gutter block's selectors, read each page stylesheet's 90px container rule, and check the class is BOTH listed and actually rendered by that page's JSX (`className="…"`). That check now reports 21 gutter pages, 0 unhandled. When adding a page, copy its root class out of the JSX rather than guessing it from the prefix.
 
 Related: don't implement a phone behaviour in a page stylesheet if this layer already handles it. The pick-up row's swipe scrolling lived in both for a while, at two different breakpoints, which is precisely how two implementations drift.
 

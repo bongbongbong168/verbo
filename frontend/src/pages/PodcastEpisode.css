@@ -350,6 +350,11 @@
    the size chosen for reading Chinese; keep the two in step. */
 .pe-transcript {
   white-space: pre-wrap;
+  /* Chinese breaks anywhere on its own, but a transcript also carries Latin —
+     names, loanwords, the occasional URL — and one run longer than the column
+     would otherwise push past the card's edge with no way to wrap. Only bites
+     when a word genuinely cannot fit. */
+  overflow-wrap: break-word;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   font-size: 1.3rem;
   font-weight: 400;

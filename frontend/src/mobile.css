@@ -85,10 +85,22 @@
   /* ---- page gutters ----
      Nine pages were laid out with a 90px desktop gutter. On a 390px phone that
      is 46% of the screen, leaving a column too narrow to read. Overridden here
-     rather than in nine stylesheets so they cannot drift apart. */
+     rather than in nine stylesheets so they cannot drift apart.
+
+     THIS LIST IS CHECKED BY A SCRIPT, NOT BY EYE — it had gone wrong in two
+     different ways at once. `.pe` and `.up` were simply never added, and `.bo`,
+     `.ms` and `.qp` were listed but matched NOTHING, because those pages render
+     `bo-page`, `ms-page` and `qp-page`. A selector that matches nothing looks
+     exactly like a page that is handled. Five pages were keeping their full
+     desktop gutter on a phone. When adding a page here, copy its root class out
+     of the JSX rather than guessing it from the prefix. */
   .db,
   .rd,
   .pc,
+  /* The episode page. `.pc` above is the podcast LIST; this is the reader, and
+     the two are different containers. Left off, its card measured 195px inside
+     a 375px viewport and the title ran out past the card's edge. */
+  .pe,
   .sc,
   .sd,
   .ft,
@@ -97,8 +109,8 @@
   .td,
   .cd,
   .ck,
-  .bo,
-  .ms,
+  .bo-page,
+  .ms-page,
   .vb,
   .nt,
   .pf,
@@ -111,7 +123,8 @@
      word a line. */
   .sl,
   .un,
-  .qp,
+  .qp-page,
+  .up,
   .ss {
     padding-left: 16px !important;
     padding-right: 16px !important;
