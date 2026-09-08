@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Podcast;
+use App\Models\PodcastProgress;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -45,13 +46,116 @@ class PodcastController extends Controller
         return response()->file($path);
     }
 
-    public function show(Podcast $podcast, DictionaryService $dictionary)
+    public function show(Request $request, Podcast $podcast, DictionaryService $dictionary)
     {
         $podcast->load('user:id,name');
 
+        /* The viewer's own place in this episode, so the player can pick up
+           where they stopped without a second request before it can start. */
+        $progress = PodcastProgress::where('user_id', $request->user()->id)
+            ->where('podcast_id', $podcast->id)
+            ->first();
+
         return array_merge($podcast->toArray(), [
             'tokens' => $dictionary->annotate($podcast->transcript),
+            'progress' => $progress ? [
+                'position_seconds' => $progress->position_seconds,
+                'duration_seconds' => $progress->duration_seconds,
+                'completed_at' => $progress->completed_at,
+                // Whether to actually seek. The client should not have to know
+                // the floor or the completion rule — see the model.
+                'resume' => $progress->is_resumable,
+            ] : null,
         ]);
+    }
+
+    /**
+     * Record how far through an episode this listener is.
+     *
+     * Called on a timer while the audio plays, plus on pause and on leaving the
+     * page, so it has to be cheap and total-order-independent — it is an upsert
+     * of one row, never a log.
+     */
+    public function saveProgress(Request $request, Podcast $podcast)
+    {
+        $data = $request->validate([
+            'position_seconds' => ['required', 'integer', 'min:0'],
+            'duration_seconds' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $duration = $data['duration_seconds'] ?? null;
+        $position = $data['position_seconds'];
+
+        /* Both numbers come from the browser and neither is trustworthy. They
+           only ever drive a display and a seek, so the risk is nonsense rather
+           than danger — but a position past the end would strand the row
+           outside the completion window and keep the episode in "continue
+           listening" for good, so clamp it. */
+        if ($duration !== null && $duration > 0) {
+            $position = min($position, $duration);
+        }
+
+        $finished = $duration !== null
+            && $duration > 0
+            && $position >= $duration - PodcastProgress::FINISHED_WITHIN_SECONDS;
+
+        $progress = PodcastProgress::updateOrCreate(
+            ['user_id' => $request->user()->id, 'podcast_id' => $podcast->id],
+            [
+                'position_seconds' => $position,
+                'duration_seconds' => $duration,
+                /* Finishing is sticky within a run but not permanent: replaying
+                   from the start clears it, so a re-listen behaves like a fresh
+                   one rather than an episode that can never re-enter the row. */
+                'completed_at' => $finished ? now() : null,
+            ]
+        );
+
+        return [
+            'position_seconds' => $progress->position_seconds,
+            'completed_at' => $progress->completed_at,
+        ];
+    }
+
+    /**
+     * Episodes this listener started and has not finished, newest first.
+     *
+     * Its route MUST be declared before `/podcasts/{podcast}` or "continue"
+     * binds as an id — the same trap `bookings/clear-past`, `notifications/
+     * read-all`, `articles/recommended` and `classes/join` all hit.
+     */
+    public function continueListening(Request $request)
+    {
+        $limit = min(max((int) $request->query('limit', 3), 1), 12);
+
+        $rows = PodcastProgress::where('user_id', $request->user()->id)
+            ->whereNull('completed_at')
+            ->where('position_seconds', '>=', PodcastProgress::RESUME_FLOOR_SECONDS)
+            ->latest('updated_at')
+            // Over-fetch so rows whose episode has since been deleted can be
+            // dropped without leaving a short list.
+            ->limit($limit * 2)
+            ->with('podcast.user:id,name')
+            ->get();
+
+        return $rows
+            ->filter(fn (PodcastProgress $p) => $p->podcast !== null)
+            ->take($limit)
+            ->values()
+            ->map(fn (PodcastProgress $p) => [
+                'podcast' => array_merge(
+                    $p->podcast->only([
+                        'id', 'title', 'level', 'category', 'bio', 'host', 'created_at',
+                    ]),
+                    [
+                        'image_url' => $p->podcast->image_url,
+                        'author' => $p->podcast->user?->name,
+                    ]
+                ),
+                'position_seconds' => $p->position_seconds,
+                'duration_seconds' => $p->duration_seconds,
+                'last_played_at' => $p->updated_at,
+            ]);
     }
 
     /**

@@ -210,7 +210,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutors/{tutorProfile}/slots', [TutorAvailabilityController::class, 'slots']);
 
     Route::get('/podcasts', [PodcastController::class, 'index']);
+    /* BEFORE `/podcasts/{podcast}`, or "continue" binds as an id — the same
+       trap `bookings/clear-past`, `notifications/read-all`, `classes/join` and
+       `articles/recommended` each hit. */
+    Route::get('/podcasts/continue', [PodcastController::class, 'continueListening']);
     Route::get('/podcasts/{podcast}', [PodcastController::class, 'show']);
+    Route::put('/podcasts/{podcast}/progress', [PodcastController::class, 'saveProgress']);
     Route::post('/podcasts', [PodcastController::class, 'store']);
     Route::put('/podcasts/{podcast}', [PodcastController::class, 'update']);
     Route::delete('/podcasts/{podcast}', [PodcastController::class, 'destroy']);

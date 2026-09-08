@@ -79,6 +79,72 @@ function EpisodeCard({ episode }) {
   );
 }
 
+/** mm:ss, the same shape the episode page's player uses. */
+function clock(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/**
+ * An episode already in progress. The episode card's shell, plus the two
+ * things that make it a resume rather than a listing: how far in, and how far
+ * there is to go.
+ *
+ * The bar is drawn only when a duration is known. The client reports it once
+ * the audio's metadata loads, so a row written before that has a position and
+ * no total — and a progress bar with an invented denominator would be the one
+ * untrue thing on the card.
+ */
+function ResumeCard({ row }) {
+  const { podcast, position_seconds: at, duration_seconds: total } = row;
+  const pct = total ? Math.min(100, Math.round((at / total) * 100)) : null;
+
+  return (
+    <div className="pc-card pc-card-resume">
+      <Link to={`/podcast/${podcast.id}`} className="pc-card-cover">
+        {podcast.image_url ? (
+          <img src={podcast.image_url} alt="" />
+        ) : (
+          <div className="pc-card-cover-placeholder" />
+        )}
+      </Link>
+      <div className="pc-card-body">
+        {podcast.level && <p className="pc-card-level">{podcast.level}</p>}
+        <Link to={`/podcast/${podcast.id}`} className="pc-card-title-link">
+          <h3 className="pc-card-title">{podcast.title}</h3>
+        </Link>
+
+        {pct !== null && (
+          <div className="pc-resume-bar" aria-hidden="true">
+            <span className="pc-resume-fill" style={{ width: `${pct}%` }} />
+          </div>
+        )}
+        <p className="pc-resume-time">
+          {total ? `${clock(at)} / ${clock(total)}` : `Stopped at ${clock(at)}`}
+        </p>
+
+        <div className="pc-card-footer">
+          <div>
+            {(podcast.host || podcast.author) && (
+              <p className="pc-card-author">{podcast.host || podcast.author}</p>
+            )}
+            <p className="pc-card-lang">Chinese (Mandarin)</p>
+          </div>
+          <Link
+            to={`/podcast/${podcast.id}`}
+            className="pc-play-btn"
+            aria-label={`Continue ${podcast.title} from ${clock(at)}`}
+          >
+            <PlayIcon />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Podcast() {
   const { token, user } = useAuth();
   /* Same cache key the Dashboard uses for this list, so arriving from there
@@ -87,6 +153,14 @@ export default function Podcast() {
   const podcasts = podcastQuery.data || EMPTY;
   const loading = podcastQuery.loading;
   const error = podcastQuery.error?.message || null;
+
+  /* Episodes started and not finished. Its own cache key so it can be dropped
+     independently — the library list is unchanged by listening to something,
+     but this row is stale the moment you do. */
+  const continueQuery = useApiData("podcasts-continue", () =>
+    api.getContinueListening(token, 3),
+  );
+  const inProgress = continueQuery.data || EMPTY;
 
   const [activeLevel, setActiveLevel] = useState("all");
   const [activeTopic, setActiveTopic] = useState("all");
@@ -231,6 +305,22 @@ export default function Podcast() {
         <p className="pc-empty">No episodes yet.</p>
       ) : (
         <>
+          {/* Real resume state, not a shelf. It leads the page because it is
+              the only row that knows anything about THIS listener — everything
+              below is the same library for everyone. Rendered only when there
+              is something to resume: a "continue listening" heading over an
+              empty space is worse than no heading. */}
+          {inProgress.length > 0 && (
+            <>
+              <h2 className="pc-section-title">Pick up where you left off</h2>
+              <div className="pc-row">
+                {inProgress.map((row) => (
+                  <ResumeCard key={row.podcast.id} row={row} />
+                ))}
+              </div>
+            </>
+          )}
+
           <h2 className="pc-section-title">Recommendations</h2>
           <div className="pc-row">
             {recommended.map((p) => (

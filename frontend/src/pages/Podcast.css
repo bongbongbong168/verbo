@@ -479,3 +479,30 @@
   outline: 2px solid var(--pc-accent);
   outline-offset: 2px;
 }
+
+/* ---- resume card ----
+   The episode card plus a position. Static fill, never transitioned: the width
+   IS the state, and a transition that never gets a frame would show every
+   part-listened episode sitting at 0%. */
+.pc-resume-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: #ded9ee;
+  overflow: hidden;
+  margin: 0.1rem 0 0.4rem;
+}
+
+.pc-resume-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--pc-accent-light);
+}
+
+.pc-resume-time {
+  margin: 0 0 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pc-text-muted);
+  font-variant-numeric: tabular-nums;
+}

@@ -514,6 +514,17 @@ export const api = {
     return requestMultipart(`/podcasts/${id}`, formData, token)
   },
   deletePodcast: (token, id) => request(`/podcasts/${id}`, { method: 'DELETE', token }),
+  /* Where the listener got to. Called on a timer while audio plays, so it is
+     an upsert of one row rather than a log — order between calls does not
+     matter and a dropped one costs at most a few seconds of accuracy. */
+  savePodcastProgress: (token, id, positionSeconds, durationSeconds) =>
+    request(`/podcasts/${id}/progress`, {
+      method: 'PUT',
+      body: { position_seconds: Math.round(positionSeconds), duration_seconds: durationSeconds ? Math.round(durationSeconds) : null },
+      token,
+    }),
+  getContinueListening: (token, limit = 3) =>
+    request(`/podcasts/continue?limit=${limit}`, { token }),
   /* The Daily Use shelves in one call — recommended, popular and
      grouped topics are slices of the same small set. */
   getDailyUse: (token) => request('/study-levels/daily', { token }),

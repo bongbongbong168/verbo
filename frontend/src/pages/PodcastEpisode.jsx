@@ -82,6 +82,18 @@ export default function PodcastEpisode() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
 
+  /* Resume state.
+     `resumedFrom` is what the banner reports, and it is cleared by Start over —
+     the seek itself is silent otherwise, and being dropped six minutes into an
+     episode with no explanation reads as a bug rather than a convenience.
+     `pendingResume` holds the position until the audio element knows its own
+     duration; seeking before `loadedmetadata` is discarded by the browser. */
+  const [resumedFrom, setResumedFrom] = useState(null)
+  const pendingResumeRef = useRef(null)
+  /* The last position actually sent, so the timer can skip a write when
+     nothing has moved — a paused tab should cost no requests at all. */
+  const sentPositionRef = useRef(-1)
+
   /* Only "is the editor open" lives here now. The episode's fields, the audio
      and cover pickers, the cropper and its object-URL lifecycle all moved into
      PodcastEditDrawer, which seeds itself from `podcast` — so this page no
@@ -125,6 +137,14 @@ export default function PodcastEpisode() {
         setPodcast(data)
         podcastRef.current = data
         writeCache(key, data)
+        /* Hold the position until `loadedmetadata` — a seek before the element
+           knows its duration is silently discarded. The server decides whether
+           there is anything worth resuming (it owns the floor and the
+           finished-episode rule), so this only obeys `resume`. */
+        if (data.progress?.resume) {
+          pendingResumeRef.current = data.progress.position_seconds
+          sentPositionRef.current = data.progress.position_seconds
+        }
         // Record the visit so the Dashboard's "Pick up where you left off"
         // row can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
@@ -187,14 +207,76 @@ export default function PodcastEpisode() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [token])
 
+  /* Send the current position, unless it has not moved since the last send.
+     Fire-and-forget: this is a convenience, and a failed write must never
+     interrupt playback or surface an error over the audio someone is
+     listening to. */
+  function reportProgress(force = false) {
+    const el = audioRef.current
+    const current = podcastRef.current
+    if (!el || !current || !Number.isFinite(el.currentTime)) return
+    const at = Math.round(el.currentTime)
+    if (!force && at === sentPositionRef.current) return
+    sentPositionRef.current = at
+    api
+      .savePodcastProgress(token, current.id, at, Number.isFinite(el.duration) ? el.duration : null)
+      .catch(() => {})
+
+    /* Both cached copies are now wrong. The episode payload carries `progress`,
+       so a revisit inside the 30s freshness window would resume from where this
+       listener was BEFORE this session; and the Podcast page's continue row
+       would still show the old position, or not show the episode at all. This
+       is a local map delete, not a request. */
+    invalidate(`podcast:${current.id}`, 'podcasts-continue')
+  }
+
+  /* One write a quarter-minute while the audio is actually playing.
+     The interval is only armed WHILE PLAYING, so an open-but-paused episode
+     costs nothing — this app shares a 300/min bucket across the whole client
+     and React StrictMode doubles everything in dev.
+
+     `setInterval`, not requestAnimationFrame: rAF is throttled to a standstill
+     in a background tab, which is exactly when someone is listening with the
+     tab behind something else. Same reasoning as the booking hold countdown. */
+  useEffect(() => {
+    if (!playing) return
+    const t = setInterval(() => reportProgress(), 15000)
+    return () => clearInterval(t)
+  }, [playing, token])
+
+  /* Pausing and leaving are both "I stopped here", and neither is covered by
+     the interval above — a pause clears it, and unmounting can happen between
+     two ticks. `pagehide` covers closing the tab, where React cleanup does not
+     run at all; `visibilitychange` is not used because switching tabs is not
+     stopping. */
+  useEffect(() => {
+    const onLeave = () => reportProgress(true)
+    window.addEventListener('pagehide', onLeave)
+    return () => {
+      window.removeEventListener('pagehide', onLeave)
+      onLeave()
+    }
+  }, [token])
+
   function togglePlay() {
     const el = audioRef.current
     if (!el) return
     if (el.paused) {
       el.play()
     } else {
+      // The report happens on the element's own `pause` event, not here — see
+      // the note on the <audio> tag.
       el.pause()
     }
+  }
+
+  /* Drop back to the beginning and forget the resume, so the banner's offer is
+     genuinely reversible. */
+  function startOver() {
+    const el = audioRef.current
+    if (el) el.currentTime = 0
+    setResumedFrom(null)
+    reportProgress(true)
   }
 
   function skip(seconds) {
@@ -281,11 +363,45 @@ export default function PodcastEpisode() {
                   src={podcast.audio_url}
                   preload="metadata"
                   onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
+                  /* Reporting here rather than in `togglePlay` on purpose: the
+                     page's own button is not the only thing that pauses audio.
+                     Media keys, the OS media controls and the browser's own UI
+                     all pause the element directly and never touch our handler,
+                     so a listener who stops with the keyboard would have lost
+                     their place. This fires however it was paused. */
+                  onPause={(e) => {
+                    setPlaying(false)
+                    reportProgress(true)
+                  }}
                   onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                  onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-                  onEnded={() => setPlaying(false)}
+                  onLoadedMetadata={(e) => {
+                    setDuration(e.currentTarget.duration)
+                    // Now the seek will stick. Applied once, then cleared, so a
+                    // later metadata event cannot yank the listener back.
+                    const at = pendingResumeRef.current
+                    if (at != null) {
+                      pendingResumeRef.current = null
+                      e.currentTarget.currentTime = at
+                      setCurrentTime(at)
+                      setResumedFrom(at)
+                    }
+                  }}
+                  onEnded={() => {
+                    setPlaying(false)
+                    // Marks it finished server-side, which is what drops it out
+                    // of "continue listening" rather than leaving it at 99%.
+                    reportProgress(true)
+                  }}
                 />
+
+                {resumedFrom != null && (
+                  <p className="pe-resumed">
+                    Picked up from {formatTime(resumedFrom)}
+                    <button type="button" className="pe-resumed-reset" onClick={startOver}>
+                      Start over
+                    </button>
+                  </p>
+                )}
 
                 <div className="pe-controls">
                   <button type="button" className="pe-skip" onClick={() => skip(-10)} aria-label="Back 10 seconds">
