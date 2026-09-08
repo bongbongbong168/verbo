@@ -39,6 +39,16 @@ html {
      a sticky element taller than its scrollport cannot stay pinned: it slides
      with the page. Use --app-vh instead of 100vh for anything inside #root. */
   --app-vh: calc(100vh / var(--app-scale));
+
+  /* The banner gradient, shared by the Profile hero and the Read page's
+     highlights banner. ONE token, because two copies of a three-stop gradient
+     in two stylesheets is exactly how surfaces meant to read as one product
+     drift apart — the same reason SectionToggle, EditDrawer, ArticleCover and
+     ReaderSwitch were all pulled out.
+
+     Left to right, dark to light: the text sits on the darkest end and the
+     artwork on the lightest. */
+  --hero-gradient: linear-gradient(100deg, #46406a 0%, #6f679b 55%, #8a82b4 100%);
 }
 
 #root {

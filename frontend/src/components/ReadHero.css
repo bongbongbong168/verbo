@@ -24,7 +24,7 @@
   padding: 1.35rem 1.7rem;
   margin: 0 0 1.8rem;
   border-radius: 20px;
-  background: linear-gradient(112deg, var(--rh-from) 0%, var(--rh-to) 100%);
+  background: var(--hero-gradient);
   color: #fff;
   overflow: hidden;
 }
@@ -33,27 +33,21 @@
   display: contents;
 }
 
-/* Ornament only, and TRANSFORM ONLY. It must never start at `opacity: 0`: an
-   animation stalls at frame 0 in a tab that is not compositing, which would
-   leave the whole banner invisible rather than merely unmoved. */
-@keyframes rh-in {
-  from {
-    transform: translateX(10px);
-  }
-  to {
-    transform: none;
-  }
-}
+/* NO ENTRANCE ANIMATION, and this is the second half of the frozen-compositor
+   rule rather than an exception to it.
 
-.rh-in > .rh-text {
-  animation: rh-in 0.32s ease-out;
-}
+   There was one: `rh-in`, a transform-only 10px nudge, written on the
+   assumption that transform-only is safe because the slide stays readable at
+   frame 0. Readable, yes — but not in the right place. Measured in a tab that
+   was not compositing, the animation sat at `translateX(10px)` with
+   playState "running" two seconds into a 320ms run, leaving every slide's text
+   block 11px right of the panel padding it should sit on. Slides that happened
+   to settle and slides that did not disagreed by exactly that, so the banner
+   looked subtly misaligned as it rotated.
 
-@media (prefers-reduced-motion: reduce) {
-  .rh-in > .rh-text {
-    animation: none;
-  }
-}
+   A transform that never advances still DISPLACES. The only motion safe here is
+   one whose start position is already the resting position — which is no motion
+   at all. The slide change is a content swap and needs no announcement. */
 
 /* ---- left: the text block ---- */
 
@@ -103,7 +97,7 @@
   margin: 0 0 0.35rem;
   font-size: 0.86rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 /* ONE line. This is the recommender's "because…" sentence, whose length
@@ -115,7 +109,7 @@
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.8);
   max-width: 46ch;
   white-space: nowrap;
   overflow: hidden;
@@ -139,8 +133,13 @@
      the button's height is unchanged. */
   padding: calc(0.6rem - 1px) 1.15rem calc(0.6rem + 1px);
   border-radius: 999px;
-  background: #a89ce3;
-  color: #1c1730;
+  /* WHITE text, so the fill is the app's navy rather than #a89ce3. White on
+     lavender measures about 1.9:1, far below readable; on #2b2643 it is ~12:1.
+     It also matches the reference banners, whose CTA pills are a DARKER shade
+     of the banner's own colour, and it separates cleanly from the gradient's
+     dark end (#46406a) where the button actually sits. */
+  background: #2b2643;
+  color: #fff;
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 700;
@@ -150,7 +149,7 @@
 }
 
 .rh-cta:hover {
-  background: #b9afe9;
+  background: #3b3459;
 }
 
 .rh-cta svg {
@@ -232,7 +231,7 @@
   gap: 0.5rem;
   font-size: 0.82rem;
   line-height: 1.35;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .rh-tick {
@@ -348,8 +347,7 @@
 
   /* With the cover hidden its column would be dead space, so the text takes
      the full width on those two slides only. */
-  .rh-t1,
-  .rh-t2 {
+  .rh-v-article {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -394,42 +392,11 @@
   }
 }
 
-/* ---- per-slide tone ----
-   The reference sheet gives every banner its own colourway, which is what stops
-   a carousel reading as one slab with the words swapped. These stay inside
-   Verbo's purple family rather than running through the reference's rainbow —
-   four depths and temperatures of the same brand, not four different brands.
-   Deep enough throughout that white text and the lavender CTA hold contrast. */
-.rh {
-  --rh-from: #2b2643;
-  --rh-to: #3d3860;
-}
-
-/* Recommended — indigo, the coolest and quietest of the four. */
-.rh-t1 {
-  --rh-from: #262a52;
-  --rh-to: #453f7d;
-}
-
-/* Continue — plum, a step warmer, so returning to something reads differently
-   from being offered something new. */
-.rh-t2 {
-  --rh-from: #33254c;
-  --rh-to: #56407a;
-}
-
-/* This week — the warmest, since it is the one slide about the learner. */
-.rh-t3 {
-  --rh-from: #2f2545;
-  --rh-to: #614478;
-}
-
-/* Pro — the most saturated. It is the only slide selling anything, and the one
-   place a little more lift is earned. */
-.rh-t4 {
-  --rh-from: #362a6b;
-  --rh-to: #6a58b0;
-}
+/* ---- one ground for every slide ----
+   The four colourways are gone at the user's request: all slides now wear the
+   Profile hero's gradient, so the banner and the profile read as the same
+   surface. Per-slide tint is therefore NOT what distinguishes the slides —
+   the eyebrow, the headline and the artwork are. */
 
 /* ---- illustrations ----
    The 3D characters the app already uses. They sit at the panel's bottom-right
@@ -492,17 +459,17 @@
    column measured 223.6px inside a 196.8px content box. Trimmed here rather
    than by growing the banner: staying compact was the requirement, and the
    other three slides have room to spare they do not need. */
-.rh-t4 .rh-title {
+.rh-v-pro .rh-title {
   font-size: clamp(1.2rem, 1.7vw, 1.5rem);
   margin-bottom: 0.3rem;
 }
 
-.rh-t4 .rh-points li {
+.rh-v-pro .rh-points li {
   font-size: 0.78rem;
   line-height: 1.3;
 }
 
-.rh-t4 .rh-points {
+.rh-v-pro .rh-points {
   gap: 0.22rem 1rem;
   margin: 0.1rem 0 0.6rem;
 }

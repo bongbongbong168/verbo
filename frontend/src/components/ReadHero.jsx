@@ -183,7 +183,7 @@ export default function ReadHero({ data }) {
   if (data?.recommended) {
     slides.push({
       key: 'recommended',
-      tone: 'rh-t1',
+      variant: 'rh-v-article',
       label: 'Recommended',
       render: () => (
         <ArticleSlide
@@ -199,7 +199,7 @@ export default function ReadHero({ data }) {
     const resuming = data.continue.kind === 'resume'
     slides.push({
       key: 'continue',
-      tone: 'rh-t2',
+      variant: 'rh-v-article',
       label: resuming ? 'Continue' : 'Start here',
       render: () => (
         <ArticleSlide
@@ -213,9 +213,9 @@ export default function ReadHero({ data }) {
     })
   }
   if (data?.week) {
-    slides.push({ key: 'week', tone: 'rh-t3', label: 'This week', render: () => <ProgressSlide week={data.week} /> })
+    slides.push({ key: 'week', variant: 'rh-v-week', label: 'This week', render: () => <ProgressSlide week={data.week} /> })
   }
-  slides.push({ key: 'pro', tone: 'rh-t4', label: 'Verbo Pro', render: () => <ProSlide /> })
+  slides.push({ key: 'pro', variant: 'rh-v-pro', label: 'Verbo Pro', render: () => <ProSlide /> })
 
   const count = slides.length
   const active = Math.min(index, count - 1)
@@ -237,7 +237,7 @@ export default function ReadHero({ data }) {
 
   return (
     <section
-      className={"rh " + slides[active].tone}
+      className={"rh " + slides[active].variant}
       ref={rootRef}
       aria-roledescription="carousel"
       aria-label="Reading highlights"
@@ -248,9 +248,9 @@ export default function ReadHero({ data }) {
         if (!rootRef.current?.contains(e.relatedTarget)) setPaused(false)
       }}
     >
-      {/* `key` remounts the slide so the ornamental nudge replays. The content
-          is present and readable before it runs. */}
-      <div className="rh-slide rh-in" key={slides[active].key}>
+      {/* `key` still remounts, which is what resets any per-slide state; there is
+          no entrance animation to replay — see the note in the stylesheet. */}
+      <div className="rh-slide" key={slides[active].key}>
         {slides[active].render()}
       </div>
 

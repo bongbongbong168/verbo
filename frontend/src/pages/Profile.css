@@ -75,7 +75,9 @@
      padding left the copy crushed into a column beside an empty gap. */
   padding-right: 232px;
   border-radius: 20px;
-  background: linear-gradient(100deg, #46406a 0%, #6f679b 55%, #8a82b4 100%);
+  /* Shared with the Read banner via --hero-gradient in fonts.css, so the two
+     "this is you" surfaces cannot drift apart. */
+  background: var(--hero-gradient);
   color: #fff;
   box-shadow: 0 4px 14px rgba(28, 23, 48, 0.16);
 }
