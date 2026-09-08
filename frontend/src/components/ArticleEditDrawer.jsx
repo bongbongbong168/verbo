@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { readCache } from '../dataCache'
 import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
 
@@ -15,10 +16,17 @@ import ImageCropper from './ImageCropper'
  * `article` absent means create; present means edit. Nothing else changes.
  */
 
-/* The topics the Read page shelves by. Kept in step with TOPIC_ORDER there —
-   a topic typed by hand would build a shelf of one and sort to the bottom
-   under "unknown topics appended alphabetically". */
-const TOPICS = [
+/* A FLOOR, not the list. These are the topics the Read page names in
+   TOPIC_ORDER, offered so a library with nothing published yet still suggests
+   something sensible.
+ *
+ * The topic field is a combobox rather than a select: `articles.category` is a
+ * free string server-side (`nullable|string|max:60`, no enum), and the Read
+ * page builds its pills and shelves from whatever has actually been published —
+ * unknown topics are appended alphabetically after TOPIC_ORDER. So a new topic
+ * has always been publishable; a hardcoded <select> here was the only thing
+ * stopping anyone creating one. */
+const DEFAULT_TOPICS = [
   'Everyday Chinese',
   'Culture',
   'Entertainment',
@@ -26,6 +34,44 @@ const TOPICS = [
   'Travel',
   'Business',
 ]
+
+/**
+ * Every topic already in use, plus the defaults.
+ *
+ * Read from the shared cache rather than taken as a prop: `articles` is the key
+ * both the Read page and the Dashboard already populate, so this is the same
+ * list they render and costs no request. Falling back to the defaults when the
+ * cache is cold is the honest empty case — it offers the canonical six rather
+ * than pretending to know what has been published.
+ */
+function knownTopics(current) {
+  const cached = readCache('articles')
+  const used = Array.isArray(cached)
+    ? cached.map((a) => a.category).filter(Boolean)
+    : []
+  // Case-insensitive de-dupe, keeping the first spelling seen. Two spellings of
+  // one topic would build two shelves and split its pill in half.
+  const seen = new Map()
+  for (const t of [...used, ...DEFAULT_TOPICS, current].filter(Boolean)) {
+    const key = t.trim().toLowerCase()
+    if (key && !seen.has(key)) seen.set(key, t.trim())
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b))
+}
+
+/**
+ * Snap a typed topic onto an existing one that differs only by case or spacing.
+ *
+ * Without this, "culture" and "Culture" are two different values: two pills,
+ * two shelves, and an article filed where nobody looking at the other would
+ * find it. Anything genuinely new is kept exactly as typed.
+ */
+function normaliseTopic(value, options) {
+  const trimmed = (value || '').trim()
+  if (!trimmed) return ''
+  const match = options.find((t) => t.toLowerCase() === trimmed.toLowerCase())
+  return match || trimmed
+}
 
 /* FORMAT, not topic. `type` is what the piece IS (article/story/funfact) and
    shows as the small badge on a cover; `category` is what it is ABOUT. Mixing
@@ -52,6 +98,9 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
   const [title, setTitle] = useState(article?.title || '')
   const [type, setType] = useState(article?.type || 'article')
   const [category, setCategory] = useState(article?.category || '')
+  /* Computed once per open. Recomputing per keystroke would re-sort the
+     suggestion list under the cursor while someone is typing into it. */
+  const topicOptions = useMemo(() => knownTopics(article?.category), [article?.category])
   const [hskLevel, setHskLevel] = useState(article?.hsk_level || '')
   const [body, setBody] = useState(article?.body || '')
   const [bodyEn, setBodyEn] = useState(article?.body_en || '')
@@ -87,7 +136,10 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
       await onSave({
         title,
         type,
-        category: category || null,
+        /* Normalised here as well as on blur — Save can be reached without the
+           field ever losing focus (Enter, or clicking straight through), and an
+           un-snapped "culture" would quietly become a second shelf. */
+        category: normaliseTopic(category, topicOptions) || null,
         hsk_level: hskLevel || null,
         body,
         body_en: bodyEn,
@@ -134,16 +186,32 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
                 </select>
               </label>
 
+              {/* Type to create, or pick one that exists. A native datalist
+                  rather than a custom dropdown: it is keyboard accessible for
+                  free, and the whole point is that the field accepts a value
+                  that is not on the list. */}
               <label className="ed-field">
                 <span>Topic</span>
-                <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option value="">Unfiled</option>
-                  {TOPICS.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
+                <input
+                  type="text"
+                  list="ed-topics"
+                  value={category}
+                  placeholder="Unfiled — or type a new topic"
+                  maxLength={60}
+                  onChange={(e) => setCategory(e.target.value)}
+                  /* Snapped on blur, not on every keystroke: correcting the
+                     case while someone is still typing fights them. */
+                  onBlur={() => setCategory((v) => normaliseTopic(v, topicOptions))}
+                />
+                <datalist id="ed-topics">
+                  {topicOptions.map((t) => (
+                    <option key={t} value={t} />
                   ))}
-                </select>
+                </datalist>
+                <small className="ed-hint">
+                  A new topic gets its own shelf and filter on Read as soon as
+                  this is published.
+                </small>
               </label>
 
               <label className="ed-field ed-narrow">
