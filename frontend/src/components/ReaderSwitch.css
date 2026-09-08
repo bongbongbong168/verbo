@@ -1,0 +1,78 @@
+/* The shared reading-aid switch. Values are the app palette written out rather
+   than page tokens (`--rd-*` / `--pe-*` / `--un-*`), because the point of this
+   file is that all three pages get the SAME control — reading a per-page
+   variable would reopen the drift it was extracted to close. All three defined
+   these identically anyway: #e7e3f6, #6a6191, #a89ce3, #726c88. */
+
+.rs-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Asymmetric by measurement, not by eye. Hellix reserves more ascent than a
+     short label uses, so symmetric padding centres the LINE BOX and leaves the
+     glyphs sitting ~1px low. Measured on the CAP BAND (cap top -> baseline),
+     never the ink box — a word with a descender would otherwise disagree with
+     one without. The pair sums to the original 0.35rem, so the box height is
+     unchanged and only the text moves. */
+  padding: calc(0.35rem - 1px) 0.75rem calc(0.35rem + 1px) 0.4rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  background: #fff;
+  color: #726c88;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.rs-switch.on {
+  border-color: #a89ce3;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.rs-switch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rs-switch:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+.rs-track {
+  display: block;
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: #e2dff0;
+}
+
+.rs-switch.on .rs-track {
+  background: #a89ce3;
+}
+
+.rs-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
+}
+
+/* NO TRANSITION on the knob or the track, deliberately. A CSS transition only
+   advances while the tab is compositing frames; a switch whose thumb slides
+   would be left sitting at its start position by a backgrounded tab, reading as
+   OFF immediately after being turned on. The state is the static style and the
+   movement is not worth that. Same rule as the Settings switch and every
+   `*-in` keyframe in this app. */
+.rs-switch.on .rs-knob {
+  left: 15px;
+}

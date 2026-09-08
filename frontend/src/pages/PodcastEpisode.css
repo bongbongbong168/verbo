@@ -315,64 +315,19 @@
   background: #fbfaff;
 }
 
-.pe-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.75rem 0.35rem 0.4rem;
-  border: 1px solid var(--pe-border);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--pe-text-muted);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
 
-/* Instant, not transitioned — the fill IS the on/off answer, and a transition
-   that never gets a frame would leave the switch looking dead. */
-.pe-switch.on {
-  border-color: var(--pe-accent-light);
-  background: #f1edfc;
-  color: var(--pe-accent);
-}
 
-.pe-switch:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 
-.pe-switch-track {
-  display: block;
-  position: relative;
-  width: 30px;
-  height: 18px;
-  flex: none;
-  border-radius: 999px;
-  background: #e2dff0;
-}
 
-.pe-switch.on .pe-switch-track {
-  background: var(--pe-accent-light);
-}
 
-/* The knob's position is a static `left`, not a transform transition: it has
-   to be correct on the first paint. */
-.pe-switch-knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
-}
 
-.pe-switch.on .pe-switch-knob {
-  left: 15px;
-}
+
+
+
+
+
+
+
 
 .pe-aids-note {
   font-size: 0.78rem;

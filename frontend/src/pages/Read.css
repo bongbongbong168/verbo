@@ -582,68 +582,12 @@
   background: #fbfaff;
 }
 
-.rd-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: calc(0.35rem - 1px) 0.75rem calc(0.35rem + 1px) 0.4rem;
-  /* Hellix reserves more ascent than a short label uses, so symmetric padding
-     centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
-     BAND (cap top -> baseline), never the ink box. The pair sums to the original
-     value, so the box height is unchanged and only the text moves. */
-  border: 1px solid var(--rd-border);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--rd-text-muted);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
 
-/* Instant, not transitioned — the fill IS the on/off answer, and a transition
-   that never gets a frame would leave the switch looking dead. */
-.rd-switch.on {
-  border-color: var(--rd-accent-light);
-  background: #f1edfc;
-  color: var(--rd-accent);
-}
 
-.rd-switch:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 
-.rd-switch-track {
-  display: block;
-  position: relative;
-  width: 30px;
-  height: 18px;
-  flex: none;
-  border-radius: 999px;
-  background: #e2dff0;
-}
 
-.rd-switch.on .rd-switch-track {
-  background: var(--rd-accent-light);
-}
 
-/* The knob's position is a static left, not a transform transition: it has to
-   be correct on the first paint. */
-.rd-switch-knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
-}
 
-.rd-switch.on .rd-switch-knob {
-  left: 15px;
-}
 
 .rd-controls-note {
   font-size: 0.78rem;

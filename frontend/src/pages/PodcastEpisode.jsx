@@ -8,6 +8,7 @@ import Skeleton, { SkeletonText } from '../components/Skeleton'
 import WordPopover from '../components/WordPopover'
 import PodcastEditDrawer from '../components/PodcastEditDrawer'
 import './PodcastEpisode.css'
+import ReaderSwitch from '../components/ReaderSwitch'
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
    the form that used them — the crop has to satisfy both the list card
@@ -399,35 +400,23 @@ export default function PodcastEpisode() {
               Chinese — pinyin stacks above each word and the English sits
               underneath as its own passage. */}
           <div className="pe-aids">
-            <button
-              type="button"
-              className={'pe-switch' + (showPinyin ? ' on' : '')}
-              onClick={() => setShowPinyin((v) => !v)}
-              aria-pressed={showPinyin}
-            >
-              <span className="pe-switch-track">
-                <span className="pe-switch-knob" />
-              </span>
-              Pinyin
-            </button>
+            <ReaderSwitch
+              label="Pinyin"
+              on={showPinyin}
+              onChange={() => setShowPinyin((v) => !v)}
+            />
 
-            <button
-              type="button"
-              className={'pe-switch' + (showTranslation ? ' on' : '')}
-              onClick={() => setShowTranslation((v) => !v)}
+            <ReaderSwitch
+              label="Translation"
+              on={showTranslation}
+              onChange={() => setShowTranslation((v) => !v)}
               disabled={!hasEnglish}
-              aria-pressed={showTranslation}
               title={
                 hasEnglish
                   ? 'Show the English translation'
                   : 'No English transcript for this episode yet'
               }
-            >
-              <span className="pe-switch-track">
-                <span className="pe-switch-knob" />
-              </span>
-              Translation
-            </button>
+            />
 
             {!hasEnglish && (
               <span className="pe-aids-note">

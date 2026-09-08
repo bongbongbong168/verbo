@@ -6,6 +6,7 @@ import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
+import ReaderSwitch from '../components/ReaderSwitch'
 import WordPopover from '../components/WordPopover'
 import WordExplainer from '../components/WordExplainer'
 import sectionIcon from '../assets/study/section-icon.png'
@@ -67,6 +68,25 @@ function TickIcon() {
       aria-hidden="true"
     >
       <path d="m5 12.5 4.5 4.5L19 7" />
+    </svg>
+  )
+}
+
+/* Play / Stop for the whole conversation. Solid fills rather than the stroked
+   set above, because at 16px a stroked triangle reads as an outline arrow
+   rather than a play control. */
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.53.85l10.79-6.86a1 1 0 0 0 0-1.7L9.53 4.29A1 1 0 0 0 8 5.14z" />
+    </svg>
+  )
+}
+
+function StopIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
   )
 }
@@ -550,35 +570,41 @@ export default function StudyUnit() {
                 English rather than toggling to a blank pane. */}
             <span className="un-aids">
               {/* Hidden entirely where the browser has no speech synthesis —
-                  a play button that can only do nothing is worse than none. */}
+                  a play button that can only do nothing is worse than none.
+
+                  An ICON rather than a label: it sits beside two switches whose
+                  words are the thing you read, and "Play conversation" was the
+                  widest item in the row for an action whose glyph is universal.
+                  The name survives in `aria-label` and the tooltip, so nothing
+                  is lost to a screen reader or to a pointer that pauses. */}
               {canSpeak && (
                 <button
                   type="button"
-                  className={'un-aid un-aid-play' + (playingAll ? ' on' : '')}
+                  className={'un-play-all' + (playingAll ? ' on' : '')}
                   onClick={playConversation}
                   aria-pressed={playingAll}
+                  aria-label={playingAll ? 'Stop the conversation' : 'Play the conversation'}
+                  title={playingAll ? 'Stop' : 'Play conversation'}
                 >
-                  {playingAll ? 'Stop' : 'Play conversation'}
+                  {playingAll ? <StopIcon /> : <PlayIcon />}
                 </button>
               )}
-              <button
-                type="button"
-                className={'un-aid' + (showPinyin ? ' on' : '')}
-                onClick={() => setShowPinyin((v) => !v)}
-                aria-pressed={showPinyin}
-              >
-                Pinyin
-              </button>
-              <button
-                type="button"
-                className={'un-aid' + (showTranslation ? ' on' : '')}
-                onClick={() => setShowTranslation((v) => !v)}
-                aria-pressed={showTranslation}
+              <ReaderSwitch
+                label="Pinyin"
+                on={showPinyin}
+                onChange={() => setShowPinyin((v) => !v)}
+              />
+              <ReaderSwitch
+                label="Translation"
+                on={showTranslation}
+                onChange={() => setShowTranslation((v) => !v)}
                 disabled={!hasEnglish}
-                title={hasEnglish ? undefined : 'No English for this conversation yet'}
-              >
-                Translation
-              </button>
+                title={
+                  hasEnglish
+                    ? 'Show the English translation'
+                    : 'No English for this conversation yet'
+                }
+              />
             </span>
           </div>
 

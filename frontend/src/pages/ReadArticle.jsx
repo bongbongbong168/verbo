@@ -12,6 +12,7 @@ import ArticleComments from "../components/ArticleComments";
 import RecommendedArticles from "../components/RecommendedArticles";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import "./Read.css";
+import ReaderSwitch from '../components/ReaderSwitch'
 
 function formatDate(value) {
   if (!value) return "";
@@ -298,35 +299,23 @@ export default function ReadArticle() {
             {/* Two switches, each independent. The Chinese never leaves the
                 page — turning an aid on adds to it rather than replacing it. */}
             <div className="rd-controls">
-              <button
-                type="button"
-                className={"rd-switch" + (showPinyin ? " on" : "")}
-                onClick={() => setShowPinyin((v) => !v)}
-                aria-pressed={showPinyin}
-              >
-                <span className="rd-switch-track">
-                  <span className="rd-switch-knob" />
-                </span>
-                Pinyin
-              </button>
+              <ReaderSwitch
+                label="Pinyin"
+                on={showPinyin}
+                onChange={() => setShowPinyin((v) => !v)}
+              />
 
-              <button
-                type="button"
-                className={"rd-switch" + (showTranslation ? " on" : "")}
-                onClick={() => setShowTranslation((v) => !v)}
+              <ReaderSwitch
+                label="Translation"
+                on={showTranslation}
+                onChange={() => setShowTranslation((v) => !v)}
                 disabled={!hasEnglish}
-                aria-pressed={showTranslation}
                 title={
                   hasEnglish
                     ? "Show the English translation"
                     : "No English translation for this article yet"
                 }
-              >
-                <span className="rd-switch-track">
-                  <span className="rd-switch-knob" />
-                </span>
-                Translation
-              </button>
+              />
 
               {!hasEnglish && (
                 <span className="rd-controls-note">

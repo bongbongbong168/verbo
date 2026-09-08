@@ -999,36 +999,61 @@
   margin-left: auto;
 }
 
-.un-aid {
-  padding: 0.45rem 0.9rem;
-  border: 2px solid var(--un-tab-edge);
-  border-radius: 10px;
-  background: var(--un-card);
-  font-family: 'Hellix', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--un-text);
+/* Pinyin and Translation are `components/ReaderSwitch` now (prefix `rs-`), the
+   same control Read and Podcast use — the `.un-aid` pills that used to live
+   here were a third, divergent rendering of the same idea.
+
+   Play is the one ACTION in this row rather than a display toggle, so it stays
+   a page-owned button. Round, because it sits between two `999px` pills and a
+   10px-radius rectangle among them reads as a different kind of control.
+
+   It takes its height FROM the row rather than naming one: `align-self:
+   stretch` matches the tallest item, which is the switch. Computing the height
+   instead was tried and came out 0.65px short — a line box is not simply
+   font-size x line-height, so the switch measures ~31.0px where the arithmetic
+   predicted 30.4.
+
+   The WIDTH is then symmetric padding around a 14px glyph (14 + 16 + 2 borders
+   = 32) against that ~31px height, which at `border-radius: 999px` reads as a
+   circle. `aspect-ratio: 1` was the obvious way to say this and does NOT work
+   here: a flex item's main size comes from its content, so the ratio loses and
+   the button collapsed to 17px wide. */
+.un-play-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0 0.5rem;
+  flex: none;
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  background: #fff;
+  color: #6a6191;
   cursor: pointer;
 }
 
-/* Static, not transitioned — the fill IS the on/off state, and a transition
-   that never gets a frame would leave a switched-on aid looking off. */
-.un-aid.on {
-  background: #a89ce3;
+.un-play-all svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.un-play-all:hover {
   border-color: #a89ce3;
+}
+
+/* Static, not transitioned — the fill IS the playing/stopped state, and a
+   transition that never gets a frame would leave a playing button looking
+   idle. Same rule as ReaderSwitch and every `*-in` keyframe in this app. */
+.un-play-all.on {
+  border-color: #a89ce3;
+  background: #a89ce3;
   color: #fff;
 }
 
-.un-aid:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* Play is the one action in this row rather than a display toggle, so it reads
-   as the primary of the three. */
-.un-aid-play {
-  border-color: #a89ce3;
-  color: #6a6191;
+.un-play-all:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
 }
 
 /* ---- per-line audio ---- */
