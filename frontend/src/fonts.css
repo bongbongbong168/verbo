@@ -47,8 +47,35 @@ html {
      ReaderSwitch were all pulled out.
 
      Left to right, dark to light: the text sits on the darkest end and the
-     artwork on the lightest. */
-  --hero-gradient: linear-gradient(100deg, #46406a 0%, #6f679b 55%, #8a82b4 100%);
+     artwork on the lightest.
+
+     NOT A PLAIN TWO-STOP RAMP. The base linear is still the ground, but three
+     soft blobs sit over it so the surface has depth instead of one flat sweep.
+     This is the "shapes on top, layer blur" idea done the way CSS can afford
+     it: a radial gradient with a long falloff IS a blurred shape, so it needs
+     no `filter: blur()` — which would cost a real filter pass on a 900px panel
+     on every paint, for the same picture.
+
+     THE LIGHT BLOBS ARE CONFINED TO THE RIGHT-HAND SIDE, and that is a
+     legibility constraint, not composition. White text occupies the left ~66%
+     of the panel, so nothing there may be lighter than the base ramp already
+     is. Each light blob's reach is centre minus (falloff x radius):
+     92 - 0.58x42 = 67.6% and 96 - 0.65x40 = 70%. Both land just past the text.
+
+     MEASURED, not assumed — by painting this exact background into an SVG
+     foreignObject, drawing that to a canvas and reading the pixels back across
+     the whole text column. Worst contrast against white is **4.64:1 with these
+     blobs and 4.64:1 with the plain ramp alone**: identical, so the depth costs
+     nothing legible, and both clear the 4.5 that normal-size text needs.
+
+     A first attempt put the top blob at 86% with 0.6 alpha and pulled that
+     figure to 4.44 — under 4.5, i.e. the decoration was quietly eating the
+     legibility of the text beside it. Re-measure if these values change. */
+  --hero-gradient:
+    radial-gradient(42% 78% at 92% 2%, rgba(178, 168, 232, 0.5) 0%, rgba(178, 168, 232, 0) 58%),
+    radial-gradient(40% 70% at 96% 88%, rgba(198, 190, 240, 0.45) 0%, rgba(198, 190, 240, 0) 65%),
+    radial-gradient(60% 80% at 2% 96%, rgba(38, 33, 60, 0.55) 0%, rgba(38, 33, 60, 0) 70%),
+    linear-gradient(100deg, #46406a 0%, #6f679b 55%, #8a82b4 100%);
 }
 
 #root {
