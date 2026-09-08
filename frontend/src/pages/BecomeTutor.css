@@ -138,7 +138,12 @@
   max-width: 760px;
 }
 
+/* A <fieldset>, because these really are groups of controls — but wearing the
+   app's card, so `min-inline-size` has to be unset: the UA sheet gives a
+   fieldset `min-content`, which no width can override and which stops the card
+   shrinking with every other card on the page. */
 .bt-group {
+  min-inline-size: 0;
   border: 1px solid var(--bt-border);
   border-radius: 14px;
   background: #fff;
@@ -146,13 +151,25 @@
   margin: 0 0 1.2rem;
 }
 
+/* Floated to 100% so the legend lays out as an ordinary block INSIDE the card
+   rather than in the notch a fieldset cuts through its own top border. No
+   other card in the app breaks its outline for a heading, and this is the same
+   label the review page uses (.ta-h3). The float needs the next box to clear
+   it, or the two overlap. */
 .bt-group legend {
-  padding: 0 0.4rem;
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 0.9rem;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--bt-accent);
+}
+
+.bt-group legend + * {
+  clear: left;
 }
 
 .bt-group-note {
@@ -257,11 +274,90 @@
   outline-offset: 2px;
 }
 
-/* ---- evidence ---- */
-
-.bt-file {
-  font-size: 0.88rem;
+/* ---- picking a file ----
+   The app never ships the browser's own "Choose File / No file chosen": every
+   upload is a hidden input behind a styled control (`.ed-btn-ghost` in the edit
+   drawers, `.sl-btn-quiet` on a level). Same shape here so this page's two
+   pickers read as the app's, not as the platform's. */
+.bt-btn-ghost {
+  display: inline-block;
+  padding: 0.48rem 0.9rem;
+  border: 1px solid var(--bt-border);
+  border-radius: 9px;
+  background: none;
+  color: var(--bt-text);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
 }
+
+.bt-btn-ghost:hover {
+  border-color: var(--bt-accent);
+  color: var(--bt-accent);
+}
+
+.bt-btn-ghost:focus-within,
+.bt-btn-ghost:focus-visible {
+  outline: 2px solid var(--bt-accent);
+  outline-offset: 2px;
+}
+
+.bt-btn-ghost input[type="file"] {
+  display: none;
+}
+
+/* ---- the profile photo ---- */
+
+.bt-photo-field {
+  margin-bottom: 0.9rem;
+}
+
+.bt-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* 130x150 is the Find Tutor card's photo box; this is that shape at 60%, so
+   what the applicant crops to is the frame the card will draw. */
+.bt-photo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 78px;
+  height: 90px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #efeafc;
+  color: var(--bt-accent);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.bt-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bt-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bt-photo-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--bt-muted);
+}
+
+/* ---- evidence ---- */
 
 .bt-files {
   list-style: none;

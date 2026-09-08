@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { invalidate } from '../dataCache'
+import ImageCropper from '../components/ImageCropper'
 import PageTools from '../components/PageTools'
 import './BecomeTutor.css'
 
@@ -61,7 +62,7 @@ function Field({ label, hint, children, required }) {
 }
 
 export default function BecomeTutor() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
@@ -69,7 +70,7 @@ export default function BecomeTutor() {
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [credentials, setCredentials] = useState([])
-  const fileRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
 
   // The form. Seeded from an existing application so a resubmission edits
   // rather than retypes.
@@ -78,9 +79,23 @@ export default function BecomeTutor() {
     subjects: '', languages_spoken: '', bio: '', teaching_style: '',
     availability: '', hourly_rate: '', video_url: '',
   })
+  /* The cropped photo waiting on submit, and the file currently open in the
+     cropper — kept apart so the upload only ever receives the cropped result,
+     the same split every other photo picker in the app makes. */
   const [photo, setPhoto] = useState(null)
+  const [cropSource, setCropSource] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
 
   useEffect(() => { load() }, [token])
+
+  // In an effect, not in render: createObjectURL during a render mints a new
+  // URL on every pass and frees none of them.
+  useEffect(() => {
+    if (!photo) return setPhotoPreview(null)
+    const url = URL.createObjectURL(photo)
+    setPhotoPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [photo])
 
   function load() {
     setLoading(true)
@@ -121,11 +136,14 @@ export default function BecomeTutor() {
   async function addCredential(file) {
     if (!file) return
     setError(null)
+    setUploading(true)
     try {
       const saved = await api.uploadTutorCredential(token, file)
       setCredentials((c) => [saved, ...c])
     } catch (err) {
       setError(err.message)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -217,9 +235,47 @@ export default function BecomeTutor() {
             <Field label="Languages you speak" required hint="Students filter on this — list every language you can teach in.">
               <input value={form.languages_spoken} onChange={set('languages_spoken')} placeholder="Chinese, English" />
             </Field>
-            <Field label="Profile photo" hint="Shown on your public profile once approved.">
-              <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files[0] || null)} />
-            </Field>
+            {/* Not a `Field`: that wrapper is a <label>, and the picker below
+                is one too — nesting them is invalid and breaks the click. */}
+            <div className="bt-photo-field">
+              <span className="bt-label">Profile photo</span>
+              <div className="bt-photo-row">
+                {/* 13:15, the shape of the Find Tutor card this photo lands on,
+                    so the frame you crop to is the frame students see. */}
+                <span className="bt-photo">
+                  {photoPreview || profile?.photo_url ? (
+                    <img src={photoPreview || profile.photo_url} alt="" />
+                  ) : (
+                    <span>{(user?.name || '?').charAt(0).toUpperCase()}</span>
+                  )}
+                </span>
+                <div className="bt-photo-actions">
+                  <label className="bt-btn-ghost">
+                    {photo ? 'Choose another' : profile?.photo_url ? 'Replace photo' : 'Choose photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const picked = e.target.files[0]
+                        if (picked) setCropSource(picked)
+                        // Cleared so picking the SAME file again still fires change.
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                  {photo && (
+                    <button type="button" className="bt-btn-ghost" onClick={() => setCropSource(photo)}>
+                      Adjust crop
+                    </button>
+                  )}
+                  <p className="bt-photo-hint">
+                    {photo
+                      ? 'Ready — it uploads when you submit.'
+                      : 'Shown on your public profile once approved.'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </fieldset>
 
           <fieldset className="bt-group">
@@ -279,13 +335,15 @@ export default function BecomeTutor() {
             {/* Uploads go up immediately rather than riding on submit: the
                 application can be saved and resubmitted many times, and
                 re-uploading the same certificate each round would be busywork. */}
-            <input
-              ref={fileRef}
-              type="file"
-              className="bt-file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx"
-              onChange={(e) => { addCredential(e.target.files[0]); e.target.value = '' }}
-            />
+            <label className="bt-btn-ghost">
+              {uploading ? 'Uploading…' : 'Add a document'}
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx"
+                disabled={uploading}
+                onChange={(e) => { addCredential(e.target.files[0]); e.target.value = '' }}
+              />
+            </label>
             {credentials.length > 0 && (
               <ul className="bt-files">
                 {credentials.map((c) => (
@@ -305,6 +363,21 @@ export default function BecomeTutor() {
             Your profile stays private until a reviewer approves it.
           </p>
         </form>
+      )}
+
+      {/* Every photo in the app is cropped before it is uploaded, and this is
+          the same column the edit drawer writes later — a picker here that
+          skipped the cropper would frame one tutor differently from the rest.
+          The default aspect is the 130x150 Find Tutor card. */}
+      {cropSource && (
+        <ImageCropper
+          file={cropSource}
+          onCancel={() => setCropSource(null)}
+          onCrop={(cropped) => {
+            setPhoto(cropped)
+            setCropSource(null)
+          }}
+        />
       )}
     </div>
   )
