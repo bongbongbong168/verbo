@@ -1,0 +1,331 @@
+/* Become a tutor — the application form and its status.
+   Same palette and card language as every other page: #f9f8fe ground, white
+   cards on the app's #2b2643 stroke, #a89ce3 for the filled control. */
+
+.bt {
+  --bt-border: #e7e3f6;
+  --bt-outline: #2b2643;
+  --bt-accent: #6a6191;
+  --bt-accent-light: #a89ce3;
+  --bt-text: #1c1730;
+  --bt-muted: #726c88;
+
+  background: #f9f8fe;
+  min-height: var(--app-vh);
+  box-sizing: border-box;
+  padding: 2rem 90px 3rem; /* 90px gutter, matching the app; mobile.css cuts it to 16 */
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--bt-text);
+}
+
+.bt-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.bt-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.bt-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--bt-accent-light);
+}
+
+/* Same reason as the Read and Podcast topbars: the popovers inside PageTools
+   are z-index 40 and need a positioned ancestor lifted above the page. */
+.bt-topbar-icons {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.bt-divider {
+  border: none;
+  border-top: 1px solid var(--bt-border);
+  margin: 0 0 1.6rem;
+}
+
+.bt-loading,
+.bt-locked {
+  color: var(--bt-muted);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.bt-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+/* ---- the status banner ----
+   A tinted card per state rather than four colours of solid block: a saturated
+   panel at the top of the page reads as a warning even when the news is good.
+   Static, never transitioned — the tone IS the state. */
+.bt-state {
+  border: 1px solid var(--bt-border);
+  border-left: 4px solid var(--bt-accent-light);
+  border-radius: 14px;
+  background: #fff;
+  padding: 1.1rem 1.3rem;
+  margin: 0 0 1.8rem;
+  max-width: 760px;
+}
+
+.bt-state h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.bt-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--bt-muted);
+}
+
+.bt-state-wait { border-left-color: #a89ce3; }
+.bt-state-ask  { border-left-color: #e0a355; }
+.bt-state-ok   { border-left-color: #4c9a72; }
+.bt-state-no   { border-left-color: #c2635c; }
+
+/* The reviewer's own words, set apart so they read as a quote from a person
+   rather than as more page copy. */
+.bt-note {
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  background: #f6f4fd;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--bt-text);
+}
+
+.bt-state-link {
+  display: inline-block;
+  margin-top: 0.8rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--bt-accent);
+}
+
+/* ---- the form ---- */
+
+.bt-form {
+  max-width: 760px;
+}
+
+.bt-group {
+  border: 1px solid var(--bt-border);
+  border-radius: 14px;
+  background: #fff;
+  padding: 1.2rem 1.3rem 1.3rem;
+  margin: 0 0 1.2rem;
+}
+
+.bt-group legend {
+  padding: 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bt-accent);
+}
+
+.bt-group-note {
+  margin: 0 0 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--bt-muted);
+}
+
+/* Two-up where the pair is short, and `minmax(0, 1fr)` rather than `1fr` — a
+   grid item's automatic minimum is its content, so a long placeholder would
+   otherwise push the column past its share. */
+.bt-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.1rem;
+}
+
+.bt-field {
+  display: block;
+  margin-bottom: 0.9rem;
+}
+
+.bt-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.bt-req {
+  margin-left: 0.15rem;
+  font-style: normal;
+  color: #c2635c;
+}
+
+.bt-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--bt-muted);
+}
+
+.bt-field input,
+.bt-field select,
+.bt-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.58rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--bt-text);
+  background: #fff;
+  border: 1px solid var(--bt-border);
+  border-radius: 10px;
+}
+
+.bt-field textarea {
+  resize: vertical;
+}
+
+.bt-field input:focus,
+.bt-field select:focus,
+.bt-field textarea:focus {
+  outline: none;
+  border-color: var(--bt-accent-light);
+  box-shadow: 0 0 0 3px rgba(168, 156, 227, 0.25);
+}
+
+/* ---- the "who you teach" chips ----
+   Multi-select, so they are buttons carrying `aria-pressed` rather than a
+   listbox: each one is independently on or off. */
+.bt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bt-chip {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--bt-border);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--bt-text);
+  cursor: pointer;
+}
+
+/* Static fill, no transition — the fill IS the selected state, and one that
+   never gets a frame would leave a chosen chip looking unchosen. */
+.bt-chip.on {
+  background: var(--bt-accent-light);
+  border-color: var(--bt-accent-light);
+  color: #fff;
+}
+
+.bt-chip:focus-visible {
+  outline: 2px solid var(--bt-accent);
+  outline-offset: 2px;
+}
+
+/* ---- evidence ---- */
+
+.bt-file {
+  font-size: 0.88rem;
+}
+
+.bt-files {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.bt-files li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--bt-border);
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+
+.bt-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-files button {
+  flex: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bt-accent);
+  cursor: pointer;
+}
+
+/* ---- submit ---- */
+
+.bt-submit {
+  padding: calc(0.7rem - 1px) 1.6rem calc(0.7rem + 1px);
+  border: none;
+  border-radius: 999px;
+  background: var(--bt-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bt-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.bt-small {
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+  color: var(--bt-muted);
+}
+
+@media (max-width: 767px) {
+  .bt-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

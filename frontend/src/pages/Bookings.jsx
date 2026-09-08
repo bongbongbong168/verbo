@@ -174,10 +174,16 @@ export default function Bookings() {
       // account with none never sees the switch at all.
       api.getMyTutorProfile(token).catch(() => null),
     ])
-      .then(([b, e, profile]) => {
+      .then(([b, e, mine]) => {
         setBookings(b)
         setEnrollments(e)
-        setIsTutor(Boolean(profile))
+        /* `mine.profile`, not `mine` — the endpoint returns {profile, options}
+           and the object is always truthy, so testing it directly would show
+           the teacher switch to every account in the app.
+           APPROVED specifically: someone whose application is still pending is
+           not a tutor yet, and a teacher view with nothing in it is worse than
+           no switch at all. */
+        setIsTutor(mine?.profile?.status === 'approved')
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))

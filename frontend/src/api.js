@@ -364,7 +364,44 @@ export const api = {
     request('/learning-preferences', { method: 'POST', body: prefs, token }),
   getTutors: (token) => request('/tutors', { token }),
   getTutor: (token, id) => request(`/tutors/${id}`, { token }),
+  /* Returns {profile, options} — NOT the profile itself. `profile` is null for
+     someone who has never applied, which is a different fact from a rejected
+     application, and `options` carries the validator's own lists so the form
+     cannot drift from what the server accepts. */
   getMyTutorProfile: (token) => request('/tutor-profile', { token }),
+  /* The tutor application. Same endpoint submits and resubmits: someone asked
+     for more information edits and posts again, which returns them to the
+     queue. Multipart, because the photo goes with it. */
+  applyAsTutor: (token, fields) => {
+    const fd = new FormData()
+    for (const [k, v] of Object.entries(fields)) {
+      if (v === null || v === undefined || v === '') continue
+      // teaches_levels is an array; FormData needs one entry per value or PHP
+      // receives a comma-joined string and the `array` rule rejects it.
+      if (Array.isArray(v)) v.forEach((item) => fd.append(`${k}[]`, item))
+      else fd.append(k, v)
+    }
+    return requestMultipart('/tutor-profile', fd, token)
+  },
+  uploadTutorCredential: (token, file, label) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    if (label) fd.append('label', label)
+    return requestMultipart('/tutor-credentials', fd, token)
+  },
+  deleteTutorCredential: (token, id) =>
+    request(`/tutor-credentials/${id}`, { method: 'DELETE', token }),
+  // Admin review queue.
+  getTutorApplications: (token, status = 'awaiting') =>
+    request(`/tutor-applications?status=${encodeURIComponent(status)}`, { token }),
+  getTutorApplicationCounts: (token) => request('/tutor-applications/counts', { token }),
+  getTutorApplication: (token, id) => request(`/tutor-applications/${id}`, { token }),
+  decideTutorApplication: (token, id, decision, note) =>
+    request(`/tutor-applications/${id}/decide`, {
+      method: 'POST',
+      body: { decision, note: note || null },
+      token,
+    }),
   // Admin-only: set the photo on someone else's tutor profile. saveTutorProfile
   // below can only ever touch the caller's own.
   setTutorPhoto: (token, profileId, photo) => {

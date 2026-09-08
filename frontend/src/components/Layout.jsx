@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
@@ -197,6 +197,12 @@ const NAV = [
     items: [
       { to: "/find-tutor", label: "Find Tutor" },
       { to: "/bookings", label: "Bookings" },
+      /* Reviewing tutor applications is a tutor-domain job, so it sits here
+         rather than in an admin section of its own — one screen does not
+         justify a heading. Filtered out for everyone else below; the page and
+         every endpoint behind it check is_admin regardless, so this is a
+         courtesy rather than the gate. */
+      { to: "/tutor-applications", label: "Applications", adminOnly: true },
     ],
   },
   {
@@ -243,10 +249,27 @@ export default function Layout() {
     localStorage.setItem("sb-collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
+  /* The rail an ADMIN sees carries one extra row. Derived once here rather
+     than filtered at each of the five places NAV is rendered — an item that has
+     to be hidden in five spots is one that eventually shows up in one of
+     them. */
+  const nav = useMemo(
+    () =>
+      NAV.map((entry) =>
+        entry.kind === "group"
+          ? {
+              ...entry,
+              items: entry.items.filter((i) => !i.adminOnly || user?.is_admin),
+            }
+          : entry,
+      ),
+    [user?.is_admin],
+  );
+
   // One section open at a time. Two or three expanded at once rebuilds exactly
   // the long list this replaced.
   const here =
-    NAV.find((e) => e.kind === "group" && entryHolds(pathname, e))?.key ?? null;
+    nav.find((e) => e.kind === "group" && entryHolds(pathname, e))?.key ?? null;
   const [openKey, setOpenKey] = useState(here);
   /* Which section's sheet is open on a phone. Separate from `openKey`: the
      rail's accordion and the bottom sheet are different surfaces, and sharing
@@ -293,7 +316,7 @@ export default function Layout() {
         </div>
 
         <ul className="sb-nav">
-          {NAV.map((entry) => {
+          {nav.map((entry) => {
             if (entry.kind === "link") {
               return (
                 <li key={entry.to}>
@@ -460,7 +483,7 @@ export default function Layout() {
           which of their pages you meant — the same reasoning that kept the
           desktop rail from having landing pages. */}
       <nav className="mb-tabs" aria-label="Sections">
-        {NAV.map((entry) => {
+        {nav.map((entry) => {
           const active = entryHolds(pathname, entry);
 
           if (entry.kind === "link") {
@@ -506,10 +529,10 @@ export default function Layout() {
           <div className="mb-sheet" onClick={(e) => e.stopPropagation()}>
             <span className="mb-sheet-grip" aria-hidden="true" />
             <p className="mb-sheet-title">
-              {NAV.find((n) => n.key === sheet)?.label}
+              {nav.find((n) => n.key === sheet)?.label}
             </p>
             <ul>
-              {NAV.find((n) => n.key === sheet)?.items.map((item) => (
+              {nav.find((n) => n.key === sheet)?.items.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}

@@ -938,3 +938,29 @@
 .ft-card-photo-edit:focus-visible {
   opacity: 1;
 }
+
+/* ---- apply to teach ----
+   Replaced the inline create form. The form published a live tutor on submit;
+   this points at the application, which a reviewer has to approve first. */
+.ft-apply-note {
+  margin: 0 0 0.9rem;
+  max-width: 52ch;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ft-text-muted, #726c88);
+}
+
+.ft-apply-btn {
+  display: inline-block;
+  padding: calc(0.6rem - 1px) 1.3rem calc(0.6rem + 1px);
+  border-radius: 999px;
+  background: #6a6191;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ft-apply-btn:hover {
+  background: #7b729f;
+}

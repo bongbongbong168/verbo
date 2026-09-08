@@ -11,6 +11,8 @@ import Read from "./pages/Read";
 import ReadArticle from "./pages/ReadArticle";
 import Practice from "./pages/Practice";
 import FindTutor from "./pages/FindTutor";
+import BecomeTutor from "./pages/BecomeTutor";
+import TutorApplications from "./pages/TutorApplications";
 import Bookings from "./pages/Bookings";
 import Messages from "./pages/Messages";
 import CourseDetail from "./pages/CourseDetail";
@@ -76,6 +78,9 @@ function App() {
         <Route path="/practice" element={<Practice />} />
         <Route path="/find-tutor" element={<FindTutor />} />
         <Route path="/find-tutor/:id" element={<TutorProfileDetail />} />
+        <Route path="/become-a-tutor" element={<BecomeTutor />} />
+        {/* Admin-gated inside the page as well as on every endpoint it calls. */}
+        <Route path="/tutor-applications" element={<TutorApplications />} />
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/courses/:id" element={<CourseDetail />} />

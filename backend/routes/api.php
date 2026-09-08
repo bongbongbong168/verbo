@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\StudyTextController;
 use App\Http\Controllers\Api\StudyUnitController;
 use App\Http\Controllers\Api\StudyVocabularyController;
 use App\Http\Controllers\Api\TutorAvailabilityController;
+use App\Http\Controllers\Api\TutorApplicationController;
 use App\Http\Controllers\Api\TutorController;
 use App\Http\Controllers\Api\TutorLessonController;
 use App\Http\Controllers\Api\TutorResumeEntryController;
@@ -149,6 +150,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutors', [TutorController::class, 'index']);
     Route::get('/tutor-profile', [TutorController::class, 'show']);
     Route::post('/tutor-profile', [TutorController::class, 'store']);
+
+    /* Tutor verification. The admin queue is declared BEFORE
+       `/tutors/{tutorProfile}` further down, or "applications" would bind as a
+       profile id — the trap `bookings/clear-past`, `notifications/read-all`,
+       `articles/recommended`, `articles/highlights`, `podcasts/continue` and
+       `classes/join` have all hit. */
+    Route::get('/tutor-applications', [TutorApplicationController::class, 'index']);
+    Route::get('/tutor-applications/counts', [TutorApplicationController::class, 'counts']);
+    Route::get('/tutor-applications/{tutorProfile}', [TutorApplicationController::class, 'show']);
+    Route::post('/tutor-applications/{tutorProfile}/decide', [TutorApplicationController::class, 'decide']);
+    // The applicant's own evidence.
+    Route::post('/tutor-credentials', [TutorApplicationController::class, 'storeCredential']);
+    Route::get('/tutor-credentials/{tutorCredential}', [TutorApplicationController::class, 'showCredential']);
+    Route::delete('/tutor-credentials/{tutorCredential}', [TutorApplicationController::class, 'destroyCredential']);
     Route::get('/tutors/{tutorProfile}', [TutorController::class, 'showProfile']);
     Route::post('/tutors/{tutorProfile}/photo', [TutorController::class, 'updatePhoto']);
     // Profile-scoped rather than hung off /tutor-profile, so an admin can edit

@@ -330,32 +330,16 @@ export default function FindTutor() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(() => !hasCache("tutors"));
 
-  const [bio, setBio] = useState("");
-  const [subjects, setSubjects] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [languagesSpoken, setLanguagesSpoken] = useState("");
-  const [availability, setAvailability] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [photo, setPhoto] = useState(null);
-  // The file currently open in the cropper, kept apart from `photo` so the
-  // upload only ever receives the cropped result.
+  /* The tutor-profile fields that used to live here went with the inline
+     form — applying is /become-a-tutor now, and editing an approved profile is
+     the drawer on the profile page. The cropper stays: it is still how an admin
+     sets a photo on someone else's profile. */
   const [cropSource, setCropSource] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
   // Admin setting a photo on someone else's profile: which profile it lands on,
   // and one shared hidden input so every card does not need its own.
   const [photoTargetId, setPhotoTargetId] = useState(null);
   const photoInputRef = useRef(null);
 
-  // Created in an effect, not in render: calling createObjectURL while
-  // rendering mints a new URL on every pass and never frees any of them.
-  useEffect(() => {
-    if (!photo) return setPhotoPreview(null);
-    const url = URL.createObjectURL(photo);
-    setPhotoPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [photo]);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [showProfileForm, setShowProfileForm] = useState(false);
 
   const [search, setSearch] = useState("");
   // Which card the preview panel is showing. Null falls back to the first
@@ -384,20 +368,6 @@ export default function FindTutor() {
     loadAll();
   }, [token]);
 
-  /* The "become a tutor" form mirrors the loaded profile. Its own effect now
-     that the profile arrives on its own schedule rather than inside a combined
-     `.then` — and it must NOT stamp over what is being typed, so it only syncs
-     while the form is closed. */
-  useEffect(() => {
-    if (!myProfile || showProfileForm) return;
-    setBio(myProfile.bio || "");
-    setSubjects(myProfile.subjects || "");
-    setHourlyRate(myProfile.hourly_rate ?? "");
-    setLanguagesSpoken(myProfile.languages_spoken || "");
-    setAvailability(myProfile.availability || "");
-    setVideoUrl(myProfile.video_url || "");
-  }, [myProfile, showProfileForm]);
-
   /* Three independent reads rather than one Promise.all behind a single
      loading gate, so the tutor grid is not held up by the caller's own profile
      or their bookings. `tutors` is deliberately the SAME cache key the
@@ -409,48 +379,17 @@ export default function FindTutor() {
       .catch((err) => !tutors.length && setError(err.message))
       .finally(() => setLoading(false));
 
+    /* `.profile`, not the response itself — the endpoint returns
+       {profile, options} now, and that wrapper is always truthy, so keeping it
+       whole would make `!myProfile` permanently false and hide the apply
+       button from everyone who has never applied. */
     fetchIfStale("tutor-profile:me", () => api.getMyTutorProfile(token))
-      .then(setMyProfile)
+      .then((mine) => setMyProfile(mine?.profile ?? null))
       .catch(() => {});
 
     fetchIfStale("bookings", () => api.getBookings(token))
       .then(setBookings)
       .catch(() => {});
-  }
-
-  async function handleSaveProfile(e) {
-    e.preventDefault();
-    setError(null);
-    setSavingProfile(true);
-    try {
-      const profile = await api.saveTutorProfile(token, {
-        bio,
-        subjects,
-        hourly_rate: hourlyRate === "" ? null : Number(hourlyRate),
-        languages_spoken: languagesSpoken,
-        availability,
-        photo,
-        video_url: videoUrl,
-      });
-      setMyProfile(profile);
-      setPhoto(null);
-      setShowProfileForm(false);
-      setTutors((prev) => {
-        const withoutMine = prev.filter(
-          (t) => Number(t.user_id) !== Number(profile.user_id),
-        );
-        const next = [profile, ...withoutMine];
-        // Through the cache too, or the Dashboard's "Recommend Teachers" row
-        // and a revisit to this page would both show the pre-edit profile.
-        writeCache("tutors", next);
-        writeCache("tutor-profile:me", profile);
-        return next;
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSavingProfile(false);
-    }
   }
 
   /* Booking needs a time now (`starts_at` is required server-side), so the
@@ -713,113 +652,43 @@ export default function FindTutor() {
             </div>
           )}
 
-          {/* Only the *create* path lives here. Editing an existing profile
-              happens in the drawer on the profile page itself, so there is one
-              place to edit rather than two that can drift apart — reach it by
-              clicking your own card above, which shows "This is your profile".
-              Reviewing bookings moved to /bookings for the same reason. */}
+          {/* Becoming a tutor is an APPLICATION now, not a form that publishes
+              you. This used to be an inline form whose submit created a live,
+              publicly listed tutor in one click; it links to /become-a-tutor,
+              which collects the same details plus the ones a reviewer needs and
+              leaves the profile private until an admin approves it.
+
+              Editing an existing profile still happens in the drawer on the
+              profile page itself, so there is still exactly one place to edit. */}
           {!myProfile && (
             <>
               <h2 className="ft-section-title">Become a tutor</h2>
-              <button
-                type="button"
-                className="ft-profile-toggle"
-                onClick={() => setShowProfileForm((v) => !v)}
-              >
-                {showProfileForm ? "Cancel" : "Become a tutor"}
-              </button>
+              <p className="ft-apply-note">
+                Teach on Verbo. Applications are reviewed before a profile goes
+                live, so students only ever see tutors we have checked.
+              </p>
+              <Link className="ft-apply-btn" to="/become-a-tutor">
+                Apply to teach
+              </Link>
             </>
           )}
 
-          {showProfileForm && !myProfile && (
-            <form className="ft-form" onSubmit={handleSaveProfile}>
-              <div>
-                <label>Photo</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    // Crop before it becomes the upload, so what you frame is
-                    // what gets stored — not whatever object-fit happens to show.
-                    const picked = e.target.files[0];
-                    if (picked) setCropSource(picked);
-                    e.target.value = "";
-                  }}
-                />
-                {photo && photoPreview && (
-                  <span className="ft-photo-chosen">
-                    <img src={photoPreview} alt="" />
-                    Ready to upload
-                    <button type="button" onClick={() => setCropSource(photo)}>
-                      Adjust
-                    </button>
-                  </span>
-                )}
-              </div>
-              <div>
-                <label>Bio</label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label>Subjects</label>
-                <input
-                  type="text"
-                  value={subjects}
-                  onChange={(e) => setSubjects(e.target.value)}
-                />
-              </div>
-              <div>
-                <label>Languages spoken</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Chinese (Mandarin), English (Intermediate)"
-                  value={languagesSpoken}
-                  onChange={(e) => setLanguagesSpoken(e.target.value)}
-                />
-              </div>
-              <div>
-                <label>Availability</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 9am-12pm, 1pm-7pm"
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                />
-              </div>
-              <div>
-                <label>Intro video link</label>
-                <input
-                  type="url"
-                  placeholder="YouTube, Vimeo or a direct .mp4 link"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                />
-              </div>
-              <div>
-                <label>Hourly rate ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
-                />
-              </div>
-              <button
-                type="submit"
-                className="ft-btn-primary"
-                disabled={savingProfile}
-              >
-                {savingProfile
-                  ? "Saving..."
-                  : myProfile
-                    ? "Update profile"
-                    : "Create tutor profile"}
-              </button>
-            </form>
+          {/* Mid-application: say where it is rather than offering to start
+              again, which would look like the first submission never landed. */}
+          {myProfile && myProfile.status && myProfile.status !== "approved" && (
+            <>
+              <h2 className="ft-section-title">Your application</h2>
+              <p className="ft-apply-note">
+                {myProfile.status === "pending"
+                  ? "Your application is with our review team."
+                  : myProfile.status === "needs_info"
+                    ? "We asked for a little more information."
+                    : "Your application was not approved."}
+              </p>
+              <Link className="ft-apply-btn" to="/become-a-tutor">
+                View your application
+              </Link>
+            </>
           )}
         </div>
 
@@ -874,8 +743,10 @@ export default function FindTutor() {
           }}
           onCrop={async (cropped) => {
             setCropSource(null);
-            // No target means it is the admin's own profile form.
-            if (photoTargetId == null) return setPhoto(cropped);
+            /* Every crop here is an admin setting a photo on someone else's
+               profile — the target-less branch belonged to the inline form and
+               went with it. */
+            if (photoTargetId == null) return;
 
             try {
               await api.setTutorPhoto(token, photoTargetId, cropped);

@@ -31,6 +31,11 @@ class Notification extends Model
         'booking_cancelled' => 'tutor',
         'message' => 'message',
         'course_enrolled' => 'course',
+        /* Tutor verification. The applicant is left refreshing a page forever
+           otherwise — a decision nobody hears about is not a decision. */
+        'tutor_application_approved' => 'tutor',
+        'tutor_application_rejected' => 'tutor',
+        'tutor_application_needs_info' => 'tutor',
     ];
 
     protected $fillable = [

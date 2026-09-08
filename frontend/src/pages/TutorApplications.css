@@ -1,0 +1,396 @@
+/* Tutor application review. The app's usual page shell, then a queue beside an
+   open application — the two-panel shape Messages already uses, for the same
+   reason: you work down a list without losing your place in it. */
+
+.ta {
+  --ta-border: #e7e3f6;
+  --ta-outline: #2b2643;
+  --ta-accent: #6a6191;
+  --ta-accent-light: #a89ce3;
+  --ta-text: #1c1730;
+  --ta-muted: #726c88;
+
+  background: #f9f8fe;
+  min-height: var(--app-vh);
+  box-sizing: border-box;
+  padding: 2rem 90px 3rem;
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--ta-text);
+}
+
+.ta-topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.ta-title {
+  position: relative;
+  margin: 0;
+  padding-left: 0.7rem;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.ta-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--ta-accent-light);
+}
+
+.ta-topbar-icons {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ta-divider {
+  border: none;
+  border-top: 1px solid var(--ta-border);
+  margin: 0 0 1.4rem;
+}
+
+.ta-error {
+  color: #b3261e;
+  background: #fdecea;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  margin: 0 0 1rem;
+}
+
+/* ---- tabs ---- */
+
+.ta-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.ta-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1.05rem;
+  border: 1px solid var(--ta-border);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ta-text);
+  cursor: pointer;
+}
+
+/* Static, never transitioned — the fill is which tab you are on. */
+.ta-tab.active {
+  background: var(--ta-accent);
+  border-color: var(--ta-accent);
+  color: #fff;
+}
+
+.ta-count {
+  min-width: 20px;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--ta-accent-light);
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 20px;
+  text-align: center;
+}
+
+.ta-tab.active .ta-count {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* ---- two panels ----
+   Held as `fr` so the split survives any width, same as Messages. Both scroll
+   internally: a long queue must not walk the decision buttons off screen. */
+.ta-body {
+  display: grid;
+  grid-template-columns: 340fr 700fr;
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.ta-list,
+.ta-detail {
+  background: #fff;
+  border: 1px solid var(--ta-border);
+  border-radius: 16px;
+  max-height: calc(var(--app-vh) - 260px);
+  min-height: 320px;
+  overflow-y: auto;
+}
+
+.ta-list {
+  padding: 0.5rem;
+}
+
+.ta-detail {
+  padding: 1.4rem 1.5rem;
+}
+
+.ta-empty {
+  margin: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--ta-muted);
+}
+
+/* ---- a queue row ---- */
+
+.ta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ta-row:hover {
+  background: #f6f4fd;
+}
+
+.ta-row.open {
+  background: #f1edfc;
+  border-color: var(--ta-accent-light);
+}
+
+.ta-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ta-name {
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.ta-row-meta {
+  font-size: 0.78rem;
+  color: var(--ta-muted);
+}
+
+/* ---- status pill ----
+   Tinted rather than solid: four saturated blocks down a list read as warnings
+   even where the news is good. Same choice the Messages context card makes. */
+.ta-status {
+  flex: none;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ta-status-pending { background: #efeafc; color: #5d5487; }
+.ta-status-needs_info { background: #fdf1e2; color: #8a5b1d; }
+.ta-status-approved { background: #e6f4ec; color: #2f6d4f; }
+.ta-status-rejected { background: #fbeceb; color: #96403a; }
+
+/* ---- the open application ---- */
+
+.ta-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.ta-detail-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.ta-detail-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ta-muted);
+}
+
+.ta-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 1.2rem;
+  margin: 0 0 1.3rem;
+}
+
+.ta-facts dt {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ta-muted);
+}
+
+.ta-facts dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+}
+
+.ta-h3 {
+  margin: 1.2rem 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ta-accent);
+}
+
+.ta-prose {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.ta-muted {
+  color: var(--ta-muted);
+}
+
+.ta-files,
+.ta-resume {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ta-resume li {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ta-file {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--ta-border);
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ta-accent);
+  cursor: pointer;
+}
+
+.ta-file:hover {
+  border-color: var(--ta-accent-light);
+}
+
+/* ---- the decision ---- */
+
+.ta-decide {
+  margin-top: 1.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--ta-border);
+}
+
+.ta-note-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.ta-note-label textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--ta-border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.ta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ta-actions button {
+  padding: calc(0.6rem - 1px) 1.2rem calc(0.6rem + 1px);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ta-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ta-approve {
+  background: #2f6d4f;
+  color: #fff;
+}
+
+.ta-info {
+  background: #fff;
+  border-color: var(--ta-border);
+  color: var(--ta-text);
+}
+
+.ta-reject {
+  background: #fff;
+  border-color: #e2c3c0;
+  color: #96403a;
+}
+
+.ta-small {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ta-muted);
+}
+
+/* One column below the two-panel width — 340 + 700 cannot hold their shape in
+   a narrower content column, and a 200px queue row is unreadable. */
+@media (max-width: 1080px) {
+  .ta-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ta-list,
+  .ta-detail {
+    max-height: none;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .ta-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

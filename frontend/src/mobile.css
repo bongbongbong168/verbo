@@ -125,6 +125,11 @@
   .un,
   .qp-page,
   .up,
+  /* Tutor verification: the application and the admin review queue. Both
+     carry the 90px desktop gutter, so both belong here — checked against the
+     JSX root class, not guessed from the prefix. */
+  .bt,
+  .ta,
   .ss {
     padding-left: 16px !important;
     padding-right: 16px !important;
