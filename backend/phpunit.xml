@@ -21,8 +21,17 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- NEVER COMMENT THESE OUT. Without them the suite inherits DB_DATABASE
+             from .env, which is database/database.sqlite — the real development
+             database — and any test using RefreshDatabase runs `migrate:fresh`
+             against it, dropping every table. That has happened once already and
+             cost the local library and every account, booking and message on this
+             machine; it was recovered from backups/ plus database/content.
+
+             `:memory:` is thrown away when the process ends, so a test run cannot
+             touch development data no matter what it does. -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

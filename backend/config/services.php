@@ -65,4 +65,28 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
 
+    /*
+     * Google Safe Browsing — checks links people post in messages, comments,
+     * reviews and tutor profiles.
+     *
+     * Absent from a fresh checkout, like Stripe and Google sign-in, and the app
+     * stays fully usable without it: `SafeBrowsingService::configured()` gates
+     * every call and an unconfigured install simply does not filter links.
+     *
+     * The key is a plain API key from the Google Cloud console with the Safe
+     * Browsing API enabled. It is used server-side only and must NOT be given
+     * a VITE_ twin — unlike GOOGLE_CLIENT_ID, this one is a secret.
+     *
+     * `clean_ttl` is how long a URL that came back clean is trusted before it
+     * is asked about again. It trades quota against staleness: a URL clean
+     * today can be flagged tomorrow, so this should stay in hours, not days.
+     * `timeout` bounds how long a message send can wait on Google before the
+     * check is abandoned and the content allowed through.
+     */
+    'safe_browsing' => [
+        'key' => env('GOOGLE_SAFE_BROWSING_KEY'),
+        'clean_ttl' => env('SAFE_BROWSING_CLEAN_TTL', 3600),
+        'timeout' => env('SAFE_BROWSING_TIMEOUT', 4),
+    ],
+
 ];

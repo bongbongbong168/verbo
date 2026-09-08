@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Rules\NoUnsafeLinks;
 
 class ConversationController extends Controller
 {
@@ -193,7 +194,10 @@ class ConversationController extends Controller
          * uploads hit.
          */
         $data = $request->validate([
-            'body' => ['nullable', 'string', 'max:4000'],
+            // Links are checked against Google Safe Browsing. This is the most
+            // exposed surface in the app for it: a message is written by one
+            // person and read by another, with nothing in between.
+            'body' => ['nullable', 'string', 'max:4000', new NoUnsafeLinks],
             'file' => [
                 'nullable',
                 'file',

@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\TutorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Rules\NoUnsafeLinks;
 
 class TutorController extends Controller
 {
@@ -96,13 +97,16 @@ class TutorController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'bio' => ['nullable', 'string'],
+            'bio' => ['nullable', 'string', new NoUnsafeLinks],
             'subjects' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
             'languages_spoken' => ['nullable', 'string', 'max:255'],
             'availability' => ['nullable', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'max:10240'],
-            'video_url' => ['nullable', 'url', 'max:500'],
+            // The bio and the intro video are the two fields on a public
+            // profile a visitor might follow. One rule covers both: it pulls
+            // URLs out of free text, so a plain URL field needs nothing extra.
+            'video_url' => ['nullable', 'url', 'max:500', new NoUnsafeLinks],
         ]);
 
         $existing = $request->user()->tutorProfile;
@@ -164,13 +168,16 @@ class TutorController extends Controller
         self::authorizeProfile($request, $tutorProfile);
 
         $data = $request->validate([
-            'bio' => ['nullable', 'string'],
+            'bio' => ['nullable', 'string', new NoUnsafeLinks],
             'subjects' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
             'languages_spoken' => ['nullable', 'string', 'max:255'],
             'availability' => ['nullable', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'max:10240'],
-            'video_url' => ['nullable', 'url', 'max:500'],
+            // The bio and the intro video are the two fields on a public
+            // profile a visitor might follow. One rule covers both: it pulls
+            // URLs out of free text, so a plain URL field needs nothing extra.
+            'video_url' => ['nullable', 'url', 'max:500', new NoUnsafeLinks],
         ]);
 
         if ($request->hasFile('photo')) {

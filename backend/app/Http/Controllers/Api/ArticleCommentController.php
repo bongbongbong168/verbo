@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\ArticleComment;
 use Illuminate\Http\Request;
+use App\Rules\NoUnsafeLinks;
 
 class ArticleCommentController extends Controller
 {
@@ -33,7 +34,10 @@ class ArticleCommentController extends Controller
     {
         $data = $request->validate([
             // Trimmed before validating, so a comment of only spaces is empty.
-            'content' => ['required', 'string', 'max:2000'],
+            // Links go through Safe Browsing: a comment is public to every
+            // reader of the article, so one bad link reaches the widest
+            // audience of anywhere in the app.
+            'content' => ['required', 'string', 'max:2000', new NoUnsafeLinks],
             'parent_id' => ['nullable', 'integer'],
         ]);
 

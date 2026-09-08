@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TutorProfile;
 use App\Models\TutorReview;
 use Illuminate\Http\Request;
+use App\Rules\NoUnsafeLinks;
 
 class TutorReviewController extends Controller
 {
@@ -27,7 +28,7 @@ class TutorReviewController extends Controller
 
         $data = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['required', 'string', 'max:2000', new NoUnsafeLinks],
         ]);
 
         $review = $tutorProfile->reviews()->updateOrCreate(
