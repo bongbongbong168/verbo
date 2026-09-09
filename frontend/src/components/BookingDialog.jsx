@@ -151,6 +151,9 @@ export default function BookingDialog({ tutor, token, onClose, onBooked }) {
   const [slots, setSlots] = useState([])
   const [tutorZone, setTutorZone] = useState(null)
   const [hasAvailability, setHasAvailability] = useState(true)
+  /* The tutor's longest single opening. Not decoration: it is the difference
+     between "this day is full" and "no day can ever hold this lesson". */
+  const [longestWindow, setLongestWindow] = useState(null)
   const [duration, setDuration] = useState(30)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -198,6 +201,9 @@ export default function BookingDialog({ tutor, token, onClose, onBooked }) {
         setTutorZone(data.timezone || null)
         setDuration(data.duration_minutes || 30)
         setHasAvailability(data.has_availability !== false)
+        setLongestWindow(
+          typeof data.longest_window_minutes === 'number' ? data.longest_window_minutes : null,
+        )
       })
       .catch((err) => live && setError(err.message))
       .finally(() => live && setLoading(false))
@@ -290,6 +296,22 @@ export default function BookingDialog({ tutor, token, onClose, onBooked }) {
 
   // The last week worth paging to — beyond it every day is empty anyway.
   const maxWeek = Math.floor((DAYS_AHEAD - 1) / 7)
+
+  /* No opening is long enough for this lesson, so no amount of paging will find
+     one. Guarded on `slots.length` as well as the measurement, because a window
+     CAN be long enough and still be fully booked — that is a different fact and
+     keeps the ordinary per-day message. */
+  const tooLongForEveryWindow =
+    !loading &&
+    slots.length === 0 &&
+    typeof longestWindow === 'number' &&
+    longestWindow > 0 &&
+    longestWindow < duration
+
+  // Only lessons that would actually fit, so the offer is never a dead end.
+  const shorterLessons = lessons
+    .filter((l) => l.id !== lesson?.id && l.duration_minutes <= (longestWindow ?? 0))
+    .sort((a, b) => b.duration_minutes - a.duration_minutes)
 
   async function handleBook() {
     if (!picked) return
@@ -433,6 +455,38 @@ export default function BookingDialog({ tutor, token, onClose, onBooked }) {
           {tutor.user.name} hasn&rsquo;t opened any times yet — there is nothing to book until they
           set their weekly hours.
         </p>
+      )
+    }
+
+    /* The third empty case, and the one that read as a broken calendar: the
+       tutor HAS hours, but every opening is shorter than this lesson, so no day
+       can hold it. Saying "no free 60-minute slots on this day" is true of the
+       day and useless — it invites paging through a fortnight that will never
+       have one. Naming the number and pointing at the shorter lessons is the
+       only thing here anyone can act on. */
+    if (tooLongForEveryWindow) {
+      return (
+        <div className="bk-empty">
+          <p className="bk-empty-lead">
+            This lesson runs {duration} minutes, and {tutor.user.name}&rsquo;s longest open block
+            is {longestWindow} minutes — so it does not fit on any day.
+          </p>
+          {shorterLessons.length > 0 ? (
+            <p>
+              {shorterLessons.length === 1 ? 'This one fits:' : 'These fit:'}{' '}
+              {shorterLessons.map((l, i) => (
+                <span key={l.id}>
+                  {i > 0 && ', '}
+                  <button type="button" className="bk-inline-link" onClick={() => setLesson(l)}>
+                    {l.name} ({l.duration_minutes} min)
+                  </button>
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p>Ask {tutor.user.name} to open a longer block, and this becomes bookable.</p>
+          )}
+        </div>
       )
     }
 

@@ -473,6 +473,21 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const entries = tutor.resume_entries || []
   const lessons = tutor.lessons || []
 
+  /* The longest UNBROKEN block in the week, which is the only length that
+     matters: a booking has to sit inside one range, so six scattered chips are
+     still just six 30-minute openings. `chipsToRanges` already collapses runs,
+     so this asks it rather than re-deriving the same thing a second way. */
+  const longestBlockMinutes = chipsToRanges(chips).reduce(
+    (max, r) => Math.max(max, toMinutes(r.end_time) - toMinutes(r.start_time)),
+    0,
+  )
+
+  // Only warn once they have set something; an empty week is not a mismatch.
+  const unbookableLessons =
+    longestBlockMinutes === 0
+      ? []
+      : lessons.filter((l) => l.duration_minutes > longestBlockMinutes)
+
   return (
     <EditDrawer
       title="Edit profile"
@@ -583,6 +598,23 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             <p className="ed-warn">
               Some saved hours did not line up with the half-hour grid and have been trimmed to the
               nearest slot. Check the days below before saving.
+            </p>
+          )}
+
+          {/* The trap this closes: a lesson can only be booked inside ONE
+              unbroken block, so four separate half-hour chips host a 30-minute
+              lesson and nothing longer. A tutor who ticks single chips makes
+              their own 60-minute lesson unbookable, and the only symptom is an
+              empty calendar on the student's side — which reads as the app
+              being broken rather than as hours that are too short. Live off the
+              chips rather than the saved rows, so it answers while they edit. */}
+          {unbookableLessons.length > 0 && (
+            <p className="ed-warn">
+              Your longest unbroken block is {longestBlockMinutes} minutes, so{' '}
+              {unbookableLessons.map((l) => `${l.name} (${l.duration_minutes} min)`).join(', ')}{' '}
+              {unbookableLessons.length === 1 ? 'cannot be booked' : 'cannot be booked'} at all —
+              students see no times for {unbookableLessons.length === 1 ? 'it' : 'them'}. Tick
+              consecutive chips to open a longer block.
             </p>
           )}
 

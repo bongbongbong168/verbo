@@ -87,6 +87,8 @@ class TutorAvailabilityController extends Controller
 
         $duration = $lesson->duration_minutes ?? SlotService::DEFAULT_MINUTES;
 
+        $windows = $tutorProfile->availabilitySlots()->get();
+
         return response()->json([
             'timezone' => $tutorProfile->timezone ?: config('app.timezone'),
             'duration_minutes' => $duration,
@@ -95,7 +97,25 @@ class TutorAvailabilityController extends Controller
             // this lesson. The client cannot tell those apart from the list
             // alone, and telling someone to "try a shorter lesson" when the
             // tutor has published no hours is simply wrong.
-            'has_availability' => $tutorProfile->availabilitySlots()->exists(),
+            'has_availability' => $windows->isNotEmpty(),
+            /*
+             * The longest single window the tutor has opened, in minutes.
+             *
+             * There is a THIRD empty case, and it was the one being read as a
+             * bug: the tutor has hours, but every window is shorter than this
+             * lesson. A 60-minute lesson cannot fit in a 30-minute opening, so
+             * the calendar is empty on every day at once — and the dialog said
+             * only "No free 60-minute slots on this day", which is true of the
+             * day and hides the fact that no day will ever work. The client
+             * needs the number to say what is actually wrong and what to do.
+             *
+             * Derived, never stored: it is a property of whatever hours are
+             * currently saved, and a column would be one more thing to keep in
+             * step with the editor.
+             */
+            'longest_window_minutes' => (int) $windows
+                ->map(fn ($window) => self::minutesOf($window->end_time) - self::minutesOf($window->start_time))
+                ->max(),
             // The viewer's own id, so each slot can also say whether THEY are
             // free then. Marked rather than filtered out: a time removed with
             // no explanation reads as the tutor having no hours, when in fact
@@ -107,5 +127,20 @@ class TutorAvailabilityController extends Controller
                 optional($request->user())->id
             ),
         ]);
+    }
+
+    /**
+     * "HH:MM" or "HH:MM:SS" as minutes past midnight.
+     *
+     * Both shapes are real: SQLite stores back exactly the string it was given
+     * ("09:00"), while Postgres round-trips a `time` column as "09:00:00".
+     * Taking the first two parts reads either — the same thing SlotService
+     * already does with `explode`.
+     */
+    private static function minutesOf(string $time): int
+    {
+        [$hours, $minutes] = array_map('intval', explode(':', $time));
+
+        return $hours * 60 + $minutes;
     }
 }

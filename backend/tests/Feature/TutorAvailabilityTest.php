@@ -145,6 +145,83 @@ class TutorAvailabilityTest extends TestCase
         $this->assertSame(3, (int) $profile->availabilitySlots()->first()->day_of_week);
     }
 
+    /**
+     * The empty calendar that read as a bug.
+     *
+     * A 60-minute lesson cannot sit inside a 30-minute opening, so it has no
+     * slots on ANY day — while the 30-minute lessons beside it book fine. The
+     * response has to carry enough for the client to say that, rather than
+     * "no free 60-minute slots on this day" fourteen times over.
+     */
+    public function test_the_slot_response_reports_the_longest_window()
+    {
+        $profile = $this->tutor();
+
+        // Four separate half-hour chips: six hours apart, never contiguous.
+        foreach ([['09:00', '09:30'], ['15:00', '15:30']] as [$start, $end]) {
+            $profile->availabilitySlots()->create([
+                'day_of_week' => 3,
+                'start_time' => $start,
+                'end_time' => $end,
+            ]);
+        }
+
+        $short = $profile->lessons()->create(['name' => 'Chat', 'price' => 10, 'duration_minutes' => 30]);
+        $long = $profile->lessons()->create(['name' => 'Exam practice', 'price' => 20, 'duration_minutes' => 60]);
+
+        $this->actingAs($profile->user)
+            ->getJson("/api/tutors/{$profile->id}/slots?lesson={$long->id}&days=14")
+            ->assertOk()
+            ->assertJson([
+                'duration_minutes' => 60,
+                // Hours ARE set — so "hasn't opened any times" would be wrong.
+                'has_availability' => true,
+                'longest_window_minutes' => 30,
+            ])
+            ->assertJsonCount(0, 'slots');
+
+        $this->actingAs($profile->user)
+            ->getJson("/api/tutors/{$profile->id}/slots?lesson={$short->id}&days=14")
+            ->assertOk()
+            ->assertJson(['longest_window_minutes' => 30])
+            ->assertJsonPath('duration_minutes', 30);
+
+        $this->assertGreaterThan(
+            0,
+            count($this->getJson("/api/tutors/{$profile->id}/slots?lesson={$short->id}&days=14")->json('slots'))
+        );
+    }
+
+    /** Contiguous chips collapse into one range, which is what makes room. */
+    public function test_a_longer_block_reports_its_real_length()
+    {
+        $profile = $this->tutor();
+
+        $profile->availabilitySlots()->create([
+            'day_of_week' => 3,
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ]);
+
+        $this->actingAs($profile->user)
+            ->getJson("/api/tutors/{$profile->id}/slots")
+            ->assertOk()
+            ->assertJson(['longest_window_minutes' => 120]);
+    }
+
+    public function test_a_tutor_with_no_hours_reports_zero()
+    {
+        $profile = $this->tutor();
+
+        $this->actingAs($profile->user)
+            ->getJson("/api/tutors/{$profile->id}/slots")
+            ->assertOk()
+            ->assertJson([
+                'has_availability' => false,
+                'longest_window_minutes' => 0,
+            ]);
+    }
+
     public function test_someone_elses_hours_are_not_editable()
     {
         $profile = $this->tutor();

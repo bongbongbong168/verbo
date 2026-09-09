@@ -584,6 +584,41 @@
   text-align: center;
 }
 
+/* The "does not fit on any day" explanation is two paragraphs rather than one
+   line, so it needs its own spacing — `.bk-empty` is otherwise a bare <p>. */
+.bk-empty p {
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.bk-empty p:last-child {
+  margin-bottom: 0;
+}
+
+/* The one sentence that says what is wrong, set against the suggestion under
+   it in the page's own text colour rather than the muted grey. */
+.bk-empty-lead {
+  color: var(--bk-text);
+  font-weight: 600;
+}
+
+/* A lesson the student can switch to, inline in the sentence offering it. A
+   real button, not a styled span: it changes what is being booked. */
+.bk-inline-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--bk-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bk-inline-link:hover {
+  color: var(--bk-text);
+}
+
 .bk-error {
   margin: 14px 0 0;
   padding: 8px 11px;
