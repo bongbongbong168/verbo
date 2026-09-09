@@ -102,9 +102,23 @@ body {
     sans-serif;
 }
 
+/* WOFF2 FIRST, and it is the single biggest thing on the wire here.
+   The raw OTF is 2,034 KB — three times the whole JS bundle and by far the
+   largest asset the site ships, because a CJK face carries thousands of glyphs.
+   WOFF2 is the same glyph data in a Brotli container, so it costs nothing
+   visually and halves it to 1,056 KB. The OTF stays as the fallback for any
+   browser without WOFF2 support; every browser this app targets has it, so in
+   practice the .otf is never fetched.
+
+   Not subset to the characters currently in the app, though that would cut it
+   far further: the display text is admin-authored Chinese that changes, and a
+   fixed subset would render tofu the first time someone published a character
+   outside it. */
 @font-face {
   font-family: 'Douyin Sans';
-  src: url('./assets/fonts/DouyinSans-Bold.otf') format('opentype');
+  src:
+    url('./assets/fonts/DouyinSans-Bold.woff2') format('woff2'),
+    url('./assets/fonts/DouyinSans-Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
