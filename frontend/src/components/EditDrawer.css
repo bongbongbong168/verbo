@@ -442,6 +442,64 @@
   color: var(--ed-muted);
 }
 
+/* ---- what the ticks add up to ----
+   The grid shows what you pressed; this shows what you MADE. A count of ticked
+   boxes cannot answer "can my hour-long lesson be booked here", which is the
+   only question the tab exists to answer. */
+.ed-openings {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 10px;
+  background: var(--ed-field);
+}
+
+.ed-opening {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  font-size: 0.82rem;
+}
+
+.ed-opening-span {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The length, set apart from the times so it reads as the answer rather than
+   as more of the range. */
+.ed-opening-span em {
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: var(--ed-accent-soft);
+  color: #fff;
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ed-opening-fits {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
+  color: var(--ed-muted);
+  text-align: right;
+}
+
+/* An opening nothing fits is the exact spot a lesson goes missing, so it is
+   the one row that gets a colour. Static, never transitioned. */
+.ed-opening-fits.none {
+  color: #96403a;
+  font-weight: 600;
+}
+
 .ed-slots-actions {
   display: flex;
   gap: 0.4rem;

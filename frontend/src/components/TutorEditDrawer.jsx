@@ -477,16 +477,43 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
      matters: a booking has to sit inside one range, so six scattered chips are
      still just six 30-minute openings. `chipsToRanges` already collapses runs,
      so this asks it rather than re-deriving the same thing a second way. */
-  const longestBlockMinutes = chipsToRanges(chips).reduce(
-    (max, r) => Math.max(max, toMinutes(r.end_time) - toMinutes(r.start_time)),
-    0,
-  )
+  /* The openings the ticked chips actually add up to, with their lengths.
+     This is the thing the grid hid: 48 identical checkboxes and a count of how
+     many are on says nothing about whether a lesson fits, and every comparable
+     app (Preply, italki, Calendly) instead makes you handle a range with two
+     ends so the length is in front of you. Same collapse the save uses, so
+     what is listed here is exactly what gets stored. */
+  const openings = chipsToRanges(chips)
+    .map((r) => ({
+      ...r,
+      day: Number(r.day_of_week),
+      minutes: toMinutes(r.end_time) - toMinutes(r.start_time),
+    }))
+    .sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
+
+  const openingsFor = (day) => openings.filter((o) => o.day === day)
+
+  const minutesOpenOn = (day) => openingsFor(day).reduce((sum, o) => sum + o.minutes, 0)
+
+  const longestBlockMinutes = openings.reduce((max, o) => Math.max(max, o.minutes), 0)
 
   // Only warn once they have set something; an empty week is not a mismatch.
   const unbookableLessons =
     longestBlockMinutes === 0
       ? []
       : lessons.filter((l) => l.duration_minutes > longestBlockMinutes)
+
+  /* "1h 30m", not "90 minutes" — a tutor reads their week in hours, and the
+     day tabs have room for four characters. */
+  const readableLength = (mins) => {
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    if (!h) return `${m}m`
+    return m ? `${h}h ${m}m` : `${h}h`
+  }
+
+  // 570 -> "9:30 am", matching the chip labels above it.
+  const clockLabel = (mins) => label12(mins)
 
   return (
     <EditDrawer
@@ -608,13 +635,20 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
               empty calendar on the student's side — which reads as the app
               being broken rather than as hours that are too short. Live off the
               chips rather than the saved rows, so it answers while they edit. */}
+          {/* Said in lengths a teacher already thinks in, never in the word
+              "block": the first version read "your longest unbroken block is
+              30 minutes", which is the app's vocabulary, not theirs. A lesson
+              needs that much time IN A ROW, so the instruction is the gesture
+              that makes it — tick the box next to one you already have. */}
           {unbookableLessons.length > 0 && (
             <p className="ed-warn">
-              Your longest unbroken block is {longestBlockMinutes} minutes, so{' '}
-              {unbookableLessons.map((l) => `${l.name} (${l.duration_minutes} min)`).join(', ')}{' '}
-              {unbookableLessons.length === 1 ? 'cannot be booked' : 'cannot be booked'} at all —
-              students see no times for {unbookableLessons.length === 1 ? 'it' : 'them'}. Tick
-              consecutive chips to open a longer block.
+              Your longest opening is {readableLength(longestBlockMinutes)}, so{' '}
+              {unbookableLessons
+                .map((l) => `${l.name} (${readableLength(l.duration_minutes)})`)
+                .join(' and ')}{' '}
+              {unbookableLessons.length === 1 ? 'is' : 'are'} not bookable — nobody can see{' '}
+              {unbookableLessons.length === 1 ? 'it' : 'them'} at all. A lesson needs that much
+              time in a row, so tick the box straight after one you have already ticked.
             </p>
           )}
 
@@ -641,7 +675,11 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                   an unset day is still obvious without opening it. */}
               <div className="ed-daystrip" role="tablist" aria-label="Choose a day">
                 {WEEK.map(({ day, label }) => {
-                  const count = chips[day]?.size || 0
+                  /* How much time is open, NOT how many boxes are ticked. "5"
+                     was a count of chips — it read as five bookable lessons
+                     when it could be five scattered half-hours that fit
+                     nothing longer than 30 minutes. */
+                  const open = minutesOpenOn(day)
                   return (
                     <button
                       key={day}
@@ -652,7 +690,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                       onClick={() => setHoursDay(day)}
                     >
                       <em>{label.slice(0, 3)}</em>
-                      <strong>{count || '—'}</strong>
+                      <strong>{open ? readableLength(open) : '—'}</strong>
                     </button>
                   )
                 })}
@@ -662,8 +700,10 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                 <span className="ed-slots-day">
                   {WEEK.find((w) => w.day === hoursDay)?.label}
                   <em>
-                    {chips[hoursDay]?.size
-                      ? `${chips[hoursDay].size} slot${chips[hoursDay].size === 1 ? '' : 's'}`
+                    {openingsFor(hoursDay).length
+                      ? `${openingsFor(hoursDay).length} opening${
+                          openingsFor(hoursDay).length === 1 ? '' : 's'
+                        } · ${readableLength(minutesOpenOn(hoursDay))} open`
                       : 'Not teaching'}
                   </em>
                 </span>
@@ -684,6 +724,39 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                   </button>
                 </span>
               </div>
+
+              {/* What the ticks on this day ACTUALLY add up to.
+                  The grid shows what you pressed; this shows what you made —
+                  which is the only thing students can book inside. A lesson has
+                  to fit in ONE of these, so each one says what fits, and a row
+                  nothing fits is the exact spot where a lesson goes missing. */}
+              {openingsFor(hoursDay).length > 0 && (
+                <ul className="ed-openings">
+                  {openingsFor(hoursDay).map((o) => {
+                    const fits = lessons.filter((l) => l.duration_minutes <= o.minutes)
+                    return (
+                      <li className="ed-opening" key={o.start_time}>
+                        <span className="ed-opening-span">
+                          {clockLabel(toMinutes(o.start_time))} –{' '}
+                          {clockLabel(toMinutes(o.end_time))}
+                          <em>{readableLength(o.minutes)}</em>
+                        </span>
+                        <span
+                          className={'ed-opening-fits' + (fits.length ? '' : ' none')}
+                        >
+                          {lessons.length === 0
+                            ? 'No lessons listed yet'
+                            : fits.length === lessons.length
+                              ? 'Fits every lesson'
+                              : fits.length
+                                ? `Fits ${fits.map((l) => l.name).join(', ')}`
+                                : 'Too short for any of your lessons'}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
 
               {PART_BANDS.map((band) => {
                 const times = []
