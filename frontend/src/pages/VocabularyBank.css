@@ -419,6 +419,12 @@
 
 /* One card holding hairline-separated rows, as the reference draws it —
    separate cards per word would break the list into 50 floating objects. */
+/* NOT `overflow: hidden`, which is what this was: the list would clip an open
+   ⋮ menu on the last row, the same trap the collapsed sidebar's flyout hit. The
+   16px corners are drawn on the first and last rows instead — a background
+   respects `border-radius`, so nothing here needs clipping to stay inside it.
+   Longhand corners rather than the shorthand, or a single-card list would take
+   only the `:last-child` rule and lose its top corners. */
 .vb-list {
   list-style: none;
   margin: 0;
@@ -426,8 +432,31 @@
   border: 1px solid var(--vb-edge);
   border-radius: 16px;
   background: var(--vb-card);
-  overflow: hidden;
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.07);
+}
+
+.vb-row:first-child,
+.vb-row:first-child .vb-row-top {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+/* Only while closed — an open row has its detail panel below this box, and a
+   rounded corner in the middle of the list would look like a break in it. */
+.vb-row:last-child,
+.vb-row:last-child:not(.open) .vb-row-top {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* The accent bar is square, so on the end rows it would poke out past the
+   corner it sits in. */
+.vb-row:first-child .vb-row-top::before {
+  border-top-left-radius: 16px;
+}
+
+.vb-row:last-child:not(.open) .vb-row-top::before {
+  border-bottom-left-radius: 16px;
 }
 
 .vb-row + .vb-row {
@@ -438,13 +467,22 @@
   background: #fcfbff;
 }
 
+/* The row button and the ⋮ sit side by side. `min-width: 0` on the button is
+   what makes its width mean anything — a flex item's automatic minimum is its
+   content, and the source line would otherwise set the floor. */
+.vb-row-top {
+  display: flex;
+  align-items: stretch;
+}
+
 .vb-row-main {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  width: 100%;
-  padding: 0.95rem 1.2rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.95rem 0.6rem 0.95rem 1.2rem;
   box-sizing: border-box;
   border: none;
   background: none;
@@ -460,15 +498,19 @@
 
    Instant, not transitioned: the highlight IS the feedback, and a transition
    that never gets a frame leaves the row looking dead under the pointer. */
-.vb-row-main {
+/* The tint and the accent bar moved from the button onto the row that holds it:
+   with the ⋮ beside it the button no longer spans the row, so a highlight drawn
+   on the button alone stopped short of the menu and read as a half-lit row. */
+.vb-row-top {
   position: relative;
 }
 
-.vb-row-main:hover {
+.vb-row-top:hover,
+.vb-row-top:focus-within {
   background: var(--vb-well);
 }
 
-.vb-row-main::before {
+.vb-row-top::before {
   content: "";
   position: absolute;
   left: 0;
@@ -478,18 +520,14 @@
   background: transparent;
 }
 
-.vb-row-main:hover::before {
+/* Keyboard users get the same treatment — the row is a button. */
+.vb-row-top:hover::before,
+.vb-row-top:focus-within::before {
   background: var(--vb-fill);
 }
 
-/* Keyboard users get the same treatment — the row is a button. */
 .vb-row-main:focus-visible {
   outline: none;
-  background: var(--vb-well);
-}
-
-.vb-row-main:focus-visible::before {
-  background: var(--vb-fill);
 }
 
 .vb-row-body {
@@ -710,22 +748,104 @@
   color: var(--vb-muted);
 }
 
-.vb-remove {
-  margin-left: auto;
-  padding: 0.32rem 0.7rem;
+/* ---- the row's ⋮ menu ----
+   Same box as Scan's document rows, since it is the same control doing the same
+   job. Always drawn rather than revealed on hover: being unfindable is what it
+   was built to fix, and a touch screen has no hover to reveal it with. */
+.vb-row-actions {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  flex: none;
+  padding: 0.95rem 0.9rem 0.95rem 0;
+}
+
+.vb-row-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
   border: none;
   border-radius: 8px;
   background: none;
   color: var(--vb-muted);
-  font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
   cursor: pointer;
 }
 
-.vb-remove:hover {
+.vb-row-menu:hover,
+.vb-row-menu[aria-expanded="true"] {
+  background: #fff;
+  color: var(--vb-accent);
+}
+
+.vb-row-menu svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Which edge is pinned is set by `.up` / `.down`, and the base rule pins
+   NEITHER on purpose: overriding `top` back to `auto` from a modifier leaves an
+   abspos box with both edges pinned if the override is ever outweighed, and a
+   box pinned top AND bottom with `height: auto` stretches between them — which
+   rendered the menu 864px tall instead of 124. */
+.vb-rowmenu {
+  position: absolute;
+  right: 0.9rem;
+  /* Above the rows below it — the list clips nothing, but a later row's own
+     stacking would otherwise paint over an open menu. */
+  z-index: 5;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem;
+  border: 1px solid var(--vb-edge);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(28, 23, 48, 0.16);
+}
+
+/* Opened upward when there is no room below — see the measurement note at the
+   toggle. Static placement, never a transition: the menu is either there or it
+   is not, and a slide that never gets a frame would strand it.
+
+   NAMED IN FULL, never a bare `.up` / `.down` modifier: every page root in this
+   app is a two-letter class, and `.up` IS the Upgrade page (`Upgrade.css`). A
+   bare modifier picked up its `min-height: var(--app-vh)` and 90px gutter, and
+   the menu rendered a full viewport tall and 256px wide. */
+.vb-rowmenu-down {
+  top: calc(100% - 0.6rem);
+}
+
+.vb-rowmenu-up {
+  bottom: calc(100% - 0.6rem);
+}
+
+.vb-rowmenu-item {
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--vb-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vb-rowmenu-item:hover {
+  background: var(--vb-well);
+}
+
+.vb-rowmenu-danger {
+  color: #b3261e;
+}
+
+.vb-rowmenu-danger:hover {
   background: #fdecea;
-  color: #b02a2a;
 }
 
 /* ---- misc ---- */

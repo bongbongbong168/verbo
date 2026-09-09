@@ -18,6 +18,7 @@ import sortIcon from "../assets/scan/sort-icon.png";
 import notebookPencil from "../assets/scan/notebook-pencil.png";
 import PageTools from "../components/PageTools";
 import "./Scan.css";
+import MenuDotsIcon from "../components/MenuDotsIcon";
 
 function SearchIcon() {
   return (
@@ -124,16 +125,6 @@ function ScanLinesIcon() {
     >
       <line x1="4" y1="9" x2="16" y2="9" />
       <line x1="8" y1="15" x2="20" y2="15" />
-    </svg>
-  );
-}
-
-function MenuDotsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="5" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="12" cy="19" r="1.6" />
     </svg>
   );
 }

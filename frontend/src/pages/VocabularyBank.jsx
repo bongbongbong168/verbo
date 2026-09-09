@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
+import MenuDotsIcon from "../components/MenuDotsIcon";
 import PageTools from "../components/PageTools";
 import VocabReview from "../components/VocabReview";
 import { SOURCE_MARKS, ManualMark } from "../components/SourceIcons";
@@ -169,6 +170,12 @@ export default function VocabularyBank() {
   const [examples, setExamples] = useState({});
   const askedRef = useRef(new Set());
 
+  /* The per-row ⋮ menu — `rowMenuFor` holds a card id, distinct from `menuOpen`
+     above, which is the Review dropdown in the header. */
+  const [rowMenuFor, setRowMenuFor] = useState(null);
+  const [menuUp, setMenuUp] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(null);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState(null);
   const [starting, setStarting] = useState(false);
@@ -182,6 +189,32 @@ export default function VocabularyBank() {
     const t = setTimeout(() => setSearch(query.trim()), 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  /* Dismiss the row menu on any click outside it. The toggle button lives
+     inside `.vb-row-actions`, so it keeps handling its own open/close — the
+     same arrangement Scan's document rows use. */
+  useEffect(() => {
+    if (rowMenuFor === null) return;
+
+    function onDocClick(e) {
+      if (!e.target.closest(".vb-row-actions")) {
+        setRowMenuFor(null);
+        setConfirmingDelete(null);
+      }
+    }
+
+    document.addEventListener("click", onDocClick);
+    return () => document.removeEventListener("click", onDocClick);
+  }, [rowMenuFor]);
+
+  /* An armed Delete disarms after 4s. On a timer rather than on blur, because
+     blur never fires if focus never landed on the button — the same reason
+     Scan's page-level delete uses one. */
+  useEffect(() => {
+    if (confirmingDelete === null) return;
+    const t = setTimeout(() => setConfirmingDelete(null), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingDelete]);
 
   const loadStats = useCallback(() => {
     api
@@ -291,14 +324,29 @@ export default function VocabularyBank() {
     }
   }
 
+  /* Arms on the first click and acts on the second — the pattern Scan's delete
+     and the classroom item's use. A saved word is not recoverable: the bank is
+     the only record that this learner ever met it, and the example sentence was
+     captured at save time and cannot be found again. */
   async function remove(id) {
+    if (confirmingDelete !== id) {
+      setConfirmingDelete(id);
+      return;
+    }
+
+    setError(null);
     try {
       await api.deleteFlashcard(token, id);
       setCards((prev) => prev.filter((c) => c.id !== id));
       setTotal((t) => Math.max(t - 1, 0));
+      // The panel belongs to a row that no longer exists.
+      setOpenId((cur) => (cur === id ? null : cur));
       loadStats();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setRowMenuFor(null);
+      setConfirmingDelete(null);
     }
   }
 
@@ -487,6 +535,10 @@ export default function VocabularyBank() {
 
             return (
               <li className={"vb-row" + (open ? " open" : "")} key={card.id}>
+                {/* The row button and the ⋮ are SIBLINGS, not nested: a button
+                    inside a button is invalid and the inner one never gets its
+                    own click. `.vb-row-top` is what keeps them on one line. */}
+                <div className="vb-row-top">
                 <button
                   type="button"
                   className="vb-row-main"
@@ -527,6 +579,70 @@ export default function VocabularyBank() {
                   </span>
                 </button>
 
+                <div className="vb-row-actions">
+                  <button
+                    type="button"
+                    className="vb-row-menu"
+                    aria-label={`Options for ${card.word}`}
+                    aria-expanded={rowMenuFor === card.id}
+                    onClick={(e) => {
+                      /* Flip the menu above the button when it would open off
+                         the bottom of the screen — the last row of a long list
+                         sits at the viewport's edge, and a menu nobody can see
+                         is the same as no menu. Both numbers are painted
+                         viewport pixels, so they compare directly; this is only
+                         a class, never a px value written back inside `#root`,
+                         which is where the zoom would double-apply. */
+                      const r = e.currentTarget.getBoundingClientRect();
+                      const below = window.innerHeight - r.bottom;
+                      setMenuUp(below < 180 && r.top > below);
+                      setRowMenuFor((cur) => (cur === card.id ? null : card.id));
+                      setConfirmingDelete(null);
+                    }}
+                  >
+                    <MenuDotsIcon />
+                  </button>
+
+                  {rowMenuFor === card.id && (
+                    <div
+                      className={
+                        "vb-rowmenu " +
+                        (menuUp ? "vb-rowmenu-up" : "vb-rowmenu-down")
+                      }
+                    >
+                      {/* Only offered where the card actually points at
+                          something. A card whose source was deleted keeps its
+                          module label and loses the link — an item that
+                          navigates nowhere would be worse than its absence. */}
+                      {card.source && (
+                        <Link className="vb-rowmenu-item" to={card.source.link}>
+                          Open {card.source.label.toLowerCase()}
+                        </Link>
+                      )}
+                      <button
+                        type="button"
+                        className="vb-rowmenu-item"
+                        onClick={() => {
+                          setOpenId(open ? null : card.id);
+                          setRowMenuFor(null);
+                        }}
+                      >
+                        {open ? "Hide details" : "Show details"}
+                      </button>
+                      <button
+                        type="button"
+                        className="vb-rowmenu-item vb-rowmenu-danger"
+                        onClick={() => remove(card.id)}
+                      >
+                        {confirmingDelete === card.id
+                          ? "Confirm delete"
+                          : "Delete"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                </div>
+
                 {/* "Where you learned this" — the sentence the word was met in
                     and a way back to the content it came from. */}
                 {open && (
@@ -566,19 +682,15 @@ export default function VocabularyBank() {
                         </span>
                       )}
 
+                      {/* Removing a word lives in the row's ⋮ menu now, not
+                          here. It was reachable only after opening a panel,
+                          which is why it could not be found — and it deleted on
+                          a single click, the one delete in the app that did. */}
                       <span className="vb-detail-stats">
                         {card.review_count
                           ? `Reviewed ${card.review_count}× · ${card.correct_streak} in a row`
                           : "Not reviewed yet"}
                       </span>
-
-                      <button
-                        type="button"
-                        className="vb-remove"
-                        onClick={() => remove(card.id)}
-                      >
-                        Remove
-                      </button>
                     </div>
                   </div>
                 )}

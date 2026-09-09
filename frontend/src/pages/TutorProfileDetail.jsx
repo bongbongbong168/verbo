@@ -14,6 +14,7 @@ import TutorEditDrawer from '../components/TutorEditDrawer'
    import reads tidier is exactly how two wordings drift apart. */
 import { relativeTime } from '../components/notifications'
 import './TutorProfileDetail.css'
+import MenuDotsIcon from '../components/MenuDotsIcon'
 
 /* Figures the API has no field for yet. Kept together and named so they are
    obviously stand-ins rather than data — swap them out as the backend grows
@@ -224,16 +225,6 @@ function MessageIcon() {
 /* The same three dots the Scan documents table uses, so one gesture means one
    thing across the app. Filled circles rather than a stroked glyph — at 16px a
    stroked dot is mostly its own outline. */
-function MenuDotsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="12" cy="19" r="1.6" />
-    </svg>
-  )
-}
-
 function Stars({ count = 4 }) {
   return (
     <span className="td-stars" aria-label={`${count} out of 5`}>
