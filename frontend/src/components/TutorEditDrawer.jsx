@@ -17,17 +17,10 @@ const WEEK = [
   { day: 0, label: 'Sunday' },
 ]
 
-/* Half-hour steps, matching SlotService::STEP_MINUTES. A tutor toggles the
-   slots they are free in rather than typing times, so nothing they enter can
-   fail to line up with a generated slot. */
+/* Half-hour steps, matching SlotService::STEP_MINUTES — the times offered in
+   the pick-lists below, so nothing a tutor can choose fails to line up with a
+   generated slot. */
 const STEP = 30
-
-const PART_BANDS = [
-  { key: 'night', label: 'Early', from: 0, to: 6 * 60 },
-  { key: 'morning', label: 'Morning', from: 6 * 60, to: 12 * 60 },
-  { key: 'afternoon', label: 'Afternoon', from: 12 * 60, to: 17 * 60 },
-  { key: 'evening', label: 'Evening', from: 17 * 60, to: 24 * 60 },
-]
 
 const toMinutes = (hhmm) => {
   const [h, m] = String(hhmm).split(':').map(Number)
@@ -45,48 +38,52 @@ const label12 = (min) => {
   return h12 + ':' + pad2(min % 60) + ' ' + suffix
 }
 
-/**
- * Stored ranges -> the set of chip starts they cover.
- *
- * A range includes every step that still *fits* inside it: 09:00-11:00 covers
- * 09:00, 09:30, 10:00 and 10:30, since 10:30 ends exactly at 11:00. Anything
- * off the half-hour is snapped inward and reported, because silently moving a
- * tutor's saved hours would be worse than telling them.
- */
-function rangesToChips(rows) {
-  const byDay = {}
-  let snapped = false
+/* Every half hour as a pick-list value, plus 24:00 so a day can end at
+   midnight. Half hours rather than Google Calendar's quarter hours because
+   SlotService offers starts every 30 minutes — a 6:45 opening would sit off
+   the grid every other tutor's times land on. */
+const TIME_CHOICES = (() => {
+  const out = []
+  for (let m = 0; m <= 24 * 60; m += STEP) out.push(toHHMM(m))
+  return out
+})()
 
-  for (const row of rows) {
-    const day = Number(row.day_of_week)
-    const rawStart = toMinutes(row.start_time)
-    const rawEnd = toMinutes(row.end_time)
-    const start = Math.ceil(rawStart / STEP) * STEP
-    const end = Math.floor(rawEnd / STEP) * STEP
-    if (start !== rawStart || end !== rawEnd) snapped = true
+/* Postgres returns a `time` column as "09:00:00" while SQLite hands back the
+   "09:00" it was given. Both have to select the same option. */
+const hhmm = (t) => String(t).slice(0, 5)
 
-    byDay[day] = byDay[day] || new Set()
-    for (let t = start; t + STEP <= end; t += STEP) byDay[day].add(t)
-  }
-
-  return { byDay, snapped }
+/** The choices, plus whatever is saved if an old row sits off the half hour.
+ *  Including it beats snapping: the tutor's real hours round-trip untouched,
+ *  which is why the "we trimmed your hours" warning could be deleted. */
+function timeChoices(current) {
+  if (!current || TIME_CHOICES.includes(current)) return TIME_CHOICES
+  return [...TIME_CHOICES, current].sort()
 }
 
-/** Chip starts -> the fewest contiguous ranges that cover them. */
-function chipsToRanges(byDay) {
+/** API rows -> { day: [{start, end}] }, the shape the editor edits directly. */
+function groupByDay(rows) {
+  const byDay = {}
+  for (const row of rows) {
+    const day = Number(row.day_of_week)
+    if (!byDay[day]) byDay[day] = []
+    byDay[day].push({ start: hhmm(row.start_time), end: hhmm(row.end_time) })
+  }
+  for (const day of Object.keys(byDay)) {
+    byDay[day].sort((a, b) => toMinutes(a.start) - toMinutes(b.start))
+  }
+  return byDay
+}
+
+/** Ranges that overlap or touch become one, so "9-10" plus "9:30-11" saves as
+ *  "9-11" rather than as two rows that would offer the same times twice. */
+function mergeRanges(list) {
   const out = []
-  for (const [day, set] of Object.entries(byDay)) {
-    const times = [...set].sort((a, b) => a - b)
-    let i = 0
-    while (i < times.length) {
-      let j = i
-      while (j + 1 < times.length && times[j + 1] === times[j] + STEP) j++
-      out.push({
-        day_of_week: Number(day),
-        start_time: toHHMM(times[i]),
-        end_time: toHHMM(times[j] + STEP),
-      })
-      i = j + 1
+  for (const r of [...list].sort((a, b) => toMinutes(a.start) - toMinutes(b.start))) {
+    const last = out[out.length - 1]
+    if (last && toMinutes(r.start) <= toMinutes(last.end)) {
+      if (toMinutes(r.end) > toMinutes(last.end)) last.end = r.end
+    } else {
+      out.push({ ...r })
     }
   }
   return out
@@ -139,16 +136,16 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [savingProfile, setSavingProfile] = useState(false)
 
   // --- hours tab ---
-  /* The whole week is held locally as a day -> Set of chip starts, and posted
-     in one go: the endpoint is a wholesale replace, so the editor must always
-     know the complete picture. */
-  const [chips, setChips] = useState({})
+  /* The whole week as `day -> [{start, end}]`, posted in one go: the endpoint
+     is a wholesale replace, so the editor must always know the complete
+     picture. This is the same shape `tutor_availability` stores, which is what
+     let the two chip-conversion functions be deleted rather than rewritten. */
+  const [hours, setHours] = useState({})
   const [hoursDay, setHoursDay] = useState(1)
   const [zone, setZone] = useState(
     tutor.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   )
   const [hoursLoaded, setHoursLoaded] = useState(false)
-  const [hoursSnapped, setHoursSnapped] = useState(false)
   const [savingHours, setSavingHours] = useState(false)
 
   // --- courses tab ---
@@ -237,9 +234,8 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     api
       .getTutorAvailability(token, tutor.id)
       .then((rows) => {
-        const { byDay, snapped } = rangesToChips(rows)
-        setChips(byDay)
-        setHoursSnapped(snapped)
+        const byDay = groupByDay(rows)
+        setHours(byDay)
         // Open on a day they already teach, rather than a blank Monday.
         const firstSet = Object.keys(byDay)
           .map(Number)
@@ -250,20 +246,48 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       .catch((err) => setError(err.message))
   }, [tab, hoursLoaded, token, tutor.id])
 
-  function toggleChip(day, minutes) {
-    setChips((prev) => {
+  function setRange(day, index, patch) {
+    setHours((prev) => {
+      const rows = [...(prev[day] || [])]
+      const next = { ...rows[index], ...patch }
+      /* Moving the start past the end would make an impossible range, so the
+         end follows it. Cheaper than telling someone off for a combination the
+         editor let them pick. */
+      if (toMinutes(next.end) <= toMinutes(next.start)) {
+        next.end = toHHMM(Math.min(24 * 60, toMinutes(next.start) + STEP))
+      }
+      rows[index] = next
+      return { ...prev, [day]: rows }
+    })
+  }
+
+  /* A new row starts where the last one ended, which is almost always what a
+     teacher means by "and another time". A blank day gets a sensible evening
+     hour rather than 00:00, which nobody wants and everybody has to change. */
+  function addRange(day) {
+    setHours((prev) => {
+      const rows = prev[day] || []
+      const last = rows[rows.length - 1]
+      const start = last ? Math.min(23 * 60 + 30, toMinutes(last.end) + STEP) : 18 * 60
+      return {
+        ...prev,
+        [day]: [...rows, { start: toHHMM(start), end: toHHMM(Math.min(24 * 60, start + 60)) }],
+      }
+    })
+  }
+
+  function removeRange(day, index) {
+    setHours((prev) => {
+      const rows = (prev[day] || []).filter((_, i) => i !== index)
       const next = { ...prev }
-      const set = new Set(next[day] || [])
-      if (set.has(minutes)) set.delete(minutes)
-      else set.add(minutes)
-      if (set.size) next[day] = set
+      if (rows.length) next[day] = rows
       else delete next[day]
       return next
     })
   }
 
   function clearDay(day) {
-    setChips((prev) => {
+    setHours((prev) => {
       const next = { ...prev }
       delete next[day]
       return next
@@ -273,18 +297,20 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   /* Setting seven days chip by chip is tedious and most tutors keep the same
      hours all week, so one day can be stamped across the others. */
   function copyDayToAll(day) {
-    setChips((prev) => {
+    setHours((prev) => {
       const source = prev[day]
-      if (!source || source.size === 0) return prev
+      if (!source || source.length === 0) return prev
       const next = {}
-      for (const w of WEEK) next[w.day] = new Set(source)
+      for (const w of WEEK) next[w.day] = source.map((r) => ({ ...r }))
       return next
     })
   }
 
-  /* No start/end validation left to do: chips are fixed half-hour steps, so a
-     range that ends before it starts is now unrepresentable rather than
-     something the tutor has to be told about. */
+  /* Still no start/end validation to do, which was the one genuinely good
+     property of the chip grid and is kept: the "to" list only offers times
+     later than the "from", and moving the "from" past the "to" drags the "to"
+     with it, so a backwards range cannot be expressed rather than being
+     something the teacher gets told off about after the fact. */
   async function handleSaveHours(e) {
     e.preventDefault()
     setError(null)
@@ -292,10 +318,16 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     try {
       const saved = await api.saveTutorAvailability(token, tutor.id, {
         timezone: zone,
-        slots: chipsToRanges(chips),
+        slots: Object.entries(hours).flatMap(([day, rows]) =>
+          mergeRanges(rows).map((r) => ({
+            day_of_week: Number(day),
+            start_time: r.start,
+            end_time: r.end,
+          })),
+        ),
       })
-      setChips(rangesToChips(saved).byDay)
-      setHoursSnapped(false)
+      // Re-seeded from what was actually stored, so a merge is visible at once.
+      setHours(groupByDay(saved))
       onChange({ ...tutor, timezone: zone })
       flash('Hours saved')
     } catch (err) {
@@ -473,29 +505,20 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const entries = tutor.resume_entries || []
   const lessons = tutor.lessons || []
 
-  /* The longest UNBROKEN block in the week, which is the only length that
-     matters: a booking has to sit inside one range, so six scattered chips are
-     still just six 30-minute openings. `chipsToRanges` already collapses runs,
-     so this asks it rather than re-deriving the same thing a second way. */
-  /* The openings the ticked chips actually add up to, with their lengths.
-     This is the thing the grid hid: 48 identical checkboxes and a count of how
-     many are on says nothing about whether a lesson fits, and every comparable
-     app (Preply, italki, Calendly) instead makes you handle a range with two
-     ends so the length is in front of you. Same collapse the save uses, so
-     what is listed here is exactly what gets stored. */
-  const openings = chipsToRanges(chips)
-    .map((r) => ({
-      ...r,
-      day: Number(r.day_of_week),
-      minutes: toMinutes(r.end_time) - toMinutes(r.start_time),
-    }))
-    .sort((a, b) => toMinutes(a.start_time) - toMinutes(b.start_time))
+  /* Each row IS an opening now, so none of this has to be reconstructed from
+     ticked boxes — the editor holds the same shape the table stores. */
+  const dayRanges = (day) => hours[day] || []
 
-  const openingsFor = (day) => openings.filter((o) => o.day === day)
+  const rangeMinutes = (r) => toMinutes(r.end) - toMinutes(r.start)
 
-  const minutesOpenOn = (day) => openingsFor(day).reduce((sum, o) => sum + o.minutes, 0)
+  const minutesOpenOn = (day) => dayRanges(day).reduce((sum, r) => sum + rangeMinutes(r), 0)
 
-  const longestBlockMinutes = openings.reduce((max, o) => Math.max(max, o.minutes), 0)
+  /* A lesson has to fit inside ONE opening, so the longest single one is what
+     decides whether the long lessons are bookable at all. Six scattered half
+     hours are still six half hours. */
+  const longestBlockMinutes = Object.values(hours)
+    .flat()
+    .reduce((max, r) => Math.max(max, rangeMinutes(r)), 0)
 
   // Only warn once they have set something; an empty week is not a mismatch.
   const unbookableLessons =
@@ -503,7 +526,9 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       ? []
       : lessons.filter((l) => l.duration_minutes > longestBlockMinutes)
 
-  /* "1h 30m", not "90 minutes" — a tutor reads their week in hours, and the
+  const fitsIn = (r) => lessons.filter((l) => l.duration_minutes <= rangeMinutes(r))
+
+  /* "1h 30m", not "90 minutes" — a teacher reads their week in hours, and the
      day tabs have room for four characters. */
   const readableLength = (mins) => {
     const h = Math.floor(mins / 60)
@@ -511,9 +536,6 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     if (!h) return `${m}m`
     return m ? `${h}h ${m}m` : `${h}h`
   }
-
-  // 570 -> "9:30 am", matching the chip labels above it.
-  const clockLabel = (mins) => label12(mins)
 
   return (
     <EditDrawer
@@ -616,39 +638,26 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       {tab === 'Hours' && (
         <form className="ed-form" onSubmit={handleSaveHours}>
           <p className="ed-note">
-            Tap the times you are free to teach. Students can only book inside them. The
-            &ldquo;Availability&rdquo; line on the Profile tab is just descriptive text and books
+            Set the times you are free, and students book inside them. The
+            &ldquo;Availability&rdquo; line on the Profile tab is only a description and books
             nothing.
           </p>
 
-          {hoursSnapped && (
-            <p className="ed-warn">
-              Some saved hours did not line up with the half-hour grid and have been trimmed to the
-              nearest slot. Check the days below before saving.
-            </p>
-          )}
-
-          {/* The trap this closes: a lesson can only be booked inside ONE
-              unbroken block, so four separate half-hour chips host a 30-minute
-              lesson and nothing longer. A tutor who ticks single chips makes
-              their own 60-minute lesson unbookable, and the only symptom is an
-              empty calendar on the student's side — which reads as the app
-              being broken rather than as hours that are too short. Live off the
-              chips rather than the saved rows, so it answers while they edit. */}
-          {/* Said in lengths a teacher already thinks in, never in the word
-              "block": the first version read "your longest unbroken block is
-              30 minutes", which is the app's vocabulary, not theirs. A lesson
-              needs that much time IN A ROW, so the instruction is the gesture
-              that makes it — tick the box next to one you already have. */}
+          {/* The one thing a teacher can get wrong here, said in the lengths
+              they already think in and never in the word "block". A lesson has
+              to fit inside ONE opening, so a day of scattered half hours hosts
+              a 30-minute lesson and nothing longer — and the only symptom used
+              to be an empty calendar on the student's side, which reads as the
+              app being broken. Computed live, so it answers while they edit. */}
           {unbookableLessons.length > 0 && (
             <p className="ed-warn">
-              Your longest opening is {readableLength(longestBlockMinutes)}, so{' '}
+              Your longest single opening is {readableLength(longestBlockMinutes)}, so{' '}
               {unbookableLessons
                 .map((l) => `${l.name} (${readableLength(l.duration_minutes)})`)
                 .join(' and ')}{' '}
               {unbookableLessons.length === 1 ? 'is' : 'are'} not bookable — nobody can see{' '}
-              {unbookableLessons.length === 1 ? 'it' : 'them'} at all. A lesson needs that much
-              time in a row, so tick the box straight after one you have already ticked.
+              {unbookableLessons.length === 1 ? 'it' : 'them'}. Make one opening long enough to
+              hold {unbookableLessons.length === 1 ? 'it' : 'them'} in one go.
             </p>
           )}
 
@@ -670,15 +679,13 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             <p className="ed-empty">Loading your hours…</p>
           ) : (
             <>
-              {/* A day strip rather than seven stacked grids: 48 chips per day
-                  times seven would not fit a drawer, and the count badge means
-                  an unset day is still obvious without opening it. */}
+              {/* One day at a time: seven days of rows at once is a wall, and
+                  the badge carries how much time is open so an unset day is
+                  obvious without opening it. Hours, never a count of controls —
+                  "5" was a count of ticked boxes and could mean five scattered
+                  half hours that fit nothing longer than 30 minutes. */}
               <div className="ed-daystrip" role="tablist" aria-label="Choose a day">
                 {WEEK.map(({ day, label }) => {
-                  /* How much time is open, NOT how many boxes are ticked. "5"
-                     was a count of chips — it read as five bookable lessons
-                     when it could be five scattered half-hours that fit
-                     nothing longer than 30 minutes. */
                   const open = minutesOpenOn(day)
                   return (
                     <button
@@ -700,10 +707,8 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                 <span className="ed-slots-day">
                   {WEEK.find((w) => w.day === hoursDay)?.label}
                   <em>
-                    {openingsFor(hoursDay).length
-                      ? `${openingsFor(hoursDay).length} opening${
-                          openingsFor(hoursDay).length === 1 ? '' : 's'
-                        } · ${readableLength(minutesOpenOn(hoursDay))} open`
+                    {minutesOpenOn(hoursDay)
+                      ? `${readableLength(minutesOpenOn(hoursDay))} open`
                       : 'Not teaching'}
                   </em>
                 </span>
@@ -711,78 +716,100 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                   <button
                     type="button"
                     onClick={() => copyDayToAll(hoursDay)}
-                    disabled={!chips[hoursDay]?.size}
+                    disabled={dayRanges(hoursDay).length === 0}
                   >
                     Copy to all days
                   </button>
                   <button
                     type="button"
                     onClick={() => clearDay(hoursDay)}
-                    disabled={!chips[hoursDay]?.size}
+                    disabled={dayRanges(hoursDay).length === 0}
                   >
                     Clear
                   </button>
                 </span>
               </div>
 
-              {/* What the ticks on this day ACTUALLY add up to.
-                  The grid shows what you pressed; this shows what you made —
-                  which is the only thing students can book inside. A lesson has
-                  to fit in ONE of these, so each one says what fits, and a row
-                  nothing fits is the exact spot where a lesson goes missing. */}
-              {openingsFor(hoursDay).length > 0 && (
-                <ul className="ed-openings">
-                  {openingsFor(hoursDay).map((o) => {
-                    const fits = lessons.filter((l) => l.duration_minutes <= o.minutes)
+              {/* Google Calendar's shape, which is what the table already
+                  stores: a start, an end, and a + for another. The length is
+                  the thing you just picked rather than something to work out
+                  from how many boxes are lit, and an impossible range cannot be
+                  chosen because the "to" list only offers later times. */}
+              {dayRanges(hoursDay).length === 0 ? (
+                <p className="ed-empty">
+                  Not teaching on {WEEK.find((w) => w.day === hoursDay)?.label}. Add a time to
+                  open it.
+                </p>
+              ) : (
+                <ul className="ed-ranges">
+                  {dayRanges(hoursDay).map((r, i) => {
+                    const fits = fitsIn(r)
                     return (
-                      <li className="ed-opening" key={o.start_time}>
-                        <span className="ed-opening-span">
-                          {clockLabel(toMinutes(o.start_time))} –{' '}
-                          {clockLabel(toMinutes(o.end_time))}
-                          <em>{readableLength(o.minutes)}</em>
-                        </span>
-                        <span
-                          className={'ed-opening-fits' + (fits.length ? '' : ' none')}
+                      <li className="ed-range" key={i}>
+                        <select
+                          className="ed-range-time"
+                          value={r.start}
+                          aria-label="From"
+                          onChange={(e) => setRange(hoursDay, i, { start: e.target.value })}
                         >
+                          {timeChoices(r.start)
+                            .filter((t) => t !== '24:00')
+                            .map((t) => (
+                              <option key={t} value={t}>
+                                {label12(toMinutes(t))}
+                              </option>
+                            ))}
+                        </select>
+
+                        <span className="ed-range-to">to</span>
+
+                        <select
+                          className="ed-range-time"
+                          value={r.end}
+                          aria-label="To"
+                          onChange={(e) => setRange(hoursDay, i, { end: e.target.value })}
+                        >
+                          {timeChoices(r.end)
+                            .filter((t) => toMinutes(t) > toMinutes(r.start))
+                            .map((t) => (
+                              <option key={t} value={t}>
+                                {t === '24:00' ? 'midnight' : label12(toMinutes(t))}
+                              </option>
+                            ))}
+                        </select>
+
+                        <span className="ed-range-len">{readableLength(rangeMinutes(r))}</span>
+
+                        {/* What this opening can actually hold. The whole point
+                            of the tab, answered per row rather than left as
+                            arithmetic. */}
+                        <span className={'ed-range-fits' + (fits.length ? '' : ' none')}>
                           {lessons.length === 0
-                            ? 'No lessons listed yet'
+                            ? ''
                             : fits.length === lessons.length
-                              ? 'Fits every lesson'
+                              ? 'fits every lesson'
                               : fits.length
-                                ? `Fits ${fits.map((l) => l.name).join(', ')}`
-                                : 'Too short for any of your lessons'}
+                                ? `fits ${fits.map((l) => l.name).join(', ')}`
+                                : 'too short for any lesson'}
                         </span>
+
+                        <button
+                          type="button"
+                          className="ed-range-remove"
+                          aria-label="Remove this time"
+                          onClick={() => removeRange(hoursDay, i)}
+                        >
+                          &times;
+                        </button>
                       </li>
                     )
                   })}
                 </ul>
               )}
 
-              {PART_BANDS.map((band) => {
-                const times = []
-                for (let t = band.from; t < band.to; t += STEP) times.push(t)
-                return (
-                  <div className="ed-band" key={band.key}>
-                    <p className="ed-band-title">{band.label}</p>
-                    <div className="ed-chips">
-                      {times.map((t) => {
-                        const on = chips[hoursDay]?.has(t)
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            className={`ed-chip${on ? ' on' : ''}`}
-                            aria-pressed={on ? 'true' : 'false'}
-                            onClick={() => toggleChip(hoursDay, t)}
-                          >
-                            {label12(t)}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
+              <button type="button" className="ed-range-add" onClick={() => addRange(hoursDay)}>
+                + Add a time
+              </button>
             </>
           )}
 

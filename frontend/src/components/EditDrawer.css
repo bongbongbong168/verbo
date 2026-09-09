@@ -442,62 +442,118 @@
   color: var(--ed-muted);
 }
 
-/* ---- what the ticks add up to ----
-   The grid shows what you pressed; this shows what you MADE. A count of ticked
-   boxes cannot answer "can my hour-long lesson be booked here", which is the
-   only question the tab exists to answer. */
-.ed-openings {
+/* ---- one opening: from, to, and what fits in it ----
+   Google Calendar's shape, which is also the shape `tutor_availability`
+   already stores. It replaced a 4-column grid of 48 identical checkboxes that
+   a teacher had to decode: the length is now the thing you just picked rather
+   than something to count. */
+.ed-ranges {
   list-style: none;
-  margin: 0 0 0.9rem;
-  padding: 0.6rem 0.75rem;
+  margin: 0;
+  padding: 0;
   display: grid;
-  gap: 0.45rem;
-  border: 1px solid var(--ed-border);
-  border-radius: 10px;
-  background: var(--ed-field);
+  gap: 0.5rem;
 }
 
-.ed-opening {
+.ed-range {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.8rem;
-  font-size: 0.82rem;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.ed-opening-span {
-  font-weight: 600;
-  white-space: nowrap;
+/* Wide enough for "12:30 pm" without the two lists jumping about as the times
+   change length. */
+.ed-range-time {
+  flex: none;
+  width: 108px;
+  padding: 0.5rem 0.55rem;
+  box-sizing: border-box;
+  border: 1px solid var(--ed-border);
+  border-radius: 9px;
+  background: var(--ed-field);
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--ed-text);
 }
 
-/* The length, set apart from the times so it reads as the answer rather than
-   as more of the range. */
-.ed-opening-span em {
-  margin-left: 0.45rem;
-  padding: 0.05rem 0.4rem;
+.ed-range-time:focus {
+  outline: none;
+  border-color: var(--ed-accent);
+}
+
+.ed-range-to {
+  flex: none;
+  font-size: 0.83rem;
+  color: var(--ed-muted);
+}
+
+/* The length, as a badge rather than more text: it is the answer to the only
+   question this row is asked. */
+.ed-range-len {
+  flex: none;
+  padding: 0.12rem 0.45rem;
   border-radius: 6px;
   background: var(--ed-accent-soft);
   color: #fff;
-  font-style: normal;
   font-size: 0.72rem;
   font-weight: 700;
 }
 
-.ed-opening-fits {
+.ed-range-fits {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.76rem;
   color: var(--ed-muted);
-  text-align: right;
 }
 
 /* An opening nothing fits is the exact spot a lesson goes missing, so it is
-   the one row that gets a colour. Static, never transitioned. */
-.ed-opening-fits.none {
+   the one thing in the row that takes a colour. Static, never transitioned. */
+.ed-range-fits.none {
   color: #96403a;
   font-weight: 600;
+}
+
+.ed-range-remove {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ed-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ed-range-remove:hover {
+  background: #fdecea;
+  color: #b02a2a;
+}
+
+.ed-range-add {
+  align-self: flex-start;
+  padding: 0.45rem 0.85rem;
+  border: 1px dashed var(--ed-border);
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ed-accent);
+  cursor: pointer;
+}
+
+.ed-range-add:hover {
+  border-color: var(--ed-accent);
+  border-style: solid;
 }
 
 .ed-slots-actions {
@@ -526,50 +582,8 @@
   cursor: default;
 }
 
-.ed-band + .ed-band {
-  margin-top: 0.85rem;
-}
-
-.ed-band-title {
-  margin: 0 0 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--ed-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* Same 4-column pill grid as the booking dialog's time slots, so the tutor is
    picking from a board that looks like what the student will see. */
-.ed-chips {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.ed-chip {
-  padding: 7px 2px;
-  box-sizing: border-box;
-  border: 1px solid var(--ed-border);
-  border-radius: 8px;
-  background: #fff;
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--ed-text);
-  cursor: pointer;
-}
-
-.ed-chip:hover {
-  border-color: var(--ed-accent-soft);
-}
-
-.ed-chip.on {
-  background: var(--ed-accent-soft);
-  border-color: var(--ed-accent-soft);
-  color: #fff;
-}
-
 .ed-check {
   display: flex;
   align-items: flex-start;
