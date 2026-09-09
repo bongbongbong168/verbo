@@ -31,9 +31,33 @@ class TutorAvailabilityController extends Controller
             'slots' => ['present', 'array'],
             'slots.*.day_of_week' => ['required', 'integer', 'min:0', 'max:6'],
             'slots.*.start_time' => ['required', 'date_format:H:i'],
-            // after: compares the two fields, so a window that ends before it
-            // starts is rejected here rather than silently generating nothing.
-            'slots.*.end_time' => ['required', 'date_format:H:i', 'after:slots.*.start_time'],
+            /*
+             * NOT `date_format:H:i`, and that is the whole point of this rule.
+             *
+             * `H` is 00-23, so it rejects `24:00` — and `24:00` is exactly what
+             * the editor sends when a tutor ticks the last half-hour of a day:
+             * the chip starts at 23:30 and the range it closes ends at
+             * midnight. The save is a WHOLESALE REPLACE, so that one rejected
+             * row threw away the entire week's submission, and the tutor got
+             * "slots.1.end_time does not match the format H:i" — an array index
+             * naming no day, for a chip they had every right to tick. Their
+             * hours then looked unchanged after a reload, because they were.
+             *
+             * `24:00` is a real end-of-day boundary, not a workaround:
+             * PostgreSQL's `time` type accepts it as its documented maximum,
+             * and `Carbon::setTime(24, 0)` rolls to the next midnight, which is
+             * what SlotService already needs it to mean.
+             *
+             * `after:` still guards the ordering — strtotime resolves `24:00`
+             * to the following midnight, so it compares correctly against any
+             * start on the same day.
+             */
+            'slots.*.end_time' => ['required', 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/', 'after:slots.*.start_time'],
+        ], [
+            // The default names the array index, which tells a tutor staring at
+            // a week grid nothing they can act on.
+            'slots.*.end_time.regex' => 'Each availability window must end on a time of day, up to 24:00.',
+            'slots.*.end_time.after' => 'An availability window has to end after it starts.',
         ]);
 
         if (array_key_exists('timezone', $data)) {
