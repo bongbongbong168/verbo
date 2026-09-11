@@ -29,7 +29,22 @@ class EmailCodeService
      */
     public static function configured(): bool
     {
-        return ! in_array(config('mail.default'), ['log', 'array', null], true);
+        $driver = config('mail.default');
+
+        if (in_array($driver, ['log', 'array', null], true)) {
+            return false;
+        }
+
+        /* A `brevo` driver with no API key cannot deliver, and saying so up
+           front is more honest than letting the transport throw — the caller
+           then reports "this server cannot send email yet", which names the
+           real situation, rather than "try again in a few minutes", which
+           invites someone to keep retrying something that will never work. */
+        if ($driver === 'brevo' && ! config('services.brevo.key')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

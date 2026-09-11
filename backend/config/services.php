@@ -113,4 +113,20 @@ return [
         'timeout' => env('GEMINI_TIMEOUT', 20),
     ],
 
+    /*
+     * Brevo — how verification and password-reset codes leave the server in
+     * production. See App\Mail\BrevoTransport for why this exists at all:
+     * Railway blocks every outbound SMTP port, so mail has to go over HTTPS.
+     *
+     * The timeout is short and deliberate. This app runs no queue, so the
+     * send happens inside the user's own request — a provider having a slow
+     * morning would otherwise hang someone's sign-up. Ten seconds, then it
+     * fails soft and says so, which is the same courtesy Stripe, Safe
+     * Browsing and Gemini get.
+     */
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+        'timeout' => env('BREVO_TIMEOUT', 10),
+    ],
+
 ];

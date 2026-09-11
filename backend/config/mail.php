@@ -49,6 +49,18 @@ return [
             'transport' => 'ses',
         ],
 
+        /*
+         * Brevo over HTTPS. The driver is registered by AppServiceProvider —
+         * Laravel ships no `brevo` transport. Used in production because
+         * Railway blocks every outbound SMTP port; a laptop keeps using
+         * `smtp` above, which works there.
+         */
+        'brevo' => [
+            'transport' => 'brevo',
+            'key' => env('BREVO_API_KEY'),
+            'timeout' => env('BREVO_TIMEOUT', 10),
+        ],
+
         'mailgun' => [
             'transport' => 'mailgun',
         ],
