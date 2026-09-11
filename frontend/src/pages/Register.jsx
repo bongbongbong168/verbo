@@ -33,7 +33,15 @@ export default function Register() {
     setSubmitting(true)
     try {
       await register(name, email, password)
-      navigate('/dashboard')
+      /* Straight to the code, not to the app. Registering has just emailed
+         one, and this is the moment the person still has their inbox in
+         mind — landing on the dashboard instead means finding that email
+         later, which is how an address goes unconfirmed forever.
+
+         Google sign-up below goes to /dashboard instead, and correctly:
+         Google has already proven the address, so there is no code to
+         enter. */
+      navigate('/verify-email')
     } catch (err) {
       setError(err.message)
     } finally {

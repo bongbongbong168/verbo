@@ -28,8 +28,13 @@ export default function ProtectedRoute({ children }) {
      The `user &&` guard matters: a failed /me that was not a 401 leaves the
      token in place with no user, and redirecting on that would trap someone in
      onboarding over a network blip. The pathname check is what stops the
-     redirect firing on /onboarding itself and looping. */
-  if (user && !user.onboarded_at && pathname !== '/onboarding') {
+     redirect firing on /onboarding itself and looping.
+
+     `/verify-email` is exempt for the same reason, and the order matters:
+     confirming the address comes FIRST in the sign-up run, so bouncing it to
+     onboarding would skip the step entirely and land a brand-new account on
+     the questions instead of on its code. */
+  if (user && !user.onboarded_at && pathname !== '/onboarding' && pathname !== '/verify-email') {
     return <Navigate to="/onboarding" replace />
   }
 

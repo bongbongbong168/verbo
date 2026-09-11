@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import VocabularyBank from "./pages/VocabularyBank";
@@ -53,7 +54,17 @@ function App() {
       <Route path="/shared/scan/:shareToken" element={<SharedScan />} />
       {/* Inside ProtectedRoute but OUTSIDE Layout: onboarding is a focused
           flow with its own shell, and a sidebar full of places to go is the
-          opposite of what it is for. */}
+          opposite of what it is for. Confirming the email is the same kind of
+          step and sits immediately BEFORE it — it is about the account
+          itself, where onboarding is about preferences. */}
+      <Route
+        path="/verify-email"
+        element={
+          <ProtectedRoute>
+            <VerifyEmail />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/onboarding"
         element={
