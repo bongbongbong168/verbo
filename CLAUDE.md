@@ -80,6 +80,15 @@ So **audit it with a script, not by eye**: read the gutter block's selectors, re
 
 Related: don't implement a phone behaviour in a page stylesheet if this layer already handles it. The pick-up row's swipe scrolling lived in both for a while, at two different breakpoints, which is precisely how two implementations drift.
 
+### The Railway volume — what survives a deploy
+
+The container filesystem is discarded on every deploy, so `docker/entrypoint.sh` symlinks Laravel's writable trees onto a mounted volume at `/data` (`VERBO_DATA_DIR`). The SQLite database and **all** uploads live there.
+
+- **It links `storage/app`, NOT `storage/app/public`**, and the difference was a real data-loss bug. The private uploads — `storage/app/chat` (message attachments), `storage/app/classwork` (assignment files and student submissions) and `storage/app/tutor-credentials` (certificates) — are **siblings of `public`, not children of it**, so linking only the public child left every one of them on the container filesystem. They were destroyed on each deploy while their database rows survived, and the app then rendered files that 404ed: a student's submitted essay became a row pointing at nothing. `scans` is the one exception that never mattered, since `ScanController` deletes the upload as soon as Tesseract has read it.
+- **Moving the link up needed NO data migration.** The volume already stored images at `$DATA_DIR/storage/app/public`, and `storage/app/public` resolves to that exact path through the new parent link — the layout is unchanged, only the mount point moved up a level. There is a simulation covering the upgrade from the old layout in place.
+- **`rm -rf "$link"` must never grow a trailing slash.** On a symlink, `rm -rf dir` removes the link while `rm -rf dir/` follows it and empties the target — which here is the volume holding every upload and the database. The loop also `continue`s when the link is already correct, so on an ordinary restart the delete does not run at all.
+- **If no volume is attached, `/data` is just a container directory** and everything is ephemeral again, silently. The scripts assume the mount rather than checking for it, so confirm it in the Railway dashboard rather than inferring it from the app working.
+
 ### Publishing content to another environment
 
 `content:export` / `content:import` (`app/Console/Commands`). Production has the schema and no rows — the whole library was authored against local SQLite — and copying that file wholesale is not an option because it also holds real accounts, tokens, private scans, bookings and chat.

@@ -23,11 +23,38 @@ fi
 # Point Laravel's writable trees at the volume. tessdata and dict stay in the
 # image: they are build artefacts, not user data, and putting them on the volume
 # would mean re-downloading 16MB into it on first boot.
-for d in app/public framework/cache framework/sessions framework/views logs; do
+#
+# `app`, NOT `app/public`. Linking only the public child left every PRIVATE
+# upload on the container filesystem — `storage/app/chat` (message
+# attachments), `storage/app/classwork` (assignment files and student
+# submissions) and `storage/app/tutor-credentials` (certificates) are SIBLINGS
+# of `public`, not children of it. They were therefore destroyed on every
+# deploy while their database rows survived, so the app rendered files that
+# 404ed: a student's submitted essay became a row pointing at nothing.
+#
+# This needs NO migration of existing data. The volume already stores images at
+# `$DATA_DIR/storage/app/public`, and under this link `storage/app/public`
+# resolves to exactly that same path — the layout is unchanged, the mount point
+# just moved one level up to cover its siblings.
+for d in app framework/cache framework/sessions framework/views logs; do
   target="$DATA_DIR/storage/$d"
   link="/var/www/html/storage/$d"
-  rm -rf "$link"
+
+  mkdir -p "$target"
   mkdir -p "$(dirname "$link")"
+
+  # Already correct — leave it entirely alone. This is the common case on a
+  # restart, and not touching it removes any chance of the delete below
+  # running against a live volume.
+  if [ -L "$link" ] && [ "$(readlink "$link")" = "$target" ]; then
+    continue
+  fi
+
+  # NO TRAILING SLASH ON $link, EVER. `rm -rf somedir` on a symlink removes
+  # the link; `rm -rf somedir/` FOLLOWS it and empties the target — which here
+  # is the volume holding every upload and the database. The variable is used
+  # bare and unquoted-slash-free for exactly that reason.
+  rm -rf "$link"
   ln -s "$target" "$link"
 done
 
@@ -56,8 +83,8 @@ php artisan route:cache
 # convenience: `railway run` executes on the operator's own machine with these
 # env vars injected, so the rows would reach Postgres while the 34 images went
 # to their laptop's disk — leaving production with covers that 404. In here,
-# both land in the right place, because storage/app/public is already symlinked
-# onto the mounted volume by the block above.
+# both land in the right place, because storage/app is already symlinked onto
+# the mounted volume by the block above.
 #
 # Gated rather than unconditional because the import upserts by id: left on, a
 # redeploy would quietly revert anything edited through the admin UI in
