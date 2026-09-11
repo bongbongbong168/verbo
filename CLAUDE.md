@@ -487,3 +487,27 @@ php artisan migrate                # run DB migrations
 ```
 
 Backend `.env` is not committed — copy `backend/.env.example` to `backend/.env` and run `php artisan key:generate` on a fresh checkout.
+
+### The floating practice assistant — Gemini behind Laravel
+
+`components/PracticeAssistant.jsx` + `.css` (prefix `pa-`), mounted once in `Layout`, talking to `POST /practice-chat` (`Api\PracticeChatController` → `App\Services\GeminiService`).
+
+- **THE KEY NEVER REACHES THE BROWSER.** React → Laravel → Gemini → Laravel → React. `GEMINI_API_KEY` is server-side only and must never get a `VITE_` twin — same rule as `GOOGLE_SAFE_BROWSING_KEY`, the opposite of `GOOGLE_CLIENT_ID`. A test asserts the key appears nowhere in the response body, and another asserts an upstream 400 carrying `API key AIzaSy… is invalid` is logged rather than returned.
+- **It is mounted in `Layout`, and that IS the feature.** The component never unmounts as you move between Read, a podcast and a study unit, so the conversation is still there when you reopen it — verified across a real in-app navigation. Per-page mounting would reset the thread on every click.
+- **Unlike `SafeBrowsingService`, this FAILS CLOSED.** That one guards a rare threat while messaging is the product, so it must never block a send. Here the answer *is* the product: a learner who asks a question and silently gets nothing has been lied to. Failures return 503 with a plain sentence the widget shows as a bubble in the thread — not a banner, because it is a reply to what was just asked.
+- **`configured()` gates the whole thing.** `GET /practice-chat/status` is asked once on mount and an install with no key renders **no button at all**, rather than one that only ever errors.
+- **Its own rate-limit bucket, `ai`, at 15/min.** Every other endpoint costs a query; this one spends a metered third-party quota shared by the whole install, so at the general 300/min one person could burn the day's free tier. Keyed by user id, never IP — the route is behind `auth:sanctum`, and keying by IP would make one campus share an allowance.
+- **`topic` is `in:`-validated against `PracticeChatController::TOPICS`.** It is interpolated into the system brief, so a free-text topic would let a caller append their own instructions to the prompt. The chips ship in the status response so the client list cannot drift from the validator's.
+- **Nothing is stored.** The thread lives in the widget's state and is re-sent (trimmed to `MAX_HISTORY`, 12) each turn. A saved chat is a new data domain — history, deletion, who-can-read — and none of it helps someone asking "is this sentence right?" mid-article. The trim is also the cost bound: the whole history goes up every turn.
+
+**THE DRAG IS A TRANSFORM ON A SEPARATE ELEMENT, and both halves of that were learned by measuring.**
+- Writing `left`/`top` with everything divided by `--app-scale` — the conversion `WordPopover` needs — was **right sideways and wrong downwards**: the painted rect came back at `1.1045x` the written `left` but `1.1837x` the written `top`. A zoomed ancestor is a containing block for a fixed child, so those offsets are not simply the viewport scaled. A translation has no origin to get wrong, so only the *delta* is converted: one divide, nothing assumed.
+- **Clamping is done in painted pixels**, where the rect and `window.innerWidth/Height` are already the same units, then solved back into the translation — that is why the clamp sits on that side of the divide.
+- `.pa-anchor` carries the drag offset and `.pa` inside it carries the open animation, because **one element owning both transforms changed category on the FIRST drag** and landed it 11.7px off the pointer while every later drag was exact. Verified after the split: four drags exact including the first, and two deliberately off-screen drags clamp to the edge.
+- `setPointerCapture` is wrapped in try/catch: it throws when the pointer is already gone, and an uncaught throw there abandons the drag before it starts.
+
+**Animation follows the app's frozen-compositor rule, so "fade-in" is a rise.** The brief asked for fading messages; every keyframe here is **transform-only** instead, because an animation advances only while the tab composites frames and one starting at `opacity: 0` leaves the content permanently invisible — the bug that once blanked the account popover. The typing indicator's dots start and end at their resting position and only bob in between, so a frozen compositor shows three visible dots rather than none.
+
+- The font stack leads with Hellix and falls through to `PingFang SC`/`Microsoft YaHei`/`Noto Sans SC` — Hellix carries no CJK at all, and this is a window whose content is Chinese.
+- The mic is the browser's own `SpeechRecognition` at `lang: 'zh-CN'`, and **renders nothing where the browser lacks it** rather than offering a button that does nothing. Its result fills the draft rather than sending, so a misheard sentence can be fixed first.
+- Minimise and close both return to the one small button; the difference is the thread, which minimise keeps and close clears.

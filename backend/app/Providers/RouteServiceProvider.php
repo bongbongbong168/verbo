@@ -57,5 +57,23 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());
         });
+
+        /*
+         * The AI assistant gets its own bucket, well under the general 300.
+         *
+         * Every other endpoint here costs a database query; this one costs a
+         * call against a metered third-party quota that is shared by everyone
+         * on the install. At 300/min one person holding the send key could
+         * spend the day's free tier before anybody else opened the widget.
+         * 15/min is far above a real conversation — nobody types fifteen
+         * sentences of Chinese in a minute — and far below a script.
+         *
+         * Keyed by user id, never IP: this route is behind auth:sanctum, and
+         * keying by IP would make one campus or one office share a single
+         * allowance.
+         */
+        RateLimiter::for('ai', function (Request $request) {
+            return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

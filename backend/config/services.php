@@ -89,4 +89,28 @@ return [
         'timeout' => env('SAFE_BROWSING_TIMEOUT', 4),
     ],
 
+    /*
+     * Gemini, behind the floating Chinese practice assistant.
+     *
+     * Server-side ONLY. This must never get a VITE_ twin — the browser talks
+     * to Laravel and Laravel talks to Google, so the key is never shipped and
+     * cannot be spent by whoever reads the bundle. Same rule and the same
+     * `configured()` gate as safe_browsing above: a fresh checkout has no key
+     * and the widget simply does not appear.
+     *
+     * Free keys come from Google AI Studio (aistudio.google.com) -> Get API
+     * key. The flash model is the free tier's workhorse and is what a
+     * two-or-three-line practice reply wants; a slower, pricier model would
+     * buy nothing in a small chat window.
+     *
+     * The timeout is generous next to safe_browsing's 4s because a person is
+     * watching a typing indicator and waiting for an answer, where that one
+     * sits in the middle of someone sending a message.
+     */
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        'timeout' => env('GEMINI_TIMEOUT', 20),
+    ],
+
 ];

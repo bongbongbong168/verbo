@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\PracticeChatController;
 use App\Http\Controllers\Api\LearningPreferenceController;
 use App\Http\Controllers\Api\ArticleInteractionController;
 use App\Http\Controllers\Api\ArticleCommentController;
@@ -335,4 +336,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/quote', [QuoteController::class, 'show']);
     Route::post('/quote', [QuoteController::class, 'store']);
+
+    /*
+     * The floating Chinese practice assistant.
+     *
+     * `status` is plain: the widget asks once whether a key is configured, so
+     * an install without one shows no button at all rather than one that only
+     * ever errors. The send route carries the `ai` throttle on top of the
+     * group's own — it spends a metered third-party quota, not a query.
+     */
+    Route::get('/practice-chat/status', [PracticeChatController::class, 'status']);
+    Route::post('/practice-chat', [PracticeChatController::class, 'store'])->middleware('throttle:ai');
 });

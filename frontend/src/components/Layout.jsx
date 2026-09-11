@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
+import PracticeAssistant from "./PracticeAssistant";
 import logo from "../assets/sidebar/logo.svg";
 import logoMark from "../assets/sidebar/logo-mark.svg";
 import "./Layout.css";
@@ -472,6 +473,13 @@ export default function Layout() {
       <main className="sb-main">
         <Outlet />
       </main>
+
+      {/* Mounted HERE rather than per page, and that is the whole feature: this
+          component never unmounts as you move between Read, a podcast and a
+          study unit, so the conversation is still there when you reopen it.
+          Per-page mounting would reset the thread on every navigation. It
+          renders nothing at all unless the server reports a Gemini key. */}
+      <PracticeAssistant />
 
       {/* ---- phone navigation ----
           Rendered always and hidden by CSS above 767px, rather than switched on

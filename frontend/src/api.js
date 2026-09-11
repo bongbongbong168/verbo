@@ -641,4 +641,12 @@ export const api = {
   getActivitySummary: (token, days = 7) => request(`/activity/summary?days=${days}`, { token }),
   getQuote: (token) => request('/quote', { token }),
   saveQuote: (token, quote) => request('/quote', { method: 'POST', body: quote, token }),
+
+  /* The floating practice assistant. Asked once on mount so an install with
+     no GEMINI_API_KEY renders no button at all, rather than one that errors. */
+  getPracticeChatStatus: (token) => request('/practice-chat/status', { token }),
+  /* The whole (trimmed) conversation goes up each turn — nothing is stored
+     server-side, so the widget's own state IS the thread. */
+  sendPracticeChat: (token, body) =>
+    request('/practice-chat', { method: 'POST', body, token }),
 }

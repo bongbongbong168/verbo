@@ -1,0 +1,483 @@
+/* The floating Chinese practice assistant. Prefix `pa-`.
+
+   Self-contained tokens rather than reaching into a page's stylesheet — it
+   renders over every page, so it cannot borrow from any one of them. The
+   values are the app's own: #a89ce3 filled, #6a6191 emphasis, #f1edfc pale,
+   #2b2643 stroke, #f9f8fe ground, #1c1730 text, #726c88 muted, #e7e3f6 line. */
+
+.pa-anchor,
+.pa,
+.pa-fab {
+  --pa-card: #ffffff;
+  --pa-ground: #f9f8fe;
+  --pa-line: #e7e3f6;
+  --pa-stroke: #2b2643;
+  --pa-fill: #a89ce3;
+  --pa-accent: #6a6191;
+  --pa-pale: #f1edfc;
+  --pa-text: #1c1730;
+  --pa-muted: #726c88;
+
+  /* Hellix first for Latin, then a real CJK face — Hellix carries no Chinese
+     glyphs at all, and this is a window whose whole content is Chinese. */
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  color: var(--pa-text);
+}
+
+/* ---- the resting button ---- */
+
+.pa-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 1px solid var(--pa-stroke);
+  border-radius: 50%;
+  background: var(--pa-fill);
+  color: #fff;
+  cursor: pointer;
+  /* Navy-tinted like every other shadow in the app — neutral black would grey
+     the lavender underneath it. */
+  box-shadow: 0 6px 18px rgba(28, 23, 48, 0.22);
+}
+
+.pa-fab svg {
+  width: 25px;
+  height: 25px;
+}
+
+/* Instant fill, eased lift. The colour IS the hover feedback and a transition
+   that never gets a frame would leave the button looking dead under the
+   pointer — the same rule the Dashboard's "View all" pill follows. */
+.pa-fab:hover {
+  background: var(--pa-accent);
+  box-shadow: 0 10px 24px rgba(28, 23, 48, 0.3);
+}
+
+.pa-fab:focus-visible {
+  outline: 2px solid var(--pa-accent);
+  outline-offset: 3px;
+}
+
+/* ---- the panel ---- */
+
+/* The anchor is positioned and DRAGGED; the card inside is sized and
+   animated. Splitting them is what makes the first drag behave like every
+   later one — one element owning both transforms changed category on that
+   first move and landed 11.7px off the pointer. */
+/* z-index 80 sits above page content: a floating helper a page can paint
+   over is not floating. */
+.pa-anchor {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+}
+
+.pa {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  /* Small enough not to block the content it is helping with, and capped
+     against the viewport so it can never outgrow the screen. `--app-vh`, never
+     raw `100vh`: #root is zoomed and `vh` is not, so `100vh` renders ~10%
+     taller than the screen. */
+  height: min(520px, calc(var(--app-vh) - 48px));
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--pa-stroke);
+  border-radius: 18px;
+  background: var(--pa-card);
+  box-shadow: 0 22px 50px rgba(28, 23, 48, 0.26);
+  animation: pa-in 0.18s ease-out;
+}
+
+/* TRANSFORM ONLY — deliberately no opacity.
+   An animation advances only while the tab composites frames, so a keyframe
+   starting at `opacity: 0` leaves the panel FULLY INVISIBLE when those frames
+   never arrive. That is how the account popover once came up blank. The rise
+   is ornament; the panel is readable and correctly placed at frame 0. */
+@keyframes pa-in {
+  from {
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa {
+    animation: none;
+  }
+}
+
+/* ---- header ---- */
+
+.pa-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+  padding: 0.7rem 0.75rem 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--pa-line);
+  background: var(--pa-ground);
+  /* The grab handle. `touch-action: none` is what lets a pointer drag work on
+     a touch screen at all — without it the browser claims the gesture for
+     scrolling and the panel never moves. */
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.pa-head:active {
+  cursor: grabbing;
+}
+
+.pa-head-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--pa-fill);
+  color: #fff;
+}
+
+.pa-head-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.pa-head-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pa-head-text strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pa-head-text em {
+  font-style: normal;
+  font-size: 0.73rem;
+  color: var(--pa-muted);
+}
+
+.pa-head-actions {
+  display: flex;
+  gap: 0.2rem;
+  flex: none;
+}
+
+.pa-icon-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--pa-muted);
+  cursor: pointer;
+}
+
+.pa-icon-btn:hover {
+  background: var(--pa-pale);
+  color: var(--pa-accent);
+}
+
+.pa-icon-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+}
+
+/* ---- topic chips ---- */
+
+.pa-topics {
+  display: flex;
+  gap: 0.3rem;
+  flex: none;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--pa-line);
+  /* One scrolling line rather than a wrapping block: six chips over two rows
+     would take a fifth of a 520px window before a word has been said. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pa-topics::-webkit-scrollbar {
+  display: none;
+}
+
+.pa-topic {
+  flex: none;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--pa-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pa-topic:hover {
+  border-color: var(--pa-fill);
+}
+
+/* Static fill, no transition — the fill IS the selected state. */
+.pa-topic.on {
+  background: var(--pa-fill);
+  border-color: var(--pa-fill);
+  color: #fff;
+}
+
+/* ---- messages ---- */
+
+.pa-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.8rem 0.75rem;
+  background: var(--pa-ground);
+}
+
+.pa-msg {
+  max-width: 85%;
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  /* The model answers in short lines — Chinese, then pinyin, then English —
+     and those line breaks are the layout. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  animation: pa-msg-in 0.16s ease-out;
+}
+
+/* Transform-only again, for the same reason as the panel: a message that
+   starts transparent is a message nobody reads in a backgrounded tab. It
+   rises rather than fades. */
+@keyframes pa-msg-in {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-msg {
+    animation: none;
+  }
+}
+
+/* Lavender for your own side, so the two are told apart by colour and not
+   only by which edge they sit on — the same choice the Messages page makes. */
+.pa-msg-user {
+  align-self: flex-end;
+  border-bottom-right-radius: 5px;
+  background: var(--pa-fill);
+  color: #fff;
+}
+
+.pa-msg-ai {
+  align-self: flex-start;
+  border-bottom-left-radius: 5px;
+  background: #fff;
+  border: 1px solid var(--pa-line);
+}
+
+.pa-msg-ai.failed {
+  background: #fdecea;
+  border-color: #f6c6c1;
+  color: #b3261e;
+}
+
+/* ---- typing indicator ---- */
+
+.pa-typing {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--pa-line);
+  border-radius: 14px;
+  border-bottom-left-radius: 5px;
+  background: #fff;
+}
+
+.pa-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pa-fill);
+  animation: pa-bob 1s ease-in-out infinite;
+}
+
+.pa-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.pa-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Starts and ends at the RESTING position, so a frozen compositor leaves
+   three visible dots rather than three invisible ones. Never opacity. */
+@keyframes pa-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pa-typing i {
+    animation: none;
+  }
+}
+
+/* ---- composer ---- */
+
+.pa-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex: none;
+  padding: 0.55rem 0.6rem;
+  border-top: 1px solid var(--pa-line);
+  background: var(--pa-card);
+}
+
+.pa-input {
+  flex: 1;
+  min-width: 0;
+  /* Two lines of room before it scrolls: a corrected sentence plus its pinyin
+     is a realistic thing to paste in. */
+  max-height: 72px;
+  padding: 0.45rem 0.6rem;
+  box-sizing: border-box;
+  border: 1px solid var(--pa-line);
+  border-radius: 10px;
+  background: var(--pa-ground);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--pa-text);
+  resize: none;
+}
+
+.pa-input:focus {
+  outline: none;
+  border-color: var(--pa-fill);
+}
+
+.pa-send,
+.pa-mic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.pa-send {
+  border: none;
+  background: var(--pa-fill);
+  color: #fff;
+}
+
+.pa-send:hover:not(:disabled) {
+  background: var(--pa-accent);
+}
+
+.pa-send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pa-mic {
+  border: 1px solid var(--pa-line);
+  background: #fff;
+  color: var(--pa-muted);
+}
+
+.pa-mic:hover {
+  border-color: var(--pa-fill);
+  color: var(--pa-accent);
+}
+
+/* Listening is a static fill, not a pulse — a pulse that stalls says nothing,
+   and this is a state you need to be able to read at a glance. */
+.pa-mic.on {
+  background: var(--pa-fill);
+  border-color: var(--pa-fill);
+  color: #fff;
+}
+
+.pa-send svg,
+.pa-mic svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---- phone ----
+   Nearly full width, and the drag is dropped: there is nowhere to move a
+   panel to on a 375px screen, and `left`/`top` from a desktop drag would
+   strand it half off the edge. The inline position is overridden rather than
+   cleared in JS, so nothing has to be reset when the window is resized back. */
+@media (max-width: 767px) {
+  .pa-anchor {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    /* Any offset from a desktop drag is dropped here: there is nowhere to
+       move a panel to on a 375px screen, and a translation carried over would
+       strand it half off the edge. */
+    transform: none !important;
+  }
+
+  .pa {
+    width: auto;
+    height: min(75vh, calc(var(--app-vh) - 90px));
+  }
+
+  .pa-head {
+    cursor: default;
+  }
+
+  .pa-fab {
+    right: 16px;
+    /* Clear of the thumb bar the phone layer puts along the bottom. */
+    bottom: 84px;
+  }
+}
