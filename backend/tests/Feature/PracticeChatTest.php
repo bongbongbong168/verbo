@@ -196,6 +196,32 @@ class PracticeChatTest extends TestCase
             ->assertJsonValidationErrors('messages');
     }
 
+    /**
+     * The key travels in a HEADER, never the URL.
+     *
+     * `?key=` authenticates too, and that is what this sent first — but a
+     * cURL failure quotes the whole URL in its message, which is how a live
+     * key reached laravel.log. A header has no route into an exception
+     * message, a proxy log or a referrer.
+     */
+    public function test_the_key_is_sent_as_a_header_and_never_in_the_url()
+    {
+        $this->withKey();
+        $this->fakeReply('ok');
+
+        $this->actingAs($this->learner())
+            ->postJson('/api/practice-chat', [
+                'messages' => [['role' => 'user', 'text' => 'hi']],
+            ])
+            ->assertOk();
+
+        Http::assertSent(function ($request) {
+            return $request->hasHeader('x-goog-api-key', 'test-key')
+                && ! str_contains($request->url(), 'test-key')
+                && ! str_contains($request->url(), 'key=');
+        });
+    }
+
     /** The brief is what makes this a tutor rather than a general chatbot. */
     public function test_it_sends_the_system_brief_and_the_history()
     {

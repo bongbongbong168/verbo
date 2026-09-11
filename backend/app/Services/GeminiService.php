@@ -93,9 +93,21 @@ class GeminiService
         $model = config('services.gemini.model');
 
         try {
+            /*
+             * THE KEY GOES IN A HEADER, NOT THE QUERY STRING.
+             *
+             * `?key=` works too, and that is what this did first — but it put
+             * the secret inside the request URL, and a cURL failure quotes the
+             * whole URL in its message. That is how a live key ended up in
+             * laravel.log. A header cannot appear in an exception message, a
+             * proxy log or a browser referrer, so the leak has no route rather
+             * than being scrubbed on the way out. `redact()` below stays as
+             * the belt to this brace.
+             */
             $response = Http::timeout(config('services.gemini.timeout'))
+                ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
                 ->asJson()
-                ->post(self::ENDPOINT."/{$model}:generateContent?key=".config('services.gemini.key'), [
+                ->post(self::ENDPOINT."/{$model}:generateContent", [
                     'systemInstruction' => [
                         'parts' => [['text' => $this->brief($topic)]],
                     ],
