@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import VocabularyBank from "./pages/VocabularyBank";
@@ -40,6 +42,11 @@ function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
+      {/* Public, and outside ProtectedRoute: someone who cannot sign in is by
+          definition not signed in. The token is a path segment so the emailed
+          link is one clean URL. */}
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       {/* Public on purpose — the share token in the URL is the credential, so
           this must sit OUTSIDE ProtectedRoute and outside Layout (a recipient
           has no account, so there is no sidebar to render). */}

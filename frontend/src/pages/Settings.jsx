@@ -197,6 +197,18 @@ export default function Settings() {
     );
   };
 
+  /* The way back in for someone who cannot remember their current password —
+     the form above requires it, and this does not. It takes no email: the
+     server reads it off the session, so this button cannot be aimed at
+     another account. The reply is the same generic sentence the public route
+     sends, so it is shown rather than a claim of our own. */
+  const sendResetLink = () =>
+    run(
+      "resetLink",
+      () => api.sendMyResetLink(token),
+      (res) => say(res?.message || "Check your email for the reset link"),
+    );
+
   const revokeSessions = () =>
     run(
       "sessions",
@@ -444,6 +456,33 @@ export default function Settings() {
                   </button>
                 </div>
               </form>
+
+              {/* The form above needs the CURRENT password, which is exactly
+                  what the person this row is for does not have: signed in on
+                  a device that remembered them, and unable to recall it. The
+                  server reads the address off the session rather than the
+                  request, so this cannot be aimed at another account. */}
+              <div className="se-row">
+                <div className="se-row-text">
+                  <p className="se-row-label">Forgot your password?</p>
+                  <p className="se-row-help">
+                    If you cannot remember your current one, we will email a reset link to{" "}
+                    {user?.email}. The link lasts an hour, and using it signs you out
+                    everywhere — including here.
+                  </p>
+                </div>
+
+                <div className="se-row-control">
+                  <button
+                    type="button"
+                    className="se-btn se-btn-ghost"
+                    disabled={busy === "resetLink"}
+                    onClick={sendResetLink}
+                  >
+                    {busy === "resetLink" ? "Sending…" : "Email me a reset link"}
+                  </button>
+                </div>
+              </div>
 
               <div className="se-row">
                 <div className="se-row-text">

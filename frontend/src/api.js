@@ -120,6 +120,15 @@ export const api = {
   register: (name, email, password) =>
     request('/register', { method: 'POST', body: { name, email, password } }),
   login: (email, password) => request('/login', { method: 'POST', body: { email, password } }),
+
+  /* Forgotten passwords. `forgotPassword` answers the same way whether or not
+     the address has an account — see PasswordResetController — so the page
+     must not try to infer anything from the response. */
+  forgotPassword: (email) => request('/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (body) => request('/reset-password', { method: 'POST', body }),
+  // The signed-in route, for Settings. Takes no email: the server reads it
+  // from the session so it cannot be aimed at someone else's account.
+  sendMyResetLink: (token) => request('/user/password/reset-link', { method: 'POST', token }),
   /* Sign in or sign up with Google. `credential` is the ID token Google
      Identity Services hands the browser; the server verifies it and answers
      with the same {user, token} shape login does, so the caller stores it

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PracticeChatController;
 use App\Http\Controllers\Api\LearningPreferenceController;
 use App\Http\Controllers\Api\ArticleInteractionController;
@@ -54,6 +55,13 @@ Route::middleware('throttle:auth')->group(function () {
        endpoint that creates accounts, and the cheap limit costs a real user
        nothing — nobody signs in with Google ten times a minute. */
     Route::post('/auth/google', [AuthController::class, 'google']);
+
+    /* Forgotten passwords. In the auth bucket because both are
+       unauthenticated and both are guessable surfaces: the first would
+       otherwise be a way to mail-bomb an address, and the second is a token
+       somebody could try to brute-force. */
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
+    Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 });
 
 // Public: the share token is the credential. See ScanController::shared —
@@ -345,6 +353,11 @@ Route::middleware('auth:sanctum')->group(function () {
      * ever errors. The send route carries the `ai` throttle on top of the
      * group's own — it spends a metered third-party quota, not a query.
      */
+    /* The signed-in route to the same thing. Settings can only CHANGE a
+       password and that form needs the current one, which is no use to
+       someone signed in on a remembered device who cannot recall it. */
+    Route::post('/user/password/reset-link', [PasswordResetController::class, 'sendLinkToSelf']);
+
     Route::get('/practice-chat/status', [PracticeChatController::class, 'status']);
     Route::post('/practice-chat', [PracticeChatController::class, 'store'])->middleware('throttle:ai');
 });

@@ -165,13 +165,43 @@
   outline-offset: 2px;
 }
 
+/* A real link now, not a dead label. It sat here as a <span> with
+    because there was no reset flow to send anyone to;
+   there is one at /forgot-password. */
 .lg-forgot {
   display: block;
   text-align: right;
   font-size: 0.85rem;
   color: var(--lg-text-muted);
   margin-bottom: 1.6rem;
-  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.lg-forgot:hover {
+  color: var(--lg-btn-bg);
+  text-decoration: underline;
+}
+
+/* The confirmation after a reset link is requested. Deliberately worded by
+   the SERVER, which says 'if that email has an account' — this page must not
+   restate it as a certainty, because the endpoint is careful not to reveal
+   whether the address is known. */
+.lg-sent {
+  margin: 0 0 1.2rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #cfe8d8;
+  border-radius: 12px;
+  background: #ecf8f0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #1f7a45;
+}
+
+/* Whose password is being reset, under the heading on the link's own page. */
+.lg-sent-quiet {
+  margin: -1rem 0 1.4rem;
+  font-size: 0.88rem;
+  color: var(--lg-text-muted);
 }
 
 .lg-error {

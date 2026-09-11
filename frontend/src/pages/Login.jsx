@@ -82,7 +82,7 @@ export default function Login() {
               </button>
             </div>
 
-            <span className="lg-forgot">Forgot password ?</span>
+            <Link className="lg-forgot" to="/forgot-password">Forgot password ?</Link>
 
             {error && <p className="lg-error">{error}</p>}
 

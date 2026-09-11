@@ -56,6 +56,14 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    /*
+     * Where the React app lives. Used to build links that a PERSON clicks —
+     * the password-reset email above all — which must land on the UI, not on
+     * this API. The same value CORS already trusts, so there is one answer to
+     * "where does the app live" rather than two that drift.
+     */
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
     'asset_url' => env('ASSET_URL'),
 
     /*
