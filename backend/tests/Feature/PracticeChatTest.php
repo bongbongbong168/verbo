@@ -29,7 +29,7 @@ class PracticeChatTest extends TestCase
 
     private function withKey(): void
     {
-        config(['services.gemini.key' => 'test-key', 'services.gemini.model' => 'gemini-2.0-flash']);
+        config(['services.gemini.key' => 'test-key', 'services.gemini.model' => 'gemini-3.8-flash']);
     }
 
     private function fakeReply(string $text): void
