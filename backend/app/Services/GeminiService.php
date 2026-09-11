@@ -112,7 +112,16 @@ class GeminiService
                     ],
                 ]);
         } catch (\Throwable $e) {
-            Log::warning('Gemini request failed', ['message' => $e->getMessage()]);
+            /*
+             * REDACTED, and this was a real leak rather than a precaution.
+             * The key travels as a query parameter, so a cURL failure's
+             * message carries the whole URL — and that message was being
+             * written verbatim into storage/logs/laravel.log, putting a live
+             * secret in a file that gets tailed, shipped and shared. The URL
+             * is the useful part of the message, so it is kept with the key
+             * struck out rather than dropped.
+             */
+            Log::warning('Gemini request failed', ['message' => self::redact($e->getMessage())]);
 
             return ['ok' => false, 'error' => 'Could not reach the assistant. Try again in a moment.'];
         }
@@ -149,6 +158,18 @@ class GeminiService
         }
 
         return ['ok' => true, 'reply' => $text];
+    }
+
+    /**
+     * Strike the key out of anything on its way to a log.
+     *
+     * Matches the query parameter by shape rather than by comparing against
+     * the configured value, so a stale or rotated key in an old message is
+     * caught too.
+     */
+    private static function redact(string $text): string
+    {
+        return preg_replace('/([?&]key=)[^&\s"\']+/i', '$1REDACTED', $text);
     }
 
     /** The system brief, plus the chosen topic if there is one. */
