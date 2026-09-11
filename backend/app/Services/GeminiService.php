@@ -24,6 +24,10 @@ use Illuminate\Support\Facades\Log;
  */
 class GeminiService
 {
+    public function __construct(private PinyinCorrector $pinyin)
+    {
+    }
+
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     /** How much of the conversation is sent back each turn. */
@@ -169,7 +173,10 @@ class GeminiService
             return ['ok' => false, 'error' => 'The assistant had nothing to say to that. Try rephrasing.'];
         }
 
-        return ['ok' => true, 'reply' => $text];
+        /* Tone marks are checked against the app's own dictionary before the
+           reply leaves, because a tutor that teaches the wrong tone is worse
+           than one that says nothing. See PinyinCorrector. */
+        return ['ok' => true, 'reply' => $this->pinyin->fix($text)];
     }
 
     /**
