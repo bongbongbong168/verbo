@@ -57,12 +57,12 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
-     * Where the React app lives. Used to build links that a PERSON clicks —
-     * the password-reset email above all — which must land on the UI, not on
-     * this API. The same value CORS already trusts, so there is one answer to
-     * "where does the app live" rather than two that drift.
+     * NOTE: there is deliberately no `frontend_url` here any more. It existed
+     * to build the password-reset LINK, and resets are a six-digit code now —
+     * no email in this app contains a URL, so nothing needs to know where the
+     * UI lives. The FRONTEND_URL env var is still read, but by `config/cors.php`
+     * and only as an allowed origin.
      */
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
 
     'asset_url' => env('ASSET_URL'),
 
