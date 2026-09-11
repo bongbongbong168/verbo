@@ -206,7 +206,7 @@ export default function Settings() {
     run(
       "resetLink",
       () => api.sendMyResetLink(token),
-      (res) => say(res?.message || "Check your email for the reset link"),
+      (res) => say(res?.message || "Check your email for the reset code"),
     );
 
   const revokeSessions = () =>
@@ -466,9 +466,9 @@ export default function Settings() {
                 <div className="se-row-text">
                   <p className="se-row-label">Forgot your password?</p>
                   <p className="se-row-help">
-                    If you cannot remember your current one, we will email a reset link to{" "}
-                    {user?.email}. The link lasts an hour, and using it signs you out
-                    everywhere — including here.
+                    If you cannot remember your current one, we will email a six-digit
+                    code to {user?.email}. Enter it on the forgot-password page to set a
+                    new one. Doing so signs you out everywhere — including here.
                   </p>
                 </div>
 
@@ -479,7 +479,7 @@ export default function Settings() {
                     disabled={busy === "resetLink"}
                     onClick={sendResetLink}
                   >
-                    {busy === "resetLink" ? "Sending…" : "Email me a reset link"}
+                    {busy === "resetLink" ? "Sending…" : "Email me a reset code"}
                   </button>
                 </div>
               </div>

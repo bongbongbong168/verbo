@@ -3,104 +3,116 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EmailCode;
+use App\Models\User;
+use App\Services\EmailCodeService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
 /**
- * Forgotten passwords — ask for a link, then use it.
+ * Forgotten passwords — ask for a code, then spend it.
  *
- * Built on Laravel's own password broker rather than a hand-rolled token
- * table: it already handles expiry, single use and the throttle between
- * requests, and those are exactly the parts that are dangerous to get wrong.
- * The one thing overridden is where the link points (see AuthServiceProvider:
- * the UI is a separate origin, so Laravel's default would send people to a
- * 404 on the API domain).
+ * A SIX-DIGIT CODE RATHER THAN A LINK, and that is a real trade, not a style
+ * choice. A link is longer and unguessable, but it only works in the browser
+ * that opens the mail — on a phone that means the app's session lives in one
+ * browser and the link opens in the mail client's own, which is exactly where
+ * "it just takes me to a login screen" comes from. A code is typed into the
+ * tab the person is already standing in. The guessability it costs is bought
+ * back by EmailCode's attempt cap; see the note there.
  *
- * MAIL IS NOT ASSUMED TO EXIST. The rest of this app gates optional services
- * behind a `configured()` check — Stripe, Safe Browsing, Gemini — and mail is
- * the same: a checkout with no mailer answers with a plain "this server
- * cannot send email yet" instead of a 500 from deep inside the transport.
+ * MAIL IS NOT ASSUMED TO EXIST, the same `configured()` gate Stripe, Safe
+ * Browsing and Gemini all carry.
  */
 class PasswordResetController extends Controller
 {
     /**
-     * Is there a mailer that can actually deliver?
+     * "Send me a code."
      *
-     * `log` and `array` are real Laravel drivers that "succeed" while sending
-     * nothing a person will ever see, so they do not count as configured for
-     * a flow whose entire purpose is to reach someone's inbox.
+     * ALWAYS answers the same way, whether or not the address is one we know.
+     * Telling a stranger "no account with that email" turns this endpoint
+     * into a way to test which of a list of addresses have Verbo accounts.
      */
-    public static function canSendMail(): bool
+    public function sendCode(Request $request)
     {
-        return ! in_array(config('mail.default'), ['log', 'array', null], true);
-    }
+        $data = $request->validate(['email' => ['required', 'email']]);
 
-    /**
-     * Ask the broker to send, and never let the mail transport reach the user.
-     *
-     * `canSendMail()` can only see the driver NAME. A configured-but-unreachable
-     * SMTP server still throws from deep inside the transport, and that message
-     * carries the mail host and port and PHP's own socket internals — locally
-     * it surfaced in the UI as `Connection could not be established with host
-     * "mailpit:1025": stream_socket_client : php_network_getaddresses…`. That is
-     * infrastructure detail, and it is no more use to the person reading it
-     * than the tesseract command line ScanController catches for the same
-     * reason. Logged, then answered as the plain 503 a dead mailer already gets.
-     *
-     * @return string|\Illuminate\Http\JsonResponse the broker status, or the
-     *                                              response to return as-is
-     */
-    private function trySend(string $email)
-    {
-        try {
-            return Password::sendResetLink(['email' => $email]);
-        } catch (\Throwable $e) {
-            Log::error('Password reset mail failed to send', ['error' => $e->getMessage()]);
+        if (! EmailCodeService::configured()) {
+            return response()->json([
+                'message' => 'This server cannot send email yet, so a reset code cannot be delivered. Ask an administrator to reset your password.',
+            ], 503);
+        }
 
+        $user = User::where('email', $data['email'])->first();
+
+        /* Sent only to a real account, but the ANSWER below does not say so.
+           A missing account is silent rather than an error, which is what
+           keeps the two cases indistinguishable from outside. */
+        if ($user && ! EmailCodeService::send($user, EmailCode::RESET)) {
             return response()->json([
                 'message' => 'We could not send the email just now. Please try again in a few minutes.',
             ], 503);
         }
-    }
-
-    /**
-     * "Send me a reset link."
-     *
-     * ALWAYS answers the same way, whether or not the address is one we know.
-     * Telling a stranger "no account with that email" turns this endpoint into
-     * a way to test which of a list of addresses have Verbo accounts. Laravel's
-     * broker is built around the same rule; the responses are flattened here
-     * so a timing-free, identical body goes back either way.
-     */
-    public function sendLink(Request $request)
-    {
-        $data = $request->validate(['email' => ['required', 'email']]);
-
-        if (! self::canSendMail()) {
-            return response()->json([
-                'message' => 'This server cannot send email yet, so a reset link cannot be delivered. Ask an administrator to reset your password.',
-            ], 503);
-        }
-
-        $status = $this->trySend($data['email']);
-
-        if (! is_string($status)) {
-            return $status;
-        }
-
-        if ($status === Password::RESET_THROTTLED) {
-            return response()->json([
-                'message' => 'A link was sent very recently. Check your inbox, then try again in a minute.',
-            ], 429);
-        }
 
         return response()->json([
-            'message' => 'If that email has a Verbo account, a reset link is on its way. The link expires in an hour.',
+            'message' => 'If that email has a Verbo account, a code is on its way. It expires in '.EmailCode::TTL_MINUTES.' minutes.',
+        ]);
+    }
+
+    /** Spend the code and set the new password. */
+    public function reset(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'string'],
+            // Same rule as registration, so a password set here cannot be
+            // weaker than one set anywhere else.
+            'password' => ['required', 'confirmed', PasswordRule::min(8)],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        /* The code is checked even when there is no such user, so the two
+           paths cost the same work and answer the same way. Without the
+           check, a missing account would return measurably faster than a
+           wrong code and hand back the very fact the endpoint above hides. */
+        $ok = EmailCode::consume($data['email'], EmailCode::RESET, $data['code']);
+
+        if (! $user || ! $ok) {
+            return response()->json([
+                'message' => 'That code is not valid or has expired. Ask for a new one.',
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($data['password']),
+            // Invalidates the "remember me" cookie for good measure; this app
+            // is token-based, but the column exists and a stale value
+            // outliving a reset would be wrong.
+            'remember_token' => Str::random(60),
+            /* Getting a code at this address PROVES the address, so the
+               account is verified by the same act. Leaving it unverified
+               would nag someone who just demonstrated they hold the mailbox. */
+            'email_verified_at' => $user->email_verified_at ?? now(),
+        ])->save();
+
+        /*
+         * EVERY EXISTING TOKEN IS REVOKED. Someone resetting a password has
+         * usually lost control of it — a shared machine, a phone left
+         * somewhere, a password they suspect is known. Leaving old Sanctum
+         * tokens alive would mean the new password changes nothing for
+         * whoever already had a session. Settings' own change-password route
+         * spares the caller's token because they are holding it; here there
+         * is no caller session to spare.
+         */
+        $user->tokens()->delete();
+
+        event(new PasswordReset($user));
+
+        return response()->json([
+            'message' => 'Your password has been changed. Sign in with it now.',
         ]);
     }
 
@@ -113,73 +125,24 @@ class PasswordResetController extends Controller
      * address is taken from the session rather than the request, so this
      * cannot be pointed at somebody else's account.
      */
-    public function sendLinkToSelf(Request $request)
+    public function sendCodeToSelf(Request $request)
     {
-        if (! self::canSendMail()) {
+        $user = $request->user();
+
+        if (! EmailCodeService::configured()) {
             return response()->json([
-                'message' => 'This server cannot send email yet, so a reset link cannot be delivered.',
+                'message' => 'This server cannot send email yet, so a reset code cannot be delivered.',
             ], 503);
         }
 
-        $status = $this->trySend($request->user()->email);
-
-        if (! is_string($status)) {
-            return $status;
-        }
-
-        if ($status === Password::RESET_THROTTLED) {
+        if (! EmailCodeService::send($user, EmailCode::RESET)) {
             return response()->json([
-                'message' => 'A link was sent very recently. Check your inbox, then try again in a minute.',
-            ], 429);
+                'message' => 'We could not send the email just now. Please try again in a few minutes.',
+            ], 503);
         }
 
         return response()->json([
-            'message' => 'A reset link is on its way to '.$request->user()->email.'. It expires in an hour.',
-        ]);
-    }
-
-    /** Spend the token and set the new password. */
-    public function reset(Request $request)
-    {
-        $data = $request->validate([
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email'],
-            // Same rule as registration, so a password set here cannot be
-            // weaker than one set anywhere else.
-            'password' => ['required', 'confirmed', PasswordRule::min(8)],
-        ]);
-
-        $status = Password::reset($data, function ($user, string $password) {
-            $user->forceFill([
-                'password' => Hash::make($password),
-                // Invalidates the "remember me" cookie for good measure; this
-                // app is token-based, but the column exists and a stale value
-                // outliving a reset would be wrong.
-                'remember_token' => Str::random(60),
-            ])->save();
-
-            /*
-             * EVERY EXISTING TOKEN IS REVOKED. Someone resetting a password
-             * has usually lost control of it — a shared machine, a phone left
-             * somewhere, a password they suspect is known. Leaving old Sanctum
-             * tokens alive would mean the new password changes nothing for
-             * whoever already had a session. Settings' own change-password
-             * route spares the caller's token because they are holding it;
-             * here there is no caller session to spare.
-             */
-            $user->tokens()->delete();
-
-            event(new PasswordReset($user));
-        });
-
-        if ($status !== Password::PASSWORD_RESET) {
-            return response()->json([
-                'message' => 'That reset link is invalid or has expired. Ask for a new one.',
-            ], 422);
-        }
-
-        return response()->json([
-            'message' => 'Your password has been changed. Sign in with it now.',
+            'message' => 'A reset code is on its way to '.$user->email.'. It expires in '.EmailCode::TTL_MINUTES.' minutes.',
         ]);
     }
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import verboLogo from '../assets/sidebar/logo.svg'
 import feather from '../assets/signup/feather.png'
@@ -10,6 +10,12 @@ import './Login.css'
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  /* Changing a password sends people here with a note saying it worked.
+     Without this the reset ends on a bare sign-in screen, which reads as
+     "did that go through?" rather than as the success it was. Held in state
+     so it survives the first keystroke but not a reload. */
+  const { state } = useLocation()
+  const [notice] = useState(state?.notice || null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -44,6 +50,8 @@ export default function Login() {
       <div className="lg-form-panel">
         <div className="lg-form-wrap">
           <h2 className="lg-heading">Sign in</h2>
+
+          {notice && <p className="lg-sent">{notice}</p>}
 
           <form onSubmit={handleSubmit}>
             <label className="lg-label" htmlFor="lg-email">

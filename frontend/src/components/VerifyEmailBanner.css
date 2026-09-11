@@ -1,0 +1,210 @@
+/* "Confirm your email" banner. Prefix `ve-`.
+
+   Self-contained tokens rather than reaching into a page's stylesheet — it
+   renders above every page, so it cannot borrow from any one of them. The
+   values are the app's own: #a89ce3 filled, #6a6191 emphasis, #f1edfc pale,
+   #2b2643 stroke, #1c1730 text, #726c88 muted. */
+
+.ve {
+  --ve-pale: #f1edfc;
+  --ve-line: #d9d2f4;
+  --ve-fill: #a89ce3;
+  --ve-accent: #6a6191;
+  --ve-text: #1c1730;
+  --ve-muted: #726c88;
+
+  box-sizing: border-box;
+  padding: 0.7rem 90px;
+  border-bottom: 1px solid var(--ve-line);
+  background: var(--ve-pale);
+  color: var(--ve-text);
+  font-family: 'Hellix', system-ui, sans-serif;
+  /* NO entrance animation. An animation only advances while the tab
+     composites frames, so one starting off-position leaves the bar visibly
+     displaced in a tab that never draws — the bug that left the Read banner
+     11px off its padding. Static is the only safe motion here. */
+}
+
+.ve-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ve-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--ve-fill);
+  color: #fff;
+}
+
+.ve-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ve-text {
+  flex: 1;
+  min-width: 220px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ve-title {
+  font-weight: 700;
+}
+
+.ve-body {
+  color: var(--ve-muted);
+}
+
+.ve-actions,
+.ve-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+}
+
+.ve-code {
+  width: 116px;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--ve-line);
+  border-radius: 9px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  /* Tracked and tabular so the digits read as a code being checked off. The
+     indent gives back the trailing letter-space so the run stays centred. */
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--ve-text);
+}
+
+.ve-code:focus-visible {
+  outline: 2px solid var(--ve-accent);
+  outline-offset: 2px;
+}
+
+.ve-btn {
+  flex: none;
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 9px;
+  background: var(--ve-fill);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Instant fill on hover — the colour IS the feedback, and a transition that
+   never gets a frame leaves the button looking dead under the pointer. */
+.ve-btn:hover:not(:disabled) {
+  background: var(--ve-accent);
+}
+
+/* A real disabled palette, never `opacity`: fading white on lavender drops
+   the label to ~1.6:1 and makes it unreadable rather than merely inactive. */
+.ve-btn:disabled {
+  background: #ddd8ee;
+  color: #7d7792;
+  cursor: default;
+}
+
+.ve-btn-quiet {
+  flex: none;
+  padding: 0.45rem 0.7rem;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--ve-accent);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ve-btn-quiet:hover:not(:disabled) {
+  background: #e5dffa;
+}
+
+.ve-btn-quiet:disabled {
+  color: var(--ve-muted);
+  cursor: default;
+}
+
+.ve-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ve-muted);
+  cursor: pointer;
+}
+
+.ve-close:hover {
+  background: #e5dffa;
+  color: var(--ve-accent);
+}
+
+.ve-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ve-msg {
+  margin: 0.55rem 0 0;
+  padding-left: calc(30px + 0.75rem);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ve-accent);
+}
+
+.ve-msg-bad {
+  color: #b3261e;
+}
+
+/* Visually hidden, still read aloud. The field has a placeholder but a
+   placeholder is not a label. */
+.ve-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The page gutter drops to 16px on a phone, so this has to follow or the bar
+   sits inset from everything under it. */
+@media (max-width: 767px) {
+  .ve {
+    padding: 0.7rem 16px;
+  }
+
+  .ve-text {
+    min-width: 0;
+  }
+
+  .ve-msg {
+    padding-left: 0;
+  }
+}

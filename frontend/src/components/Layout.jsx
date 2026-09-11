@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
 import PracticeAssistant from "./PracticeAssistant";
+import VerifyEmailBanner from "./VerifyEmailBanner";
 import logo from "../assets/sidebar/logo.svg";
 import logoMark from "../assets/sidebar/logo-mark.svg";
 import "./Layout.css";
@@ -471,6 +472,10 @@ export default function Layout() {
         </div>
       </nav>
       <main className="sb-main">
+        {/* Above the page rather than inside it, so the prompt follows the
+            reader everywhere instead of being something they can walk away
+            from by clicking a link. Renders nothing for a verified account. */}
+        <VerifyEmailBanner />
         <Outlet />
       </main>
 

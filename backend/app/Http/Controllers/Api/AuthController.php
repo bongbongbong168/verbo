@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EmailCode;
 use App\Models\User;
+use App\Services\EmailCodeService;
 use App\Services\GoogleAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -122,6 +124,16 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('verbo')->plainTextToken;
+
+        /* Confirm the address, but do NOT make the account wait on it.
+           Sign-up succeeds and returns a token either way; the app nags with
+           a banner until the code is entered. Blocking here would mean one
+           mail outage locks out every new sign-up at once, and this app has
+           no queue to retry with — so the failure would be total. The send is
+           deliberately unchecked for that reason: it cannot fail the
+           registration, and EmailCodeService has already logged whatever went
+           wrong. The user can resend from the banner. */
+        EmailCodeService::send($user, EmailCode::VERIFY);
 
         return response()->json(['user' => $user, 'token' => $token], 201);
     }

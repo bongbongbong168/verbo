@@ -182,10 +182,11 @@
   text-decoration: underline;
 }
 
-/* The confirmation after a reset link is requested. Deliberately worded by
+/* The confirmation after a reset code is requested. Deliberately worded by
    the SERVER, which says 'if that email has an account' — this page must not
    restate it as a certainty, because the endpoint is careful not to reveal
-   whether the address is known. */
+   whether the address is known. Also carries the "password changed" notice
+   handed to /login through router state after a successful reset. */
 .lg-sent {
   margin: 0 0 1.2rem;
   padding: 0.8rem 1rem;
@@ -197,11 +198,44 @@
   color: #1f7a45;
 }
 
-/* Whose password is being reset, under the heading on the link's own page. */
+/* Whose password is being reset, under the heading on the code step. */
 .lg-sent-quiet {
   margin: -1rem 0 1.4rem;
   font-size: 0.88rem;
   color: var(--lg-text-muted);
+}
+
+/* The six-digit code field. Wide tracking and a tabular figure so the digits
+   read as a code being checked off rather than as a word, which is what makes
+   a mistyped one findable at a glance. */
+.lg-code-input {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  /* The tracking is applied AFTER each glyph, including the last, so the run
+     sits visibly left of centre without this pulling the space back. */
+  text-indent: 0.42em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A button that has to read as a link — "Send another" sits mid-sentence in
+   a line of copy, and a real <button> is correct because it performs an
+   action rather than going anywhere. */
+.lg-linkish {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--lg-link);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lg-linkish:disabled {
+  color: var(--lg-text-muted);
+  cursor: default;
 }
 
 .lg-error {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PracticeChatController;
 use App\Http\Controllers\Api\LearningPreferenceController;
@@ -60,7 +61,7 @@ Route::middleware('throttle:auth')->group(function () {
        unauthenticated and both are guessable surfaces: the first would
        otherwise be a way to mail-bomb an address, and the second is a token
        somebody could try to brute-force. */
-    Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendCode']);
     Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 });
 
@@ -356,7 +357,16 @@ Route::middleware('auth:sanctum')->group(function () {
     /* The signed-in route to the same thing. Settings can only CHANGE a
        password and that form needs the current one, which is no use to
        someone signed in on a remembered device who cannot recall it. */
-    Route::post('/user/password/reset-link', [PasswordResetController::class, 'sendLinkToSelf']);
+    Route::post('/user/password/reset-link', [PasswordResetController::class, 'sendCodeToSelf']);
+
+    /* Confirming the address after sign-up. Both read the email off the
+       session rather than the request, so neither can be aimed at another
+       account. `throttle:auth` on the send caps how fast someone can make
+       this server post mail — the general 300/min bucket would allow a
+       mail-bomb through an account they already hold. */
+    Route::post('/email/send-code', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:auth');
+    Route::post('/email/verify', [EmailVerificationController::class, 'confirm']);
 
     Route::get('/practice-chat/status', [PracticeChatController::class, 'status']);
     Route::post('/practice-chat', [PracticeChatController::class, 'store'])->middleware('throttle:ai');

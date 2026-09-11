@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\EmailCode;
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\EmailCodeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -30,14 +31,30 @@ class PasswordResetTest extends TestCase
         ]);
     }
 
-    public function test_it_sends_a_link_to_a_real_account()
+    /** Ask for a code and read it back out of the notification. */
+    private function codeFor(User $user): string
+    {
+        $this->postJson('/api/forgot-password', ['email' => $user->email])->assertOk();
+
+        $code = null;
+        Notification::assertSentTo($user, EmailCodeNotification::class, function ($n) use (&$code) {
+            $code = $n->code;
+
+            return true;
+        });
+
+        return $code;
+    }
+
+    public function test_it_sends_a_code_to_a_real_account()
     {
         Notification::fake();
         $user = $this->learner();
 
         $this->postJson('/api/forgot-password', ['email' => $user->email])->assertOk();
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, EmailCodeNotification::class,
+            fn ($n) => $n->purpose === EmailCode::RESET && preg_match('/^\d{6}$/', $n->code) === 1);
     }
 
     /**
@@ -59,39 +76,46 @@ class PasswordResetTest extends TestCase
         Notification::assertCount(1);
     }
 
-    /** The link has to land on the React app, not on this API. */
-    public function test_the_link_points_at_the_frontend_with_the_email_attached()
-    {
-        Notification::fake();
-        config(['app.frontend_url' => 'https://verbo-omega.vercel.app']);
-        $user = $this->learner();
-
-        $this->postJson('/api/forgot-password', ['email' => $user->email])->assertOk();
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $url = $notification->toMail($user)->actionUrl;
-
-            return str_starts_with($url, 'https://verbo-omega.vercel.app/reset-password/')
-                && str_contains($url, 'email=' . urlencode($user->email));
-        });
-    }
-
-    public function test_a_valid_token_changes_the_password()
+    /** THE CODE ITSELF MUST NEVER COME BACK IN THE RESPONSE. */
+    public function test_the_code_is_not_in_the_response_body()
     {
         Notification::fake();
         $user = $this->learner();
-        $this->postJson('/api/forgot-password', ['email' => $user->email]);
 
-        $token = null;
-        Notification::assertSentTo($user, ResetPassword::class, function ($n) use (&$token) {
-            $token = $n->token;
+        $response = $this->postJson('/api/forgot-password', ['email' => $user->email]);
+
+        $code = null;
+        Notification::assertSentTo($user, EmailCodeNotification::class, function ($n) use (&$code) {
+            $code = $n->code;
 
             return true;
         });
 
+        $this->assertStringNotContainsString($code, $response->getContent());
+    }
+
+    /** Stored hashed, like any other credential. */
+    public function test_the_code_is_hashed_at_rest()
+    {
+        Notification::fake();
+        $user = $this->learner();
+        $code = $this->codeFor($user);
+
+        $row = EmailCode::where('email', $user->email)->latest('id')->first();
+
+        $this->assertNotSame($code, $row->code_hash);
+        $this->assertTrue(Hash::check($code, $row->code_hash));
+    }
+
+    public function test_a_valid_code_changes_the_password()
+    {
+        Notification::fake();
+        $user = $this->learner();
+        $code = $this->codeFor($user);
+
         $this->postJson('/api/reset-password', [
-            'token' => $token,
             'email' => $user->email,
+            'code' => $code,
             'password' => 'a-brand-new-one',
             'password_confirmation' => 'a-brand-new-one',
         ])->assertOk();
@@ -114,17 +138,11 @@ class PasswordResetTest extends TestCase
         $user->createToken('laptop');
         $this->assertSame(2, $user->tokens()->count());
 
-        $this->postJson('/api/forgot-password', ['email' => $user->email]);
-        $token = null;
-        Notification::assertSentTo($user, ResetPassword::class, function ($n) use (&$token) {
-            $token = $n->token;
-
-            return true;
-        });
+        $code = $this->codeFor($user);
 
         $this->postJson('/api/reset-password', [
-            'token' => $token,
             'email' => $user->email,
+            'code' => $code,
             'password' => 'a-brand-new-one',
             'password_confirmation' => 'a-brand-new-one',
         ])->assertOk();
@@ -132,21 +150,34 @@ class PasswordResetTest extends TestCase
         $this->assertSame(0, $user->tokens()->count());
     }
 
-    public function test_a_token_cannot_be_used_twice()
+    /** Receiving a code at that address proves the address. */
+    public function test_resetting_also_confirms_the_email()
     {
         Notification::fake();
         $user = $this->learner();
-        $this->postJson('/api/forgot-password', ['email' => $user->email]);
-        $token = null;
-        Notification::assertSentTo($user, ResetPassword::class, function ($n) use (&$token) {
-            $token = $n->token;
+        $this->assertNull($user->email_verified_at);
 
-            return true;
-        });
+        $code = $this->codeFor($user);
+
+        $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'code' => $code,
+            'password' => 'a-brand-new-one',
+            'password_confirmation' => 'a-brand-new-one',
+        ])->assertOk();
+
+        $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_a_code_cannot_be_used_twice()
+    {
+        Notification::fake();
+        $user = $this->learner();
+        $code = $this->codeFor($user);
 
         $body = [
-            'token' => $token,
             'email' => $user->email,
+            'code' => $code,
             'password' => 'a-brand-new-one',
             'password_confirmation' => 'a-brand-new-one',
         ];
@@ -155,13 +186,88 @@ class PasswordResetTest extends TestCase
         $this->postJson('/api/reset-password', $body)->assertStatus(422);
     }
 
-    public function test_a_forged_token_is_refused()
+    /** Asking again must not leave the previous code live. */
+    public function test_issuing_a_new_code_kills_the_previous_one()
     {
+        Notification::fake();
         $user = $this->learner();
 
+        $first = $this->codeFor($user);
+        Notification::fake();
+        $second = $this->codeFor($user);
+        $this->assertNotSame($first, $second);
+
         $this->postJson('/api/reset-password', [
-            'token' => 'not-a-real-token',
             'email' => $user->email,
+            'code' => $first,
+            'password' => 'a-brand-new-one',
+            'password_confirmation' => 'a-brand-new-one',
+        ])->assertStatus(422);
+
+        $this->assertTrue(Hash::check('the-old-one', $user->fresh()->password));
+    }
+
+    /**
+     * THE ATTEMPT CAP IS WHAT MAKES SIX DIGITS SAFE.
+     *
+     * Without it a million possibilities is a weekend's work. After five
+     * wrong guesses the code is dead, so even the RIGHT one stops working
+     * and the attacker has to request another — which lands in the victim's
+     * inbox and is its own alarm.
+     */
+    public function test_the_code_dies_after_five_wrong_guesses()
+    {
+        Notification::fake();
+        $user = $this->learner();
+        $code = $this->codeFor($user);
+
+        for ($i = 0; $i < EmailCode::MAX_ATTEMPTS; $i++) {
+            $this->postJson('/api/reset-password', [
+                'email' => $user->email,
+                'code' => '000000' === $code ? '111111' : '000000',
+                'password' => 'a-brand-new-one',
+                'password_confirmation' => 'a-brand-new-one',
+            ])->assertStatus(422);
+        }
+
+        // Even the real code is now refused.
+        $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'code' => $code,
+            'password' => 'a-brand-new-one',
+            'password_confirmation' => 'a-brand-new-one',
+        ])->assertStatus(422);
+
+        $this->assertTrue(Hash::check('the-old-one', $user->fresh()->password));
+    }
+
+    public function test_an_expired_code_is_refused()
+    {
+        Notification::fake();
+        $user = $this->learner();
+        $code = $this->codeFor($user);
+
+        $this->travel(EmailCode::TTL_MINUTES + 1)->minutes();
+
+        $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'code' => $code,
+            'password' => 'a-brand-new-one',
+            'password_confirmation' => 'a-brand-new-one',
+        ])->assertStatus(422);
+
+        $this->assertTrue(Hash::check('the-old-one', $user->fresh()->password));
+    }
+
+    /** A code issued to confirm an address must not reset a password. */
+    public function test_a_verification_code_cannot_be_spent_on_a_reset()
+    {
+        $user = $this->learner();
+        $code = EmailCode::issue($user->email, EmailCode::VERIFY);
+
+        $this->postJson('/api/reset-password', [
+            'email' => $user->email,
+            'code' => $code,
             'password' => 'a-brand-new-one',
             'password_confirmation' => 'a-brand-new-one',
         ])->assertStatus(422);
@@ -172,18 +278,13 @@ class PasswordResetTest extends TestCase
     public function test_a_weak_password_is_refused()
     {
         $this->postJson('/api/reset-password', [
-            'token' => 'whatever',
             'email' => 'mei@example.test',
+            'code' => '123456',
             'password' => 'short',
             'password_confirmation' => 'short',
         ])->assertStatus(422)->assertJsonValidationErrors('password');
     }
 
-    /**
-     * A checkout with no mailer says so plainly rather than 500ing from deep
-     * inside the mail transport — the same courtesy Stripe, Safe Browsing and
-     * Gemini get.
-     */
     public function test_it_reports_cleanly_when_the_server_cannot_send_mail()
     {
         config(['mail.default' => 'log']);
@@ -196,12 +297,11 @@ class PasswordResetTest extends TestCase
     /**
      * A CONFIGURED-BUT-UNREACHABLE MAILER MUST NOT REACH THE USER.
      *
-     * `canSendMail()` only sees the driver name, so a real `smtp` setting
-     * pointed at a host that is not there sails past it and throws from inside
-     * the transport. That message carries the mail host, the port and PHP's
-     * socket internals — observed in the UI as `Connection could not be
-     * established with host "mailpit:1025": stream_socket_client :
-     * php_network_getaddresses…`. Same rule as OCR: log it, answer plainly.
+     * `configured()` only sees the driver name, so a real `smtp` setting
+     * pointed at a host that is not there throws from inside the transport.
+     * That message carries the mail host, the port and PHP's socket
+     * internals — observed in the UI as `Connection could not be established
+     * with host "mailpit:1025": stream_socket_client …`.
      */
     public function test_a_failing_mail_transport_is_not_leaked_to_the_client()
     {
@@ -217,14 +317,14 @@ class PasswordResetTest extends TestCase
     }
 
     /** The signed-in route, for Settings. */
-    public function test_a_signed_in_user_can_send_a_link_to_themselves()
+    public function test_a_signed_in_user_can_send_a_code_to_themselves()
     {
         Notification::fake();
         $user = $this->learner();
 
         $this->actingAs($user)->postJson('/api/user/password/reset-link')->assertOk();
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, EmailCodeNotification::class);
     }
 
     /**
@@ -241,8 +341,8 @@ class PasswordResetTest extends TestCase
             ->postJson('/api/user/password/reset-link', ['email' => $other->email])
             ->assertOk();
 
-        Notification::assertSentTo($user, ResetPassword::class);
-        Notification::assertNotSentTo($other, ResetPassword::class);
+        Notification::assertSentTo($user, EmailCodeNotification::class);
+        Notification::assertNotSentTo($other, EmailCodeNotification::class);
     }
 
     public function test_the_signed_in_route_is_behind_auth()
