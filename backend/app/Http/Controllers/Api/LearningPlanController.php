@@ -84,7 +84,7 @@ class LearningPlanController extends Controller
             return null;
         }
 
-        $unit = StudyUnit::with('level:id,title')->find($lastView->viewable_id);
+        $unit = StudyUnit::with('level:id,title,level_label')->find($lastView->viewable_id);
 
         // The unit or its level can be deleted after being opened.
         if (! $unit || ! $unit->level) {
@@ -107,6 +107,16 @@ class LearningPlanController extends Controller
         return [
             'level_id' => $unit->level->id,
             'level' => $unit->level->title,
+            /* The difficulty pill beside the title. REAL and admin-authored —
+               `study_levels.level_label` already holds "Beginner level",
+               "Upper intermediate level" and so on, which is the same column
+               Daily Use reads. Nothing is derived from the HSK number here;
+               inferring difficulty from curriculum naming is exactly what the
+               Profile popover refused to do when it dropped its own
+               "Intermediate" segment. Groomed server-side beside `pace_label`
+               for the same reason: the card's context already says "level", so
+               a trailing one in the label is the word said twice. */
+            'level_label' => $this->levelLabel($unit->level->level_label),
             'units_total' => $unitIds->count(),
             'units_opened' => $opened,
             'units_left' => max(0, $unitIds->count() - $opened),
@@ -122,6 +132,22 @@ class LearningPlanController extends Controller
             // does not. Shortened too — the rail gives this line ~170px.
             'pace_label' => $this->paceLabel($goal),
         ];
+    }
+
+    /**
+     * "Beginner level" -> "Beginner", "Everyday level" -> "Everyday".
+     *
+     * One rule, applied only to a trailing word, so a label authored without
+     * it ("Beginner") is returned untouched and one that uses the word in the
+     * middle is never mangled.
+     */
+    private function levelLabel(?string $label): ?string
+    {
+        if (! $label) {
+            return null;
+        }
+
+        return trim(preg_replace('/\s+level$/i', '', trim($label))) ?: null;
     }
 
     private function paceLabel(?string $goal): ?string

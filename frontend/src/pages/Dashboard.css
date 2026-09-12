@@ -1584,9 +1584,10 @@ a.db-course:hover {
 
 .db-plan-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
+  margin-bottom: 0.2rem;
 }
 
 /* `min-width: 0` is what makes this claim the row. A flex item defaults to
@@ -1599,11 +1600,47 @@ a.db-course:hover {
 }
 
 .db-plan-level {
-  margin: 0 0 0.2rem;
+  margin: 0;
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.2;
   color: var(--db-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The level's own difficulty, from `study_levels.level_label`. Sits against
+   the title because it qualifies it — "HSK 1, which is Beginner". */
+.db-plan-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  padding: 0.22rem 0.5rem 0.22rem 0.28rem;
+  border-radius: 999px;
+  background: var(--db-pill-bg);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--db-accent);
+  white-space: nowrap;
+}
+
+.db-plan-tag-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--db-card);
+}
+
+.db-plan-tag-mark svg {
+  width: 11px;
+  height: 11px;
 }
 
 .db-plan-sub {
@@ -1632,26 +1669,67 @@ a.db-course:hover {
   color: var(--db-accent);
 }
 
-/* CHANGE is the last item and pushed right by `margin-left: auto`, so the two
-   stats keep their natural width and the link never squeezes them. */
+/* Three boxes of equal weight, each with its own marked chip. They were bare
+   numbers with CHANGE floated off to the right, which read as two facts and a
+   loose link rather than as one row. `minmax(0, 1fr)` floors the columns —
+   a grid item defaults to min-content, the trap `.db-pickup > *` documents. */
 .db-plan-stats {
-  display: flex;
-  align-items: flex-end;
-  gap: 1.4rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
   margin-top: 0.9rem;
 }
 
+/* STACKED, not the mockup's side-by-side chip and number — measured. This
+   card is 236px wide at 1440 and 253px here, so a third of it is ~64px: a
+   28px chip plus the tile's padding leaves 13px for the word, and "OPENED"
+   needs 40. The mockup is drawn on a canvas several times this wide. Stacking
+   keeps the marked tile it is really asking for and fits the rail. */
 .db-plan-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
   min-width: 0;
+  padding: 0.6rem 0.35rem;
+  border-radius: 12px;
+  background: var(--db-pill-bg);
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
 }
 
-.db-plan-stats .db-plan-change {
-  margin-left: auto;
+/* Not transitioned — the fill IS the feedback, and a transition that never
+   gets a frame leaves the tile looking dead under the pointer. */
+.db-plan-stat-link:hover {
+  background: #e7e0f8;
+}
+
+.db-plan-stat-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--db-card);
+  color: var(--db-accent);
+}
+
+.db-plan-stat-mark svg {
+  width: 15px;
+  height: 15px;
+}
+
+.db-plan-stat-body {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .db-plan-stat strong {
   display: block;
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.1;
   color: var(--db-text);
@@ -1660,11 +1738,21 @@ a.db-course:hover {
 
 .db-plan-stat span {
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.62rem;
-  font-weight: 600;
+  font-size: 0.6rem;
+  font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--db-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* CHANGE carries no number, so its label takes the number's place and the
+   tile stays exactly as tall as the two beside it. */
+.db-plan-stat-link .db-plan-stat-body {
+  display: flex;
+  align-items: center;
+  min-height: 1.15rem;
 }
 
 /* ---- today's three ---- */
@@ -1736,12 +1824,19 @@ a.db-course:hover {
    apart is the glyph. */
 .db-goal {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.35rem 0.55rem;
-  padding: 0.55rem 0.6rem;
-  border-radius: 12px;
-  background: var(--db-pill-bg);
+  gap: 0.3rem 0.6rem;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid var(--db-border);
+  border-radius: 14px;
+  background: var(--db-card);
+}
+
+/* The title spans past the count's column; only the bar shares a row with it,
+   so a long label uses the full width instead of wrapping around a number. */
+.db-goal-label {
+  grid-column: 2 / -1;
 }
 
 .db-goal-mark {
@@ -1749,22 +1844,22 @@ a.db-course:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   flex: none;
   border-radius: 50%;
-  background: var(--db-card);
+  background: var(--db-pill-bg);
   color: var(--db-accent);
 }
 
 .db-goal-mark svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 }
 
 .db-goal-label {
-  font-size: 0.76rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--db-text);
   min-width: 0;
@@ -1778,37 +1873,33 @@ a.db-course:hover {
 
 /* A completed row still steps FORWARD, never greys out — done is the good
    outcome and the app refuses to draw it as disabled. It is carried by depth
-   within one hue rather than by a second hue: a deeper tile, a solid chip and
-   a full bar, all lavender. */
+   within one hue: the tile fills where the others are white, and the bar
+   completes. The chip INVERTS against its own tile — pale on the white rows,
+   white on the filled one — so the mark separates in both states instead of
+   disappearing into the row it sits on. */
 .db-goal.done {
+  border-color: transparent;
   background: var(--db-goal-done-well);
 }
 
 .db-goal.done .db-goal-mark {
-  background: var(--db-goal-done);
-  color: var(--db-text);
+  background: var(--db-card);
 }
 
-/* The bar is the row's body now, so it has to be tall enough to hold a
-   number. `position: relative` + `overflow: hidden` keeps the fill clipped to
-   the groove's corners while the count sits above it.
+/* A plain bar. It used to carry the count inside, which is why it was 18px
+   with padding and a flex row; with the count moved out to its own column the
+   groove can just be a groove.
 
-   THE GROOVE IS WHITE AND THE TILE IS THE PALE PILL, which is the inverse of
-   the first attempt and was decided by looking: `--db-progress-track`
-   (`#ece8f8`) on a `#f9f8fe` tile is a 2% difference, so an untouched goal —
-   0/5, no fill at all — rendered as a bar that had simply failed to draw.
-   Against white the empty groove reads as a container waiting to be filled,
-   which is the one thing this row has to say before anything has happened. */
+   The row is white and the groove is the lavender track — the inverse of the
+   version before it, and it survives the same test that one was built for: an
+   untouched goal (0/5, no fill at all) still reads as a container waiting to
+   be filled rather than as a bar that failed to draw. */
 .db-goal-track {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  height: 18px;
-  padding: 0 0.42rem;
+  height: 10px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: var(--db-card);
+  background: var(--db-progress-track);
   overflow: hidden;
 }
 
@@ -1829,13 +1920,12 @@ a.db-course:hover {
   background: var(--db-goal-done);
 }
 
-/* ONE colour in every state, deliberately. The fill slides under this number
-   as the day goes on, so a count that had to follow it would need a rule per
-   state; `--db-text` measures 7.2:1 on the lavender fill and higher again on
-   the white groove, which makes the question moot. */
+/* Its own column at the right, so the three counts line up down one edge and
+   can be read against each other. Tabular figures keep that edge straight as
+   the numbers change. */
 .db-goal-count {
-  position: relative;
-  font-size: 0.66rem;
+  flex: none;
+  font-size: 0.74rem;
   font-weight: 700;
   line-height: 1;
   color: var(--db-text);

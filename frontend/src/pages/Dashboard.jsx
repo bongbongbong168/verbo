@@ -276,11 +276,12 @@ function StarIcon() {
  * with a single home.
  */
 const GOAL_MARKS = {
+  // An open book with a line of text on it — reading, not a filed document.
   read_article: (
     <>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5" />
-      <path d="M9 13h6M9 17h4" />
+      <path d="M12 7.5v12" />
+      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
+      <path d="M15.5 10.5h3M15.5 13.5h3" />
     </>
   ),
   review_words: (
@@ -289,10 +290,36 @@ const GOAL_MARKS = {
       <path d="M20.5 3.5v4.5H16" />
     </>
   ),
+  // A bookmark with a star — saving something worth keeping.
   save_words: (
     <>
       <path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-3.8L5.5 21V4a1 1 0 0 1 1-1z" />
-      <path d="M12 7.5v5M9.5 10h5" />
+      <path d="m12 7 1.15 2.33 2.57.38-1.86 1.81.44 2.56L12 12.87l-2.3 1.21.44-2.56-1.86-1.81 2.57-.38z" />
+    </>
+  ),
+  opened: (
+    <>
+      <path d="M12 7.5v12" />
+      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
+    </>
+  ),
+  words: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h4" />
+    </>
+  ),
+  /* Sliders, NOT the mockup's circular arrow. That glyph is already
+     "Review 5 words" three rows below, and the same drawing meaning two
+     different things inside one card is worse than a small deviation — this
+     one also points where the link actually goes, which is the Learning panel
+     in Settings. */
+  change: (
+    <>
+      <path d="M4 8h10M18 8h2M4 16h3M11 16h9" />
+      <circle cx="16" cy="8" r="2.2" />
+      <circle cx="9" cy="16" r="2.2" />
     </>
   ),
 }
@@ -303,13 +330,36 @@ function GoalMark({ type }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
       {GOAL_MARKS[type]}
     </svg>
+  )
+}
+
+/** One of the three boxes under the level: a marked chip, a number, a label. */
+function PlanStat({ mark, value, label, to }) {
+  const inner = (
+    <>
+      <span className="db-plan-stat-mark" aria-hidden="true">
+        <GoalMark type={mark} />
+      </span>
+      <span className="db-plan-stat-body">
+        {value !== undefined && <strong>{value}</strong>}
+        <span>{label}</span>
+      </span>
+    </>
+  )
+
+  return to ? (
+    <Link className="db-plan-stat db-plan-stat-link" to={to}>
+      {inner}
+    </Link>
+  ) : (
+    <div className="db-plan-stat">{inner}</div>
   )
 }
 
@@ -343,7 +393,20 @@ function LearningPlanCard({ plan, goals }) {
               does, and it is load-bearing: in the rail the card is ~171px of
               content at 1240, so a button beside the title left ~110px and
               broke "7 lessons left" across two lines mid-phrase. */}
-          <h2 className="db-plan-level">{plan.level}</h2>
+          <div className="db-plan-top">
+            <h2 className="db-plan-level">{plan.level}</h2>
+            {/* Real, admin-authored: `study_levels.level_label`, the same
+                column Daily Use reads. Nothing is inferred from the HSK
+                number — see the note in LearningPlanController. */}
+            {plan.level_label && (
+              <span className="db-plan-tag">
+                <span className="db-plan-tag-mark" aria-hidden="true">
+                  <GoalMark type="opened" />
+                </span>
+                {plan.level_label}
+              </span>
+            )}
+          </div>
           <p className="db-plan-sub">
             {plan.units_left > 0
               ? `${plan.units_left} ${plan.units_left === 1 ? 'lesson' : 'lessons'} left`
@@ -356,20 +419,12 @@ function LearningPlanCard({ plan, goals }) {
           </p>
 
           <div className="db-plan-stats">
-            <div className="db-plan-stat">
-              <strong>{plan.units_opened}</strong>
-              {/* "Opened", never "completed" — nothing records a unit as
-                  finished, so the label cannot claim more than is known. The
-                  Profile page words it the same way. */}
-              <span>OPENED</span>
-            </div>
-            <div className="db-plan-stat">
-              <strong>{plan.words_saved}</strong>
-              <span>WORDS</span>
-            </div>
-            <Link className="db-plan-change" to="/settings?s=learning">
-              CHANGE
-            </Link>
+            {/* "Opened", never "completed" — nothing records a unit as
+                finished, so the label cannot claim more than is known. The
+                Profile page words it the same way. */}
+            <PlanStat mark="opened" value={plan.units_opened} label="OPENED" />
+            <PlanStat mark="words" value={plan.words_saved} label="WORDS" />
+            <PlanStat mark="change" label="CHANGE" to="/settings?s=learning" />
           </div>
         </>
       ) : (
@@ -407,21 +462,19 @@ function LearningPlanCard({ plan, goals }) {
                   while the tab composites frames, so a backgrounded tab would
                   leave every bar sitting at zero.
 
-                  The count rides INSIDE the track, which is the reference's
-                  one structural idea worth taking: the progress becomes the
-                  row's body instead of a 5px hairline under it. It is drawn
-                  in `--db-text` at both ends of the bar deliberately — that
-                  reads 7.2:1 on the lavender fill, 7.9:1 on the warm one and
-                  higher again on the empty groove, so the number never has to
-                  change colour to follow the fill sliding under it. */}
+                  The count sits OUTSIDE the bar now, in its own column. It
+                  rode inside while the groove was white-on-lavender and the
+                  number needed somewhere solid to sit; with the row inverted
+                  the bar is free to be a plain bar, and the three counts line
+                  up down a single right edge where they can be compared. */}
               <span className="db-goal-track">
                 <span
                   className="db-goal-fill"
                   style={{ width: `${(g.progress / g.target) * 100}%` }}
                 />
-                <span className="db-goal-count">
-                  {g.progress} / {g.target}
-                </span>
+              </span>
+              <span className="db-goal-count">
+                {g.progress} / {g.target}
               </span>
             </li>
           ))}
