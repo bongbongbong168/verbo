@@ -75,8 +75,14 @@ export default function VerifyEmailBanner() {
         <div className="ve-text">
           <strong className="ve-title">Confirm your email</strong>{' '}
           <span className="ve-body">
-            We sent a code to {user.email}. Entering it keeps your account
-            recoverable if you forget your password.
+            {/* One clause, not two. The longer version — "Entering it keeps
+                your account recoverable if you forget your password" — wrapped
+                the bar onto a second and sometimes third line above every
+                page, which is what made it the loudest thing on a screen it
+                is not the subject of. The reason still has to be stated;
+                it just does not need a subordinate clause. */}
+            We sent a code to {user.email} — confirm it to keep your account
+            recoverable.
           </span>
         </div>
 

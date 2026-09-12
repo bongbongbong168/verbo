@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
+use App\Models\ClassroomItem;
 use App\Models\ClassroomMember;
 use App\Models\Submission;
 use Illuminate\Http\Request;
@@ -21,25 +22,157 @@ class ClassroomController extends Controller
     {
         $user = $request->user();
 
-        $teaching = $user->classroomsTeaching()
+        $teachingModels = $user->classroomsTeaching()
             ->whereNull('archived_at')
             ->withCount(['members as students_count', 'assignments as assignments_count'])
             ->latest('id')
-            ->get()
-            ->map(fn (Classroom $c) => $this->card($c, 'teacher'));
+            ->get();
 
-        $joined = $user->classroomsJoined()
+        $joinedModels = $user->classroomsJoined()
             ->whereNull('archived_at')
             ->withCount(['members as students_count', 'assignments as assignments_count'])
-            ->get()
-            ->map(fn (Classroom $c) => $this->card($c, 'student'));
+            ->get();
+
+        /* Ungraded work PER CLASS, resolved in one query rather than one per
+           card. The page badges a class with what is waiting in it, which is
+           the only per-class status that actually changes — every class this
+           endpoint returns is un-archived, so an "Active" badge would be a
+           constant painted on every card. */
+        $toGradeByClass = $this->pendingGradeByClass($teachingModels->pluck('id'));
+
+        $teaching = $teachingModels->map(fn (Classroom $c) => $this->card($c, 'teacher')
+            + ['to_grade' => (int) ($toGradeByClass[$c->id] ?? 0)]);
+
+        $joined = $joinedModels->map(fn (Classroom $c) => $this->card($c, 'student'));
+
+        $classIds = $teachingModels->pluck('id')->merge($joinedModels->pluck('id'));
 
         return response()->json([
             'teaching' => $teaching->values(),
             'joined' => $joined->values(),
             // Drives the dashboard's "N submissions waiting" line.
             'to_grade' => $this->pendingGradeCount($user),
+            /* The two rail panels. Both are DERIVED from rows the portal
+               already writes — there is no activity table and no schedule
+               table, and adding one to fill a column would be a second source
+               of truth for something two queries already answer. An account
+               with nothing on either is genuinely empty rather than waiting
+               on a feature. */
+            'upcoming' => $this->upcoming($classIds),
+            'activity' => $this->activity($user, $teachingModels->pluck('id'), $classIds),
         ]);
+    }
+
+    /**
+     * The next assignments due, across everything this person teaches or is
+     * enrolled in.
+     *
+     * Only `assignment` rows with a real `due_at` in the future — a material
+     * has no deadline by construction, and a past deadline belongs in the
+     * class's own feed rather than under a heading that says Upcoming.
+     */
+    private function upcoming($classIds): array
+    {
+        if ($classIds->isEmpty()) {
+            return [];
+        }
+
+        return ClassroomItem::whereIn('classroom_id', $classIds)
+            ->where('type', 'assignment')
+            ->whereNotNull('due_at')
+            ->where('due_at', '>=', now())
+            ->with('classroom:id,name')
+            ->orderBy('due_at')
+            ->limit(4)
+            ->get()
+            ->map(fn (ClassroomItem $i) => [
+                'id' => $i->id,
+                'title' => $i->title,
+                'due_at' => $i->due_at,
+                'class_id' => $i->classroom_id,
+                'class_name' => optional($i->classroom)->name,
+            ])
+            ->all();
+    }
+
+    /**
+     * What has happened lately: work posted into any of these classes, and
+     * work handed in on the ones this person teaches.
+     *
+     * Two streams merged and cut to five rather than two half-empty lists —
+     * "what changed?" is one question, and the answer is more useful in one
+     * time order. Submissions are teaching-only on purpose: a student seeing
+     * every classmate's hand-in would be a roster leak, not a feed.
+     */
+    private function activity($user, $teachingIds, $classIds): array
+    {
+        if ($classIds->isEmpty()) {
+            return [];
+        }
+
+        $posted = ClassroomItem::whereIn('classroom_id', $classIds)
+            ->with('classroom:id,name')
+            ->latest('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (ClassroomItem $i) => [
+                'kind' => $i->type === 'assignment' ? 'assignment_posted' : 'material_posted',
+                'title' => $i->title,
+                'who' => null,
+                'class_id' => $i->classroom_id,
+                'class_name' => optional($i->classroom)->name,
+                'at' => $i->created_at,
+            ]);
+
+        $handed = collect();
+
+        if ($teachingIds->isNotEmpty()) {
+            $handed = Submission::whereNotNull('submitted_at')
+                ->whereIn('classroom_item_id', function ($q) use ($teachingIds) {
+                    $q->select('id')->from('classroom_items')
+                        ->whereIn('classroom_id', $teachingIds);
+                })
+                ->with(['item:id,classroom_id,title', 'item.classroom:id,name', 'user:id,name'])
+                ->latest('submitted_at')
+                ->limit(5)
+                ->get()
+                ->map(fn (Submission $s) => [
+                    'kind' => 'submitted',
+                    'title' => optional($s->item)->title,
+                    'who' => optional($s->user)->name,
+                    'class_id' => optional($s->item)->classroom_id,
+                    'class_name' => optional(optional($s->item)->classroom)->name,
+                    'at' => $s->submitted_at,
+                ]);
+        }
+
+        return $posted->concat($handed)
+            ->sortByDesc('at')
+            ->take(5)
+            ->values()
+            ->all();
+    }
+
+    /** Ungraded hand-ins keyed by class id — one query, not one per card. */
+    private function pendingGradeByClass($classIds): array
+    {
+        if ($classIds->isEmpty()) {
+            return [];
+        }
+
+        /* `select(... raw count)` then pluck by NAME. Handing `pluck()` a
+           `DB::raw` expression as its value column throws "Illegal offset
+           type" on Laravel 9 — the expression object ends up used as an array
+           key. Aliasing the count and plucking the alias is the working form. */
+        return DB::table('submissions')
+            ->join('classroom_items', 'classroom_items.id', '=', 'submissions.classroom_item_id')
+            ->whereIn('classroom_items.classroom_id', $classIds)
+            ->whereNotNull('submissions.submitted_at')
+            ->whereNull('submissions.graded_at')
+            ->groupBy('classroom_items.classroom_id')
+            ->select('classroom_items.classroom_id', DB::raw('count(*) as n'))
+            ->pluck('n', 'classroom_id')
+            ->all();
     }
 
     public function store(Request $request)

@@ -30,10 +30,24 @@
 
 .cl-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.3rem;
+}
+
+.cl-heading {
+  min-width: 0;
+}
+
+/* "Classes" names the noun and not the job, which is why the page read as
+   generic. This says what can be done here. */
+.cl-subtitle {
+  margin: 0.35rem 0 0;
+  padding-left: 0.7rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--cl-muted);
 }
 
 .cl-tools {
@@ -104,31 +118,79 @@
   margin-bottom: 1.6rem;
 }
 
+/* A mark and a heading on the top row, the action beneath it and aligned with
+   the text rather than the card's edge. The two cards were identical slabs of
+   the same weight with a lot of air in them.
+
+   TWO ROWS, NOT THREE COLUMNS — measured. A mark, copy and an action side by
+   side needs about 400px; these cards render 441px at 1400, which left the
+   text column at 166px, wrapped one sentence onto four lines and pushed both
+   cards to 257px tall. Gating that on a viewport media query was the wrong
+   instrument too: the constraint is the CARD's width, and `.cl-entry` is an
+   auto-fit grid, so the card is narrow long before the viewport is. */
 .cl-entry-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 1.2rem 1.3rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem 0.9rem;
+  padding: 1.1rem 1.2rem;
   border: 1px solid var(--cl-line);
   border-radius: 16px;
   background: var(--cl-card);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
 }
 
-.cl-entry-label {
-  font-size: 0.72rem;
+.cl-entry-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 13px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cl-entry-mark svg {
+  width: 21px;
+  height: 21px;
+}
+
+.cl-entry-body {
+  min-width: 0;
+}
+
+.cl-entry-title {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cl-muted);
+  line-height: 1.25;
+  color: var(--cl-text);
 }
 
 .cl-entry-text {
   margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.5;
+  font-size: 0.85rem;
+  line-height: 1.45;
   color: var(--cl-muted);
+}
+
+/* Starts under the heading, not under the mark: the action belongs to the
+   copy that explains it. `justify-self: start` keeps the button its own width
+   while the join form still spans the column. */
+.cl-entry-action {
+  grid-column: 2 / -1;
+  justify-self: start;
+  margin: 0;
+}
+
+form.cl-entry-action {
+  justify-self: stretch;
+}
+
+.cl-entry-card .cl-join-note {
+  grid-column: 2 / -1;
 }
 
 .cl-join {
@@ -415,6 +477,84 @@
   font-weight: 700;
 }
 
+/* ---- body: classes left, what is happening right ----
+
+   One class in the full page width read as an unfinished screen. The rail is
+   not padding: both panels are real queries over the curriculum and
+   submission rows the portal already writes. Below 1100px it drops under the
+   list rather than squeezing the cards. */
+.cl-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 26px;
+  align-items: start;
+  margin-top: 1.8rem;
+}
+
+.cl-main {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .cl-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- the role filter ---- */
+
+.cl-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+/* No transition on the selected fill — a transition only advances while the
+   tab composites frames, so a pill switched in a backgrounded tab would come
+   back looking unselected. The colour IS the state. */
+.cl-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 999px;
+  background: var(--cl-card);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--cl-muted);
+  cursor: pointer;
+}
+
+.cl-tab:hover {
+  border-color: var(--cl-fill);
+  color: var(--cl-accent);
+}
+
+.cl-tab.on {
+  border-color: var(--cl-fill);
+  background: var(--cl-fill);
+  /* Dark on lavender, never white: white on #a89ce3 measures ~1.9:1. */
+  color: var(--cl-edge);
+}
+
+.cl-tab-n {
+  padding: 0 0.36rem;
+  border-radius: 999px;
+  background: var(--cl-well);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cl-accent);
+}
+
+.cl-tab.on .cl-tab-n {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--cl-edge);
+}
+
 .cl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -467,15 +607,167 @@
   min-width: 0;
 }
 
+.cl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .cl-card-name {
   font-size: 1.02rem;
   font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ungraded work, NOT the word "Active". This page only lists un-archived
+   classes, so "Active" would be a constant stamped on every card — a status
+   that never changes is decoration. What a teacher actually needs to see at a
+   glance is whether something is waiting on them. */
+.cl-card-badge {
+  flex: none;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  background: #fdeee6;
+  color: #b45b30;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* What this class IS — the subject and the level, read as one phrase rather
+   than as two chips competing with the focus and the term beside them. */
+.cl-card-identity {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--cl-accent);
 }
 
 .cl-card-chips {
   display: flex;
   gap: 0.3rem;
   flex-wrap: wrap;
+}
+
+/* The code and the way in, on one line at the foot of the card. */
+.cl-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--cl-line);
+}
+
+.cl-card-more {
+  flex: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--cl-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.cl-card-more::after {
+  content: " ›";
+}
+
+.cl-card-more:hover {
+  text-decoration: underline;
+}
+
+/* ---- the rail ---- */
+
+.cl-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.cl-panel {
+  padding: 1.05rem 1.15rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 16px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+}
+
+.cl-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cl-text);
+}
+
+.cl-panel-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 9px;
+  background: var(--cl-well);
+  color: var(--cl-accent);
+}
+
+.cl-panel-mark svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cl-panel-empty {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--cl-muted);
+}
+
+.cl-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cl-feed-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.cl-feed-row + .cl-feed-row {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--cl-line);
+}
+
+.cl-feed-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cl-text);
+  text-decoration: none;
+}
+
+.cl-feed-text:hover {
+  color: var(--cl-accent);
+  text-decoration: underline;
+}
+
+.cl-feed-meta {
+  font-size: 0.75rem;
+  color: var(--cl-muted);
 }
 
 .cl-card-stats {
