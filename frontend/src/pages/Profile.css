@@ -776,17 +776,14 @@
   background: linear-gradient(100deg, #fff0e6, #fdf7f2);
 }
 
+/* 2:3, matching the mark's 16x24 viewBox — a square box would squash it.
+   The cold state is the component's own `lit={false}` colours now; it used
+   to be `grayscale(1) opacity(0.4)`, which is all a baked raster allows and
+   which yields a washed-out orange rather than the app's grey. */
 .pf-streak-mark {
-  width: 28px;
+  width: 18.67px;
   height: 28px;
   flex: none;
-  /* A baked raster cannot change colour, so a broken run desaturates its own
-     flame rather than being handed a second file. */
-  filter: grayscale(1) opacity(0.4);
-}
-
-.pf-streakbar.on .pf-streak-mark {
-  filter: none;
 }
 
 .pf-streak-text {

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 /* The same artwork the Dashboard's streak badge uses. One flame in the app, so
    the mark means the same thing wherever a streak is shown. */
-import iconStreak from '../assets/dashboard/icon-streak.png'
+import FlameMark from '../components/FlameMark'
 /* The supplied export, kept separate from the quiz launcher's copy of the same
    figure: that one was cropped out of a screenshot and flood-filled, this is
    the clean original with a real alpha channel. */
@@ -96,12 +96,15 @@ function ProgressRing({ percent }) {
  * that is not there, and "0" in a warm block reads as a bug rather than a
  * fact.
  */
-function StreakBar({ days, mark, week }) {
+function StreakBar({ days, week }) {
   const on = days > 0
 
   return (
     <div className={'pf-streakbar' + (on ? ' on' : '')}>
-      <img className="pf-streak-mark" src={mark} alt="" aria-hidden="true" />
+      {/* Drawn, so a broken run gets a real grey rather than a desaturated
+          orange. The raster this replaced could only be filtered, which is
+          why the cold state used to be `grayscale(1) opacity(0.4)`. */}
+      <FlameMark className="pf-streak-mark" lit={on} />
       <span className="pf-streak-text">
         <span className="pf-streak-n">{days}</span>
         {/* Attributive: "1 day streak", "12 day streak" — never "days". */}
@@ -367,7 +370,7 @@ export default function Profile() {
 
             {/* ROW TWO: the streak, full width and warm, with its own evidence
                 beside it. */}
-            <StreakBar days={streak} mark={iconStreak} week={activity?.days} />
+            <StreakBar days={streak} week={activity?.days} />
           </section>
 
           {/* Lifted out of the progress card and given marks. Four anonymous

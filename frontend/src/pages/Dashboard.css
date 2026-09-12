@@ -134,41 +134,40 @@
   /* Vertically symmetric — the optical correction lives on .db-streak-text
      alone, and the flame sits where flexbox puts it because its artwork is
      centred in its own box.
-     Horizontally it is NOT symmetric, and deliberately so. The flame artwork
-     fills only 75.4% of its square source (measured: 63px of transparent
-     canvas each side of 512), so ~2.09px of nothing sits between the pill's
-     left padding and the first lit pixel. Trimming that from the left inset
-     makes the flame LOOK 1rem in, matching the text on the right. Same family
-     of correction as the bell's 143% scale, and for the same reason: the
-     artwork's box is not its ink. */
-  padding: 0.5rem 1rem 0.5rem calc(1rem - 2.09px);
+     Horizontally it is symmetric AGAIN. It carried `calc(1rem - 2.09px)` on
+     the left while the mark was a PNG that filled only 75.4% of its square
+     source — 63px of transparent canvas each side of 512 — so the inset had
+     to eat that margin for the flame to LOOK 1rem in. The drawn mark runs
+     edge to edge in its viewBox, so the correction would now push the flame
+     2px into the padding instead of out of it. Artwork's box is not its ink,
+     and the fix has to be re-derived whenever the artwork changes. */
+  padding: 0.5rem 1rem;
   z-index: 1;
   cursor: default;
 }
 
 /* No streak yet: the flame stays (it is what makes the badge recognisable)
    but goes cold, so it does not read as an achievement the user has not
-   earned. A baked raster cannot be recoloured, so this is a filter — the same
-   constraint the bell PNG has, and the reason its state is a ring rather than
-   a fill. */
+   earned. The MARK's own cold colours come from the component now — it is
+   drawn, so it can simply be grey. The `filter: grayscale(1)` this replaced
+   could only ever produce a desaturated orange. */
 .db-streak-badge.idle {
   color: #8e8ba0;
 }
 
-.db-streak-badge.idle .db-streak-flame {
-  opacity: 0.5;
-  filter: grayscale(1);
-}
+/* Sized by the box, not by font-size — it is artwork, not a glyph.
+   `display: block` keeps it off the text baseline; an inline element sits on
+   the baseline and reserves descender space below it, which is what would
+   push it visibly high in the pill.
 
-/* Sized by the box, not by font-size — it is an image now, not a glyph.
-   `display: block` keeps it off the text baseline; an inline image sits on the
-   baseline and reserves descender space below it, which is what would push it
-   visibly high in the pill. Height is set and width follows the square source,
-   so the artwork can never be squashed. */
+   WIDTH IS 2/3 OF HEIGHT because the viewBox is 16x24, not the old square.
+   Setting both to 17 would squash a flame drawn at 0.65 into a circle — and
+   the PNG's own rule ("height is set and width follows the square source")
+   silently becomes wrong the moment the source stops being square. */
 .db-streak-flame {
   flex-shrink: 0;
   display: block;
-  width: 17px;
+  width: 11.33px;
   height: 17px;
 }
 

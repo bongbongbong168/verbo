@@ -9,7 +9,7 @@ import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
-import iconStreak from '../assets/dashboard/icon-streak.png'
+import FlameMark from '../components/FlameMark'
 import './Dashboard.css'
 
 /* The design's Top Reads filter is four content categories that do not exist in
@@ -830,12 +830,13 @@ export default function Dashboard() {
               : 'Open Verbo on consecutive days to build a streak'
           }
         >
-          {/* The supplied artwork, not the 🔥 emoji it replaced — that rendered
-              as a different picture on every OS, so the badge could not be
-              designed around it, and its ink sat off-centre in its line box and
-              needed a measured nudge to look level. A 512px source for a 15px
-              mark, so it stays sharp at any zoom or pixel ratio. */}
-          <img className="db-streak-flame" src={iconStreak} alt="" />
+          {/* Drawn, not a raster — and not the 🔥 emoji before that, which
+              rendered as a different picture on every OS. The reason for the
+              second swap is the cold state: a PNG cannot be recoloured, so
+              "no streak yet" had to be `filter: grayscale(1)`, which gives a
+              desaturated orange rather than the app's grey. The component
+              takes `lit` and uses real colours for both. */}
+          <FlameMark className="db-streak-flame" lit={streak > 0} />
           {/* "5 day streak", not "5 days streak" — attributive, and it is how
               the design words it. Wrapped so its vertical position can be tuned
               against the flame without dragging the flame along with it. */}
