@@ -339,48 +339,101 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
+/* ---- the Pro card ----
+   A tag, a two-line pitch, the owl, and one full-width CTA. The owl is
+   positioned absolutely so the copy column can reserve exactly its width and
+   nothing overlaps — see `.sb-promo-copy`. */
 .sb-promo {
-  background: var(--sb-card);
+  position: relative;
+  /* A gentle lift off the rail rather than the flat card colour: the promo is
+     the one block here that is selling something, and at `--sb-card` flat it
+     read as another nav surface. */
+  background: linear-gradient(155deg, #4a4470 0%, var(--sb-card) 58%, #383354 100%);
   border-radius: 18px;
-  padding: 1.1rem;
+  padding: 1.05rem 1rem 1rem;
+  box-shadow: 0 6px 18px rgba(12, 9, 26, 0.28);
+}
+
+/* The copy column reserves the owl's width so the two can never collide.
+   66px of bird + 8px of air; the button below it spans the full card. */
+.sb-promo-copy {
+  padding-right: 74px;
+}
+
+/* THE OWL IS CROPPED TO ITS OWN INK (215x336) and that is what makes it
+   placeable. The source render was 577x433 with the bird occupying only the
+   middle 215px — 63% of the frame was transparent padding, unevenly split
+   58/39 top to bottom — so any `right`/`top` positioned the empty box rather
+   than the owl, which is exactly why it would not sit where it was put. */
+.sb-promo-owl {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.75rem;
+  width: 66px;
+  height: auto;
+  /* Anchored to the card, so it cannot stretch the row it sits in. */
+  pointer-events: none;
+  /* A soft ground shadow so the bird sits ON the card rather than floating
+     above it as a pasted cut-out. Navy-tinted like every other shadow here. */
+  filter: drop-shadow(0 4px 8px rgba(12, 9, 26, 0.35));
+}
+
+.sb-promo-tag {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  /* Translucent rather than the solid accent: the CTA below is the solid
+     lavender, and two filled lavender blocks in one small card compete. */
+  background: rgba(168, 156, 227, 0.22);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #cfc7f2;
 }
 
 .sb-promo-title {
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
   font-size: 0.95rem;
-  margin: 0 0 0.4rem;
+  line-height: 1.25;
+  margin: 0 0 0.3rem;
 }
 
 .sb-promo-text {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--sb-text-muted);
-  margin: 0 0 0.9rem;
-  line-height: 1.4;
+  margin: 0 0 0.85rem;
+  line-height: 1.45;
 }
 
+/* Full width, so the card ends on one decisive edge-to-edge action rather
+   than a pill floating in the corner under an illustration. */
 .sb-promo-btn {
-  display: inline-block;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   font-family: 'Hellix', sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.82rem;
-  color: #fff;
-  background: linear-gradient(135deg, #e06fc7, #a89ce3);
+  text-align: center;
+  /* DARK ON LAVENDER, never white. White on #a89ce3 measures ~1.9:1, far
+     below readable; #2b2643 on it is 5.6:1. Same rule as the Read banner's
+     CTA, which is white on the navy for the mirror-image reason. */
+  color: #2b2643;
+  background: var(--sb-accent);
   border: none;
-  border-radius: 999px;
-  padding: 0.55rem 1.2rem;
-}
-
-/* It is a link now, not a button — it goes to /upgrade. `text-decoration` and
-   the pointer have to be set explicitly because the rule above was written for
-   a <button>, which needs neither. */
-.sb-promo-btn {
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
   text-decoration: none;
   cursor: pointer;
 }
 
+/* Instant colour, no transition — the fill IS the feedback, and a transition
+   that never gets a frame leaves the button looking dead under the pointer.
+   Same rule as the Dashboard's "View all" pill. */
 .sb-promo-btn:hover {
-  filter: brightness(1.06);
+  background: #bcb2ec;
 }
 
 .sb-shell {

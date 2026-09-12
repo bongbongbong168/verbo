@@ -6,6 +6,7 @@ import PracticeAssistant from "./PracticeAssistant";
 import VerifyEmailBanner from "./VerifyEmailBanner";
 import logo from "../assets/sidebar/logo.svg";
 import logoMark from "../assets/sidebar/logo-mark.svg";
+import owlPro from "../assets/sidebar/owl-pro.png";
 import "./Layout.css";
 
 /* Optical normalisation, measured with getBBox() rather than guessed.
@@ -459,15 +460,26 @@ export default function Layout() {
         </button>
 
         <div className="sb-promo">
-          <p className="sb-promo-title">Upgrade to PRO</p>
-          <p className="sb-promo-text">Unlock premium features for free.</p>
+          {/* The owl sits INSIDE the card, never bleeding past its top edge:
+              `.sb-promo` is `overflow: hidden` because the collapse animates
+              `max-height` to 0, so anything overlapping the edge is simply
+              clipped. `aria-hidden` — it is decoration, and the card already
+              says what it is in words. */}
+          <img className="sb-promo-owl" src={owlPro} alt="" aria-hidden="true" />
+
+          <div className="sb-promo-copy">
+            <span className="sb-promo-tag">Popular</span>
+            <p className="sb-promo-title">Upgrade to PRO</p>
+            <p className="sb-promo-text">Unlock premium features for free.</p>
+          </div>
+
           {/* Was a disabled button with a "Coming soon" title and nowhere to
               go. It has somewhere to go now — the plan comparison — so it is a
               link. What is still not built is the payment step, and the
               upgrade page says that itself rather than the rail implying the
               whole feature is absent. */}
           <NavLink to="/upgrade" className="sb-promo-btn">
-            SEE PLANS
+            Get Verbo+
           </NavLink>
         </div>
       </nav>
