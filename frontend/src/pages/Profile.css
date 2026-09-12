@@ -313,21 +313,7 @@
 
 /* Ring on the left, the facts it needs beside it on the right. The old
    full-width bar spent the card's whole width on one number. */
-.pf-prog {
-  display: flex;
-  align-items: center;
-  gap: 1.15rem;
-}
 
-.pf-prog-facts {
-  display: flex;
-  flex-direction: column;
-  /* Without this a long level title sets the column's floor and pushes the
-     ring out of the card — the same min-width: auto trap the Dashboard's
-     pick-up row hit. */
-  min-width: 0;
-  flex: 1;
-}
 
 .pf-ring {
   position: relative;
@@ -371,17 +357,7 @@
   color: var(--pf-text);
 }
 
-.pf-prog-level {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--pf-accent);
-}
 
-.pf-prog-note {
-  margin: 0.15rem 0 0;
-  font-size: 0.82rem;
-  color: var(--pf-muted);
-}
 
 /* ---- last 7 days ---- */
 
@@ -389,16 +365,6 @@
   margin-top: 1.1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--pf-line);
-}
-
-.pf-week-label {
-  display: block;
-  margin-bottom: 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--pf-muted);
 }
 
 /* space-between, not a 7-column grid. With `minmax(0, 1fr)` columns each
@@ -453,99 +419,30 @@
   height: 60%;
 }
 
-.pf-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 0.7rem;
-}
 
 /* Without a level there is no ring beside them, so they spread. */
-.pf-metrics-wide {
-  gap: 12px;
-  margin-top: 1.1rem;
-}
 
 /* Number and label stacked on the left, the mark trailing on the right.
    The mark goes last on purpose: these two tiles sit directly beside the ring,
    and a leading icon would put a column of glyphs between the ring and the
    numbers — the one run the eye needs kept clear. */
-.pf-metric {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 12px;
-  background: var(--pf-well);
-  min-width: 0;
-}
 
-.pf-metric-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
 
 /* Pushed to the far edge rather than sitting at the end of the text, so both
    tiles' marks line up with each other however long the numbers are — "1h 44m"
    and "3" are wildly different widths. */
-.pf-metric-mark {
-  display: grid;
-  place-items: center;
-  flex: none;
-  margin-left: auto;
-  width: 22px;
-  height: 22px;
-}
 
-.pf-metric-mark svg {
-  width: 18px;
-  height: 18px;
-  color: var(--pf-accent);
-}
 
 /* The flame is the Dashboard's artwork, and a baked raster cannot be
    recoloured — so a streak of zero greys it rather than tinting it, exactly as
    the Dashboard badge does. */
-.pf-metric-mark img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  opacity: 0.45;
-  filter: grayscale(1);
-}
 
-.pf-metric.hot .pf-metric-mark img {
-  opacity: 1;
-  filter: none;
-}
 
-.pf-metric-n {
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--pf-text);
-}
 
-.pf-metric-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--pf-muted);
-}
 
 /* Without the ring beside them there is room to breathe. */
-.pf-metrics-wide .pf-metric {
-  padding: 0.75rem 0.9rem;
-}
 
-.pf-metrics-wide .pf-metric-n {
-  font-size: 1.15rem;
-}
 
-.pf-metrics-wide .pf-metric-label {
-  font-size: 0.8rem;
-}
 
 .pf-counts {
   display: grid;
@@ -780,5 +677,281 @@
     height: auto;
     max-width: 34px;
     aspect-ratio: 1;
+  }
+}
+
+/* ================================================================
+   THE HERO BAND — the one loud thing on this page.
+
+   The page read as templated for a measurable reason: six cards with the
+   same radius, border and padding, five uppercase labels at the same size,
+   and a 104px ring that was SMALLER than the stat tiles beside it. Nothing
+   claimed the eye. Everything below this band is deliberately quiet so the
+   band can be the thing you see first.
+   ================================================================ */
+
+.pf-hero-card {
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+
+/* Its own heading is gone: the level name IS the heading, and "Learning
+   Progress" above it was a label describing a thing that describes itself. */
+.pf-band {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.pf-band-mid {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* A flex item defaults to its min-content width, so without this a long
+     level name sets the column's floor and shoves the streak off the row —
+     the trap `.db-pickup > *` documents. */
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+/* The level is the card's headline now, so it is sized like one. */
+.pf-band-level {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--pf-text);
+}
+
+.pf-band-note {
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--pf-muted);
+}
+
+/* Time studied is a supporting fact, so it is a quiet line rather than the
+   second of two matching pills it used to be — the pair gave a duration the
+   same weight as the streak, which is the fact people actually come for. */
+.pf-band-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--pf-accent);
+}
+
+.pf-band-time svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* ---- the streak: a full-width warm bar, carrying its own evidence ----
+
+   It was a 104px block in a third column, which starved the level name to
+   59px of width in this ~384px rail — measured, and the reason "HSK 1" broke
+   across two lines. Full width is both the fix and the better idea: the bar
+   carries the last-7-days dots, so the streak and the proof of it are one
+   object rather than two stacked rows under two grey labels. */
+
+/* `flex-wrap` is the safety net, not decoration. At 22px dots the row cleared
+   the bar by 1.4px with a ONE-DIGIT streak — "100 day streak" is ~20px wider
+   and would have hung off the card. Wrapping drops the dots onto a second
+   line instead, which stays readable; without it the overflow is silent. */
+.pf-streakbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.7rem;
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  background: var(--pf-well);
+}
+
+/* Warm ONLY while the run is alive. A zero in an orange bar promises heat
+   that is not there and reads as a bug rather than a fact. */
+.pf-streakbar.on {
+  background: linear-gradient(100deg, #fff0e6, #fdf7f2);
+}
+
+.pf-streak-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  /* A baked raster cannot change colour, so a broken run desaturates its own
+     flame rather than being handed a second file. */
+  filter: grayscale(1) opacity(0.4);
+}
+
+.pf-streakbar.on .pf-streak-mark {
+  filter: none;
+}
+
+.pf-streak-text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  flex: none;
+}
+
+.pf-streak-n {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--pf-muted);
+}
+
+.pf-streakbar.on .pf-streak-n {
+  color: #c2521f;
+}
+
+.pf-streak-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--pf-muted);
+  white-space: nowrap;
+}
+
+.pf-streakbar.on .pf-streak-label {
+  color: #b4603a;
+}
+
+/* The dots sit at the far end, so the bar reads
+   "2 day streak .......... S M T W T check check". */
+.pf-streakbar .pf-week-strip {
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+/* THE DOTS SHRINK INSIDE THE BAR, and they have to.
+   At their standalone 34px the seven of them want 285.9px, which with the
+   flame and the label needs 387.8px inside a bar that has 306.8px — measured,
+   and the reason the last dot hung off the card's edge. 22px fits the row
+   with room to spare and still reads as a week at a glance. */
+.pf-streakbar .pf-week-days {
+  gap: 0.25rem;
+}
+
+.pf-streakbar .pf-day {
+  width: 20px;
+  height: 20px;
+  font-size: 0.58rem;
+}
+
+.pf-streakbar .pf-day svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---- the four counts, lifted out of the card ---- */
+
+/* Standalone tiles rather than a row inside the progress card: they are not
+   progress through a level, they are where words have come from — which is
+   the one idea the whole app is built on. */
+.pf-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.pf-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  box-sizing: border-box;
+  padding: 0.85rem 0.8rem 0.8rem;
+  border: 1px solid var(--pf-line);
+  border-radius: 14px;
+  background: var(--pf-card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.pf-count:hover {
+  border-color: var(--pf-fill);
+}
+
+/* The mark is what makes four numbers read as four different places. Every
+   hue below is already sampled elsewhere in this app — none is invented for
+   this row. */
+.pf-count-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 0.35rem;
+  border-radius: 9px;
+}
+
+.pf-count-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.pf-count-flashcards .pf-count-mark {
+  background: #efeafc;
+  color: #6a6191;
+}
+
+/* #bcb3e8 — the Dashboard's "Unit n" tag. */
+.pf-count-units_opened .pf-count-mark {
+  background: #f0edfa;
+  color: #7d6fc0;
+}
+
+/* #7d76a0 — the Dashboard hero and duration badge. */
+.pf-count-podcasts_opened .pf-count-mark {
+  background: #eceaf3;
+  color: #6b6491;
+}
+
+/* #fe916a — the Dashboard's level tag, the one warm hue this app already
+   owns. It marks Scan here for the same reason it marks the streak: the two
+   things on this page that are not lavender are the two worth spotting. */
+.pf-count-scans .pf-count-mark {
+  background: #fdece4;
+  color: #c2521f;
+}
+
+.pf-count-n {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--pf-text);
+}
+
+.pf-count-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--pf-muted);
+}
+
+/* The band stacks before the numbers get cramped: at the rail's narrower
+   widths a 104px ring plus a 104px streak leaves the level name too little
+   to sit on one line. */
+@media (max-width: 1150px) {
+  .pf-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .pf-band {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .pf-band-mid {
+    order: 3;
+    flex-basis: 100%;
   }
 }

@@ -81,25 +81,75 @@ function ProgressRing({ percent }) {
   )
 }
 
+
 /**
- * One of the two figures beside the ring.
+ * The streak, given its own block rather than a pill beside the clock.
  *
- * The mark sits on the RIGHT, after the number it belongs to: the tiles are a
- * pair, and a left-hand icon would put a column of glyphs between the ring and
- * the numbers, which is the one place the eye needs a clear run. Written once
- * rather than twice because the card renders these in both the with-level and
- * without-level branches, and two copies is how they drift.
+ * THIS IS THE PAGE'S SECOND FOCAL POINT AND IT IS WARM ON PURPOSE. Before, the
+ * streak and "1h 8m this week" were two identical lavender pills, so the one
+ * fact a learner checks daily read as interchangeable with a duration. Orange
+ * is not a new colour here — it is the Dashboard's `--db-tag-level` (#fe916a),
+ * and the flame mark was already orange; it is simply being used where it
+ * means something.
+ *
+ * A broken run goes grey and says so. Colouring a zero would promise heat
+ * that is not there, and "0" in a warm block reads as a bug rather than a
+ * fact.
  */
-function Metric({ value, label, icon, hot }) {
+function StreakBar({ days, mark, week }) {
+  const on = days > 0
+
   return (
-    <div className={`pf-metric${hot ? ' hot' : ''}`}>
-      <span className="pf-metric-text">
-        <span className="pf-metric-n">{value}</span>
-        <span className="pf-metric-label">{label}</span>
+    <div className={'pf-streakbar' + (on ? ' on' : '')}>
+      <img className="pf-streak-mark" src={mark} alt="" aria-hidden="true" />
+      <span className="pf-streak-text">
+        <span className="pf-streak-n">{days}</span>
+        {/* Attributive: "1 day streak", "12 day streak" — never "days". */}
+        <span className="pf-streak-label">{on ? 'day streak' : 'no streak yet'}</span>
       </span>
-      <span className="pf-metric-mark">{icon}</span>
+      {/* THE DOTS LIVE HERE, not under their own grey "LAST 7 DAYS" heading.
+          They are the streak's evidence — the same fact drawn a second way —
+          so splitting them into a separate labelled row was one more
+          equal-weight band on a page that already had five. */}
+      <WeekStrip days={week} />
     </div>
   )
+}
+
+/**
+ * The four counts carry a MARK AND A TINT, because they are four different
+ * kinds of thing and read as one kind without them.
+ *
+ * Every hue is already sampled elsewhere in this app rather than invented for
+ * this row: lavender is the fill, #bcb3e8 the Dashboard's Unit tag, #7d76a0
+ * its hero, #fe916a its level tag. A count with no glyph is a number and a
+ * word; with one it is a place you have been.
+ */
+const COUNT_MARKS = {
+  flashcards: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="M3 10h18" strokeLinecap="round" />
+    </svg>
+  ),
+  units_opened: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z" />
+      <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z" />
+    </svg>
+  ),
+  podcasts_opened: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" strokeLinecap="round" />
+    </svg>
+  ),
+  scans: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" strokeLinecap="round" />
+      <path d="M7 12h10" strokeLinecap="round" />
+    </svg>
+  ),
 }
 
 /**
@@ -120,7 +170,6 @@ function WeekStrip({ days }) {
 
   return (
     <div className="pf-week-strip">
-      <span className="pf-week-label">Last 7 days</span>
       <div className="pf-week-days">
         {days.map((d) => {
           const isToday = d.date === today
@@ -283,73 +332,57 @@ export default function Profile() {
       <div className="pf-body">
         <div className="pf-col">
           {/* ---- Learning Progress ---- */}
-          <section className="pf-card">
-            <h3 className="pf-card-title">Learning Progress</h3>
+          {/* THE HERO BAND. Everything below it is deliberately quiet.
+              This card used to be five elements of identical weight stacked in
+              a column — a small ring, two matching pills, a day strip and four
+              grey tiles — so nothing on the page said "look here first". Now
+              the ring is sized to be the focal point, the streak is a real
+              second object in its own warm colour, and the week strip is the
+              band's base rather than another row. */}
+          <section className="pf-card pf-hero-card">
+            {/* ROW ONE: the ring and what it is a ring OF. Two zones, not
+                three — the rail's left column is ~384px, and a third zone on
+                this row starved the middle to 59px and broke "HSK 1" across
+                two lines. */}
+            <div className={'pf-band' + (level ? '' : ' pf-band-empty')}>
+              <ProgressRing percent={level ? level.percent : 0} />
 
-            {level ? (
-              /* The ring replaced a full-width bar. A bar spends the card's
-                 whole width saying one number and leaves the level name to
-                 float beside it; the ring holds the number inside itself and
-                 frees that width for the facts that belong next to it. */
-              <div className="pf-prog">
-                <ProgressRing percent={level.percent} />
-                <div className="pf-prog-facts">
-                  <span className="pf-prog-level">{level.title}</span>
-                  {/* Says OPENED, not completed — nothing in the app records a
-                      unit as finished, so the label cannot claim more. */}
-                  <span className="pf-prog-note">
-                    {level.units_opened} of {level.units_total} units opened
-                  </span>
-                  <div className="pf-metrics">
-                    <Metric
-                      value={loading ? '—' : weekLabel}
-                      label="this week"
-                      icon={<ClockIcon />}
-                    />
-                    {/* Attributive: "1 day streak", "12 day streak". */}
-                    <Metric
-                      value={streak}
-                      label="day streak"
-                      hot={streak > 0}
-                      icon={<img src={iconStreak} alt="" />}
-                    />
-                  </div>
-                </div>
+              <div className="pf-band-mid">
+                <span className="pf-band-level">{level ? level.title : 'No level yet'}</span>
+                {/* Says OPENED, not completed — nothing in the app records a
+                    unit as finished, so the label cannot claim more. */}
+                <span className="pf-band-note">
+                  {level
+                    ? `${level.units_opened} of ${level.units_total} units opened`
+                    : /* An empty state is an invitation to act, not a
+                         statement of absence. */
+                      'Open a study unit to start one'}
+                </span>
+                <span className="pf-band-time">
+                  <ClockIcon />
+                  {loading ? '—' : weekLabel} this week
+                </span>
               </div>
-            ) : (
-              <>
-                <p className="pf-empty">
-                  Open a study unit and your progress through that level shows up here.
-                </p>
-                {/* The two metrics are true with or without a level, so they
-                    stay put rather than disappearing with the ring. */}
-                <div className="pf-metrics pf-metrics-wide">
-                  <Metric
-                    value={loading ? '—' : weekLabel}
-                    label="this week"
-                    icon={<ClockIcon />}
-                  />
-                  <Metric
-                    value={streak}
-                    label="day streak"
-                    hot={streak > 0}
-                    icon={<img src={iconStreak} alt="" />}
-                  />
-                </div>
-              </>
-            )}
-
-            <WeekStrip days={activity?.days} />
-
-            <div className="pf-counts">
-              {COUNTS.map((c) => (
-                <Link key={c.key} className="pf-count" to={c.to}>
-                  <span className="pf-count-n">{loading ? '—' : (overview?.stats?.[c.key] ?? 0)}</span>
-                  <span className="pf-count-label">{c.label}</span>
-                </Link>
-              ))}
             </div>
+
+            {/* ROW TWO: the streak, full width and warm, with its own evidence
+                beside it. */}
+            <StreakBar days={streak} mark={iconStreak} week={activity?.days} />
           </section>
+
+          {/* Lifted out of the progress card and given marks. Four anonymous
+              grey numbers read as one kind of thing; these are four different
+              places, and the whole idea of Verbo is that words arrive from all
+              of them. */}
+          <div className="pf-counts">
+            {COUNTS.map((c) => (
+              <Link key={c.key} className={`pf-count pf-count-${c.key}`} to={c.to}>
+                <span className="pf-count-mark">{COUNT_MARKS[c.key]}</span>
+                <span className="pf-count-n">{loading ? '—' : (overview?.stats?.[c.key] ?? 0)}</span>
+                <span className="pf-count-label">{c.label}</span>
+              </Link>
+            ))}
+          </div>
 
           {/* ---- My Tutors ---- */}
           <section className="pf-card">
