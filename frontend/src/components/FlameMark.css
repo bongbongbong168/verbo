@@ -1,0 +1,155 @@
+/* The streak flame's flicker. Prefix `fm-`.
+
+   THIS IS THE ONE SHAPE OF ANIMATION THIS CODEBASE ALLOWS, and it is worth
+   being precise about why it is allowed when the Read banner's entrance
+   animation was deleted outright.
+
+   An animation only advances while the tab composites frames. The banner's
+   `rh-in` was transform-only and still had to go, because a transform that
+   never advances still DISPLACES — it sat at `translateX(10px)` in a tab that
+   was not drawing and left the text 11px off its padding. The rule that came
+   out of that is sharper than "transform-only": THE START POSITION MUST BE
+   THE RESTING POSITION.
+
+   Every keyframe here begins and ends at `scale(1)` with no translation, so a
+   frozen compositor renders exactly the flame the static design asks for. The
+   movement only exists between those points — the same construction as the
+   practice assistant's typing dots, which start and end at their resting spot
+   and only bob in between, so a stalled tab shows three visible dots rather
+   than none.
+
+   Nothing here carries state. The flame is lit or cold by FILL, set on the
+   paths themselves; the flicker says nothing a still frame does not. */
+
+/* The embers are drawn above the viewBox, so they only paint at all because
+   the box does not clip. See the note in the component for why they live
+   outside it rather than inside a taller one. */
+.fm-flame {
+  overflow: visible;
+}
+
+/* A whole-mark float, which is the reference's main movement — the flame
+   hovers rather than sitting on anything. Applied to the svg and not to a
+   group inside it so it composes with, rather than fights, the per-path
+   flicker below. */
+.fm-flame.fm-lit {
+  animation: fm-float 3.4s ease-in-out infinite;
+}
+
+.fm-flame path,
+.fm-flame rect {
+  /* Percentage origins on an SVG child resolve against the viewport box
+     unless this is set — `fill-box` makes them relative to the path's own
+     bounding box, so each flame pivots on its own base rather than on a
+     point somewhere outside itself. */
+  transform-box: fill-box;
+  /* Bottom centre: fire grows upward from where it is anchored. Scaling from
+     the middle would make the flame sink into the badge on every downbeat. */
+  transform-origin: 50% 100%;
+}
+
+/* Only a live streak moves. A broken run is grey and still — motion reads as
+   "this is going", which is precisely what a zero must not claim. */
+.fm-flame.fm-lit .fm-outer {
+  animation: fm-flicker 2.9s ease-in-out infinite;
+}
+
+.fm-flame.fm-lit .fm-inner {
+  /* A different period, so the two drift in and out of phase instead of
+     pulsing together — two shapes breathing in lockstep reads as one object
+     being scaled, not as fire. Deliberately not a multiple of 2.9s, or they
+     would resynchronise on a fixed beat. */
+  animation: fm-flicker-inner 2.1s ease-in-out infinite;
+}
+
+/* Amounts are in the SVG's own user units, so the flicker scales with the
+   mark: identical at the badge's 17px and the profile bar's 28px, with no
+   per-size tuning. */
+@keyframes fm-flicker {
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1);
+  }
+  22% {
+    transform: scaleY(1.055) scaleX(0.975);
+  }
+  46% {
+    transform: scaleY(0.972) scaleX(1.022);
+  }
+  71% {
+    transform: scaleY(1.032) scaleX(0.99);
+  }
+}
+
+@keyframes fm-flicker-inner {
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1) translateY(0);
+  }
+  30% {
+    transform: scaleY(0.93) scaleX(1.04) translateY(0.22px);
+  }
+  62% {
+    transform: scaleY(1.075) scaleX(0.965) translateY(-0.25px);
+  }
+}
+
+@keyframes fm-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.6px);
+  }
+}
+
+/* ---- the embers ----
+
+   Each rests VISIBLE and in place, rises a little as it dims, and comes back.
+   That is the shape the frozen-compositor rule forces: a spark that faded in
+   from `opacity: 0` would be missing entirely in a tab that never draws, and
+   one that drifted away from a start position would sit permanently displaced.
+   At rest they read as the three sparks the reference shows in its own still
+   frame, which is the right still picture to be stuck on.
+
+   DESYNCED BY DURATION, NEVER BY A NEGATIVE `animation-delay`. A negative
+   delay starts an animation part-way through its timeline, so frame 0 is no
+   longer the resting position — the exact failure the rule above exists to
+   prevent, reintroduced by a scheduling trick. Three different periods, all
+   resting at 0%, drift apart on their own. */
+.fm-flame.fm-lit .fm-spark-a {
+  animation: fm-ember 2.6s ease-in-out infinite;
+}
+
+.fm-flame.fm-lit .fm-spark-b {
+  animation: fm-ember 3.3s ease-in-out infinite;
+}
+
+.fm-flame.fm-lit .fm-spark-c {
+  animation: fm-ember 1.9s ease-in-out infinite;
+}
+
+@keyframes fm-ember {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-1.6px);
+    opacity: 0.25;
+  }
+}
+
+/* Asked not to be moved, so it is not moved — and because every keyframe
+   rests at the static position, simply removing the animation leaves the
+   correct flame rather than stranding it mid-sweep. */
+@media (prefers-reduced-motion: reduce) {
+  .fm-flame.fm-lit,
+  .fm-flame.fm-lit .fm-outer,
+  .fm-flame.fm-lit .fm-inner,
+  .fm-flame.fm-lit .fm-spark {
+    animation: none;
+  }
+}
