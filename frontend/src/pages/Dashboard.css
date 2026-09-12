@@ -26,6 +26,14 @@
   --db-bar: #d5c6ff; /* activity bar */
   --db-bar-peak: #7d76a0; /* the highlighted day */
 
+  /* A finished daily goal. No new hue: the fill IS the level tag above, and
+     the warm ground is the tint the Profile streak bar already uses for a run
+     that is alive. Both states keep `--db-text` for their words — #b4603a and
+     #c2521f were tried and measure 4.05:1 and 4.19:1 on this ground, under AA
+     for a 12px label. */
+  --db-goal-done: var(--db-tag-level);
+  --db-goal-done-well: #fff0e6;
+
   background: var(--db-bg);
   padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
   font-family: 'Hellix', system-ui, sans-serif;
@@ -1679,10 +1687,22 @@ a.db-course:hover {
 }
 
 .db-goals-count {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--db-text-muted);
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: var(--db-pill-bg);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--db-accent);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Warm when the day is cleared — the same signal a finished row carries, and
+   the same rule the Profile streak bar follows: the app's orange means a run
+   that is actually alive, never decoration. */
+.db-goals-count.all {
+  background: var(--db-goal-done-well);
+  color: var(--db-text);
 }
 
 .db-goals-list {
@@ -1691,47 +1711,101 @@ a.db-course:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.5rem;
 }
 
-/* Two columns and a full-width track beneath, so the bar always spans the row
-   however long the label is. */
+/* ---- a goal is a TILE, not a line of text ----
+
+   Rebuilt from a supplied "Goal board" reference whose rows are each an object
+   — a tinted ground, a marked chip, and a fat bar carrying its own number —
+   against three bare labels over 5px hairlines, which is what made this the
+   flattest thing in the rail.
+
+   Two columns, not the reference's four. MEASURED: at 1440 this card is
+   236.2px wide with 197.4px of content, so a chip, a title, a bar and a tick
+   side by side cannot be laid out here. The chip spans both rows instead and
+   the tick moves inside the bar, where the row already has width to spare.
+
+   COLOUR CARRIES STATE, NOT IDENTITY. The reference gives each row its own
+   hue; it owns a palette with three, and Verbo owns lavender plus one warm
+   accent. A blue and a green minted to fill the gap would be exactly the
+   second colour family the `#8b6ff0` sweep removed. What tells the three
+   apart is the glyph. */
 .db-goal {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.2rem 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  background: var(--db-pill-bg);
+}
+
+.db-goal-mark {
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--db-card);
+  color: var(--db-accent);
+}
+
+.db-goal-mark svg {
+  width: 15px;
+  height: 15px;
 }
 
 .db-goal-label {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
   color: var(--db-text);
   min-width: 0;
+  /* The longest label measures 100.9px against 142px of column here, so this
+     is a backstop for a narrower rail rather than something that normally
+     bites. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.db-goal-count {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--db-text-muted);
-  font-variant-numeric: tabular-nums;
+/* A completed row is the LOUDEST thing on the card, never a greyed one — done
+   is the good outcome, and the app refuses to draw it as disabled. Orange is
+   `--db-tag-level`, already the Dashboard's level tag and already what the
+   Profile streak bar means by a live run; no new hue is introduced. */
+.db-goal.done {
+  background: var(--db-goal-done-well);
 }
 
-/* A completed row states itself in the accent rather than going grey — done
-   is the good outcome and should not read as disabled. */
-.db-goal.done .db-goal-label {
-  color: var(--db-accent);
-  font-weight: 600;
+.db-goal.done .db-goal-mark {
+  background: var(--db-goal-done);
+  color: var(--db-text);
 }
 
-.db-goal.done .db-goal-count {
-  color: var(--db-accent);
-  font-weight: 700;
-}
+/* The bar is the row's body now, so it has to be tall enough to hold a
+   number. `position: relative` + `overflow: hidden` keeps the fill clipped to
+   the groove's corners while the count sits above it.
 
+   THE GROOVE IS WHITE AND THE TILE IS THE PALE PILL, which is the inverse of
+   the first attempt and was decided by looking: `--db-progress-track`
+   (`#ece8f8`) on a `#f9f8fe` tile is a 2% difference, so an untouched goal —
+   0/5, no fill at all — rendered as a bar that had simply failed to draw.
+   Against white the empty groove reads as a container waiting to be filled,
+   which is the one thing this row has to say before anything has happened. */
 .db-goal-track {
-  grid-column: 1 / -1;
-  height: 5px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 18px;
+  padding: 0 0.42rem;
+  box-sizing: border-box;
   border-radius: 999px;
-  background: var(--db-progress-track);
+  background: var(--db-card);
   overflow: hidden;
 }
 
@@ -1740,12 +1814,28 @@ a.db-course:hover {
    backgrounded tab and report every goal as untouched — the same rule the
    Settings switch and every `*-in` keyframe in this app follow. */
 .db-goal-fill {
-  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
   border-radius: 999px;
   background: var(--db-progress);
 }
 
 .db-goal.done .db-goal-fill {
-  background: var(--db-accent);
+  background: var(--db-goal-done);
+}
+
+/* ONE colour in every state, deliberately. The fill slides under this number
+   as the day goes on, so a count that had to follow it would need a rule per
+   state; `--db-text` measures 7.2:1 on the lavender fill, 7.9:1 on the warm
+   one and higher again on the empty groove, which makes the question moot. */
+.db-goal-count {
+  position: relative;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--db-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

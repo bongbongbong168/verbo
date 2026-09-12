@@ -260,6 +260,59 @@ function StarIcon() {
   )
 }
 
+/**
+ * One mark per goal type, on the app's usual 24 grid at strokeWidth 1.7.
+ *
+ * THE GLYPH IS WHAT DISTINGUISHES THE THREE, NOT A COLOUR. The reference this
+ * was rebuilt from gives every row its own hue, but it owns a palette with
+ * three of them and Verbo owns lavender plus one warm accent — inventing a
+ * blue and a green to fill the gap is exactly the second colour family the
+ * `#8b6ff0` sweep took back out. Colour here carries STATE (see the CSS);
+ * identity is carried by the drawing.
+ *
+ * Declared here rather than in `components/` because these three exist nowhere
+ * else. Extract them the moment a second page wants one — the `MenuDotsIcon`
+ * note is about a mark that had already been copied twice, not about marks
+ * with a single home.
+ */
+const GOAL_MARKS = {
+  read_article: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h4" />
+    </>
+  ),
+  review_words: (
+    <>
+      <path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" />
+      <path d="M20.5 3.5v4.5H16" />
+    </>
+  ),
+  save_words: (
+    <>
+      <path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-3.8L5.5 21V4a1 1 0 0 1 1-1z" />
+      <path d="M12 7.5v5M9.5 10h5" />
+    </>
+  ),
+}
+
+function GoalMark({ type }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {GOAL_MARKS[type]}
+    </svg>
+  )
+}
+
 /* Section heading, with the design's optional "View all" link on the right. */
 /**
  * Where the learner is in their level, and today's three goals.
@@ -334,7 +387,11 @@ function LearningPlanCard({ plan, goals }) {
       <div className="db-goals">
         <div className="db-goals-head">
           <h3 className="db-goals-title">Today</h3>
-          <span className="db-goals-count">
+          {/* Warm once the day is cleared, the same signal a finished row
+              carries. The reference puts a reward ladder here instead —
+              50exp / 100exp / Claim Now — and there is no XP in Verbo, by
+              decision rather than omission. */}
+          <span className={done === goals.length ? 'db-goals-count all' : 'db-goals-count'}>
             {done} / {goals.length} done
           </span>
         </div>
@@ -342,18 +399,29 @@ function LearningPlanCard({ plan, goals }) {
         <ul className="db-goals-list">
           {goals.map((g) => (
             <li className={g.done ? 'db-goal done' : 'db-goal'} key={g.type}>
-              <span className="db-goal-label">{g.label}</span>
-              <span className="db-goal-count">
-                {g.done ? '✓' : `${g.progress}/${g.target}`}
+              <span className="db-goal-mark">
+                <GoalMark type={g.type} />
               </span>
+              <span className="db-goal-label">{g.label}</span>
               {/* A track, not an animation — a width transition only advances
                   while the tab composites frames, so a backgrounded tab would
-                  leave every bar sitting at zero. */}
+                  leave every bar sitting at zero.
+
+                  The count rides INSIDE the track, which is the reference's
+                  one structural idea worth taking: the progress becomes the
+                  row's body instead of a 5px hairline under it. It is drawn
+                  in `--db-text` at both ends of the bar deliberately — that
+                  reads 7.2:1 on the lavender fill, 7.9:1 on the warm one and
+                  higher again on the empty groove, so the number never has to
+                  change colour to follow the fill sliding under it. */}
               <span className="db-goal-track">
                 <span
                   className="db-goal-fill"
                   style={{ width: `${(g.progress / g.target) * 100}%` }}
                 />
+                <span className="db-goal-count">
+                  {g.progress} / {g.target}
+                </span>
               </span>
             </li>
           ))}
