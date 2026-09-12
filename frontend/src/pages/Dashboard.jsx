@@ -261,6 +261,108 @@ function StarIcon() {
 }
 
 /* Section heading, with the design's optional "View all" link on the right. */
+/**
+ * Where the learner is in their level, and today's three goals.
+ *
+ * THERE IS NO PROJECTED FINISH DATE. The reference this was built from leads
+ * with "HSK 1 in 1 month and 9 days", and nothing in Verbo measures how long a
+ * lesson takes — that date would be an assumption dressed as a measurement.
+ * The card reports lessons left at the pace the learner chose and lets them do
+ * the arithmetic, which they can see.
+ *
+ * Every figure is counted server-side from rows the app already writes, so
+ * there is nothing to invalidate when a word is saved or a lesson opened — the
+ * next load is simply current.
+ */
+function LearningPlanCard({ plan, goals }) {
+  // Nothing has arrived yet. No skeleton: this sits below the fold of the rail
+  // and a flashing block there is more distracting than a moment of nothing.
+  if (!goals) return null
+
+  const done = goals.filter((g) => g.done).length
+
+  return (
+    <section className="db-plan">
+      {plan ? (
+        <>
+          {/* The heading takes the FULL width. CHANGE sits on the stats row
+              below instead of beside the title — which is what the reference
+              does, and it is load-bearing: in the rail the card is ~171px of
+              content at 1240, so a button beside the title left ~110px and
+              broke "7 lessons left" across two lines mid-phrase. */}
+          <h2 className="db-plan-level">{plan.level}</h2>
+          <p className="db-plan-sub">
+            {plan.units_left > 0
+              ? `${plan.units_left} ${plan.units_left === 1 ? 'lesson' : 'lessons'} left`
+              : 'Every lesson opened'}
+            {/* The pace is only stated when one was actually chosen.
+                "Whenever I have time" is a real answer for someone who will
+                not commit to a number, and turning it into a silent
+                assumption would be the one untrue thing here. */}
+            {plan.pace_label ? ` · ${plan.pace_label}` : ''}
+          </p>
+
+          <div className="db-plan-stats">
+            <div className="db-plan-stat">
+              <strong>{plan.units_opened}</strong>
+              {/* "Opened", never "completed" — nothing records a unit as
+                  finished, so the label cannot claim more than is known. The
+                  Profile page words it the same way. */}
+              <span>OPENED</span>
+            </div>
+            <div className="db-plan-stat">
+              <strong>{plan.words_saved}</strong>
+              <span>WORDS</span>
+            </div>
+            <Link className="db-plan-change" to="/settings?s=learning">
+              CHANGE
+            </Link>
+          </div>
+        </>
+      ) : (
+        <div className="db-plan-top">
+          <div>
+            <h2 className="db-plan-level">Pick a level</h2>
+            <p className="db-plan-sub">Open a lesson and your progress shows up here.</p>
+          </div>
+          <Link className="db-plan-change" to="/study">
+            BROWSE
+          </Link>
+        </div>
+      )}
+
+      <div className="db-goals">
+        <div className="db-goals-head">
+          <h3 className="db-goals-title">Today</h3>
+          <span className="db-goals-count">
+            {done} / {goals.length} done
+          </span>
+        </div>
+
+        <ul className="db-goals-list">
+          {goals.map((g) => (
+            <li className={g.done ? 'db-goal done' : 'db-goal'} key={g.type}>
+              <span className="db-goal-label">{g.label}</span>
+              <span className="db-goal-count">
+                {g.done ? '✓' : `${g.progress}/${g.target}`}
+              </span>
+              {/* A track, not an animation — a width transition only advances
+                  while the tab composites frames, so a backgrounded tab would
+                  leave every bar sitting at zero. */}
+              <span className="db-goal-track">
+                <span
+                  className="db-goal-fill"
+                  style={{ width: `${(g.progress / g.target) * 100}%` }}
+                />
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 function SectionHead({ title, to }) {
   return (
     <div className="db-head">
@@ -354,6 +456,7 @@ export default function Dashboard() {
   const levelQuery = useApiData('study-levels', () => api.getStudyLevels(token))
   const recentQuery = useApiData('recent-views:3', () => api.getRecentViews(token, 3))
   const activityQuery = useApiData('activity:7', () => api.getActivitySummary(token, 7))
+  const planQuery = useApiData('learning-plan', () => api.getLearningPlan(token))
   const learningQuery = useApiData('my-learning:3', () => api.getMyLearning(token, 3))
 
   const quote = quoteQuery.data ?? null
@@ -1013,6 +1116,10 @@ export default function Dashboard() {
               )}
             </div>
           </section>
+
+          {/* Directly under the chart, and the order is the point: the chart
+              says how much you have done, this says what is left. */}
+          <LearningPlanCard plan={planQuery.data?.plan} goals={planQuery.data?.goals} />
         </aside>
       </div>
     </div>

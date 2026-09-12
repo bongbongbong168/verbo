@@ -1554,3 +1554,198 @@ a.db-course:hover {
   line-height: 1.45;
   color: var(--db-text-muted);
 }
+
+/* ---- the plan card ----
+   Sits under the activity chart in the rail. The chart says how much has been
+   done; this says what is left. Its own tokens are the page's — no new colours.
+
+   There is deliberately NO projected finish date: nothing measures how long a
+   lesson takes, so a date would be an assumption wearing a measurement's
+   clothes. Lessons left at a stated pace is the honest version. */
+.db-plan {
+  margin-top: 1.4rem;
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid var(--db-edge);
+  border-radius: 16px;
+  background: var(--db-card);
+  box-sizing: border-box;
+}
+
+.db-plan-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+/* `min-width: 0` is what makes this claim the row. A flex item defaults to
+   its min-content width, so without it the heading column was squeezed by
+   CHANGE and "7 lessons left" broke across two lines mid-phrase. The same
+   trap `.db-pickup > *` documents. */
+.db-plan-top > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-plan-level {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--db-text);
+}
+
+.db-plan-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--db-text-muted);
+}
+
+/* Quiet, not a CTA — it is the escape hatch, not the thing to do. Goes to the
+   Learning panel in Settings, which is where the daily goal actually lives. */
+.db-plan-change {
+  flex: none;
+  padding: 0.3rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--db-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.db-plan-change:hover {
+  background: var(--db-pill-bg);
+  color: var(--db-accent);
+}
+
+/* CHANGE is the last item and pushed right by `margin-left: auto`, so the two
+   stats keep their natural width and the link never squeezes them. */
+.db-plan-stats {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.4rem;
+  margin-top: 0.9rem;
+}
+
+.db-plan-stat {
+  min-width: 0;
+}
+
+.db-plan-stats .db-plan-change {
+  margin-left: auto;
+}
+
+.db-plan-stat strong {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--db-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.db-plan-stat span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--db-text-muted);
+}
+
+/* ---- today's three ---- */
+
+.db-goals {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--db-border);
+}
+
+.db-goals-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.db-goals-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--db-text);
+}
+
+.db-goals-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--db-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.db-goals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* Two columns and a full-width track beneath, so the bar always spans the row
+   however long the label is. */
+.db-goal {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.5rem;
+}
+
+.db-goal-label {
+  font-size: 0.78rem;
+  color: var(--db-text);
+  min-width: 0;
+}
+
+.db-goal-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--db-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A completed row states itself in the accent rather than going grey — done
+   is the good outcome and should not read as disabled. */
+.db-goal.done .db-goal-label {
+  color: var(--db-accent);
+  font-weight: 600;
+}
+
+.db-goal.done .db-goal-count {
+  color: var(--db-accent);
+  font-weight: 700;
+}
+
+.db-goal-track {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--db-progress-track);
+  overflow: hidden;
+}
+
+/* NO TRANSITION on the width. An animation only advances while the tab
+   composites frames, so a bar that eases from 0 would sit at 0 in a
+   backgrounded tab and report every goal as untouched — the same rule the
+   Settings switch and every `*-in` keyframe in this app follow. */
+.db-goal-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--db-progress);
+}
+
+.db-goal.done .db-goal-fill {
+  background: var(--db-accent);
+}

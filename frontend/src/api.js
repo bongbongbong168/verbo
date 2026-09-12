@@ -654,6 +654,12 @@ export const api = {
   // client cannot inflate the total.
   recordActivity: (token) => request('/activity/heartbeat', { method: 'POST', token }),
   getActivitySummary: (token, days = 7) => request(`/activity/summary?days=${days}`, { token }),
+
+  /* The Dashboard's plan card: which level, how much of it is left, and
+     today's three goals. One call because it is one card — see
+     LearningPlanController. Nothing is stored server-side; it is all counted,
+     so this is always current and never needs invalidating on a write. */
+  getLearningPlan: (token) => request('/learning-plan', { token }),
   getQuote: (token) => request('/quote', { token }),
   saveQuote: (token, quote) => request('/quote', { method: 'POST', body: quote, token }),
 

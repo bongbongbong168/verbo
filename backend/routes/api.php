@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\LearningPlanController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PracticeChatController;
@@ -301,6 +302,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // credits the gap between beats server-side; see ActivityController.
     Route::post('/activity/heartbeat', [ActivityController::class, 'heartbeat']);
     Route::get('/activity/summary', [ActivityController::class, 'summary']);
+
+    /* Where the learner is in their level, and today's three goals — one card,
+       so one request against a Dashboard that already fans out to eight.
+       Beside the activity routes because it answers the same question from the
+       other end: that one says how much has been done, this says what is left.
+       Nothing is stored; every figure is counted. See the controller. */
+    Route::get('/learning-plan', [LearningPlanController::class, 'index']);
 
     /* In-app notifications. Raised inline by the controllers that handle the
        events — there is no queue or scheduler here, so nothing time-based. */
