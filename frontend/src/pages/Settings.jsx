@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import ImageCropper from "../components/ImageCropper";
@@ -72,6 +72,7 @@ const SECTIONS = [
 export default function Settings() {
   const { token, user, setUser } = useAuth();
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const active = SECTIONS.some((s) => s.key === params.get("s"))
     ? params.get("s")
@@ -200,13 +201,28 @@ export default function Settings() {
   /* The way back in for someone who cannot remember their current password —
      the form above requires it, and this does not. It takes no email: the
      server reads it off the session, so this button cannot be aimed at
-     another account. The reply is the same generic sentence the public route
-     sends, so it is shown rather than a claim of our own. */
+     another account.
+
+     IT SENDS *AND THEN TAKES YOU TO THE CODE FIELD*. Sending alone was the
+     bug: you were handed a six-digit code and left to find
+     /forgot-password yourself, then retype the address you are already
+     signed in as. The code had nowhere to go. Now one click mails it and
+     lands on the step that spends it, with the email already filled in.
+
+     On failure it stays put, so the error is read next to the button that
+     caused it rather than on a page you did not ask for. */
   const sendResetLink = () =>
     run(
       "resetLink",
       () => api.sendMyResetLink(token),
-      (res) => say(res?.message || "Check your email for the reset code"),
+      (res) =>
+        navigate("/forgot-password", {
+          state: {
+            email: user?.email || "",
+            step: "code",
+            notice: res?.message || "Check your email for the code.",
+          },
+        }),
     );
 
   const revokeSessions = () =>
@@ -467,8 +483,9 @@ export default function Settings() {
                   <p className="se-row-label">Forgot your password?</p>
                   <p className="se-row-help">
                     If you cannot remember your current one, we will email a six-digit
-                    code to {user?.email}. Enter it on the forgot-password page to set a
-                    new one. Doing so signs you out everywhere — including here.
+                    code to {user?.email} and take you straight to the screen that uses
+                    it. Setting a new password there signs you out everywhere —
+                    including here.
                   </p>
                 </div>
 
@@ -479,7 +496,11 @@ export default function Settings() {
                     disabled={busy === "resetLink"}
                     onClick={sendResetLink}
                   >
-                    {busy === "resetLink" ? "Sending…" : "Email me a reset code"}
+                    {/* Gmail's SMTP send happens inside the request and takes
+                        ~5s, so this label is on screen long enough to be read.
+                        It says what is happening rather than just "Sending…",
+                        which at that length reads as stuck. */}
+                    {busy === "resetLink" ? "Emailing your code…" : "Email me a reset code"}
                   </button>
                 </div>
               </div>

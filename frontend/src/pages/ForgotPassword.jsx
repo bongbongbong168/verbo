@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import EyeIcon from '../components/EyeIcon'
 import logo from '../assets/sidebar/logo.svg'
@@ -22,10 +22,17 @@ import './Login.css'
 export default function ForgotPassword() {
   const navigate = useNavigate()
 
+  /* Settings can hand this page a code it has ALREADY sent, along with the
+     address it went to — see `sendResetLink` there. Arriving that way skips
+     straight to the digits rather than asking a signed-in person to retype
+     the email they are signed in as. Read once into state so the fields stay
+     editable and a reload falls back to the normal first step. */
+  const { state } = useLocation()
+
   // 'ask' = which address, 'code' = the digits plus the new password.
-  const [step, setStep] = useState('ask')
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(null)
+  const [step, setStep] = useState(state?.step === 'code' ? 'code' : 'ask')
+  const [email, setEmail] = useState(state?.email || '')
+  const [sent, setSent] = useState(state?.notice || null)
 
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
