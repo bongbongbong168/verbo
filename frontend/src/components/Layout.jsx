@@ -478,8 +478,11 @@ export default function Layout() {
               link. What is still not built is the payment step, and the
               upgrade page says that itself rather than the rail implying the
               whole feature is absent. */}
+          {/* The label is a span so it can sit ABOVE the two pseudo-elements
+              that draw the travelling border light — a bare text node cannot
+              take a z-index, so it would be painted under the fill. */}
           <NavLink to="/upgrade" className="sb-promo-btn">
-            Get Verbo+
+            <span className="sb-promo-btn-label">Get Verbo+</span>
           </NavLink>
         </div>
       </nav>

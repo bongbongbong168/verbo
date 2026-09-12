@@ -408,11 +408,30 @@
 }
 
 /* Full width, so the card ends on one decisive edge-to-edge action rather
-   than a pill floating in the corner under an illustration. */
+   than a pill floating in the corner under an illustration.
+
+   THE BORDER CARRIES A TRAVELLING LIGHT, built from a rotating conic
+   gradient clipped to the button's shape: `::before` is the gradient,
+   `::after` is the fill inset by 2px, so all that survives is a bright arc
+   running round a 2px ring. The button itself is transparent — the fill
+   lives on `::after` — which is why hover and the disabled palette below
+   target that layer rather than this one.
+
+   IT IS SAFE UNDER THE FROZEN-COMPOSITOR RULE, and that needed checking. An
+   animation only advances while the tab composites frames, so the test is
+   what frame 0 looks like: here it is the fill, the label and a stationary
+   glint on the edge — a highlight, not a broken control. Contrast the
+   skeletons, which are static precisely because a frozen shimmer reads as a
+   page that failed to load. Nothing here carries state or meaning; the
+   button is fully readable and clickable with the beam parked. */
 .sb-promo-btn {
+  position: relative;
   display: block;
   width: 100%;
   box-sizing: border-box;
+  /* Clips the oversized gradient to the pill, which is what turns a spinning
+     square into a light running round an edge. */
+  overflow: hidden;
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
   font-size: 0.82rem;
@@ -421,7 +440,7 @@
      below readable; #2b2643 on it is 5.6:1. Same rule as the Read banner's
      CTA, which is white on the navy for the mirror-image reason. */
   color: #2b2643;
-  background: var(--sb-accent);
+  background: transparent;
   border: none;
   border-radius: 12px;
   padding: 0.6rem 1rem;
@@ -429,11 +448,61 @@
   cursor: pointer;
 }
 
+/* The light. `inset: -75%` makes the gradient square large enough that its
+   corners still cover the button at every angle — at -50% the corners sweep
+   inside the edges and the beam blinks out four times a turn. */
+.sb-promo-btn::before {
+  content: '';
+  position: absolute;
+  inset: -75%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 250deg,
+    rgba(255, 255, 255, 0.35) 300deg,
+    #ffffff 342deg,
+    rgba(255, 255, 255, 0.5) 352deg,
+    transparent 360deg
+  );
+  animation: sb-beam 3.6s linear infinite;
+}
+
+/* The fill, inset so a 2px ring of the gradient shows through. */
+.sb-promo-btn::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 10px;
+  background: var(--sb-accent);
+}
+
+/* Lifted above both layers — a bare text node cannot be raised, which is why
+   the label is wrapped in a span. */
+.sb-promo-btn-label {
+  position: relative;
+  z-index: 1;
+}
+
 /* Instant colour, no transition — the fill IS the feedback, and a transition
    that never gets a frame leaves the button looking dead under the pointer.
    Same rule as the Dashboard's "View all" pill. */
-.sb-promo-btn:hover {
+.sb-promo-btn:hover::after {
   background: #bcb2ec;
+}
+
+@keyframes sb-beam {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* Someone who has asked for less motion gets the button with no beam at all,
+   not a slower one. The ring goes quietly solid rather than disappearing, so
+   the shape stays the same. */
+@media (prefers-reduced-motion: reduce) {
+  .sb-promo-btn::before {
+    animation: none;
+    background: rgba(255, 255, 255, 0.28);
+  }
 }
 
 .sb-shell {
