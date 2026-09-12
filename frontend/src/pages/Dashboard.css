@@ -26,13 +26,16 @@
   --db-bar: #d5c6ff; /* activity bar */
   --db-bar-peak: #7d76a0; /* the highlighted day */
 
-  /* A finished daily goal. No new hue: the fill IS the level tag above, and
-     the warm ground is the tint the Profile streak bar already uses for a run
-     that is alive. Both states keep `--db-text` for their words — #b4603a and
-     #c2521f were tried and measure 4.05:1 and 4.19:1 on this ground, under AA
-     for a 12px label. */
-  --db-goal-done: var(--db-tag-level);
-  --db-goal-done-well: #fff0e6;
+  /* A finished daily goal, IN THE CARD'S OWN FAMILY.
+     This was warm — `--db-tag-level` on a `#fff0e6` ground, borrowed from the
+     Profile streak bar — and one orange row among lavender ones read as the
+     odd thing out rather than as the finished one. Done is now the same
+     lavender everything else on the card is made of, one step deeper: the
+     tile drops from the pale pill to the line tint, the chip goes solid, and
+     the bar fills. Three changes in one hue carry the state without a second
+     colour family, which is the rule the #8b6ff0 sweep set. */
+  --db-goal-done: var(--db-progress); /* #a89ce3, the fill lavender */
+  --db-goal-done-well: var(--db-border); /* #e7e3f6, a step under the tile */
 
   background: var(--db-bg);
   padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
@@ -1697,11 +1700,11 @@ a.db-course:hover {
   white-space: nowrap;
 }
 
-/* Warm when the day is cleared — the same signal a finished row carries, and
-   the same rule the Profile streak bar follows: the app's orange means a run
-   that is actually alive, never decoration. */
+/* Fills when the day is cleared — the same promotion a finished row gets,
+   in the same hue. Dark on lavender, never white: white on #a89ce3 measures
+   ~1.9:1 and #1c1730 on it is 7.2:1. */
 .db-goals-count.all {
-  background: var(--db-goal-done-well);
+  background: var(--db-goal-done);
   color: var(--db-text);
 }
 
@@ -1773,10 +1776,10 @@ a.db-course:hover {
   white-space: nowrap;
 }
 
-/* A completed row is the LOUDEST thing on the card, never a greyed one — done
-   is the good outcome, and the app refuses to draw it as disabled. Orange is
-   `--db-tag-level`, already the Dashboard's level tag and already what the
-   Profile streak bar means by a live run; no new hue is introduced. */
+/* A completed row still steps FORWARD, never greys out — done is the good
+   outcome and the app refuses to draw it as disabled. It is carried by depth
+   within one hue rather than by a second hue: a deeper tile, a solid chip and
+   a full bar, all lavender. */
 .db-goal.done {
   background: var(--db-goal-done-well);
 }
@@ -1828,8 +1831,8 @@ a.db-course:hover {
 
 /* ONE colour in every state, deliberately. The fill slides under this number
    as the day goes on, so a count that had to follow it would need a rule per
-   state; `--db-text` measures 7.2:1 on the lavender fill, 7.9:1 on the warm
-   one and higher again on the empty groove, which makes the question moot. */
+   state; `--db-text` measures 7.2:1 on the lavender fill and higher again on
+   the white groove, which makes the question moot. */
 .db-goal-count {
   position: relative;
   font-size: 0.66rem;
