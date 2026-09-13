@@ -1767,8 +1767,20 @@ a.db-course:hover {
   color: var(--db-text);
 }
 
+/* ASYMMETRIC ON PURPOSE, AND THE NUMBER IS MEASURED. Hellix reserves more
+   ascent than a short label uses, so symmetric padding centres the LINE BOX
+   and leaves the glyphs sitting low — 0.935px low here, which is visible and
+   was reported. Taking it off the top and giving it to the bottom raises the
+   ink by exactly that and leaves the pill's height untouched.
+
+   The cap band is measured against a FLAT-CAPPED reference (`H`), never the
+   label's own ink: "0 / 3 done" measures 0.71875 per em against "Popular"'s
+   0.70313, because round glyphs — 0, 3, O — overshoot the cap line. A metric
+   whose answer depends on which letters are in the label is broken, and using
+   it would have tuned this pill and the sidebar's by different amounts for no
+   real reason. */
 .db-goals-count {
-  padding: 0.2rem 0.45rem;
+  padding: 0.1416rem 0.45rem 0.2584rem;
   border-radius: 999px;
   background: var(--db-pill-bg);
   font-size: 0.68rem;

@@ -378,10 +378,16 @@
   filter: drop-shadow(0 4px 8px rgba(12, 9, 26, 0.35));
 }
 
+/* The pad is asymmetric and measured, the same correction the Dashboard's
+   "n / 3 done" pill carries — Hellix reserves more ascent than a short label
+   uses, so symmetric padding centres the line box and leaves the word 0.826px
+   low in its own pill. Off the top, onto the bottom, height unchanged. Cap
+   band measured against a flat-capped `H`, not against "Popular", whose own
+   ink would have given a different answer for no reason that matters. */
 .sb-promo-tag {
   display: inline-block;
   margin-bottom: 0.5rem;
-  padding: 0.16rem 0.5rem;
+  padding: 0.1084rem 0.5rem 0.2116rem;
   border-radius: 999px;
   /* Translucent rather than the solid accent: the CTA below is the solid
      lavender, and two filled lavender blocks in one small card compete. */
