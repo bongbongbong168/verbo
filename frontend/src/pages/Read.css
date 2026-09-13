@@ -552,8 +552,11 @@
   margin-top: 0.9rem;
 }
 
-.rd-chip {
-  padding: 0.2rem 0.6rem;
+.rd-chip {  /* Measured cap-band correction against a flat-capped `H` at 400px: the label
+     sat low under a symmetric pad. The pair sums to the original, so the box
+     height is unchanged and only the text moves. */
+
+  padding: calc(0.2rem - 0.899px) 0.6rem calc(0.2rem + 0.899px);
   border-radius: 7px;
   background: #f1edfc;
   color: var(--rd-accent);
@@ -869,8 +872,11 @@
   background: var(--rd-accent-light);
 }
 
-.rd-sec-count {
-  padding: 0.1rem 0.5rem;
+.rd-sec-count {  /* Measured cap-band correction against a flat-capped `H` at 400px: the label
+     sat low under a symmetric pad. The pair sums to the original, so the box
+     height is unchanged and only the text moves. */
+
+  padding: calc(0.1rem - 1.017px) 0.5rem calc(0.1rem + 1.017px);
   border-radius: 999px;
   background: #f1edfc;
   color: var(--rd-accent);
@@ -895,8 +901,10 @@
 .rd-cm-new-body {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  /* The action sits at the RIGHT end of the field it belongs to, rather than
+     under its left edge, where it read as a separate unrelated control. */
+  align-items: flex-end;
+  gap: 0.55rem;
   flex: 1;
   min-width: 0;
 }
@@ -1073,11 +1081,32 @@
   margin-top: 0.4rem;
 }
 
+/* An empty log is an INVITATION, not a status line. It was one grey sentence
+   sitting under the composer, indistinguishable from a disabled hint; it gets
+   its own tinted well so the section reads as ready rather than broken. */
 .rd-cm-empty,
 .rd-cm-locked {
-  margin: 0.6rem 0;
+  margin: 0.9rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #f6f4fd;
   font-size: 0.88rem;
   color: var(--rd-text-muted);
+  text-align: center;
+}
+
+/* ---- the comment log, as a CARD ----
+   It was bare rows on the page ground: a hairline, a grey textarea, a pale
+   button and a line of grey text. Nothing said where the conversation started
+   or ended, and the composer read as a disabled form rather than an invitation.
+   The panel gives it an edge, the same white card every other surface in this
+   app sits on. */
+.rd-cm-panel {
+  padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 16px;
+  background: var(--rd-panel-bg);
+  box-shadow: 0 2px 10px rgba(28, 23, 48, 0.05);
 }
 
 /* ---- recommendations ---- */
@@ -1134,11 +1163,14 @@
 
 /* Marks something they have already opened — the recommender ranks these
    lower but does not hide them, so the label explains why it is still here. */
-.rd-rec-read {
+.rd-rec-read {  /* Measured cap-band correction against a flat-capped `H` at 400px: the label
+     sat low under a symmetric pad. The pair sums to the original, so the box
+     height is unchanged and only the text moves. */
+
   position: absolute;
   top: 8px;
   right: 8px;
-  padding: 0.12rem 0.5rem;
+  padding: calc(0.12rem - 0.907px) 0.5rem calc(0.12rem + 0.907px);
   border-radius: 6px;
   background: rgba(28, 23, 48, 0.72);
   color: #fff;
@@ -1188,8 +1220,11 @@
   color: var(--rd-text-muted);
 }
 
-.rd-rec-cta {
-  padding: 0.28rem 0.7rem;
+.rd-rec-cta {  /* Measured cap-band correction against a flat-capped `H` at 400px: the label
+     sat low under a symmetric pad. The pair sums to the original, so the box
+     height is unchanged and only the text moves. */
+
+  padding: calc(0.28rem - 0.923px) 0.7rem calc(0.28rem + 0.923px);
   border-radius: 8px;
   background: #f1edfc;
   color: var(--rd-accent);

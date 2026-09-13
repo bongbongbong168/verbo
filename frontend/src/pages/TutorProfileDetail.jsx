@@ -901,7 +901,11 @@ export default function TutorProfileDetail() {
               onClick={() => setShowBooking(true)}
               disabled={isSelf}
             >
-              <MessageIcon />
+              {/* No glyph. It carried an ENVELOPE, which is the mark this page
+                  uses for "Message tutor" directly below — so the two buttons
+                  wore the same icon for opposite jobs, and the louder of the
+                  two was the one that said "send a message" while opening the
+                  booking calendar. The label is unambiguous on its own. */}
               {isSelf ? 'This is your profile' : booked ? 'Book another lesson' : 'Book a lesson'}
             </button>
 
