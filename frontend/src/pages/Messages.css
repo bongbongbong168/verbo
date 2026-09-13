@@ -990,6 +990,20 @@
   color: #b02a2a;
 }
 
+/* Inline with the message, not a button below it: the failure is one line of
+   text and the way out belongs in that line. No padding, so there is no cap
+   band to correct — it sits on the sentence`s own baseline. */
+.ms-attach-retry {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* A message can be a file with no words; give it breathing room either way. */
 .ms-bubble-wrap > * + * {
   margin-top: 0.35rem;

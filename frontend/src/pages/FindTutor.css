@@ -208,9 +208,19 @@
 
 /* .ft-card itself is defined with the tutor-card block further down. */
 
+/* THE CARD IS AS TALL AS ITS TEXT, not as tall as its photograph.
+   The frame was a fixed 150px, and because the card is a flex row the body
+   stretched to match it — measured, a tutor whose bio is one word had 51px of
+   text inside a 178px column, so most of the card was empty. The photo takes
+   the card`s height now and keeps its 13:15 crop through `object-fit: cover`,
+   with a floor so a nearly-empty profile still reads as a portrait rather than
+   a stripe. A tutor who has filled their profile in is unaffected: their text
+   was already the taller of the two. */
 .ft-card-photo {
   width: 130px;
-  height: 150px;
+  align-self: stretch;
+  height: auto;
+  min-height: 118px;
   border-radius: 4px;
   object-fit: cover;
   background: var(--ft-pill-bg);
@@ -219,7 +229,9 @@
 
 .ft-card-photo-placeholder {
   width: 130px;
-  height: 150px;
+  align-self: stretch;
+  height: auto;
+  min-height: 118px;
   border-radius: 4px;
   background: linear-gradient(135deg, var(--ft-accent-light), var(--ft-accent));
   color: #fff;

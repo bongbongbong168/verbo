@@ -495,12 +495,39 @@ export const api = {
   /* Unsend one of your own messages. It goes for both sides — see the
      controller for why there is no "delete for me". */
   deleteMessage: (token, id) => request(`/messages/${id}`, { method: 'DELETE', token }),
-  fetchAttachment: async (token, messageId) => {
-    const res = await fetch(`${BASE_URL}/messages/${messageId}/attachment`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) throw new Error('Could not load that attachment.')
-    return URL.createObjectURL(await res.blob())
+  /* A BLOB FETCH THAT CANNOT HANG FOREVER.
+     This request had no timeout, so a stalled one simply never settled — and
+     the deployed API stalls for seconds on roughly one request in three. The
+     picture's reserved placeholder then sat there as a blank tinted box with
+     nothing to resolve it and no error to report, which is exactly the "it
+     does not show until I refresh" symptom: reloading is the only thing that
+     starts a second request.
+
+     One retry, because the stall is a one-in-three event rather than a broken
+     file: a second attempt usually lands. The abort is what makes the retry
+     possible at all — without it the first request is still holding on. */
+  fetchAttachment: async (token, messageId, { timeoutMs = 12000, attempt = 0 } = {}) => {
+    const stop = new AbortController()
+    const timer = setTimeout(() => stop.abort(), timeoutMs)
+    try {
+      const res = await fetch(`${BASE_URL}/messages/${messageId}/attachment`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: stop.signal,
+      })
+      if (!res.ok) throw new Error('Could not load that attachment.')
+      return URL.createObjectURL(await res.blob())
+    } catch (err) {
+      /* Retry a stall, never a refusal: a 403 or a 404 will say the same thing
+         twice and the second wait is spent for nothing. */
+      if (attempt === 0 && err.name === 'AbortError') {
+        return api.fetchAttachment(token, messageId, { timeoutMs, attempt: 1 })
+      }
+      throw err.name === 'AbortError'
+        ? new Error('That attachment took too long to load.')
+        : err
+    } finally {
+      clearTimeout(timer)
+    }
   },
   // Idempotent: returns the existing thread or opens it. Never a second one.
   openTutorConversation: (token, profileId) =>

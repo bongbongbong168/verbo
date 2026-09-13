@@ -78,17 +78,28 @@ function Rail({ title, children }) {
      is a harmless no-op, which is all the disabled state was buying. */
   const ref = useWheelScroll();
 
-  /* INSTANT, NOT `behavior: 'smooth'`. A smooth scroll is animated by the
-     browser off requestAnimationFrame, and rAF is throttled to a standstill in
-     a surface that is not compositing — measured here, the click registered and
-     `scrollLeft` never left 0. That is the frozen-compositor rule in its
-     plainest form: the button has to work on the frame it is pressed. Snapping
-     also gives the row's `scroll-snap` a definite position to settle on rather
-     than a moving target. */
+  /* SMOOTH, WITH A GUARANTEE. A smooth scroll is animated by the browser off
+     requestAnimationFrame, and rAF is throttled to a standstill on a surface
+     that is not compositing — measured here once: the click registered and
+     `scrollLeft` never left 0. That is why this was instant for a while.
+
+     The honest fix is not to give up the easing but to check it happened: ask
+     for smooth, then a moment later, if the row has not moved at all, jump it.
+     A real tab eases; a stalled one still ends up where the click asked for.
+     The frozen-compositor rule is about state that never arrives, and a scroll
+     position carries none — the worst case here is a row that moves without
+     animating. */
   function page(dir) {
     const el = ref.current;
     if (!el) return;
-    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'auto' });
+    const from = el.scrollLeft;
+    const by = dir * el.clientWidth * 0.8;
+    el.scrollBy({ left: by, behavior: "smooth" });
+    window.setTimeout(() => {
+      if (ref.current && ref.current.scrollLeft === from) {
+        ref.current.scrollBy({ left: by, behavior: "auto" });
+      }
+    }, 220);
   }
 
   return (
