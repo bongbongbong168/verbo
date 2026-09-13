@@ -921,7 +921,13 @@
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--rd-text);
-  resize: vertical;
+  /* NO RESIZE GRABBER. The diagonal notch in the bottom-right corner is drawn
+     by the browser, not by this stylesheet, and it was the only hand-drawn-
+     looking mark on an otherwise clean card. `field-sizing` grows the box with
+     what is typed instead, where the browser supports it; `rows` is the floor
+     everywhere else, so nothing is lost by taking the handle away. */
+  resize: none;
+  field-sizing: content;
   outline: none;
 }
 
