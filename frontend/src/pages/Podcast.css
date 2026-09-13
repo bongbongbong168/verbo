@@ -588,3 +588,55 @@
   color: var(--pc-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+
+/* ---- topic shelves ---- */
+
+.pc-shelf {
+  margin-bottom: 2.2rem;
+}
+
+/* The Dashboard`s treatment, and for its reason: this pill repeats on every
+   shelf down the page, so four solid lavender blocks would pull the eye off
+   the episodes they label. Soft at rest, the export`s fill on hover — and the
+   hover fill is NOT transitioned, because the colour IS the feedback and a
+   transition that never gets a frame leaves it looking dead under the
+   pointer. Only the chevron`s nudge is eased. */
+.pc-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  /* Cap-band correction measured on this control against a flat-capped `H` at
+     400px, before it ever shipped. The pair sums to 0.7rem, so the pill`s
+     height is what the symmetric pad would have given. */
+  padding: calc(0.35rem - 0.95px) 0.85rem calc(0.35rem + 0.95px);
+  border: none;
+  border-radius: 8px;
+  background: var(--pc-border);
+  color: var(--pc-accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pc-viewall:hover {
+  background: var(--pc-accent-light);
+  color: #fff;
+}
+
+/* The chevron is a box whose ink IS its box, so it does not want the label`s
+   correction — equal and opposite margins keep it off. */
+.pc-viewall svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  margin-top: 0.95px;
+  margin-bottom: -0.95px;
+  transition: transform 0.14s ease;
+}
+
+.pc-viewall:hover svg {
+  transform: translateX(2px);
+}

@@ -113,6 +113,49 @@ function Rail({ title, children }) {
   );
 }
 
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+/* ONE SHELF PER TOPIC, the shape the Read page already browses by.
+
+   Everything below Recommendations used to be a single "Discover new" grid —
+   every remaining episode in one undifferentiated block, which answers "what
+   else is there?" and nothing else. A shelf per topic answers the question
+   people actually arrive with: what is there about travel, about business.
+
+   `View all` filters the page in place rather than routing, because the grid
+   it would navigate to is the one the topic pills already build — a second
+   copy is a second thing to keep true. Same decision, same wording, as Read. */
+function Shelf({ title, items, onViewAll }) {
+  if (!items.length) return null;
+
+  return (
+    <section className="pc-shelf">
+      <div className="pc-section-head">
+        <h2 className="pc-section-title">{title}</h2>
+        <button type="button" className="pc-viewall" onClick={onViewAll}>
+          View all
+          <ChevronIcon />
+        </button>
+      </div>
+      <div className="pc-grid">
+        {items.map((p) => (
+          <EpisodeCard key={p.id} episode={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* Four to a shelf: it is what fits the panel at the card`s fixed 289px, and a
+   shelf is meant to tempt rather than empty a topic onto the page. */
+const SHELF_SIZE = 4;
 function EpisodeCard({ episode }) {
   return (
     <div className="pc-card">
@@ -286,9 +329,36 @@ export default function Podcast() {
   );
 
   // Latest four lead the horizontal Recommendations row; the rest fall
-  // through to the Discover new grid.
+  // through to the shelves below it.
   const recommended = visible.slice(0, 4);
   const discover = visible.slice(4);
+
+  /* Built from `discover`, not from everything, so an episode already leading
+     the Recommendations row is not shown twice on one screen. Topics come from
+     what has actually been published, in the model`s order — the same list the
+     pills read, so the shelves can never offer a topic the filter cannot. */
+  const shelves = useMemo(
+    () =>
+      availableTopics
+        .map((topic) => ({
+          topic,
+          items: discover
+            .filter((p) => p.category === topic)
+            .slice(0, SHELF_SIZE),
+        }))
+        .filter((s) => s.items.length > 0),
+    [availableTopics, discover],
+  );
+
+  /* Anything published without a topic still has to be reachable, so it gets
+     the old flat grid under a heading that says what it is rather than being
+     silently dropped off the page. */
+  const unfiled = discover.filter((p) => !p.category);
+
+  /* Shelves answer "show me around"; a chosen topic or level is someone who
+     has already said what they want, and three-at-a-time shelving would hide
+     matches from them. Same swap the Read page makes, for the same reason. */
+  const browsing = activeTopic === "all" && activeLevel === "all";
 
   return (
     <div className="pc">
@@ -401,17 +471,45 @@ export default function Podcast() {
             ))}
           </Rail>
 
-          <h2 className="pc-section-title">Discover new</h2>
-          {discover.length === 0 ? (
+          {discover.length === 0 && (
             <p className="pc-empty">
               Nothing more yet — new episodes land here.
             </p>
-          ) : (
-            <div className="pc-grid">
-              {discover.map((p) => (
-                <EpisodeCard key={p.id} episode={p} />
+          )}
+
+          {browsing ? (
+            <>
+              {shelves.map((shelf) => (
+                <Shelf
+                  key={shelf.topic}
+                  title={shelf.topic}
+                  items={shelf.items}
+                  onViewAll={() => setActiveTopic(shelf.topic)}
+                />
               ))}
-            </div>
+
+              {unfiled.length > 0 && (
+                <section className="pc-shelf">
+                  <h2 className="pc-section-title">More episodes</h2>
+                  <div className="pc-grid">
+                    {unfiled.map((p) => (
+                      <EpisodeCard key={p.id} episode={p} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          ) : (
+            discover.length > 0 && (
+              <section className="pc-shelf">
+                <h2 className="pc-section-title">More in this filter</h2>
+                <div className="pc-grid">
+                  {discover.map((p) => (
+                    <EpisodeCard key={p.id} episode={p} />
+                  ))}
+                </div>
+              </section>
+            )
           )}
         </>
       )}
