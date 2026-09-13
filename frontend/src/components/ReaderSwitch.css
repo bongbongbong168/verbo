@@ -42,12 +42,22 @@
   outline-offset: 2px;
 }
 
+/* THE PADDING ABOVE IS A CAP-BAND CORRECTION FOR THE LABEL, AND IT MUST NOT
+   REACH THE TRACK. The label's glyphs sit low inside their line box and need
+   lifting; the track is a plain box whose ink IS its box, so it had nothing to
+   correct and simply rode that 1px translation up with the text — measured
+   5.59px above centre against 7.59 below. The margins hand the pixel back,
+   equal and opposite rather than `position: relative`, which would move it into
+   the positioned paint layer for a one-pixel nudge (and the knob inside is
+   already positioned against this box). Same trap as `.db-btn-cta-arrow`. */
 .rs-track {
   display: block;
   position: relative;
   width: 30px;
   height: 18px;
   flex: none;
+  margin-top: 1px;
+  margin-bottom: -1px;
   border-radius: 999px;
   background: #e2dff0;
 }

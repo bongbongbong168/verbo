@@ -304,9 +304,16 @@
   color: #fff;
 }
 
+/* The 7/9 pad above is a cap-band correction for the LABEL and must not reach
+   the chevron — an SVG's box is its ink, so it had no low glyphs to lift and
+   rode that 1px translation up with the text (measured -1.00 from centre).
+   Equal and opposite margins, not `position: relative`. */
 .rd-viewall svg {
   width: 13px;
   height: 13px;
+  flex: none;
+  margin-top: 1px;
+  margin-bottom: -1px;
   transition: transform 0.15s ease;
 }
 
