@@ -1,0 +1,63 @@
+/* The tutor cover's own drawing. Prefix `tc-`.
+
+   Only what goes INSIDE the box lives here — the box itself (a fixed height on
+   the Dashboard, an `aspect-ratio` on the profile page) belongs to the caller,
+   because those two genuinely differ and forcing one on both would be the
+   opposite of the reason this was extracted. */
+
+.tc {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #cccbd1;
+}
+
+/* Five tones cycled by the tutor's id. All five stay inside the app's own
+   lavender-to-warm range rather than being five arbitrary colours, so a row of
+   them reads as one set and not as five different products. The plain grey
+   above is still the fallback for anything with no tone. */
+.tc[data-tone='0'] {
+  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
+}
+
+.tc[data-tone='1'] {
+  background: linear-gradient(135deg, #92c9c0, #5c9c92);
+}
+
+.tc[data-tone='2'] {
+  background: linear-gradient(135deg, #eba98f, #d1734f);
+}
+
+.tc[data-tone='3'] {
+  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
+}
+
+.tc[data-tone='4'] {
+  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
+}
+
+/* An uploaded photo covers the tone completely, so the two never compete. */
+.tc img {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Oversized and low-contrast: it is standing in for a photograph, not asking
+   to be read. Nudged off-centre so a row does not look like five identical
+   letters in five identical boxes.
+
+   Sized in `em` rather than `rem` so it tracks whatever font-size the calling
+   card sets on the box — the Dashboard's cover is 92px tall and the profile
+   page's is taller at the same column width, and a fixed 3.4rem was only ever
+   right for the first of those. */
+.tc-mark {
+  grid-area: 1 / 1;
+  font-size: 3.4em;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.34);
+  user-select: none;
+  transform: translate(22%, 4%);
+}

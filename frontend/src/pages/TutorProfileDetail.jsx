@@ -9,6 +9,7 @@ import BookingDialog from '../components/BookingDialog'
 import CourseDialog from '../components/CourseDialog'
 import TutorLessonsCard from '../components/TutorLessonsCard'
 import TutorEditDrawer from '../components/TutorEditDrawer'
+import TutorCover from '../components/TutorCover'
 /* The one relativeTime in the app. Lives beside the notification bits
    because that is where it was first needed; duplicating it here so the
    import reads tidier is exactly how two wordings drift apart. */
@@ -786,28 +787,46 @@ export default function TutorProfileDetail() {
               <div className="td-similar-grid">
                 {others.map((t) => (
                   <Link className="td-similar-card" to={`/find-tutor/${t.id}`} key={t.id}>
-                    <span className="td-similar-cover">
-                      {t.photo_url && <img src={t.photo_url} alt="" />}
+                    {/* Shared with the Dashboard's teacher card. This used to
+                        be `{t.photo_url && <img/>}`, so a tutor with no photo
+                        got a bare grey rectangle — the biggest thing on the
+                        card, saying nothing — while the Dashboard had already
+                        solved the same case with a generated cover. */}
+                    <TutorCover
+                      className="td-similar-cover"
+                      id={t.id}
+                      photoUrl={t.photo_url}
+                      name={t.user.name}
+                    />
+                    <span className="td-similar-body">
+                      <span className="td-similar-head">
+                        <span className="td-similar-name">{t.user.name}</span>
+                        <span className="td-verified sm">
+                          <VerifiedIcon />
+                        </span>
+                      </span>
+                    {/* THE "+1" USED TO BE HARDCODED. It was printed after the
+                        first language whatever the tutor actually listed, so a
+                        tutor who speaks only Mandarin was credited with a
+                        second language nobody had entered. It counts the real
+                        remainder now and says nothing when there is none. */}
+                      {t.languages_spoken && (
+                        <span className="td-similar-lang">
+                          <LangIcon />
+                          <span>
+                            {(() => {
+                              const langs = t.languages_spoken
+                                .split(',')
+                                .map((l) => l.trim())
+                                .filter(Boolean)
+                              const more = langs.length - 1
+                              return more > 0 ? `${langs[0]} +${more}` : langs[0]
+                            })()}
+                          </span>
+                        </span>
+                      )}
+                      {t.bio && <span className="td-similar-bio">{t.bio}</span>}
                     </span>
-                    <span className="td-similar-head">
-                      <span className="td-similar-avatar">
-                        {t.photo_url ? (
-                          <img src={t.photo_url} alt="" />
-                        ) : (
-                          t.user.name.charAt(0).toUpperCase()
-                        )}
-                      </span>
-                      <span className="td-similar-name">{t.user.name}</span>
-                      <span className="td-verified sm">
-                        <VerifiedIcon />
-                      </span>
-                    </span>
-                    {t.languages_spoken && (
-                      <span className="td-similar-lang">
-                        <LangIcon /> {t.languages_spoken.split(',')[0]} +1
-                      </span>
-                    )}
-                    {t.bio && <span className="td-similar-bio">{t.bio}</span>}
                   </Link>
                 ))}
               </div>

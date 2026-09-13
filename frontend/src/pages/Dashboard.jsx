@@ -7,6 +7,7 @@ import Skeleton, { SkeletonCards } from '../components/Skeleton'
 import ArticleCover from '../components/ArticleCover'
 import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
+import TutorCover from '../components/TutorCover'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import FlameMark from '../components/FlameMark'
@@ -1009,27 +1010,18 @@ export default function Dashboard() {
               <div className="db-grid3">
                 {tutors.map((t) => (
                   <Link className="db-teacher" key={t.id} to={`/find-tutor/${t.id}`}>
-                    {/* A tutor with no photo used to be a plain grey block —
-                        the largest thing on the card, saying nothing. It gets
-                        a generated cover instead, the same answer the article
-                        shelves already use: a tone and the initial, oversized
-                        as texture rather than as something to read.
-
-                        The tone is keyed to the tutor's OWN id, not to the
-                        card's position, so a tutor looks the same on the
-                        Dashboard as anywhere else they appear. Number()
-                        because SQLite hands ids back as strings on list
-                        endpoints, and '3' % 5 would work by coercion while
-                        reading as a mistake. */}
-                    <span className="db-teacher-cover" data-tone={Number(t.id) % 5}>
-                      {t.photo_url ? (
-                        <img src={t.photo_url} alt="" />
-                      ) : (
-                        <span className="db-teacher-cover-mark" aria-hidden="true">
-                          {t.user.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
+                    {/* Shared with the profile page's "Teacher you may like"
+                        strip — see `TutorCover` for why it was pulled out.
+                        A tutor with no photo gets a generated cover rather
+                        than a plain grey block: a tone and the initial,
+                        oversized as texture rather than as something to
+                        read. */}
+                    <TutorCover
+                      className="db-teacher-cover"
+                      id={t.id}
+                      photoUrl={t.photo_url}
+                      name={t.user.name}
+                    />
                     <span className="db-teacher-head">
                       <span className="db-teacher-avatar">
                         {t.photo_url ? (

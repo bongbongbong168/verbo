@@ -967,59 +967,15 @@
     box-shadow 0.14s ease;
 }
 
+/* The BOX only. The tones, the photo and the oversized initial moved to
+   `components/TutorCover` when the profile page's suggestion strip turned out
+   to be rendering a bare grey rectangle for the same case this had already
+   solved. `font-size` is what scales the generated initial, which is sized in
+   `em` so one component can serve a 92px cover here and a taller one there. */
 .db-teacher-cover {
-  display: grid;
-  place-items: center;
   height: 92px;
-  overflow: hidden;
   border-radius: 8px;
-  background: var(--db-cover);
-}
-
-/* ---- generated cover, for a tutor with no photo ----
-   Five tones cycled by the tutor's id. All five stay inside the app's own
-   lavender-to-warm range rather than being five arbitrary colours, so a row of
-   them reads as one set and not as five different products. The plain
-   `--db-cover` grey above is still the fallback for anything without a tone. */
-.db-teacher-cover[data-tone="0"] {
-  background: linear-gradient(135deg, #b9aeeb, #8d80cd);
-}
-
-.db-teacher-cover[data-tone="1"] {
-  background: linear-gradient(135deg, #92c9c0, #5c9c92);
-}
-
-.db-teacher-cover[data-tone="2"] {
-  background: linear-gradient(135deg, #eba98f, #d1734f);
-}
-
-.db-teacher-cover[data-tone="3"] {
-  background: linear-gradient(135deg, #9fb6e8, #6b83c4);
-}
-
-.db-teacher-cover[data-tone="4"] {
-  background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
-}
-
-/* An uploaded photo covers the tone completely, so the two never compete. */
-.db-teacher-cover img {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Oversized and low-contrast: it is standing in for a photograph, not asking
-   to be read. Nudged off-centre so the row does not look like five identical
-   letters in five identical boxes. */
-.db-teacher-cover-mark {
-  grid-area: 1 / 1;
-  font-size: 3.4rem;
-  font-weight: 700;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.34);
-  user-select: none;
-  transform: translate(22%, 4%);
+  font-size: 1rem;
 }
 
 /* The avatar rides up over the cover's bottom edge, as in the design. The

@@ -623,33 +623,48 @@
    one squeezed the names to nothing. Filling by a minimum width instead lets
    the row carry as many as fit and wrap the rest, so the section grows with
    the number of tutors rather than being pinned to a number chosen once. */
+/* THE CARD IS A ROW NOW, NOT A POSTER, and the measurement is what decided it.
+   This grid sits in the page's left column, which is **482px** — so a
+   `minmax(230px, 1fr)` floor fits exactly ONE track, and each card became a
+   438px-wide poster with a **268px-tall** cover above three short lines of
+   text. Widening the cards made the photo enormous and the information
+   incidental: "prioritise the info, instead of making the cover so big".
+
+   Laid out sideways, a single 482px track is the right shape rather than the
+   wrong one — a bounded photo on the left, everything you actually choose a
+   tutor on beside it. The floor is 300px so a second column only appears
+   where a row genuinely fits one. */
 .td-similar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0.85rem;
 }
 
 /* Cover, an avatar overlapping its lower-left corner, then the name row,
    language and bio stacked beneath. Spacing is set relative to the cover so the
    three cards stay proportional at any column width rather than only at one.
 
-   Bordered, but with the PALE hairline rather than the page's navy. This is a
-   "you may like" block at the foot of the page, and everything above it — the
-   profile card, the stats bar, the Lessons rail — already carries the 2px
-   navy. Giving the suggestions that same stroke put the quietest content on
-   the page at the top of its hierarchy. The hairline is enough to stop them
-   floating loose without competing for the eye.
+   THE NAVY STROKE AND WHITE FILL REVERSE AN EARLIER DECISION, deliberately.
+   These used to be transparent with a pale `#e7e3f6` hairline, on the
+   reasoning that a "you may like" block at the foot of the page should sit a
+   step back from the 2px-navy cards above it. That reasoning was sound and
+   the result was not: against the page ground they read as unfinished
+   placeholders rather than as quiet cards — "it doesn't fit the design".
+   Asked for directly, and it is also what the rest of the app does: every
+   inner card in Verbo carries the navy.
 
-   No fill either: sitting directly on the page ground keeps them a step back
-   from the white cards above. */
+   1px, not the 2px of `.td-card` above. That is what keeps the hierarchy the
+   old hairline was reaching for — same colour family as the page's cards, a
+   lighter weight — and it matches the Dashboard's own inner cards. */
 .td-similar-card {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
   min-width: 0;
   box-sizing: border-box;
-  padding: 10px;
-  background: transparent;
-  border: 1px solid var(--td-border, #e7e3f6);
+  padding: 12px;
+  background: var(--td-card);
+  border: 1px solid var(--td-edge);
   border-radius: 14px;
   text-decoration: none;
   color: inherit;
@@ -662,81 +677,58 @@
 .td-similar-card:hover {
   transform: translateY(-2px);
   border-color: var(--td-edge-soft, #a89ce3);
-  background: #fff;
+  box-shadow: 0 6px 16px rgba(43, 38, 67, 0.12);
 }
 
 /* aspect-ratio, not a fixed height: the reference's cover is ~1.7:1, and a
    fixed height only matches that at one column width — at a wide window it
    flattened to 2.2:1. */
+/* The BOX only — what is drawn inside it is `TutorCover`, shared with the
+   Dashboard's teacher card. The two boxes genuinely differ, which is why the
+   component owns the drawing and the caller owns the frame.
+
+   A FIXED WIDTH, NOT A FRACTION. This is the whole point of the rebuild: the
+   photo cannot grow with the card any more, so widening the column spends the
+   extra pixels on the name, the languages and the bio. 84 x 13:15 is the same
+   portrait proportion `.ft-card-photo` uses on Find Tutor, so a tutor's photo
+   is cropped to one shape wherever it appears. */
 .td-similar-cover {
-  display: block;
-  aspect-ratio: 1.71;
-  /* One notch tighter than the card's 14px. A child sitting inside 10px of
-     padding needs a smaller radius than its parent or the two curves fight;
-     14 - 10 would be 4, which reads square, so 10 splits the difference. */
+  width: 84px;
+  aspect-ratio: 13 / 15;
+  flex: none;
   border-radius: 10px;
-  overflow: hidden;
-  background: #cfcddb;
+  /* The generated initial is `3.4em`, so this sets it to ~39px — sized to the
+     84px box rather than to the Dashboard's much wider cover. */
+  font-size: 0.72rem;
 }
 
-.td-similar-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.td-similar-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
-/* The avatar straddles the cover's bottom edge with its top third overlapping.
-   Both numbers are percentages of the card width, not pixels: the reference's
-   avatar is 27% of the card (48px in a ~180px card), and a fixed 48px collapses
-   to a sixth of that on a wide screen while the cover keeps growing. A
-   percentage margin-top resolves against the container's WIDTH, so -9% is
-   exactly a third of the 27% avatar at every size. */
+/* The name row. The overlapping avatar that used to sit here is GONE — it was
+   a second, smaller copy of the same photograph, which only earned its place
+   while the cover was a full-width banner behind it. Sideways, the photo is
+   the avatar, and `.td-similar-avatar` came out with it rather than being left
+   behind unused. */
 .td-similar-head {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: -9%;
-  margin-bottom: 0.65rem;
-  /* Was 4%. The card now carries 10px of its own padding, so that inset was
-     being applied twice — and in a 160px column it cost the name the very
-     pixels it needed. */
-  padding-left: 0;
+  margin-bottom: 0.3rem;
 }
 
-.td-similar-avatar {
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 27%;
-  aspect-ratio: 1;
-  /* Floors so it stays legible in a narrow column and does not balloon in a
-     wide one; between them the percentage governs. */
-  min-width: 42px;
-  max-width: 68px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-  border: 3px solid #fff;
-  color: var(--td-accent);
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.td-similar-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Wraps rather than truncating. These columns are ~160px wide, and an ellipsis
-   turned "Lin Wanqing" into "Lin Wa…" — on a card whose entire job is to
-   suggest a person, the one thing that must survive is their name. Two lines
-   are allowed; a name long enough to need a third is genuinely exceptional. */
+/* Wraps rather than truncating. On a card whose entire job is to suggest a
+   person, the one thing that must survive is their name — an ellipsis turned
+   "Lin Wanqing" into "Lin Wa…". Two lines are allowed; a name long enough to
+   need a third is genuinely exceptional. */
 .td-similar-name {
   min-width: 0;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.25;
   overflow-wrap: break-word;
   display: -webkit-box;
@@ -768,12 +760,15 @@
   color: var(--td-text-muted);
 }
 
+/* Three lines, not four. The card is a row now, so its height is floored by
+   the 97px photo beside it; a fourth line only pushed past that and made the
+   cards ragged against each other. */
 .td-similar-bio {
   font-size: 0.86rem;
   line-height: 1.45;
-  color: var(--td-text);
+  color: var(--td-text-muted);
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1036,12 +1031,71 @@
 }
 
 @media (max-width: 1000px) {
+  /* COLLAPSING THE TEMPLATE IS NOT ENOUGH — THE ITEMS HAVE TO LET GO TOO.
+
+     `.td-layout` dropped to one column here, but every child still carried its
+     own `grid-column` / `grid-row` from the two-column layout, and the two
+     cards pinned to `grid-column: 2` kept forcing an IMPLICIT second track
+     into existence. The explicit `1fr` column then resolved against what was
+     left after that track took its content width — measured at 900px:
+     `0px 339.545px`, so the entire left column (profile, about, reviews,
+     suggestions) rendered ZERO pixels wide and the page was blank apart from
+     the rail.
+
+     A single-column layout has to reset placement, not just the template:
+     everything goes to column 1 and takes its natural order. `grid-row: auto`
+     matters as much as the column — leaving row 5 on the suggestions would
+     hold four empty rows above it. */
   .td-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Named, NOT `.td-layout > *`. `.td-main` and `.td-side` are
+     `display: contents`, so they generate no box of their own — they are the
+     element children but they are not the grid ITEMS, and placing them does
+     nothing at all. The items are these six. */
+  .td-profile,
+  .td-stats,
+  .td-resume,
+  .td-reviews,
+  .td-similar,
+  .td-hire,
+  .td-lessons {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  /* `display: contents` also means DOM order stacks the whole left column
+     before the whole right one, which would bury the booking card under the
+     reviews. `order` restores a sensible read: who this is, how to book them,
+     then the detail. Grid items honour it. */
+  .td-profile {
+    order: 1;
+  }
+  .td-hire {
+    order: 2;
+  }
+  .td-stats {
+    order: 3;
+  }
+  .td-lessons {
+    order: 4;
+  }
+  .td-resume {
+    order: 5;
+  }
+  .td-reviews {
+    order: 6;
+  }
+  .td-similar {
+    order: 7;
+  }
+
+  /* One row per card once the page is a single column. The 160px floor here
+     was for the old poster shape; against a sideways card it would try to fit
+     two columns that have no width for their text. */
   .td-similar-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
