@@ -108,16 +108,6 @@ export default function ArticleActions({
     }
   }
 
-  /** The browser's own share sheet, where the device offers one. */
-  async function nativeShare() {
-    try {
-      await navigator.share({ title, url });
-      api.recordArticleShare(token, articleId, "native").catch(() => {});
-      setShareOpen(false);
-    } catch {
-      // A cancelled share throws too; there is nothing to report.
-    }
-  }
 
   return (
     <div className="rd-actions">
@@ -175,17 +165,11 @@ export default function ArticleActions({
             </div>
 
             <div className="rd-share-row">
-              {/* Only offered where the device actually has a share sheet —
-                  a button that always fails is worse than no button. */}
-              {typeof navigator !== "undefined" && navigator.share && (
-                <button
-                  type="button"
-                  className="rd-share-btn"
-                  onClick={nativeShare}
-                >
-                  Device share
-                </button>
-              )}
+              {/* No "Device share" button. It handed the page off to the OS share
+                  sheet, which then offered the same three destinations listed
+                  right here plus a list of apps that have nothing to do with
+                  this article — a row that led to another row. The named
+                  targets below are the whole of what it was for. */}
               {TARGETS.map((t) => (
                 <a
                   key={t.key}

@@ -454,16 +454,6 @@
   border-bottom-right-radius: 16px;
 }
 
-/* The accent bar is square, so on the end rows it would poke out past the
-   corner it sits in. */
-.vb-row:first-child .vb-row-top::before {
-  border-top-left-radius: 16px;
-}
-
-.vb-row:last-child:not(.open) .vb-row-top::before {
-  border-bottom-left-radius: 16px;
-}
-
 .vb-row + .vb-row {
   border-top: 1px solid var(--vb-line);
 }
@@ -515,13 +505,25 @@
   background: var(--vb-well);
 }
 
+/* INSET AND SHORTENED, NOT FLUSH — the same fix `.sb-nav-link.active::before`
+   already carries in the rail, for the same reason. The list has a 16px
+   corner radius, so on the first and last rows the card edge has already
+   curved inward by the time the bar reaches the top and bottom; a straight
+   bar pinned at `left: 0` from edge to edge therefore hung OUTSIDE the card,
+   which is what read as the row leaking past its own corner.
+
+   Rounding the bar`s own corner was the previous attempt and could not work:
+   the bar is 3px wide, so a 16px radius clamps to 1.5px and follows nothing.
+   Keeping the bar clear of the curve is what actually fixes it. */
 .vb-row-top::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 62%;
   width: 3px;
+  border-radius: 999px;
   background: transparent;
 }
 

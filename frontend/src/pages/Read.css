@@ -826,8 +826,10 @@
   flex-wrap: wrap;
 }
 
-.rd-share-btn {
-  padding: 0.4rem 0.8rem;
+.rd-share-btn {  /* Measured cap-band correction against a flat-capped `H` at 400px: 0.972px
+     low. The pair sums to the original, so the button height is unchanged. */
+
+  padding: calc(0.4rem - 0.972px) 0.8rem calc(0.4rem + 0.972px);
   border: 1px solid var(--rd-border);
   border-radius: 999px;
   background: #fff;
@@ -921,13 +923,16 @@
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--rd-text);
-  /* NO RESIZE GRABBER. The diagonal notch in the bottom-right corner is drawn
-     by the browser, not by this stylesheet, and it was the only hand-drawn-
-     looking mark on an otherwise clean card. `field-sizing` grows the box with
-     what is typed instead, where the browser supports it; `rows` is the floor
-     everywhere else, so nothing is lost by taking the handle away. */
+  /* NO RESIZE GRABBER — the diagonal notch in the corner is drawn by the
+     browser, and it was the only hand-drawn-looking mark on a clean card.
+
+     `field-sizing: content` was tried here to grow the box as you type and is
+     REVERTED: on a textarea it collapsed the field to a single line, clipped
+     the placeholder against the top edge and drew stepper arrows in the
+     corner. A fixed floor is the boring, correct answer — the field scrolls
+     internally past it, which is what a comment box has always done. */
   resize: none;
-  field-sizing: content;
+  min-height: 4.6em;
   outline: none;
 }
 
