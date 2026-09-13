@@ -18,7 +18,7 @@ import ReaderSwitch from '../components/ReaderSwitch'
 function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8.5 6.2v11.6c0 .8.9 1.3 1.6.9l9.2-5.8c.6-.4.6-1.4 0-1.8L10.1 5.3c-.7-.4-1.6.1-1.6.9z" />
+      <path d="M6.375 6.2v11.6c0 .8.9 1.3 1.6.9l9.2-5.8c.6-.4.6-1.4 0-1.8L7.975 5.3c-.7-.4-1.6.1-1.6.9z" />
     </svg>
   )
 }

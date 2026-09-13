@@ -385,14 +385,10 @@
 /* The tone is carried twice — a rail down the edge and the pill — so the
    state is readable at a glance from the card's shape, not only by reading
    the word. */
-.ms-context-rail {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--ms-tone, var(--ms-fill));
-}
+/* The 4px tone rail that used to run down the left edge is GONE. The state was
+   carried twice — a coloured bar and a tinted pill saying the word — and on a
+   cancelled booking the bar was a grey stripe pinned to the card's corner,
+   read as a rendering artefact rather than as a status. The pill says it. */
 
 .ms-context-body {
   flex: 1;
@@ -408,7 +404,21 @@
 
 .ms-context-status {
   flex: none;
-  padding: 0.16rem 0.55rem;
+  /* Measured on the CAP BAND against a flat-capped `H` at 400px, never the
+     label's own ink — round glyphs overshoot the cap line by ~1% and would
+     tune this pill by a different amount than its siblings. Hellix reserves
+     more ascent than an all-caps word uses, so symmetric padding centred the
+     LINE BOX and left the word 0.935px low inside its own pill. The pair sums
+     to the original 0.16rem, so the pill's height is unchanged.
+
+     The margins are the second half: lifting the word inside the pill also
+     lifts the pill's ink 0.935px clear of the lesson title beside it, which
+     measured level to within 0.371px before. Equal and opposite, so the row's
+     height is untouched — and `position: relative` is not used for a nudge
+     this small anywhere in this codebase. */
+  padding: calc(0.16rem - 0.935px) 0.55rem calc(0.16rem + 0.935px);
+  margin-top: 1.306px;
+  margin-bottom: -1.306px;
   border-radius: 6px;
   background: var(--ms-tone-soft, var(--ms-soft));
   color: var(--ms-tone, var(--ms-accent));

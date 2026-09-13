@@ -401,11 +401,18 @@ export default function ReadArticle() {
 
           <ArticleComments
             articleId={article.id}
+            /* Returning `cur` unchanged when the count already matches is what
+               lets React bail out of the re-render. Building a fresh object
+               every time it reported meant the parent always re-rendered, which
+               handed the child a new callback — the other half of the refetch
+               loop fixed in ArticleComments. Either fix alone stops it; both
+               together mean neither side can reopen it. */
             onCountChange={(n) =>
-              setInteractions((cur) => ({
-                ...(cur || article.interactions),
-                comments: n,
-              }))
+              setInteractions((cur) => {
+                const base = cur || article.interactions;
+                if (base && base.comments === n) return cur;
+                return { ...base, comments: n };
+              })
             }
           />
 

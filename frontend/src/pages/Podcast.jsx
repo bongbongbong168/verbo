@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
@@ -34,8 +34,99 @@ const TOPICS = [
 function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8.5 6.2v11.6c0 .8.9 1.3 1.6.9l9.2-5.8c.6-.4.6-1.4 0-1.8L10.1 5.3c-.7-.4-1.6.1-1.6.9z" />
+      <path d="M6.375 6.2v11.6c0 .8.9 1.3 1.6.9l9.2-5.8c.6-.4.6-1.4 0-1.8L7.975 5.3c-.7-.4-1.6.1-1.6.9z" />
     </svg>
+  );
+}
+
+function RailArrow({ back }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={back ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
+    </svg>
+  );
+}
+
+/* A SHELF WITH NO SCROLLBAR UNDER IT. The row was a plain `overflow-x: auto`,
+   so the browser drew its own scrub bar across the page — the widest, greyest
+   thing in the section, and it made the shelf read as spilling out of the
+   panel rather than continuing past it.
+
+   The bar is hidden and the two jobs it did are given back properly: buttons in
+   the heading row, and the wheel. The buttons sit BESIDE THE TITLE rather than
+   floating over the first and last card, so nothing overlaps the artwork and
+   the shelf keeps exactly the left and right edges the `Discover new` grid
+   below it has — the alignment that was actually being complained about.
+
+   There is no arrow-shaped hole for the keyboard, either: the row is
+   `tabindex="0"`, so arrow keys scroll it natively once tabbed into, and the
+   buttons are ordinary buttons. */
+function Rail({ title, children }) {
+  const ref = useRef(null);
+
+  /* THE ARROWS CARRY NO STATE, AND THAT IS A DELIBERATE SIMPLIFICATION. Greying
+     them at the ends needs a measurement that re-runs on scroll and resize, and
+     every version of that here either failed to update (the row's `scroll-snap`
+     swallows programmatic scrolls, so the event it hangs off does not always
+     arrive) or re-rendered itself in a loop, because writing a fresh state
+     object fed a new `children` identity back into the effect. `scrollBy`
+     already clamps at both ends, so a click at the end of the shelf is a
+     harmless no-op — which is all the disabled state was buying. */
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    /* Attached by hand rather than with onWheel, because React registers wheel
+       listeners as PASSIVE — `preventDefault()` inside one is ignored, so the
+       page would scroll down at the same time as the shelf moved sideways. */
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      const next = el.scrollLeft + e.deltaY;
+      /* At either end the gesture goes back to the page. Swallowing it there
+         is what makes a shelf feel like it has trapped your wheel. */
+      if (next < 0 || next > max) return;
+      e.preventDefault();
+      el.scrollLeft = next;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  /* INSTANT, NOT `behavior: 'smooth'`. A smooth scroll is animated by the
+     browser off requestAnimationFrame, and rAF is throttled to a standstill in
+     a surface that is not compositing — measured here, the click registered and
+     `scrollLeft` never left 0. That is the frozen-compositor rule in its
+     plainest form: the button has to work on the frame it is pressed. Snapping
+     also gives the row's `scroll-snap` a definite position to settle on rather
+     than a moving target. */
+  function page(dir) {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'auto' });
+  }
+
+  return (
+    <>
+      <div className="pc-section-head">
+        <h2 className="pc-section-title">{title}</h2>
+        <div className="pc-rail-nav">
+          <button type="button" className="pc-rail-btn" onClick={() => page(-1)}
+            aria-label={`Scroll ${title} back`}>
+            <RailArrow back />
+          </button>
+          <button type="button" className="pc-rail-btn" onClick={() => page(1)}
+            aria-label={`Scroll ${title} forward`}>
+            <RailArrow />
+          </button>
+        </div>
+      </div>
+      <div className="pc-row" ref={ref} tabIndex={0}>
+        {children}
+      </div>
+    </>
   );
 }
 
@@ -321,12 +412,11 @@ export default function Podcast() {
             </>
           )}
 
-          <h2 className="pc-section-title">Recommendations</h2>
-          <div className="pc-row">
+          <Rail title="Recommendations">
             {recommended.map((p) => (
               <EpisodeCard key={p.id} episode={p} />
             ))}
-          </div>
+          </Rail>
 
           <h2 className="pc-section-title">Discover new</h2>
           {discover.length === 0 ? (

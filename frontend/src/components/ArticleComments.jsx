@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 
@@ -43,21 +43,37 @@ export default function ArticleComments({ articleId, onCountChange }) {
   const [editDraft, setEditDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /* THE CALLBACK IS HELD IN A REF, AND IT MUST NOT BE A DEPENDENCY OF `load`.
+     `ReadArticle` passes an inline arrow, so the prop is a new function on
+     every parent render — and reporting the count sets parent state to a
+     freshly built object, which React can never bail out of. So the chain ran
+     load -> onCountChange -> parent renders -> new prop -> new `load` -> the
+     effect below fires again -> load, without end: an infinite GET of this
+     article's comments that burned the shared 300/min bucket and put "Too many
+     requests" on screen. Typing only made it obvious, because a re-render
+     while the loop ran surfaced the error beside the box.
+
+     A ref is the fix rather than asking every caller to remember `useCallback`:
+     the newest callback is always the one invoked, and `load` stays stable. */
+  const onCountChangeRef = useRef(onCountChange);
+  useEffect(() => {
+    onCountChangeRef.current = onCountChange;
+  });
+
   const load = useCallback(() => {
     setLoading(true);
     api
       .getArticleComments(token, articleId)
       .then((data) => {
         setItems(data);
-        if (onCountChange) {
-          onCountChange(
-            data.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0),
-          );
+        const report = onCountChangeRef.current;
+        if (report) {
+          report(data.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0));
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [token, articleId, onCountChange]);
+  }, [token, articleId]);
 
   useEffect(() => {
     load();

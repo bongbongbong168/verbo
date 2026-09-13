@@ -487,8 +487,6 @@ export default function Messages() {
                 <div
                   className={`ms-context ms-context-${STATUS[active.booking.status]?.tone || 'off'}`}
                 >
-                  <span className="ms-context-rail" aria-hidden="true" />
-
                   <div className="ms-context-body">
                     <div className="ms-context-top">
                       <span className="ms-context-status">
@@ -530,8 +528,6 @@ export default function Messages() {
 
               {active.course && (
                 <div className="ms-context ms-context-brand">
-                  <span className="ms-context-rail" aria-hidden="true" />
-
                   <div className="ms-context-body">
                     {/* Deliberately NOT the course title — the header above is
                         already the course name, and repeating it here would

@@ -173,13 +173,90 @@
    matches all four, which is why it is uneven. Getting the sides wrong is what
    left a hard vertical edge slicing the shadow beside each card. Don't trim
    any of it back. */
+/* The heading and the shelf's own controls share one row, so the buttons never
+   sit over a card and the shelf keeps the same left and right edges as the
+   `.pc-grid` below it. */
+.pc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.pc-section-head .pc-section-title {
+  margin-bottom: 0;
+}
+
+.pc-rail-nav {
+  display: flex;
+  gap: 0.4rem;
+  flex: none;
+}
+
+.pc-rail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid var(--pc-outline);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pc-outline);
+  cursor: pointer;
+  /* The fill IS the feedback, so it is not transitioned — the rule this app
+     follows everywhere: a transition that never gets a frame sits at its start
+     value and the control looks dead under the pointer. */
+}
+
+.pc-rail-btn:hover {
+  background: var(--pc-outline);
+  color: #fff;
+}
+
+.pc-rail-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
 .pc-row {
   display: flex;
   gap: 1.4rem;
   overflow-x: auto;
+  /* The padding buys clearance for the cards' hover lift and shadow, which
+     `overflow` would otherwise shave off; the matching negative margin hands
+     it straight back, so the first card still starts exactly on the page
+     gutter and the shelf lines up with the grid under it. */
   padding: 16px 24px 34px;
   margin: -16px -24px 14px;
   scroll-snap-type: x proximity;
+  /* WITHOUT THIS THE ROW SCROLLS ITSELF ON LOAD. `scroll-snap-align: start`
+     snaps a card to the scrollport's start, which sits INSIDE the 24px padding
+     above — so the browser scrolled the row by that 24px to satisfy the snap,
+     and the first card came to rest 26px left of where the `.pc-grid` below
+     starts. Measured: card at 359 against the grid's 385. `scroll-padding`
+     moves the snapport in to match, so the resting position is a card sitting
+     exactly on the page gutter, level with the grid. */
+  scroll-padding: 0 24px;
+  /* NO SCRUB BAR. The buttons above and the wheel do its work — see `Rail` in
+     Podcast.jsx. Keep all three declarations: Firefox reads `scrollbar-width`,
+     Chrome and Safari need the pseudo-element. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pc-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tabbing into the shelf makes the arrow keys scroll it, so the focus ring has
+   to be visible — but only for the keyboard, or a click would ring the row. */
+.pc-row:focus-visible {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: -14px;
+  border-radius: 12px;
 }
 
 /* 289x324, measured off the design. The card is ONE size everywhere on this
