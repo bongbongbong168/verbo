@@ -822,7 +822,10 @@
      glyphs land ~1.5px low in a 20px box. A bottom pad lifts them by half its
      value; measured back, 3px lands the ink at 5.49 above / 5.51 below.
      Don't "tidy" it to 0. */
-  padding: 0 0 3px;
+  /* Re-measured against a flat-capped `H` at 400px: 3px lifted the label 0.649px
+     TOO FAR. A pad on a fixed-height box shrinks the content box, so it lifts by
+     HALF its value - the correction is 2 x 0.649 off the 3. */
+  padding: 0 0 1.702px;
   border: 1px solid var(--db-duration-edge);
   border-radius: 6px;
   background: var(--db-hero);
@@ -1298,11 +1301,16 @@ a.db-course:hover {
   font-weight: 700;
 }
 
-.db-activity-range {
+.db-activity-range {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
+  padding: calc(0.3rem - 0.771px) 0.7rem calc(0.3rem + 0.771px);
   border: 1px solid var(--db-border);
   border-radius: 8px;
   font-size: 0.76rem;
@@ -1593,7 +1601,9 @@ a.db-course:hover {
   align-items: center;
   gap: 0.3rem;
   flex: none;
-  padding: 0.22rem 0.5rem 0.22rem 0.28rem;
+  /* Cap-band correction, measured 0.935px low. The pair sums to the original
+     0.44rem, so the tag height is unchanged. */
+  padding: calc(0.22rem - 0.935px) 0.5rem calc(0.22rem + 0.935px) 0.28rem;
   border-radius: 999px;
   background: var(--db-pill-bg);
   font-size: 0.68rem;

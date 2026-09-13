@@ -355,8 +355,13 @@
   font-size: 0.76rem;
 }
 
-.vb-add-toggle {
-  padding: 0.35rem 0.7rem;
+.vb-add-toggle {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
+  padding: calc(0.35rem - 1.033px) 0.7rem calc(0.35rem + 1.033px);
   border: none;
   border-radius: 9px;
   background: none;
@@ -596,8 +601,13 @@
    palette: pale lavender for untouched, warm for in progress, green for done. */
 .vb-state {
   flex: none;
-  /* Same optical correction as the pills above: 3.52 symmetric sat 0.5px low. */
-  padding: 3.02px 0.6rem 4.02px;
+  /* Re-measured against a flat-capped `H` at 400px. The old 0.5px came from a
+     reading taken at the pill's real 11.5px, where canvas quantises the cap
+     height to a whole pixel and hands back a suspiciously round number — it
+     caught barely half the error, leaving the word 0.49px low. The true lift is
+     0.99px off the 3.52px symmetric pad. The pair still sums to 7.04, so the
+     pill's height is unchanged. */
+  padding: 2.53px 0.6rem 4.51px;
   border-radius: 8px;
   font-size: 0.72rem;
   font-weight: 700;

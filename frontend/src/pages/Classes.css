@@ -241,8 +241,13 @@ form.cl-entry-action {
 
 /* ---- buttons ---- */
 
-.cl-btn {
-  padding: 0.55rem 1.1rem;
+.cl-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
+  padding: calc(0.55rem - 1.069px) 1.1rem calc(0.55rem + 1.069px);
   border: none;
   border-radius: 10px;
   background: var(--cl-fill);

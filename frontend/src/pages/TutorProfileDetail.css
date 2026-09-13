@@ -108,9 +108,29 @@
   flex-direction: column;
 }
 
+/* THE RAIL FOLLOWS YOU DOWN, and it is this card that does the following.
+   Pinning the whole right column was the first reading of the request and the
+   measurement rules it out: the video card and this one come to 887px together,
+   which does not fit a laptop viewport — a sticky box taller than the screen
+   pins immediately and hides its own bottom, so the price and the button would
+   be the parts you could never reach.
+
+   This card alone is 516px and fits. The video card keeps its documented job of
+   standing level with the profile and rating cards; once you scroll past those,
+   the card carrying the lessons, the price and the CTA comes with you through
+   the resume, the reviews and the suggestions.
+
+   Spanning to the last row is what gives it somewhere to travel: a sticky item
+   can only move inside its own containing block, and pinned to row 3 alone that
+   block was exactly the card's own height, so it could not move at all.
+   `align-self: start` keeps it its natural height rather than stretching to
+   fill the rows it now spans. */
 .td-lessons {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 3 / -1;
+  align-self: start;
+  position: sticky;
+  top: 20px;
 }
 
 .td-card {
@@ -1063,6 +1083,9 @@
   .td-lessons {
     grid-column: 1;
     grid-row: auto;
+    /* Unpinned in one column: there is no rail to follow here, and a card that
+       pinned itself over a single stack would sit on top of the reviews. */
+    position: static;
   }
 
   /* `display: contents` also means DOM order stacks the whole left column

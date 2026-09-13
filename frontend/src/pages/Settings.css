@@ -102,8 +102,13 @@
   top: 1rem;
 }
 
-.se-nav-item {
-  padding: 0.6rem 0.9rem;
+.se-nav-item {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
+  padding: calc(0.6rem - 1.118px) 0.9rem calc(0.6rem + 1.118px);
   border: none;
   border-radius: 10px;
   background: none;
@@ -271,9 +276,14 @@
 
 /* ---- buttons ---- */
 
-.se-btn {
+.se-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
   flex: none;
-  padding: 0.6rem 1.2rem;
+  padding: calc(0.6rem - 1.021px) 1.2rem calc(0.6rem + 1.021px);
   border: none;
   border-radius: 10px;
   background: var(--se-accent-soft);
@@ -309,7 +319,8 @@
 }
 
 .se-btn-sm {
-  padding: 0.45rem 0.9rem;
+  /* Cap-band correction, same rule as .se-btn above: measured 1.021px low. */
+  padding: calc(0.45rem - 1.021px) 0.9rem calc(0.45rem + 1.021px);
   font-size: 0.84rem;
 }
 

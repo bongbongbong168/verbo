@@ -321,7 +321,12 @@
   margin: 0 0 0.6rem 0.3rem;
 }
 
-.sb-logout {
+.sb-logout {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
   font-size: 0.85rem;
@@ -329,7 +334,7 @@
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 999px;
-  padding: 0.55rem 1rem;
+  padding: calc(0.55rem - 1.033px) 1rem calc(0.55rem + 1.033px);
   cursor: pointer;
   margin-bottom: 1.2rem;
   transition: background 0.15s ease;
@@ -430,7 +435,12 @@
    skeletons, which are static precisely because a frozen shimmer reads as a
    page that failed to load. Nothing here carries state or meaning; the
    button is fully readable and clickable with the beam parked. */
-.sb-promo-btn {
+.sb-promo-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
+     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
+     at real pill sizes). The pair sums to the original, so the box height is
+     unchanged and only the text moves. */
+
   position: relative;
   display: block;
   width: 100%;
@@ -449,7 +459,7 @@
   background: transparent;
   border: none;
   border-radius: 12px;
-  padding: 0.6rem 1rem;
+  padding: calc(0.6rem - 1.128px) 1rem calc(0.6rem + 1.128px);
   text-decoration: none;
   cursor: pointer;
 }
