@@ -278,6 +278,10 @@ export default function Classes() {
     to_grade: 0,
     upcoming: [],
     activity: [],
+    // Assume NOT until the server says otherwise: the create card appearing
+    // for an instant before the payload lands and takes it away is worse than
+    // it arriving a moment late.
+    can_teach: false,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -347,6 +351,8 @@ export default function Classes() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const canTeach = Boolean(data.can_teach);
+
   const counts = {
     all: data.teaching.length + data.joined.length,
     teaching: data.teaching.length,
@@ -373,8 +379,11 @@ export default function Classes() {
             treatment the Read and Vocabulary Bank headings get. */}
         <div className="cl-heading">
           <h1 className="cl-title">Classes</h1>
+          {/* The page does not promise something this account cannot do. */}
           <p className="cl-subtitle">
-            Teach, join, and manage your Chinese classes.
+            {canTeach
+              ? 'Teach, join, and manage your Chinese classes.'
+              : 'Join and keep track of your Chinese classes.'}
           </p>
         </div>
         <div className="cl-tools">
@@ -391,27 +400,34 @@ export default function Classes() {
           rather than the role. "Teaching" and "Studying" are what the lists
           below are called; up here the question is what you came to do, and
           the two cards were otherwise identical slabs of the same weight. */}
-      <div className="cl-entry">
-        <div className="cl-entry-card">
-          <span className="cl-entry-mark" aria-hidden="true">
-            <CapIcon />
-          </span>
-          <div className="cl-entry-body">
-            <h2 className="cl-entry-title">Teach a class</h2>
-            <p className="cl-entry-text">
-              Create one, then read the join code out to your students.
-            </p>
+      <div className={'cl-entry' + (canTeach ? '' : ' cl-entry-solo')}>
+        {/* ONLY FOR SOMEONE WHO CAN ACTUALLY TEACH. A student was being
+            offered "Create class", which is not something their account may
+            do — `ClassroomController::store` refuses it, so the button was an
+            invitation to a 403. `can_teach` comes off the payload this page
+            already loads; the server re-checks, and that check is the gate. */}
+        {canTeach && (
+          <div className="cl-entry-card">
+            <span className="cl-entry-mark" aria-hidden="true">
+              <CapIcon />
+            </span>
+            <div className="cl-entry-body">
+              <h2 className="cl-entry-title">Teach a class</h2>
+              <p className="cl-entry-text">
+                Create one, then read the join code out to your students.
+              </p>
+            </div>
+            {/* Always "Create class" now — the dialog carries its own Cancel,
+                so this button no longer has to double as the way out. */}
+            <button
+              type="button"
+              className="cl-btn cl-entry-action"
+              onClick={() => setCreating(true)}
+            >
+              + Create class
+            </button>
           </div>
-          {/* Always "Create class" now — the dialog carries its own Cancel, so
-              this button no longer has to double as the way out. */}
-          <button
-            type="button"
-            className="cl-btn cl-entry-action"
-            onClick={() => setCreating(true)}
-          >
-            + Create class
-          </button>
-        </div>
+        )}
 
         <div className="cl-entry-card">
           <span className="cl-entry-mark" aria-hidden="true">
@@ -620,7 +636,9 @@ export default function Classes() {
             ) : (
               <p className="cl-empty">
                 {total === 0
-                  ? "No classes yet. Create one to start teaching, or join one with a code from your teacher."
+                  ? canTeach
+                    ? 'No classes yet. Create one to start teaching, or join one with a code from your teacher.'
+                    : 'No classes yet. Enter the code your teacher gave you to join your first one.'
                   : tab === "teaching"
                     ? "You are not teaching any classes yet."
                     : "You have not joined a class yet."}

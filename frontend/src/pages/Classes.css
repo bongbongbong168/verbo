@@ -118,6 +118,14 @@
   margin-bottom: 1.6rem;
 }
 
+/* A student sees only "Join a class", and `auto-fit` would stretch that one
+   card across the whole page — a 900px row holding a code field and a button,
+   with the rest air. Capped at roughly the width it had as one of a pair, so
+   the card keeps its proportions instead of inheriting the row's. */
+.cl-entry-solo {
+  grid-template-columns: minmax(0, 520px);
+}
+
 /* A mark and a heading on the top row, the action beneath it and aligned with
    the text rather than the card's edge. The two cards were identical slabs of
    the same weight with a lot of air in them.

@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\ClassroomItem;
 use App\Models\ClassroomMember;
 use App\Models\Submission;
+use App\Models\TutorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -60,7 +61,43 @@ class ClassroomController extends Controller
                on a feature. */
             'upcoming' => $this->upcoming($classIds),
             'activity' => $this->activity($user, $teachingModels->pluck('id'), $classIds),
+            /* Whether this account may open a class at all. Shipped on the
+               payload the page already fetches rather than costing it a second
+               call to `GET /tutor-profile` — same reasoning as
+               `has_availability` riding along on the slots response. It is a
+               MIRROR of the server's own rule, never the rule itself: `store`
+               re-checks it, because a flag in a JSON body is a hint to the UI
+               and not a permission. */
+            'can_teach' => $this->canTeach($user),
         ]);
+    }
+
+    /**
+     * Who may open a class.
+     *
+     * AN APPROVED TUTOR, OR AN ADMIN — not simply anyone signed in, which is
+     * what it used to be. A classroom is a teaching container with real
+     * students, a join code and their submitted work in it; letting any
+     * account conjure one skips the verification the marketplace already
+     * insists on before someone can present themselves as a teacher.
+     *
+     * It asks the same question `TutorProfile::scopeApproved()` answers
+     * everywhere else rather than testing `status` inline, so there is one
+     * definition of "is a tutor" in the app. A pending applicant is not one,
+     * for the reason `Bookings.jsx` already had to learn.
+     *
+     * Nothing needed grandfathering: every existing classroom is owned by an
+     * approved tutor, checked before this landed. If that ever stops being
+     * true, gate CREATION only — an existing class must keep working for the
+     * students already inside it.
+     */
+    private function canTeach($user): bool
+    {
+        if ($user->is_admin) {
+            return true;
+        }
+
+        return TutorProfile::where('user_id', $user->id)->approved()->exists();
     }
 
     /**
@@ -177,6 +214,16 @@ class ClassroomController extends Controller
 
     public function store(Request $request)
     {
+        /* THE REAL GATE. The page hides its "Teach a class" card from anyone
+           who cannot, but that is UX — this is the check, and it runs before
+           validation so a student posting straight at the endpoint is refused
+           rather than told which fields they got wrong. */
+        abort_unless(
+            $this->canTeach($request->user()),
+            403,
+            'Only approved tutors can create a class. Apply to teach on Verbo first.'
+        );
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'subject' => ['nullable', 'string', 'max:60'],
