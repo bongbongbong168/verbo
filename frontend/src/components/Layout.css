@@ -1061,7 +1061,7 @@
    happened"), and this answers a different question — how many conversations
    are waiting on you — where the number changes what you do. Capped at 9+ so a
    busy week cannot widen the row and push the label into the caret. */
-.sb-badge {
+.sb-count {
   flex: none;
   margin-left: auto;
   min-width: 18px;
@@ -1078,14 +1078,14 @@
 
 /* On a section header the caret already owns the right-hand end, so the badge
    sits beside it rather than taking the auto margin for itself. */
-.sb-group-btn .sb-badge {
+.sb-group-btn .sb-count {
   margin-right: 0.35rem;
 }
 
 /* In the collapsed rail the labels are gone and the row is a centred icon, so
    the badge rides the icon's top-right corner instead of sitting in a row it
    would otherwise widen. */
-.sb.collapsed .sb-badge {
+.sb.collapsed .sb-count {
   position: absolute;
   top: 6px;
   right: 12px;

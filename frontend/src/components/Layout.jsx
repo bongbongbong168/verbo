@@ -395,7 +395,7 @@ export default function Layout() {
                       because the row below it is then saying the same thing
                       two lines further down. */}
                   {sectionUnread(entry) > 0 && !open && (
-                    <span className="sb-badge" aria-hidden="true">
+                    <span className="sb-count" aria-hidden="true">
                       {sectionUnread(entry) > 9 ? '9+' : sectionUnread(entry)}
                     </span>
                   )}
@@ -428,7 +428,7 @@ export default function Layout() {
                           >
                             {item.label}
                             {itemUnread(item) > 0 && (
-                              <span className="sb-badge" aria-hidden="true">
+                              <span className="sb-count" aria-hidden="true">
                                 {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
                               </span>
                             )}
@@ -459,7 +459,7 @@ export default function Layout() {
                             >
                               {item.label}
                               {itemUnread(item) > 0 && (
-                                <span className="sb-badge" aria-hidden="true">
+                                <span className="sb-count" aria-hidden="true">
                                   {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
                                 </span>
                               )}
