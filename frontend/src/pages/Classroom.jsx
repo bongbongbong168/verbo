@@ -8,12 +8,14 @@ import CurriculumItem from "../components/CurriculumItem";
 import CreateItemDialog from "../components/CreateItemDialog";
 import "./Classes.css";
 
-/* Attendance is deliberately not built yet — the tab is here so the shape of
-   the portal is visible, and it says so rather than pretending. */
+/* ATTENDANCE WAS A TAB HERE AND IS GONE. It rendered a "Soon" chip over a
+   panel explaining that marking students present per session needs a record
+   nothing in Verbo produces. That was honest, but a permanent placeholder in
+   the primary navigation of a class is still a tab that never does anything —
+   it is the same call as the Practice section being kept out of the rail. */
 const TABS = [
   { key: "curriculum", label: "Curriculum" },
   { key: "students", label: "Students", teacherOnly: true },
-  { key: "attendance", label: "Attendance", soon: true },
   { key: "settings", label: "Settings", teacherOnly: true },
 ];
 
@@ -175,7 +177,6 @@ export default function Classroom() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
-            {t.soon && <span className="cl-soon">Soon</span>}
           </button>
         ))}
       </nav>
@@ -327,17 +328,6 @@ export default function Classroom() {
               </tbody>
             </table>
           )}
-        </div>
-      )}
-
-      {tab === "attendance" && (
-        <div className="cl-panel cl-soon-panel">
-          <h2 className="cl-soon-title">Attendance isn&rsquo;t built yet</h2>
-          <p className="cl-empty">
-            The space is reserved. Marking students present or absent per
-            session needs its own record, and nothing in Verbo produces one
-            today.
-          </p>
         </div>
       )}
 

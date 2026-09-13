@@ -868,21 +868,6 @@ form.cl-entry-action {
   box-shadow: 0 2px 6px rgba(28, 23, 48, 0.12);
 }
 
-.cl-soon {
-  /* The worst of the three: its label sat 1.70px low, because at 0.62rem the
-     line box still reserves Hellix's full 11.90px of leading while these caps
-     are only 7.10px tall. Half the error off each side. Measured from font
-     metrics, not from the rendered box. */
-  padding: 0.11px 0.38rem 1.81px;
-  border-radius: 6px;
-  background: #eeedf3;
-  color: #6b6780;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 /* ---- panels, forms, tables ---- */
 
 .cl-panel {
@@ -891,17 +876,6 @@ form.cl-entry-action {
   border-radius: 16px;
   background: var(--cl-card);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
-}
-
-.cl-soon-panel {
-  text-align: center;
-  padding: 2.4rem 1.4rem;
-}
-
-.cl-soon-title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
 }
 
 .cl-form {

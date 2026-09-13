@@ -885,8 +885,8 @@
     box-sizing: border-box;
   }
 
-  /* The tab strip is four items wide on a phone; let it wrap rather than
-     squeezing "Attendance SOON" off the edge. */
+  /* The tab strip can still outgrow a phone once a class has several tabs;
+     let it wrap rather than squeezing the last one off the edge. */
   .cl-tabs {
     flex-wrap: wrap;
   }
