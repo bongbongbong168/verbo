@@ -381,22 +381,6 @@ form.cl-entry-action {
   text-align: center;
 }
 
-.cl-log-empty-mark {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-bottom: 0.3rem;
-  border-radius: 14px;
-  background: var(--cl-well);
-  color: var(--cl-accent);
-}
-
-.cl-log-empty-mark svg {
-  width: 21px;
-  height: 21px;
-}
-
 .cl-log-empty-title {
   margin: 0;
   font-size: 1rem;
@@ -1119,7 +1103,10 @@ form.cl-entry-action {
 }
 
 .jc-copy {
-  padding: 0.3rem 0.65rem;
+  /* Cap-band correction, measured against a flat-capped `H` at 400px: the
+     label sat 1.045px low under a symmetric pad. The pair sums to the
+     original 0.6rem, so the button height is unchanged. */
+  padding: calc(0.3rem - 1.045px) 0.65rem calc(0.3rem + 1.045px);
   border: none;
   border-radius: 8px;
   background: #f1edfc;
@@ -2006,6 +1993,12 @@ form.cl-entry-action {
 }
 
 .cl-status-dot {
+  /* The pad above lifts the LABEL onto its cap band, and the dot is a plain
+     box with no low glyphs to correct — so it rode that shift up and sat
+     1.03px above the word beside it. Equal and opposite margins hand the
+     pixel back; the same trap `.rs-track` and the play triangles hit. */
+  margin-top: 1.03px;
+  margin-bottom: -1.03px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -2178,4 +2171,16 @@ form.cl-entry-action {
    height of its rows. */
 .gr {
   min-width: 0;
+  /* SPACE OF ITS OWN, because the collision was also providing the spacing.
+     While the wrapper was `className="st"` it inherited the Study page`s
+     padding and ground along with that 818px floor — so removing the floor
+     also removed the gap, and the marking table came up hard against the
+     attachment chip above it with its header row touching. The well is stated
+     here instead: it separates the teacher`s list of who has handed in from
+     the assignment`s own instructions and files, which are a different kind of
+     thing on the same card. */
+  margin-top: 1.2rem;
+  padding: 0.5rem 0.9rem 0.2rem;
+  border-radius: 12px;
+  background: var(--cl-bg);
 }

@@ -334,9 +334,9 @@ export default function Classroom() {
                an empty panel. Dashed, because it is a slot waiting to be
                filled rather than a card with content in it. */
             <div className="cl-log-empty">
-              <span className="cl-log-empty-mark" aria-hidden="true">
-                <PlusIcon />
-              </span>
+              {/* No mark. A plus in a chip directly above a button that already
+                  says "Post to class" is the same instruction twice, and the
+                  larger, quieter of the two was the one carrying no words. */}
               <p className="cl-log-empty-title">
                 {isTeacher ? "Nothing posted yet" : "Nothing here yet"}
               </p>
