@@ -150,7 +150,8 @@
    than the CTA under it. Translucent white over the dark card keeps the text
    white, keeps the contrast high, and leaves the one SOLID light block on this
    card to the button, which is where the eye should land. */
-.up-badge {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.up-badge {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -282,7 +283,8 @@
 
 /* ---- buttons ---- */
 
-.up-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.up-btn {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

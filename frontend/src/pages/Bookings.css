@@ -83,7 +83,8 @@
   gap: 0.5rem;
 }
 
-.bo-tab {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.bo-tab {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -382,7 +383,8 @@
   background: var(--bo-pill-bg);
 }
 
-.bo-role {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.bo-role {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

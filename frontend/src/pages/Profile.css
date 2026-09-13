@@ -128,7 +128,8 @@
 
 /* Only on hover — an always-on "Change" label would sit on the user's face
    every time they looked at their own profile. */
-.pf-avatar-edit {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.pf-avatar-edit {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -245,7 +246,8 @@
 
 /* Outlined, not filled. A solid button on the banner would be the brightest
    thing on it and pull the eye off the name it belongs to. */
-.pf-edit {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.pf-edit {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -588,7 +590,8 @@
   background: var(--pf-fill);
 }
 
-.pf-soon {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.pf-soon {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -605,7 +608,8 @@
   text-transform: uppercase;
 }
 
-.pf-more {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.pf-more {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

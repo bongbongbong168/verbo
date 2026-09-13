@@ -506,7 +506,24 @@
      buys clip room without moving anything. */
   padding: 14px 0 28px;
   margin: -14px 0 -28px;
-  overflow: hidden;
+  /* SCROLLABLE, not merely clipped. It was `overflow: hidden`, so the cards
+     past the edge could be seen fading and never reached — the fade promised
+     more and the row refused to move. `auto` also forces `overflow-y` to
+     compute to `auto`, which is exactly why the vertical padding above exists:
+     it keeps the cards` hover shadow inside the scrollport, and the negative
+     margin hands the space straight back so nothing shifts.
+
+     A mouse wheel only reports deltaY, so the row still would not move for
+     anyone without a trackpad — hooks/useWheelScroll turns that into sideways
+     movement, and hands the gesture back to the page at either end.
+
+     The platform scrollbar stays hidden: the fade IS the affordance here, and
+     a grey bar drawn under a row that deliberately dissolves at its edge would
+     undo the effect. Keep all three declarations — Firefox reads
+     `scrollbar-width`, Chrome and Safari need the pseudo-element. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   /* A 26px ramp, not 60. The point of the fade is to avoid a hard chop at the
      panel edge, not to dim the card behind it — over 60px it washed out about a
      quarter of the third card, so a real title and cover read as greyed-out
@@ -516,6 +533,10 @@
   mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
+}
+
+.db-pickup::-webkit-scrollbar {
+  display: none;
 }
 
 /* A flex item defaults to `min-width: auto`, i.e. its min-content width — and
@@ -1301,7 +1322,8 @@ a.db-course:hover {
   font-weight: 700;
 }
 
-.db-activity-range {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.db-activity-range {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

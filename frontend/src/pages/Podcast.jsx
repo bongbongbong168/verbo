@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
@@ -7,6 +7,7 @@ import { invalidate } from "../dataCache";
 import PageTools from "../components/PageTools";
 import PodcastEditDrawer from "../components/PodcastEditDrawer";
 import { SkeletonCards } from "../components/Skeleton";
+import useWheelScroll from "../hooks/useWheelScroll";
 import "./Podcast.css";
 
 /* Stable identity for an absent list — a fresh [] each render would re-run
@@ -63,37 +64,19 @@ function RailArrow({ back }) {
    `tabindex="0"`, so arrow keys scroll it natively once tabbed into, and the
    buttons are ordinary buttons. */
 function Rail({ title, children }) {
-  const ref = useRef(null);
+  /* The wheel handler lives in a shared hook — the Dashboard’s pick-up row
+     wants exactly the same behaviour, and two copies of it is the drift that
+     ReaderSwitch and ArticleCover were each extracted to stop.
 
-  /* THE ARROWS CARRY NO STATE, AND THAT IS A DELIBERATE SIMPLIFICATION. Greying
-     them at the ends needs a measurement that re-runs on scroll and resize, and
-     every version of that here either failed to update (the row's `scroll-snap`
-     swallows programmatic scrolls, so the event it hangs off does not always
-     arrive) or re-rendered itself in a loop, because writing a fresh state
-     object fed a new `children` identity back into the effect. `scrollBy`
-     already clamps at both ends, so a click at the end of the shelf is a
-     harmless no-op — which is all the disabled state was buying. */
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return undefined;
-
-    /* Attached by hand rather than with onWheel, because React registers wheel
-       listeners as PASSIVE — `preventDefault()` inside one is ignored, so the
-       page would scroll down at the same time as the shelf moved sideways. */
-    const onWheel = (e) => {
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-      const max = el.scrollWidth - el.clientWidth;
-      if (max <= 0) return;
-      const next = el.scrollLeft + e.deltaY;
-      /* At either end the gesture goes back to the page. Swallowing it there
-         is what makes a shelf feel like it has trapped your wheel. */
-      if (next < 0 || next > max) return;
-      e.preventDefault();
-      el.scrollLeft = next;
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
+     THE ARROWS CARRY NO STATE, and that is a deliberate simplification.
+     Greying them at the ends needs a measurement that re-runs on scroll and
+     on resize, and every version of that here either failed to update — the
+     row’s scroll-snap swallows programmatic scrolls, so the event it hangs
+     off does not always arrive — or re-rendered itself in a loop, because a
+     fresh state object fed a new children identity back into the effect.
+     scrollBy already clamps at both ends, so a click at the end of the shelf
+     is a harmless no-op, which is all the disabled state was buying. */
+  const ref = useWheelScroll();
 
   /* INSTANT, NOT `behavior: 'smooth'`. A smooth scroll is animated by the
      browser off requestAnimationFrame, and rAF is throttled to a standstill in

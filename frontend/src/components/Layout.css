@@ -321,7 +321,8 @@
   margin: 0 0 0.6rem 0.3rem;
 }
 
-.sb-logout {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.sb-logout {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -435,7 +436,8 @@
    skeletons, which are static precisely because a frozen shimmer reads as a
    page that failed to load. Nothing here carries state or meaning; the
    button is fully readable and clickable with the beam parked. */
-.sb-promo-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.sb-promo-btn {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

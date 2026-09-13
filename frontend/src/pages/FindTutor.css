@@ -749,7 +749,8 @@
   letter-spacing: 0.05em;
 }
 
-.ft-preview-book {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.ft-preview-book {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -779,7 +780,8 @@
 
 /* Border colour matches .ft-preview-book's fill (#6a6191), not the unrelated
    navy it had before — the two buttons read as a filled/outline pair now. */
-.ft-preview-profile {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.ft-preview-profile {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is

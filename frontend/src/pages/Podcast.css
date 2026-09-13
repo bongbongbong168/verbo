@@ -109,7 +109,8 @@
   margin-bottom: 0.9rem;
 }
 
-.pc-filter {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.pc-filter {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -236,15 +237,15 @@
      gutter and the shelf lines up with the grid under it. */
   padding: 16px 24px 34px;
   margin: -16px -24px 14px;
-  scroll-snap-type: x proximity;
-  /* WITHOUT THIS THE ROW SCROLLS ITSELF ON LOAD. `scroll-snap-align: start`
-     snaps a card to the scrollport's start, which sits INSIDE the 24px padding
-     above — so the browser scrolled the row by that 24px to satisfy the snap,
-     and the first card came to rest 26px left of where the `.pc-grid` below
-     starts. Measured: card at 359 against the grid's 385. `scroll-padding`
-     moves the snapport in to match, so the resting position is a card sitting
-     exactly on the page gutter, level with the grid. */
-  scroll-padding: 0 24px;
+  /* NO SCROLL-SNAP. It was `x proximity`, and it fought both other ways of
+     moving this shelf. A wheel step is ~120px against a 311px card, so snap
+     pulled every one of them straight back to the card it started on —
+     measured: the handler ran, set scrollLeft to 120, and the row settled at 0
+     again. It also snapped the row 24px sideways on load, because the snapport
+     started inside the row`s own padding, leaving the first card 26px left of
+     the `Discover new` grid below it (359 against 385); `scroll-padding` was
+     added to correct that and is gone with the cause. The arrows page by 80%
+     of the visible width, which is what snapping was there to approximate. */
   /* NO SCRUB BAR. The buttons above and the wheel do its work — see `Rail` in
      Podcast.jsx. Keep all three declarations: Firefox reads `scrollbar-width`,
      Chrome and Safari need the pseudo-element. */
@@ -271,7 +272,6 @@
    `1fr`, which would stretch them on a wide screen. */
 .pc-row .pc-card {
   flex: 0 0 289px;
-  scroll-snap-align: start;
 }
 
 .pc-grid {

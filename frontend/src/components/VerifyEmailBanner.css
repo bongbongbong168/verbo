@@ -94,7 +94,8 @@
   outline-offset: 2px;
 }
 
-.ve-btn {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.ve-btn {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
@@ -126,7 +127,8 @@
   cursor: default;
 }
 
-.ve-btn-quiet {  /* Measured cap-band correction: Hellix reserves more ascent than a short
+.ve-btn-quiet {
+  /* Measured cap-band correction: Hellix reserves more ascent than a short
      label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
      sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
      at real pill sizes). The pair sums to the original, so the box height is
