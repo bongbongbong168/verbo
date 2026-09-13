@@ -1731,7 +1731,19 @@ a.db-course:hover {
   max-width: 100%;
 }
 
-.db-plan-stat strong {
+/* CLASSES, NOT TYPE SELECTORS, and this cost a real bug.
+
+   These were `.db-plan-stat strong` and `.db-plan-stat span`. The second one
+   also matches `.db-plan-stat-mark` — the chip is a span as well — and at
+   (0,1,1) it outranked the chip's own (0,1,0) rule, overriding its
+   `display: flex` with `display: block`. The centring silently stopped
+   working and every glyph sat hard against the top of its circle with 13px
+   of nothing under it, which is exactly what it looked like: the icons
+   drifting upward out of their chips.
+
+   Same family as the `.up` collision the Vocabulary Bank documents. A
+   selector must not reach further than the one element it describes. */
+.db-plan-stat-value {
   display: block;
   font-size: 1.15rem;
   font-weight: 700;
@@ -1740,7 +1752,7 @@ a.db-course:hover {
   font-variant-numeric: tabular-nums;
 }
 
-.db-plan-stat span {
+.db-plan-stat-label {
   display: block;
   font-size: 0.6rem;
   font-weight: 700;

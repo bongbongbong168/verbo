@@ -347,9 +347,18 @@ function PlanStat({ mark, value, label, to }) {
       <span className="db-plan-stat-mark" aria-hidden="true">
         <GoalMark type={mark} />
       </span>
+      {/* Both of these carry a CLASS, and that is not decoration. The rule
+          that styles the label used to be the bare type selector
+          `.db-plan-stat span` — which also matches `.db-plan-stat-mark`,
+          because the chip is a span too, and at (0,1,1) it outranked the
+          chip's own (0,1,0) rule and killed its `display: flex`. The glyph
+          then sat hard against the top of its circle with 13px of nothing
+          beneath it. Same family as the `.up` collision the Vocabulary Bank
+          documents: never let a selector reach further than the one element
+          it is describing. */}
       <span className="db-plan-stat-body">
-        {value !== undefined && <strong>{value}</strong>}
-        <span>{label}</span>
+        {value !== undefined && <strong className="db-plan-stat-value">{value}</strong>}
+        <span className="db-plan-stat-label">{label}</span>
       </span>
     </>
   )
