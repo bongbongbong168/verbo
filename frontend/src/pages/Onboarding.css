@@ -330,9 +330,35 @@
 }
 
 /* A static class, never a width transition — the filled segments ARE the
-   state, and a transition that never gets a frame would leave the bar empty. */
+   state, and a transition that never gets a frame would leave the bar empty.
+
+   The GLINT over it is the same construction the rail's connector uses: the
+   fill is the class, the motion is a decoration laid on top, parked outside
+   the element at rest. Only the newly-lit segment plays it — a CSS animation
+   starts when its property is first applied, and the segments behind it have
+   already had theirs. (Arriving at step 4 directly does light all four at
+   once, which reads as the bar filling up, and is fine.) */
 .ob-seg.on {
-  background: var(--ob-fill);
+  background-color: var(--ob-fill);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.85),
+    transparent
+  );
+  background-repeat: no-repeat;
+  background-size: 30px 100%;
+  background-position: -30px 0;
+  animation: ob-seg-lit 0.5s ease-out;
+}
+
+@keyframes ob-seg-lit {
+  from {
+    background-position: -30px 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
 }
 
 .ob-count {
@@ -350,13 +376,24 @@
    only, deliberately: a keyframe starting at `opacity: 0` leaves the whole
    question invisible if the tab never composites — the trap this codebase has
    hit repeatedly. Movement is decoration; the content is readable at frame 0. */
+/* LONGER AND SHORTER — 0.22s over 9px became 0.34s over 7px. Both halves of
+   that are the same idea: 220ms is quick enough to read as a jump-cut rather
+   than a movement, and the distance was doing the work the duration should.
+   Easing out on a gentle curve lets it settle instead of stopping dead.
+
+   Note which way this trades against the frozen-compositor risk. The worst
+   case for an entrance is the content stranded at its start offset, so the
+   number that matters is the DISTANCE, not the time — 7px is a strictly
+   smaller worst case than the 9px it replaces, while the longer duration
+   costs nothing there. Same bounded-displacement reasoning as the edit
+   drawer's 24px nudge standing in for `translateX(100%)`. */
 .ob-body {
-  animation: ob-in 0.22s ease-out;
+  animation: ob-in 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 @keyframes ob-in {
   from {
-    transform: translateY(9px);
+    transform: translateY(7px);
   }
   to {
     transform: translateY(0);
@@ -368,11 +405,12 @@
     animation: none;
   }
 
-  /* Safe to remove outright: the filled connector and the lit mark are static
-     classes, so stripping the motion leaves the rail saying exactly what it
-     said with it. */
+  /* Safe to remove outright: the filled connector, the lit mark and the filled
+     segment are all static classes, so stripping the motion leaves the rail
+     and the bar saying exactly what they said with it. */
   .ob-step.done::before,
-  .ob-step.here .ob-step-mark::after {
+  .ob-step.here .ob-step-mark::after,
+  .ob-seg.on {
     animation: none;
   }
 }
