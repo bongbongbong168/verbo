@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
+import useUnreadMessages from "../hooks/useUnreadMessages";
 import PracticeAssistant from "./PracticeAssistant";
 import VerifyEmailBanner from "./VerifyEmailBanner";
 import logo from "../assets/sidebar/logo.svg";
@@ -193,13 +194,17 @@ const NAV = [
     key: "tutor",
     label: "Tutor",
     Icon: TutorIcon,
-    /* Messages is deliberately NOT here — it lives in the top-right beside the
-       bell (components/PageTools). Leaving it in both places would give one
-       destination two homes, and the rail would say it is something you go
-       looking for rather than something waiting on you. */
+    /* MESSAGES IS BACK IN THE RAIL, reversing the note that used to sit here.
+       The argument for keeping it only in the top-right was that the rail
+       should list what you go looking for, not what is waiting on you — and
+       that is exactly right, which is why it now arrives WITH A COUNT. A number
+       here is the one place in the app that answers "is someone waiting on me?"
+       from any page, without opening anything. Asked for directly: a bar on the
+       left, the way a chat app does it. */
     items: [
       { to: "/find-tutor", label: "Find Tutor" },
       { to: "/bookings", label: "Bookings" },
+      { to: "/messages", label: "Messages" },
       /* Reviewing tutor applications is a tutor-domain job, so it sits here
          rather than in an admin section of its own — one screen does not
          justify a heading. Filtered out for everyone else below; the page and
@@ -239,6 +244,20 @@ export default function Layout() {
   // Counts time spent, for the Dashboard's activity chart. Mounted here so it
   // covers every authenticated page rather than being wired up per page.
   useActivityHeartbeat(token);
+
+  /* THE RAIL CARRIES UNREAD MESSAGES, and that is the point of putting it here
+     rather than on the Messages page: the whole reason to show a count is to
+     tell someone who is NOT looking at their messages. Polled through the
+     shared cache, so the sidebar remounting on every navigation costs nothing.
+
+     Only messages for now. The bell already answers "what happened?" for
+     bookings and courses; a number in the rail answers "is someone waiting on
+     me?", and those are different questions. */
+  const { unread: unreadMessages } = useUnreadMessages(token);
+
+  const itemUnread = (item) => (item.to === "/messages" ? unreadMessages : 0);
+  const sectionUnread = (entry) =>
+    entry.items.reduce((n, item) => n + itemUnread(item), 0);
 
   // Persisted so the choice survives navigation and reloads — a sidebar that
   // silently re-expands on every page change would be worse than not having
@@ -369,6 +388,17 @@ export default function Layout() {
                 >
                   <entry.Icon />
                   <span className="sb-nav-label">{entry.label}</span>
+                  {/* The section carries the count of whatever is unread
+                      INSIDE it, so a shut section — or the collapsed rail,
+                      where there is no sub-list at all — still says there is
+                      something waiting. Hidden once the section is open,
+                      because the row below it is then saying the same thing
+                      two lines further down. */}
+                  {sectionUnread(entry) > 0 && !open && (
+                    <span className="sb-badge" aria-hidden="true">
+                      {sectionUnread(entry) > 9 ? '9+' : sectionUnread(entry)}
+                    </span>
+                  )}
                   <CaretIcon />
                 </button>
 
@@ -397,6 +427,11 @@ export default function Layout() {
                             tabIndex={open ? undefined : -1}
                           >
                             {item.label}
+                            {itemUnread(item) > 0 && (
+                              <span className="sb-badge" aria-hidden="true">
+                                {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
+                              </span>
+                            )}
                           </NavLink>
                         </li>
                       ))}
@@ -423,6 +458,11 @@ export default function Layout() {
                               }
                             >
                               {item.label}
+                              {itemUnread(item) > 0 && (
+                                <span className="sb-badge" aria-hidden="true">
+                                  {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
+                                </span>
+                              )}
                             </NavLink>
                           </li>
                         ))}

@@ -15,7 +15,13 @@ import './NotificationMenu.css'
 /* How often the badge re-checks. Long on purpose: this app has no websockets,
    and a tight poll would burn the shared 300/min bucket for a number that is
    only ever a few minutes stale. */
-const POLL_MS = 60000
+/* Was 60s. A minute is a long time to sit looking at a bell with no dot on it
+   after someone has replied to you — reported exactly that way — and the dot is
+   the only thing in the app that says a message arrived while you were on
+   another page. 20s is still nowhere near a tight poll against a 300/min bucket
+   shared by the whole client, and the count goes through the cache, so the
+   sidebar remounting on every navigation costs nothing. */
+const POLL_MS = 20000
 
 /* Shared with nothing else, but held in the app-wide cache so the count
    survives the remount that every page navigation causes. */

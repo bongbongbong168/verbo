@@ -4,7 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import MessageAttachment from '../components/MessageAttachment'
 import PageTools from '../components/PageTools'
+import { invalidateUnreadMessages } from '../hooks/useUnreadMessages'
 import './Messages.css'
+
+/* How often an open thread re-asks for new messages. Faster than the rail's
+   own count, because this is the screen you are actually watching while you
+   wait for a reply. */
+const THREAD_POLL_MS = 8000
 
 /* Laid out from design/message.png: a "Chat" title with an accent rule, then a
    374px thread panel beside a wide conversation panel. Colours are this app's
@@ -248,6 +254,11 @@ export default function Messages() {
         .then((c) => {
           setActive(c)
           loadThreads()
+          /* Opening a thread marks the other side's messages read, so the
+             rail's badge is wrong the instant this returns. Dropping the
+             cached count means the sidebar's next tick asks for a real one
+             instead of showing unread messages you are looking at. */
+          invalidateUnreadMessages()
         })
         .catch((err) => setError(err.message))
     },
@@ -257,6 +268,33 @@ export default function Messages() {
   useEffect(() => {
     if (openId) openThread(openId)
     else setActive(null)
+  }, [openId, openThread])
+
+  /* THE OPEN THREAD REFRESHES ITSELF. Nothing here is pushed — there are no
+     websockets in this app — so a reply that arrived while you sat on the
+     thread simply was not on screen until you reloaded the page, which is what
+     "I have to refresh to see the message" was.
+
+     `setInterval`, not requestAnimationFrame: rAF is throttled to a standstill
+     in a background tab, which is exactly when a thread is left open. The tick
+     is skipped while the tab is hidden for the same reason — a poll nobody can
+     see is a request spent for nothing — and fires once on return, which is the
+     moment the thread is most likely to be out of date.
+
+     It reuses `openThread`, so the refresh also marks arriving messages read
+     and re-sorts the thread list, rather than being a second way to load a
+     conversation that could drift from the first. */
+  useEffect(() => {
+    if (!openId) return undefined
+    const tick = () => {
+      if (document.visibilityState === 'visible') openThread(openId)
+    }
+    const id = setInterval(tick, THREAD_POLL_MS)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [openId, openThread])
 
   useEffect(() => {

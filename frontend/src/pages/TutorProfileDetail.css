@@ -72,9 +72,44 @@
    rating bar as one row pair — previously they lived in separate flex columns,
    so keeping them level meant hand-tuning the video's height every time the
    type or the card height changed. */
-.td-main,
+/* A REAL COLUMN, NOT `display: contents` ANY MORE — and the reason is the rail
+   opposite it. While both wrappers dissolved, the left cards were grid items on
+   rows 1..5 and the sticky rail had to span `1 / -1` to have anywhere to
+   travel; a spanning item taller than the rows it covers makes the browser GROW
+   those rows to fit it, which opened a screen-high gap between the profile card
+   and the rating bar. Two plain columns cannot do that to each other: the grid
+   is now one row of two tracks, and each column stacks its own cards. */
+.td-main {
+  grid-column: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* THE WHOLE RIGHT RAIL FOLLOWS YOU DOWN — video card and lessons card together,
+   the way Find Tutor's `.ft-side` does. It is a real grid item rather than
+   `display: contents` precisely so it can be sticky: a dissolved wrapper
+   generates no box, and a box is the one thing `position: sticky` needs.
+
+   The cost, stated rather than hidden: the two cards come to ~887px, so on a
+   viewport shorter than about 930px the rail pins with its own bottom below the
+   fold and the last of the lessons list cannot be reached while it is pinned.
+   Pinning only the lessons card avoided that and was rejected — both cards were
+   asked for twice. `top` is small for the same reason: every pixel there is a
+   pixel off the bottom.
+
+   `align-self: start` keeps the rail its natural height instead of stretching
+   down the full grid, which would give sticky nothing to move within. */
 .td-side {
-  display: contents;
+  grid-column: 2;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  min-width: 0;
 }
 
 .td-profile {
@@ -98,39 +133,19 @@
   grid-row: 5;
 }
 
-/* Spans both rows on the left, so it matches their combined height whatever
-   the bio length turns out to be. */
+/* A flex child of the sticky rail now, so it no longer places itself on the
+   grid or stretches to match the profile and rating cards beside it — it takes
+   its own height, and the rail carries both cards down the page together. */
 .td-hire {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: stretch;
   display: flex;
   flex-direction: column;
 }
 
-/* THE RAIL FOLLOWS YOU DOWN, and it is this card that does the following.
-   Pinning the whole right column was the first reading of the request and the
-   measurement rules it out: the video card and this one come to 887px together,
-   which does not fit a laptop viewport — a sticky box taller than the screen
-   pins immediately and hides its own bottom, so the price and the button would
-   be the parts you could never reach.
-
-   This card alone is 516px and fits. The video card keeps its documented job of
-   standing level with the profile and rating cards; once you scroll past those,
-   the card carrying the lessons, the price and the CTA comes with you through
-   the resume, the reviews and the suggestions.
-
-   Spanning to the last row is what gives it somewhere to travel: a sticky item
-   can only move inside its own containing block, and pinned to row 3 alone that
-   block was exactly the card's own height, so it could not move at all.
-   `align-self: start` keeps it its natural height rather than stretching to
-   fill the rows it now spans. */
 .td-lessons {
-  grid-column: 2;
-  grid-row: 3 / -1;
-  align-self: start;
-  position: sticky;
-  top: 20px;
+  /* Placement and stickiness both live on `.td-side` now — this card is one of
+     two flex children of the rail that travels, not a card that travels on its
+     own. */
+  min-width: 0;
 }
 
 .td-card {
@@ -1068,6 +1083,19 @@
      hold four empty rows above it. */
   .td-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The rail dissolves back into the grid here, so its two cards become items
+     again and the `order` rules below can interleave them with the left column.
+     Kept as one sticky flex column it would drop in as a single block, burying
+     the booking card under the reviews — which is the exact problem the order
+     list was written to fix. Static too: there is no rail to follow in one
+     column, and a card that pinned itself over a single stack would sit on top
+     of what you were reading. */
+  .td-main,
+  .td-side {
+    display: contents;
+    position: static;
   }
 
   /* Named, NOT `.td-layout > *`. `.td-main` and `.td-side` are
