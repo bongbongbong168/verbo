@@ -176,10 +176,79 @@
 
 /* The current step is a ring, not a fill — filled would say "finished". */
 .ob-step.here .ob-step-mark {
+  position: relative;
   border-color: var(--ob-fill);
   background: transparent;
   color: #fff;
   box-shadow: 0 0 0 3px rgba(168, 156, 227, 0.22);
+}
+
+/* ---- the rail as PROGRESS, and arriving at a step as a movement ----
+
+   THE CONNECTOR NOW FILLS BEHIND YOU. It was a flat
+   `rgba(255, 255, 255, 0.18)` at every step, so the row drew five marks joined
+   by a line that never changed: the marks said where you were and the line
+   said nothing at all. It is driven by the same `.done` class the mark already
+   uses — STATIC, so the rail is correct at frame 0 whether or not a single
+   frame of animation ever arrives.
+
+   That split is the whole design here. The state is a class; the motion is a
+   decoration laid over it. Nothing below reports anything the static rail does
+   not already say, which is what lets this page animate at all when the goal
+   bars and the Read banner could not. */
+.ob-step.done::before {
+  background-color: var(--ob-fill);
+  /* A glint that runs the length of the connector once, as the step completes.
+     It RESTS OFF THE LINE (parked at `-18px`, outside the element) so a tab
+     that never composites shows a plainly filled connector — the truth —
+     rather than a highlight stranded halfway down it. */
+  background-image: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    transparent
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 18px;
+  background-position: 0 -18px;
+  animation: ob-trace 0.45s ease-out;
+}
+
+@keyframes ob-trace {
+  from {
+    background-position: 0 -18px;
+  }
+  to {
+    background-position: 0 100%;
+  }
+}
+
+/* A ring that expands off the mark once, as it becomes the current step.
+   Frame 0 is a crisp ring at the mark's own size — so a frozen tab shows the
+   current step wearing a slightly firmer halo than the design's soft one,
+   which is a decoration behaving differently, not a step reporting the wrong
+   state. Once it has played it reverts to `opacity: 0` and `.here`'s permanent
+   box-shadow carries the state on its own. */
+.ob-step.here .ob-step-mark::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--ob-fill);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: ob-ping 0.62s ease-out;
+}
+
+@keyframes ob-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(2.1);
+    opacity: 0;
+  }
 }
 
 .ob-step-text {
@@ -296,6 +365,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ob-body {
+    animation: none;
+  }
+
+  /* Safe to remove outright: the filled connector and the lit mark are static
+     classes, so stripping the motion leaves the rail saying exactly what it
+     said with it. */
+  .ob-step.done::before,
+  .ob-step.here .ob-step-mark::after {
     animation: none;
   }
 }
@@ -940,6 +1017,30 @@
     bottom: auto;
     width: auto;
     height: 1px;
+  }
+
+  /* The glint turns with it. Same construction as the vertical rail — a band
+     sized across the line, parked outside the element so its resting state is
+     a plainly filled connector — only running left to right. */
+  .ob-step.done::before {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.95),
+      transparent
+    );
+    background-size: 26px 100%;
+    background-position: -26px 0;
+    animation-name: ob-trace-x;
+  }
+
+  @keyframes ob-trace-x {
+    from {
+      background-position: -26px 0;
+    }
+    to {
+      background-position: 100% 0;
+    }
   }
 
   /* Hidden from the EYE, not from the screen reader. The marks are
