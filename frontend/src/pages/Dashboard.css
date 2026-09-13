@@ -1744,6 +1744,10 @@ a.db-course:hover {
   display: block;
   font-size: 0.6rem;
   font-weight: 700;
+  /* Stated rather than left at `normal`, so the reserved height below can be
+     computed from the type instead of measured off whatever Hellix happens to
+     give. 0.6 x 1.25 = 0.75rem, which is the 12px the label really occupies. */
+  line-height: 1.25;
   letter-spacing: 0.06em;
   color: var(--db-text-muted);
   overflow: hidden;
@@ -1751,12 +1755,26 @@ a.db-course:hover {
   white-space: nowrap;
 }
 
-/* CHANGE carries no number, so its label takes the number's place and the
-   tile stays exactly as tall as the two beside it. */
+/* CHANGE has no number, and the row has to survive that.
+
+   The body RESERVES BOTH LINE BOXES — the number's and the label's — so the
+   tile is filled to the same depth as the two beside it, and `flex-end` drops
+   the word onto the label row. The three chips then line up across the top and
+   the three labels across the bottom, with one empty cell where a number would
+   be: a table with a gap in it, rather than a tile that stopped early.
+
+   It previously reserved only the NUMBER's line (`1.15rem`), which left the
+   word sitting on the number row with 26.6px of dead space beneath it against
+   the others' 9.6px — visibly an unfinished third tile.
+
+   The calc is the two line boxes written out, not a measured constant:
+   1.15rem x 1.1 (the number) + 0.6rem x 1.25 (the label) = 32.24px, against
+   the 32.23px the real stacked pair measures. */
 .db-plan-stat-link .db-plan-stat-body {
   display: flex;
-  align-items: center;
-  min-height: 1.15rem;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: calc(1.15rem * 1.1 + 0.6rem * 1.25);
 }
 
 /* ---- today's three ---- */
