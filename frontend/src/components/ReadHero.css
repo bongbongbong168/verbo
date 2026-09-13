@@ -51,8 +51,51 @@
 
 /* ---- left: the text block ---- */
 
+/* ---- the slide change ----
+
+   THIS IS NOT `rh-in` COMING BACK. That was an entrance — `from` at
+   `translateX(10px)` — and it produced a real, reported bug: in a tab that was
+   not compositing it sat at its `from` value with `playState: "running"` two
+   seconds into a 320ms run, leaving the text 11px off its padding, and since
+   some slides settled and others did not the banner looked subtly misaligned
+   as it rotated. Adding a fade or a slide back would reproduce that exactly.
+
+   These keyframes START AND END AT REST and only move in between — the
+   construction the streak flame established. Stuck at frame 0 is stuck
+   CORRECT, which is the one property an entrance can never have. So the slide
+   change reads as the content landing rather than arriving from somewhere.
+
+   `.rh-slide` is `display: contents` and generates no box, so it cannot carry
+   this itself; its children remount with it, which is what replays them. */
 .rh-text {
   min-width: 0;
+  animation: rh-land 0.44s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes rh-land {
+  0% {
+    transform: translateY(0);
+  }
+  32% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* The artwork lifts a little further and a little later, so the two read as
+   one movement with depth rather than two things twitching together. */
+@keyframes rh-land-art {
+  0% {
+    transform: scale(1);
+  }
+  36% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .rh-eyebrow {
@@ -194,6 +237,21 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
+  animation: rh-land-art 0.52s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Every animation here is ornament resting at the static position, so pulling
+   them all leaves the banner exactly as it was designed — no slide stranded
+   mid-move, no control left hidden. */
+@media (prefers-reduced-motion: reduce) {
+  .rh-text,
+  .rh-visual {
+    animation: none;
+  }
+
+  .rh-arrows {
+    transition: none;
+  }
 }
 
 /* The article cover, sized to the panel. `.ac` sets its own aspect ratio, so
@@ -345,19 +403,59 @@
   outline-offset: 2px;
 }
 
-/* The arrows are the bulk of the cluster's weight — two 28px circles — so
-   they carry most of the receding. 0.4 rather than 0, because 0 is the state
-   that could strand: they stay visible and hittable if the fade never runs. */
+/* THE ARROWS COLLAPSE AWAY, leaving the dots alone until you point at the
+   banner. Asked for twice, so it is the decision — the earlier version only
+   dimmed them to 0.4, which was the cautious reading and not what was wanted.
+
+   Collapsing rather than merely fading also fixes the complaint that the
+   cluster looked off-centre: the dots and the arrows were BOTH already dead
+   centre in the pill (measured 17.72/17.73 and 5.63/5.63), but the arrows are
+   what forced it to 42px tall, so six-pixel dots sat marooned in a tall dark
+   box. With the arrows collapsed the pill hugs the dots and the imbalance goes
+   with it.
+
+   `max-width` carries the collapse and the negative margin cancels the
+   parent's own `gap`, which would otherwise leave 0.75rem of dead space beside
+   nothing. */
 .rh-arrows {
   display: flex;
   gap: 0.35rem;
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
+  max-width: 0;
+  /* THE HEIGHT HAS TO COLLAPSE TOO. `max-width: 0` alone left the arrows
+     0 wide and still 30.8px TALL, so the pill stayed 42px high around
+     six-pixel dots — measured, and exactly the imbalance this was meant to
+     remove. It hugs the dots at ~18px now and opens to full height on hover,
+     so the reveal grows in both directions. */
+  max-height: 0;
+  margin-left: -0.75rem;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 0.32s ease,
+    max-height 0.32s ease,
+    margin-left 0.32s ease,
+    opacity 0.24s ease;
 }
 
 .rh:hover .rh-arrows,
 .rh-controls:focus-within .rh-arrows {
+  max-width: 80px;
+  max-height: 40px;
+  margin-left: 0;
   opacity: 1;
+}
+
+/* A TOUCH SCREEN HAS NO HOVER, so there they simply stay — the same reason
+   the Vocabulary Bank draws its row menu unconditionally. `:focus-within`
+   above covers the keyboard. Between them, every input that cannot hover
+   still reaches the arrows. */
+@media (hover: none) {
+  .rh-arrows {
+    max-width: 80px;
+    max-height: 40px;
+    margin-left: 0;
+    opacity: 1;
+  }
 }
 
 .rh-arrow {
