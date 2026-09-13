@@ -670,4 +670,17 @@ export const api = {
      server-side, so the widget's own state IS the thread. */
   sendPracticeChat: (token, body) =>
     request('/practice-chat', { method: 'POST', body, token }),
+
+  /* Saved cards.
+     `addPaymentMethod` takes the brand, the last four digits and the expiry —
+     NEVER a card number. The browser reads the number only long enough to work
+     those out and then forgets it; there is no column for one on the server and
+     no parameter for one here. */
+  getPaymentMethods: (token) => request('/payment-methods', { token }),
+  addPaymentMethod: (token, body) =>
+    request('/payment-methods', { method: 'POST', body, token }),
+  setDefaultPaymentMethod: (token, id) =>
+    request(`/payment-methods/${id}/default`, { method: 'POST', token }),
+  deletePaymentMethod: (token, id) =>
+    request(`/payment-methods/${id}`, { method: 'DELETE', token }),
 }

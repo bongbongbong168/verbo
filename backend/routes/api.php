@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\LearningPlanController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\PaymentMethodController;
 use App\Http\Controllers\Api\PracticeChatController;
 use App\Http\Controllers\Api\LearningPreferenceController;
 use App\Http\Controllers\Api\ArticleInteractionController;
@@ -108,6 +109,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/avatar', [ProfileController::class, 'updateAvatar']);
     Route::delete('/user/avatar', [ProfileController::class, 'deleteAvatar']);
     Route::get('/user/stats', [ProfileController::class, 'stats']);
+
+    /* Saved cards. `default` is a WORD, so it is declared before the
+       `{paymentMethod}` route or it binds as an id — the trap
+       `bookings/clear-past` and `notifications/read-all` both hit. */
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::post('/payment-methods/{paymentMethod}/default', [PaymentMethodController::class, 'setDefault']);
+    Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy']);
     // Profile page + the header popover.
     Route::get('/user/overview', [ProfileController::class, 'overview']);
 

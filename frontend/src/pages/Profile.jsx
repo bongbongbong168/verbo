@@ -35,7 +35,7 @@ const ACCOUNT = [
   // at the top of the page to hunt for it — `?s=` is the section's address.
   { label: 'Personal Information', note: 'Name, picture and email', to: '/settings?s=profile' },
   { label: 'Notifications', note: 'Booking replies, messages and courses', to: '/notifications' },
-  { label: 'Payment Methods', note: 'Not built yet', soon: true },
+  { label: 'Payment Methods', note: 'Cards you can pick at checkout', to: '/settings?s=payments' },
   { label: 'Privacy & Security', note: 'Password and signed-in devices', to: '/settings?s=security' },
 ]
 

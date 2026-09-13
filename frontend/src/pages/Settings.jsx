@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import ImageCropper from "../components/ImageCropper";
 import LearningPreferences from "../components/LearningPreferences";
+import PaymentMethods from "../components/PaymentMethods";
 import PageTools from "../components/PageTools";
 import { SCALE_OPTIONS, getAppScale, setAppScale } from "../appScale";
 import "./Settings.css";
@@ -39,6 +40,7 @@ function formatDate(value) {
 const SECTIONS = [
   { key: "profile", label: "Profile" },
   { key: "learning", label: "Learning" },
+  { key: "payments", label: "Payments" },
   { key: "security", label: "Security" },
   { key: "appearance", label: "Appearance" },
   { key: "data", label: "Your data" },
@@ -410,6 +412,27 @@ export default function Settings() {
                 <div className="se-row-control">
                   <LearningPreferences />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ---- payments ----
+              A real section now, not the "Soon" chip the Profile page used to
+              carry. It manages CARDS, which is a different thing from taking a
+              payment: what is stored is the brand, the last four digits and the
+              expiry, so a person can recognise and pick one at checkout. The
+              number itself is never sent here — see components/PaymentMethods. */}
+          {active === "payments" && (
+            <div className="se-rows">
+              <div className="se-row se-row-stack">
+                <div className="se-row-text">
+                  <p className="se-row-label">Saved cards</p>
+                  <p className="se-row-help">
+                    Pick one at checkout instead of typing it in each time. Only
+                    the brand, the last four digits and the expiry are stored.
+                  </p>
+                </div>
+                <PaymentMethods token={token} />
               </div>
             </div>
           )}

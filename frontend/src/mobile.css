@@ -8,6 +8,74 @@
    focused, content that clears the notch and the home indicator, and
    navigation that lives where a thumb is. */
 
+/* ---- Messages: one panel at a time, and NOT only on a phone ----
+
+   Measured at 820px wide: the rail is still expanded at 286px and the page is
+   still paying a 90px gutter each side, so the two panels were handed 354px
+   between them and each rendered SIXTY-FIVE PIXELS wide. The desktop split
+   needs about 1100px before it is worth having, which is well above the phone
+   boundary — so these rules live in their own band rather than inside the
+   767px block they started in. The gutter comes in with them; at this width it
+   is the difference between a usable panel and a sliver. */
+@media (max-width: 1100px) {
+  .ms-page {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* ---- Messages: one panel at a time ----
+     The desktop layout is a thread list beside an open conversation. Stacked on
+     a phone that gave a full screen of "Pick a conversation." underneath the
+     list — a whole viewport spent saying nothing. Now it behaves like a phone
+     mail app: the list, then the conversation replacing it.
+
+     (The earlier pass targeted `.ms-panels`, which is not a class this page
+     has — the wrapper is `.ms-layout` — so that rule had been doing nothing.)
+
+     `:has()` is doing the work. Unsupported browsers simply keep the stacked
+     behaviour, which is the layout as it was rather than a broken one. */
+  .ms-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    display: block;
+  }
+
+  /* Nothing open: the empty chat pane is not worth a screen. */
+  .ms-chat:has(.ms-empty-chat) {
+    display: none;
+  }
+
+  /* Something open: the conversation takes the screen, the list steps aside.
+     Keyed on the list row that carries .active rather than on the chat pane —
+     CSS forbids nesting :has() inside :has(), so the obvious
+     `:has(.ms-chat:not(:has(...)))` is an INVALID selector and silently does
+     nothing. This is a single :has() and actually applies. */
+  .ms-layout:has(.ms-thread.active) .ms-list-panel {
+    display: none;
+  }
+
+  /* The way back, since the list is now hidden. */
+  .ms-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    margin-right: 2px;
+    border: 1px solid #e7e3f6;
+    border-radius: 10px;
+    background: #fff;
+    color: #1c1730;
+    cursor: pointer;
+  }
+
+  .ms-back svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
 @media (max-width: 767px) {
   /* ---- viewport height ----
      `100vh` on iOS Safari is the height with the toolbars HIDDEN, so a 100vh
@@ -334,58 +402,6 @@
    pages that were still laid out for a mouse actually work on a phone.
    --------------------------------------------------------------------------- */
 @media (max-width: 767px) {
-  /* ---- Messages: one panel at a time ----
-     The desktop layout is a thread list beside an open conversation. Stacked on
-     a phone that gave a full screen of "Pick a conversation." underneath the
-     list — a whole viewport spent saying nothing. Now it behaves like a phone
-     mail app: the list, then the conversation replacing it.
-
-     (The earlier pass targeted `.ms-panels`, which is not a class this page
-     has — the wrapper is `.ms-layout` — so that rule had been doing nothing.)
-
-     `:has()` is doing the work. Unsupported browsers simply keep the stacked
-     behaviour, which is the layout as it was rather than a broken one. */
-  .ms-layout {
-    grid-template-columns: minmax(0, 1fr) !important;
-    display: block;
-  }
-
-  /* Nothing open: the empty chat pane is not worth a screen. */
-  .ms-chat:has(.ms-empty-chat) {
-    display: none;
-  }
-
-  /* Something open: the conversation takes the screen, the list steps aside.
-     Keyed on the list row that carries .active rather than on the chat pane —
-     CSS forbids nesting :has() inside :has(), so the obvious
-     `:has(.ms-chat:not(:has(...)))` is an INVALID selector and silently does
-     nothing. This is a single :has() and actually applies. */
-  .ms-layout:has(.ms-thread.active) .ms-list-panel {
-    display: none;
-  }
-
-  /* The way back, since the list is now hidden. */
-  .ms-back {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    margin-right: 2px;
-    border: 1px solid #e7e3f6;
-    border-radius: 10px;
-    background: #fff;
-    color: #1c1730;
-    cursor: pointer;
-  }
-
-  .ms-back svg {
-    width: 17px;
-    height: 17px;
-  }
-
   /* ---- Find Tutor ---- */
   /* The tools wrapped onto their own line and sat left, stranded under the
      search field. Pushed back to the right where they live everywhere else. */

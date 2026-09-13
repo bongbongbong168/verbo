@@ -1,0 +1,257 @@
+/* Saved cards. Prefix `pmx-`.
+   `pm-` is already the account popover (ProfileMenu) and `pf-` is the Profile
+   page — grep the prefix before naming anything new, the rule the Vocabulary
+   Bank's row menu learned the hard way. */
+
+.pmx {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pmx-error {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #f6c6c1;
+  border-radius: 10px;
+  background: #fdecea;
+  color: #b3261e;
+  font-size: 0.88rem;
+}
+
+.pmx-note {
+  margin: 0;
+  color: #726c88;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.pmx-note-tight {
+  font-size: 0.82rem;
+}
+
+.pmx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pmx-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #ece8f8;
+}
+
+.pmx-row:last-child {
+  border-bottom: none;
+}
+
+/* An expired card stays listed rather than vanishing — it is still a card the
+   person chose to save, and silently dropping it reads as data loss. It just
+   cannot be made the default. */
+.pmx-row.expired .pmx-who {
+  opacity: 0.55;
+}
+
+/* The brand's own wordmark is not used: shipping six logos means six licences
+   and six more files, for a chip the width of a thumbnail. A tinted block
+   carrying the first letters is honest about what it is. */
+.pmx-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 30px;
+  border-radius: 7px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pmx-mark-visa {
+  background: #eaf0fd;
+  color: #2a4b8d;
+}
+.pmx-mark-mastercard {
+  background: #fdeee6;
+  color: #b45b30;
+}
+.pmx-mark-amex {
+  background: #e8f1fa;
+  color: #2a6ea6;
+}
+
+.pmx-who {
+  flex: 1;
+  min-width: 0;
+}
+
+.pmx-name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1c1730;
+}
+
+.pmx-dots {
+  color: #726c88;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.pmx-exp {
+  margin: 0.1rem 0 0;
+  font-size: 0.8rem;
+  color: #726c88;
+}
+
+.pmx-default {
+  flex: none;
+  /* Cap-band correction: measured against a flat-capped `H`, the label sits
+     low under a symmetric pad. The pair sums to the original 0.22rem, so the
+     chip's height is unchanged. */
+  padding: calc(0.22rem - 0.935px) 0.6rem calc(0.22rem + 0.935px);
+  border-radius: 999px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.pmx-link {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6a6191;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pmx-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.pmx-link:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Arms on the first click and acts on the second — the pattern every delete in
+   this app uses. The label carries the state, so there is no separate
+   confirmation box to dismiss. */
+.pmx-remove {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #9a95ab;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pmx-remove:hover:not(:disabled),
+.pmx-remove.armed {
+  color: #b3261e;
+}
+
+.pmx-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 14px;
+  background: #fbfaff;
+}
+
+.pmx-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+}
+
+.pmx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.pmx-field span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #726c88;
+}
+
+.pmx-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: #1c1730;
+  outline: none;
+}
+
+.pmx-field input:focus {
+  border-color: #a89ce3;
+}
+
+.pmx-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.pmx-save,
+.pmx-add {
+  /* Cap-band correction, measured: 1.021px low under a symmetric 0.55rem. */
+  padding: calc(0.55rem - 1.021px) 1.2rem calc(0.55rem + 1.021px);
+  border: none;
+  border-radius: 10px;
+  background: #6a6191;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* The fill IS the feedback, so it is not transitioned — a transition that
+     never gets a frame leaves the button looking dead under the pointer. */
+}
+
+.pmx-add {
+  align-self: flex-start;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.pmx-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pmx-save:hover:not(:disabled) {
+  background: #56507a;
+}
+
+.pmx-add:hover {
+  background: #e4ddfa;
+}

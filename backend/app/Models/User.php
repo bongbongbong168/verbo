@@ -81,6 +81,12 @@ class User extends Authenticatable
         return $this->hasMany(Flashcard::class);
     }
 
+    /** Saved cards. See PaymentMethod: no card number is ever stored. */
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
+
     public function scans()
     {
         return $this->hasMany(Scan::class);

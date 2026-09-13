@@ -547,6 +547,20 @@
   --sb-ease: cubic-bezier(0.32, 0.72, 0.2, 1);
   --sb-dur: 0.26s;
 
+  /* THE RAIL NEEDS A Z-INDEX OR ITS FLYOUT PAINTS UNDER THE PAGE.
+     `position: sticky` creates a stacking context ALWAYS — unlike `relative`,
+     it does so regardless of z-index — so `.sb-flyout`'s own `z-index: 50` is
+     scoped inside the rail and cannot lift it above anything outside. The rail
+     itself was left in the `auto` band, where any positioned page content
+     painted over it: Settings' sub-nav is sticky too, and sits later in the
+     document, so hovering Tools in the collapsed rail drew the flyout with
+     "Payments" and "Security" showing straight through it.
+
+     45, not higher: the topbar's own icon cluster sits at 50 and owns the bell
+     and account popovers. Those are top-right and the flyout is left of centre,
+     so they never meet — but if that ever changes, the popovers should win. */
+  z-index: 45;
+
   transition:
     width var(--sb-dur) var(--sb-ease),
     padding var(--sb-dur) var(--sb-ease);
