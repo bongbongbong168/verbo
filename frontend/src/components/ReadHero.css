@@ -271,6 +271,27 @@
    A scrim is the honest fix, and it is STATIC — no transition on the blur, for
    the same reason the booking dialog’s backdrop-filter is mounted already
    blurred: a transition that never advances would leave it half-applied. */
+/* IT RECEDES AT REST AND COMES FORWARD UNDER THE POINTER — it does not appear
+   from nothing, and that distinction is the whole design.
+
+   The ask was to reveal this on hover, because a dark pill parked on the
+   artwork reads as heavy. Hiding it outright was rejected on three counts,
+   each of which this codebase has already written down somewhere: a touch
+   screen has no hover (the reason the Vocabulary Bank's ⋮ is always drawn), a
+   keyboard user would lose the arrows entirely, and the dots are the ONLY
+   thing on the banner saying it rotates at all — the same argument as the
+   shelf's peeking next card being the affordance.
+
+   So the cluster stays present and clickable at both ends of the transition.
+   That is also what makes easing it safe here: the codebase's rule is that
+   hover feedback must not be transitioned, because a stalled transition
+   "leaves the pill looking dead under the pointer" — but nothing here is
+   revealed BY the transition, so the worst a stalled one can do is leave the
+   controls in their resting look, which is already usable.
+
+   `backdrop-filter` stays out of the transition list deliberately: it is
+   static for the same reason the booking dialog mounts already blurred, and
+   it is the expensive half besides. */
 .rh-controls {
   position: absolute;
   right: 1.35rem;
@@ -280,9 +301,19 @@
   gap: 0.75rem;
   padding: 0.32rem 0.6rem;
   border-radius: 999px;
-  background: rgba(28, 23, 48, 0.34);
+  /* 0.28 at rest, not lower. The scrim is here because the inactive dots were
+     MEASURED vanishing into the pale book covers on the illustrated slides,
+     and that finding does not stop being true because the pill looks heavy —
+     so the arrows do the receding and the scrim only eases off. */
+  background: rgba(28, 23, 48, 0.28);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  transition: background-color 0.3s ease;
+}
+
+.rh:hover .rh-controls,
+.rh-controls:focus-within {
+  background: rgba(28, 23, 48, 0.46);
 }
 
 .rh-dots {
@@ -314,9 +345,19 @@
   outline-offset: 2px;
 }
 
+/* The arrows are the bulk of the cluster's weight — two 28px circles — so
+   they carry most of the receding. 0.4 rather than 0, because 0 is the state
+   that could strand: they stay visible and hittable if the fade never runs. */
 .rh-arrows {
   display: flex;
   gap: 0.35rem;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.rh:hover .rh-arrows,
+.rh-controls:focus-within .rh-arrows {
+  opacity: 1;
 }
 
 .rh-arrow {
