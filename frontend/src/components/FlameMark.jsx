@@ -67,9 +67,9 @@ export default function FlameMark({ className = '', lit = true }) {
           padding at both sizes, so nothing clips them. */}
       {lit && (
         <g className="fm-sparks">
-          <rect className="fm-spark fm-spark-a" x="4.2" y="-5" width="1.5" height="2.4" rx="0.75" fill="#f0911a" />
-          <rect className="fm-spark fm-spark-b" x="11.4" y="-4" width="1.5" height="2.4" rx="0.75" fill="#f0911a" />
-          <rect className="fm-spark fm-spark-c" x="9.7" y="-1.3" width="1.4" height="2.2" rx="0.7" fill="#ffd21e" />
+          <rect className="fm-spark fm-spark-a" x="3.6" y="-3.6" width="1.9" height="2.9" rx="0.95" fill="#f0911a" />
+          <rect className="fm-spark fm-spark-b" x="11.2" y="-3" width="1.9" height="2.9" rx="0.95" fill="#f0911a" />
+          <rect className="fm-spark fm-spark-c" x="9.5" y="-0.6" width="1.7" height="2.6" rx="0.85" fill="#ffd21e" />
         </g>
       )}
     </svg>

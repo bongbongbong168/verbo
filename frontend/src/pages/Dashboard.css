@@ -163,12 +163,17 @@
    WIDTH IS 2/3 OF HEIGHT because the viewBox is 16x24, not the old square.
    Setting both to 17 would squash a flame drawn at 0.65 into a circle — and
    the PNG's own rule ("height is set and width follows the square source")
-   silently becomes wrong the moment the source stops being square. */
+   silently becomes wrong the moment the source stops being square.
+
+   GROWN 17 → 21 so the embers can actually be seen. At 17 each one rendered
+   about a pixel: present in the DOM, invisible on the screen, which is what
+   "make it noticeable" was about. The pill absorbs it — its height is set by
+   the text's line box plus padding, not by the mark. */
 .db-streak-flame {
   flex-shrink: 0;
   display: block;
-  width: 11.33px;
-  height: 17px;
+  width: 14px;
+  height: 21px;
 }
 
 /* Flexbox centres an item's LINE BOX, and Hellix does not centre its ink

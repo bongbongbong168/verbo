@@ -31,9 +31,15 @@
 /* A whole-mark float, which is the reference's main movement — the flame
    hovers rather than sitting on anything. Applied to the svg and not to a
    group inside it so it composes with, rather than fights, the per-path
-   flicker below. */
+   flicker below.
+
+   AMPLITUDES AND PERIODS WERE ALL RAISED after the first pass read as barely
+   moving. The original was a 0.6-unit float over 3.4s under a 3% flicker,
+   which is roughly half a pixel of travel at the badge's size — technically
+   animated, and invisible. Fire also flickers FAST; a languid pulse reads as
+   a loading state rather than as a flame. */
 .fm-flame.fm-lit {
-  animation: fm-float 3.4s ease-in-out infinite;
+  animation: fm-float 2.3s ease-in-out infinite;
 }
 
 .fm-flame path,
@@ -51,46 +57,52 @@
 /* Only a live streak moves. A broken run is grey and still — motion reads as
    "this is going", which is precisely what a zero must not claim. */
 .fm-flame.fm-lit .fm-outer {
-  animation: fm-flicker 2.9s ease-in-out infinite;
+  animation: fm-flicker 1.6s ease-in-out infinite;
 }
 
 .fm-flame.fm-lit .fm-inner {
   /* A different period, so the two drift in and out of phase instead of
      pulsing together — two shapes breathing in lockstep reads as one object
-     being scaled, not as fire. Deliberately not a multiple of 2.9s, or they
+     being scaled, not as fire. Deliberately not a multiple of 1.6s, or they
      would resynchronise on a fixed beat. */
-  animation: fm-flicker-inner 2.1s ease-in-out infinite;
+  animation: fm-flicker-inner 1.15s ease-in-out infinite;
 }
 
 /* Amounts are in the SVG's own user units, so the flicker scales with the
-   mark: identical at the badge's 17px and the profile bar's 28px, with no
-   per-size tuning. */
+   mark: identical at the badge's 21px and the profile bar's 28px, with no
+   per-size tuning.
+
+   The outer flame also LEANS, and that is what stops this reading as a pulse.
+   Scale alone makes the shape breathe symmetrically, which at any amplitude
+   looks like a thing being resized; a flame moves because it is being pushed
+   sideways. The rotation is small (±2deg) and shares the base origin, so the
+   tip travels while the foot stays planted. */
 @keyframes fm-flicker {
   0%,
   100% {
-    transform: scaleY(1) scaleX(1);
+    transform: scaleY(1) scaleX(1) rotate(0deg);
   }
   22% {
-    transform: scaleY(1.055) scaleX(0.975);
+    transform: scaleY(1.1) scaleX(0.945) rotate(-2deg);
   }
   46% {
-    transform: scaleY(0.972) scaleX(1.022);
+    transform: scaleY(0.94) scaleX(1.05) rotate(1.2deg);
   }
   71% {
-    transform: scaleY(1.032) scaleX(0.99);
+    transform: scaleY(1.065) scaleX(0.975) rotate(2deg);
   }
 }
 
 @keyframes fm-flicker-inner {
   0%,
   100% {
-    transform: scaleY(1) scaleX(1) translateY(0);
+    transform: scaleY(1) scaleX(1) translateY(0) rotate(0deg);
   }
   30% {
-    transform: scaleY(0.93) scaleX(1.04) translateY(0.22px);
+    transform: scaleY(0.87) scaleX(1.075) translateY(0.5px) rotate(2.5deg);
   }
   62% {
-    transform: scaleY(1.075) scaleX(0.965) translateY(-0.25px);
+    transform: scaleY(1.13) scaleX(0.935) translateY(-0.55px) rotate(-2deg);
   }
 }
 
@@ -100,7 +112,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-0.6px);
+    transform: translateY(-1.3px);
   }
 }
 
@@ -119,26 +131,32 @@
    prevent, reintroduced by a scheduling trick. Three different periods, all
    resting at 0%, drift apart on their own. */
 .fm-flame.fm-lit .fm-spark-a {
-  animation: fm-ember 2.6s ease-in-out infinite;
+  animation: fm-ember 1.5s ease-in-out infinite;
 }
 
 .fm-flame.fm-lit .fm-spark-b {
-  animation: fm-ember 3.3s ease-in-out infinite;
-}
-
-.fm-flame.fm-lit .fm-spark-c {
   animation: fm-ember 1.9s ease-in-out infinite;
 }
 
+.fm-flame.fm-lit .fm-spark-c {
+  animation: fm-ember 1.2s ease-in-out infinite;
+}
+
+/* The rise more than doubled (1.6 → 3.4 units) and the dim goes nearly to
+   nothing. At the old amount an ember travelled about a pixel at the badge's
+   size, which is not a movement anyone sees — it is a slightly soft edge. The
+   travel is bounded by the padding above the mark, not by taste: 3.4 from a
+   rest of -3.6 tops out at -7.0 units, which is 6.1px above the box at 21px
+   and 8.2px at 28px, against 8px and 12.3px of headroom. */
 @keyframes fm-ember {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
   50% {
-    transform: translateY(-1.6px);
-    opacity: 0.25;
+    transform: translateY(-3.4px) scale(0.55);
+    opacity: 0.08;
   }
 }
 
