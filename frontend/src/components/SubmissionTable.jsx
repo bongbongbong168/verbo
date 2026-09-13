@@ -64,10 +64,10 @@ export default function SubmissionTable({ itemId, points }) {
   if (loading) return <p className="cl-empty">Loading submissions…</p>;
 
   return (
-    <div className="st">
+    <div className="gr">
       {error && <p className="cl-error">{error}</p>}
 
-      <table className="cl-table st-table">
+      <table className="cl-table gr-table">
         <thead>
           <tr>
             <th>Student</th>
@@ -99,14 +99,14 @@ export default function SubmissionTable({ itemId, points }) {
                 </td>
 
                 <td>
-                  <span className={`st-badge st-${status}`}>
+                  <span className={`gr-badge gr-${status}`}>
                     {status === "graded"
                       ? "Graded"
                       : status === "submitted"
                         ? "Submitted"
                         : "Missing"}
                   </span>
-                  {submission?.is_late && <span className="st-late">Late</span>}
+                  {submission?.is_late && <span className="gr-late">Late</span>}
                 </td>
 
                 <td className="cl-muted">{when(submission?.submitted_at)}</td>
@@ -117,7 +117,7 @@ export default function SubmissionTable({ itemId, points }) {
                       <button
                         key={f.id}
                         type="button"
-                        className="cu-file st-file"
+                        className="cu-file gr-file"
                         /* Opens the work rather than saving it. This is the
                            row that matters most: marking six submissions used
                            to mean saving six files to disk and opening them
@@ -167,7 +167,7 @@ export default function SubmissionTable({ itemId, points }) {
 
                   {isOpen && (
                     <form
-                      className="st-grade"
+                      className="gr-grade"
                       onSubmit={(e) => {
                         e.preventDefault();
                         save(submission.id);
@@ -191,7 +191,7 @@ export default function SubmissionTable({ itemId, points }) {
                         rows={2}
                       />
                       {submission.note && (
-                        <p className="st-note">Their note: {submission.note}</p>
+                        <p className="gr-note">Their note: {submission.note}</p>
                       )}
                       <button
                         type="submit"

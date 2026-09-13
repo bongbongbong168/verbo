@@ -991,7 +991,7 @@ form.cl-entry-action {
 /* The grading table keeps `top`: its last cell expands into a whole score +
    feedback form, and centring against that would drag the student's name into
    the middle of an otherwise empty row. */
-.st-table td {
+.gr-table td {
   vertical-align: top;
 }
 
@@ -1402,11 +1402,11 @@ form.cl-entry-action {
   margin-top: 1.2rem;
 }
 
-.st-table {
+.gr-table {
   font-size: 0.85rem;
 }
 
-.st-badge {
+.gr-badge {
   display: inline-block;
   padding: 0.14rem 0.5rem;
   border-radius: 6px;
@@ -1414,22 +1414,22 @@ form.cl-entry-action {
   font-weight: 700;
 }
 
-.st-missing {
+.gr-missing {
   background: #fdecea;
   color: #b02a2a;
 }
 
-.st-submitted {
+.gr-submitted {
   background: #e6f0fb;
   color: #2f6199;
 }
 
-.st-graded {
+.gr-graded {
   background: #ecf8f0;
   color: #1f7a45;
 }
 
-.st-late {
+.gr-late {
   margin-left: 0.35rem;
   padding: 0.14rem 0.45rem;
   border-radius: 6px;
@@ -1439,12 +1439,12 @@ form.cl-entry-action {
   font-weight: 700;
 }
 
-.st-file {
+.gr-file {
   max-width: 190px;
   font-size: 0.76rem;
 }
 
-.st-grade {
+.gr-grade {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -1457,7 +1457,7 @@ form.cl-entry-action {
   text-align: left;
 }
 
-.st-grade label {
+.gr-grade label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1465,8 +1465,8 @@ form.cl-entry-action {
   font-weight: 700;
 }
 
-.st-grade input,
-.st-grade textarea {
+.gr-grade input,
+.gr-grade textarea {
   box-sizing: border-box;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--cl-line);
@@ -1478,15 +1478,15 @@ form.cl-entry-action {
   resize: vertical;
 }
 
-.st-grade input {
+.gr-grade input {
   width: 88px;
 }
 
-.st-grade textarea {
+.gr-grade textarea {
   width: 100%;
 }
 
-.st-note {
+.gr-note {
   margin: 0;
   font-size: 0.78rem;
   font-style: italic;
@@ -2165,4 +2165,17 @@ form.cl-entry-action {
   .cl-body {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* THE GRADING TABLE IS `gr-`, NOT `st-`, AND THE RENAME WAS A REAL BUG FIX.
+   Its wrapper was `className="st"` — which is the STUDY PAGE`S ROOT CLASS —
+   so it inherited `min-height: var(--app-vh)` and stood 818px tall however
+   many students were in it: one row of marking followed by most of a screen
+   of nothing. The whole `st-` prefix was shared with Study besides, so any
+   new rule on either side could land on the other. Same family as `.vb-menu`
+   colliding with the header dropdown and `.up` with the Upgrade page: grep
+   the prefix before naming anything new. The table now takes exactly the
+   height of its rows. */
+.gr {
+  min-width: 0;
 }
