@@ -34,6 +34,73 @@ function PlusIcon() {
   );
 }
 
+function ClockIcon() {
+  return (
+    <svg className="cl-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.4V12l3.1 1.9" />
+    </svg>
+  );
+}
+
+function CalIcon() {
+  return (
+    <svg className="cl-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" />
+      <path d="M3.5 10h17M8.5 3.5v4M15.5 3.5v4" />
+    </svg>
+  );
+}
+
+/* Named for what happened, not for the table it came from. `submitted` says
+   "handed in" because that is the teacher’s word for it. */
+const FEED_LABEL = {
+  assignment_posted: "New assignment posted",
+  material_posted: "New material posted",
+  submitted: "Work handed in",
+};
+
+/* "Aug 28, 2026 · 10:43 PM". Absolute rather than "3 days ago": these rows
+   are a record of when things happened in a class, and a teacher comparing
+   them against a due date needs the date itself. */
+const feedFmt = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function longWhen(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : feedFmt.format(d).replace(", ", " · ");
+}
+function PeopleIcon() {
+  return (
+    <svg className="cl-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19.5c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5" />
+      <path d="M16.2 5.9a3.2 3.2 0 0 1 0 4.9" />
+      <path d="M18 14.6c1.6.8 2.7 2.4 2.7 4.2" />
+    </svg>
+  );
+}
+
+function SheetIcon() {
+  return (
+    <svg className="cl-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3.5V8h4.5" />
+      <path d="M8.8 13h6.4M8.8 16.4h4.2" />
+    </svg>
+  );
+}
+
 function CapIcon() {
   return (
     <svg
@@ -128,7 +195,12 @@ export default function Classroom() {
     );
 
   const isTeacher = cls.role === "teacher";
+  /* Counted from the items already on the page rather than asked for
+     separately — a second source for a number sitting beside the list it
+     comes from is a number that can disagree with it. */
+  const assignmentCount = cls.items.filter((i) => i.type === "assignment").length;
   const visibleTabs = TABS.filter((t) => !t.teacherOnly || isTeacher);
+  const hasRail = (cls.activity?.length || 0) + (cls.upcoming?.length || 0) > 0;
 
   return (
     <div className="cl">
@@ -153,6 +225,7 @@ export default function Classroom() {
               student checks. Anything with a hard navy outline here reads as a
               button: that is the app's card-stroke colour, not a label's. */}
           <div className="cl-head-chips">
+            {cls.subject && <span className="cl-chip">{cls.subject}</span>}
             {cls.focus && <span className="cl-chip">{cls.focus}</span>}
             {cls.term && <span className="cl-chip">{cls.term}</span>}
             {cls.level && (
@@ -161,6 +234,37 @@ export default function Classroom() {
             {!isTeacher && cls.teacher?.name && (
               <span className="cl-chip">{cls.teacher.name}</span>
             )}
+            {/* REAL STATE, not decoration — and the reason it may exist here
+                when the hub card refused one is that `show` does not filter
+                archived classes out. A class that has been put away is still
+                readable by the people who were in it, so this word changes;
+                on the hub every row is un-archived by construction, which is
+                why that card badges ungraded work instead. */}
+            <span
+              className={`cl-status${cls.archived_at ? " archived" : ""}`}
+            >
+              <span className="cl-status-dot" aria-hidden="true" />
+              {cls.archived_at ? "Archived" : "Active"}
+            </span>
+          </div>
+
+          {cls.description && (
+            <p className="cl-head-desc">{cls.description}</p>
+          )}
+
+          {/* What the class IS, in numbers. Both are already on screen further
+              down — the roster and the curriculum — but a teacher opening the
+              page wants the size of the thing before they scroll to it. */}
+          <div className="cl-head-stats">
+            <span className="cl-head-stat">
+              <PeopleIcon />
+              {cls.students_count} {cls.students_count === 1 ? "Student" : "Students"}
+            </span>
+            <span className="cl-head-stat">
+              <SheetIcon />
+              {assignmentCount}{" "}
+              {assignmentCount === 1 ? "Assignment" : "Assignments"}
+            </span>
           </div>
         </div>
         {isTeacher && <JoinCode code={cls.join_code} open={cls.join_open} />}
@@ -180,6 +284,15 @@ export default function Classroom() {
           </button>
         ))}
       </nav>
+
+      {/* TWO COLUMNS, and the right one is REAL rather than padding. It
+          carries what changed in this class and what is due next — both
+          derived from rows the portal already writes, the same two queries
+          the hub builds for every class at once. A class with neither is
+          genuinely quiet, so the rail simply is not drawn and the panel
+          takes the full width back. */}
+      <div className={`cl-body${hasRail ? "" : " cl-body-wide"}`}>
+        <div className="cl-main">
 
       {tab === "curriculum" && (
         <>
@@ -411,6 +524,61 @@ export default function Classroom() {
           </div>
         </div>
       )}
+
+        </div>
+
+        {hasRail && (
+          <aside className="cl-rail">
+            {cls.activity?.length > 0 && (
+              <section className="cl-rail-card">
+                <div className="cl-rail-head">
+                  <ClockIcon />
+                  <h2>Class activity</h2>
+                </div>
+                <ul className="cl-feed">
+                  {cls.activity.map((a, i) => (
+                    <li className="cl-feed-row" key={`${a.kind}-${a.at}-${i}`}>
+                      {/* The dot is the KIND, so the three read apart at a
+                          glance without a second word on every line. */}
+                      <span className={`cl-feed-dot cl-feed-${a.kind}`} aria-hidden="true" />
+                      <div>
+                        <p className="cl-feed-what">{FEED_LABEL[a.kind] || "Updated"}</p>
+                        <p className="cl-feed-title">
+                          {a.title}
+                          {a.who ? ` — ${a.who}` : ""}
+                        </p>
+                        <p className="cl-feed-when">{longWhen(a.at)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {cls.upcoming?.length > 0 && (
+              <section className="cl-rail-card">
+                <div className="cl-rail-head">
+                  <CalIcon />
+                  <h2>Upcoming</h2>
+                </div>
+                <ul className="cl-due">
+                  {cls.upcoming.map((u) => (
+                    <li className="cl-due-row" key={u.id}>
+                      <span className="cl-due-mark" aria-hidden="true">
+                        <CalIcon />
+                      </span>
+                      <div>
+                        <p className="cl-due-title">{u.title}</p>
+                        <p className="cl-due-when">{longWhen(u.due_at)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </aside>
+        )}
+      </div>
 
       {creating && (
         <CreateItemDialog

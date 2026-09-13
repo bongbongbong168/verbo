@@ -306,6 +306,26 @@ class ClassroomController extends Controller
                 'avatar_url' => $class->teacher?->avatar_url,
             ],
             'students_count' => $class->members()->count(),
+
+            /* THE STATUS IS REAL ON THIS PAGE, unlike on the hub card. `index`
+               only ever returns un-archived classes, so a badge there would be
+               a word stamped on every row — which is why it carries ungraded
+               work instead. `show` has no such filter: an archived class is
+               still readable by the people who were in it, so Active/Archived
+               here is a state that genuinely changes. */
+            'archived_at' => $class->archived_at,
+
+            /* The same two rails the hub builds, narrowed to this one class.
+               Reusing the helpers rather than writing per-class variants keeps
+               one definition of "what happened lately" — including the rule
+               that hand-ins are teaching-only, since a student seeing every
+               classmate's submission is a roster leak. */
+            'upcoming' => $this->upcoming(collect([$class->id])),
+            'activity' => $this->activity(
+                $user,
+                $role === 'teacher' ? collect([$class->id]) : collect(),
+                collect([$class->id]),
+            ),
             'items' => $items,
         ]);
     }

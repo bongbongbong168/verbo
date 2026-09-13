@@ -264,22 +264,6 @@
   transform: translateY(-1px);
 }
 
-/* THE PADDING ABOVE IS A CAP-BAND CORRECTION FOR THE TEXT, AND IT MUST NOT REACH
-   THE ARROW. An SVG's box IS its ink, so it has no low-sitting glyphs to lift and
-   simply rode the 1.5px translation up with the label. The margins hand that
-   1.5px back — equal and opposite rather than `position: relative`, which moves
-   the element into the positioned paint layer for a sub-pixel nudge. It was
-   `top: 2px`, half a pixel too much: measured 14.19 above against 13.19 below.
-   The correction is the FULL padding shift because that pair sums to the
-   original value, so it translates the content box rather than shrinking it. */
-.db-btn-cta-arrow {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  margin-top: 1.5px;
-  margin-bottom: -1.5px;
-}
-
 .db-quote-edit-toggle {
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
@@ -445,7 +429,7 @@
    chevron — an SVG's box is its ink, so it had no low glyphs to lift and rode
    the 0.95px translation up with the text (measured -0.95 from centre). Equal
    and opposite margins hand it back without touching paint order or the box
-   height. Same trap as `.db-btn-cta-arrow` and `.rs-track`. */
+   height. Same trap as `.rs-track` and `.rd-viewall svg`. */
 .db-viewall svg {
   width: 12px;
   height: 12px;

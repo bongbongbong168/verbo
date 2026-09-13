@@ -517,30 +517,10 @@ form.cl-entry-action {
 
 /* ---- the role filter ---- */
 
-.cl-tabs {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
 
 /* No transition on the selected fill — a transition only advances while the
    tab composites frames, so a pill switched in a backgrounded tab would come
    back looking unselected. The colour IS the state. */
-.cl-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.38rem 0.75rem;
-  border: 1px solid var(--cl-line);
-  border-radius: 999px;
-  background: var(--cl-card);
-  font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--cl-muted);
-  cursor: pointer;
-}
 
 .cl-tab:hover {
   border-color: var(--cl-fill);
@@ -793,9 +773,12 @@ form.cl-entry-action {
 
 .cl-head {
   display: flex;
-  align-items: center;
+  /* Top-aligned, because the body is no longer one line: a description and a
+     counts row sit under the name, and centring would float the mark and the
+     code card against the middle of a block that can be three lines tall. */
+  align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.3rem;
+  margin-bottom: 1.6rem;
 }
 
 .cl-head-icon {
@@ -836,37 +819,58 @@ form.cl-entry-action {
 
 /* ---- tab strip ---- */
 
+/* AN UNDERLINED ROW, not a segmented control on a tinted track. The pill
+   strip read as four buttons of equal weight sitting above the page; tabs
+   are navigation, and a rule under the current one says "you are in this
+   part of the class" without competing with the actions inside it. The
+   hairline runs the full width so the row reads as one edge rather than
+   four separate marks. */
 .cl-tabs {
   display: flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 1.2rem;
-  border-radius: 13px;
-  background: var(--cl-well);
+  gap: 1.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--cl-line);
 }
 
 .cl-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
-  justify-content: center;
-  padding: 0.6rem 1rem;
+  padding: 0.1rem 0 0.75rem;
   border: none;
-  border-radius: 10px;
   background: none;
-  color: var(--cl-accent);
+  color: var(--cl-muted);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
 
+.cl-tab:hover {
+  color: var(--cl-text);
+}
+
 /* Instant — the active tab must be right on the first paint. */
 .cl-tab.active {
-  background: var(--cl-card);
-  color: var(--cl-text);
-  box-shadow: 0 2px 6px rgba(28, 23, 48, 0.12);
+  color: var(--cl-accent);
+}
+
+/* Drawn over the strip’s own hairline, not above it — a 2px rule sitting
+   on a 1px line is what makes the current tab look attached to the page
+   below rather than underlined twice. Static, never transitioned: this is
+   the state itself, and a transition that never gets a frame would leave no
+   tab looking current. */
+.cl-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--cl-fill);
 }
 
 /* ---- panels, forms, tables ---- */
@@ -1947,5 +1951,218 @@ form.cl-entry-action {
   .cl-danger {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+
+/* ---- class header: description, status, counts ---- */
+
+.cl-head-desc {
+  max-width: 62ch;
+  margin: 0.6rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
+.cl-head-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.4rem;
+  margin-top: 0.9rem;
+}
+
+.cl-head-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--cl-text);
+}
+
+.cl-mini-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--cl-accent);
+}
+
+/* Green for a live class, grey for one put away. The dot carries the state as
+   well as the word, so the two rows tell apart at a glance in a chip row that
+   is otherwise all one lavender. */
+.cl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Cap-band correction, measured like every other pill here. */
+  padding: calc(0.2rem - 0.935px) 0.7rem calc(0.2rem + 0.935px);
+  border-radius: 999px;
+  background: #e7f2ec;
+  color: #2f6b4f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cl-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cl-status.archived {
+  background: #eeedf3;
+  color: #6b6780;
+}
+
+/* ---- body: the panel and its rail ---- */
+
+/* 1fr beside a fixed rail rather than two fractions: the rail holds short
+   dated lines and gains nothing from extra width, while the curriculum is the
+   part that should take whatever is going. `minmax(0, 1fr)` is what makes the
+   left column’s width mean anything — a grid item’s automatic minimum is its
+   content, and a long assignment title would otherwise set the floor. */
+.cl-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* No rail to show — the panel takes the width back rather than leaving a
+   column of empty page beside it. */
+.cl-body-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cl-main {
+  min-width: 0;
+}
+
+.cl-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.cl-rail-card {
+  padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--cl-line);
+  border-radius: 16px;
+  background: var(--cl-card);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
+}
+
+.cl-rail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+.cl-rail-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cl-rail-icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  color: var(--cl-accent);
+}
+
+.cl-feed,
+.cl-due {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-feed-row,
+.cl-due-row {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--cl-line);
+}
+
+.cl-feed-row:last-child,
+.cl-due-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Nudged onto the first line’s cap band rather than its line box — a dot
+   centred on the box sits visibly above the text beside it. */
+.cl-feed-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--cl-fill);
+}
+
+.cl-feed-submitted {
+  background: #5aa87d;
+}
+
+.cl-feed-material_posted {
+  background: #bcb3e8;
+}
+
+.cl-feed-what {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.cl-feed-title,
+.cl-due-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--cl-text);
+}
+
+.cl-due-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.cl-feed-when,
+.cl-due-when {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--cl-muted);
+}
+
+.cl-due-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--cl-well);
+}
+
+.cl-due-mark .cl-rail-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* The rail drops under the panel before the page gutter closes in, so the
+   curriculum never has to share a narrow screen with it. */
+@media (max-width: 1100px) {
+  .cl-body {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

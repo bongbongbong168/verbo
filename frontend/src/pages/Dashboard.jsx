@@ -144,22 +144,6 @@ function whenLabel(iso, endIso) {
   return `${date} · ${time}`
 }
 
-function ArrowRightIcon() {
-  return (
-    <svg
-      className="db-btn-cta-arrow"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 5l7 7-7 7" />
-    </svg>
-  )
-}
-
 function ChevronRight() {
   return (
     <svg
@@ -903,7 +887,6 @@ export default function Dashboard() {
           <div className="db-hero-actions">
             <Link to="/find-tutor" className="db-btn-cta">
               Find Tutor
-              <ArrowRightIcon />
             </Link>
             {user?.is_admin && !editingQuote && (
               <button
