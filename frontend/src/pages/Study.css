@@ -15,7 +15,19 @@
   background: var(--st-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
-  padding: 2rem 90px 3rem; /* 90px side gutter, matching the sidebar-to-content gap used across the app */
+  /* 90px side gutter, matching the sidebar-to-content gap used across the app.
+     THE BOTTOM CARRIES THE FLOATING ASSISTANT BUTTON'S FOOTPRINT. That button
+     is `position: fixed`, so the last thing on a page cannot be scrolled out
+     from under it — and the last thing on this page is the level caption,
+     which the button was sitting on top of. Measured at 560px: the button held
+     x 490-544 while the description ran to 540, so it covered the end of
+     "…simple daily conversation." The 78px is the button's own footprint,
+     24px of offset plus its 54px, and it is reserved here rather than on
+     `.sb-main` because that wrapper is shared with pages that set their own
+     background — a reservation there would show this page's ground as a strip
+     under a white one. Any other page reported with the same collision wants
+     the same line, not a change to the wrapper. */
+  padding: 2rem 90px calc(3rem + 78px);
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--st-text);
 }
