@@ -916,10 +916,8 @@
 .rd-cm-new-body {
   display: flex;
   flex-direction: column;
-  /* The action sits at the RIGHT end of the field it belongs to, rather than
-     under its left edge, where it read as a separate unrelated control. */
-  align-items: flex-end;
-  gap: 0.55rem;
+  align-items: flex-start;
+  gap: 0.5rem;
   flex: 1;
   min-width: 0;
 }
@@ -1105,32 +1103,11 @@
   margin-top: 0.4rem;
 }
 
-/* An empty log is an INVITATION, not a status line. It was one grey sentence
-   sitting under the composer, indistinguishable from a disabled hint; it gets
-   its own tinted well so the section reads as ready rather than broken. */
 .rd-cm-empty,
 .rd-cm-locked {
-  margin: 0.9rem 0 0;
-  padding: 0.9rem 1rem;
-  border-radius: 12px;
-  background: #f6f4fd;
+  margin: 0.6rem 0;
   font-size: 0.88rem;
   color: var(--rd-text-muted);
-  text-align: center;
-}
-
-/* ---- the comment log, as a CARD ----
-   It was bare rows on the page ground: a hairline, a grey textarea, a pale
-   button and a line of grey text. Nothing said where the conversation started
-   or ended, and the composer read as a disabled form rather than an invitation.
-   The panel gives it an edge, the same white card every other surface in this
-   app sits on. */
-.rd-cm-panel {
-  padding: 1.1rem 1.2rem 1.2rem;
-  border: 1px solid var(--rd-border);
-  border-radius: 16px;
-  background: var(--rd-panel-bg);
-  box-shadow: 0 2px 10px rgba(28, 23, 48, 0.05);
 }
 
 /* ---- recommendations ---- */

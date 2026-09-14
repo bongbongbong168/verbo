@@ -273,10 +273,6 @@ export default function ArticleComments({ articleId, onCountChange }) {
         <span className="rd-sec-count">{total}</span>
       </div>
 
-      {/* Everything below the heading is one card, so the conversation has a
-          visible beginning and end instead of floating on the page ground. */}
-      <div className="rd-cm-panel">
-
       {user ? (
         <form
           className="rd-cm-new"
@@ -365,7 +361,6 @@ export default function ArticleComments({ articleId, onCountChange }) {
           </div>
         ))}
       </ul>
-      </div>
     </section>
   );
 }
