@@ -69,6 +69,16 @@
    dialogs 60-95. `relative` rather than the old `absolute` + `translateY`,
    since the row is a plain flex end-aligned box now. */
 .rd-topbar-icons {
+  /* PINNED RIGHT BY ITS OWN MARGIN, not by the row`s `space-between`.
+     On Read the row holds a title and then these tools, so space-between put
+     them where they belong. On ReadArticle the tools are the row`s ONLY child
+     — that page deliberately has no title up here, because its `Read Station`
+     heading sits below the divider and a second one would only repeat it — and
+     a lone child under space-between goes to the START. That is why the bell
+     and the account button sat on the left of the article page and nowhere
+     else. An auto margin says `right` regardless of how many siblings there
+     are, and changes nothing on the pages that already had two. */
+  margin-left: auto;
   position: relative;
   z-index: 50;
   display: flex;
