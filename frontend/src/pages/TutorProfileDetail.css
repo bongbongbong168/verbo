@@ -481,11 +481,17 @@
 
 /* ---- rating summary ---- */
 
+/* SIDE PADDING MATCHES `.td-review`, so the rating bars and the reviews under
+   them start on one left edge. At 1.2rem the summary's content sat 19.2px in
+   from the card while every review row sat at 3.2px, which read as the block
+   being indented for no reason - and the well's tint is `--td-bg` on white, so
+   nothing on screen accounted for the step. The vertical padding is untouched;
+   it is the one that separates the block from the rows. */
 .td-rsum {
   display: flex;
   align-items: center;
   gap: 1.6rem;
-  padding: 1rem 1.2rem;
+  padding: 1rem 0.2rem;
   margin-bottom: 0.4rem;
   border-radius: 12px;
   background: var(--td-bg);

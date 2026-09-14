@@ -482,8 +482,16 @@
   border-color: var(--ed-accent);
 }
 
+/* The row's boxes all sit on one centre already; these three labels did not,
+   because centring a box centres its LINE BOX and Hellix reserves more ascent
+   than a short label uses. Measured against a flat-capped `H`: "to" sat 0.831px
+   low of the row's centre, the badge 0.95 and the note 0.725. Equal-and-opposite
+   margins on the two plain spans, where moving the element moves nothing but
+   its glyphs. */
 .ed-range-to {
   flex: none;
+  margin-top: -0.831px;
+  margin-bottom: 0.831px;
   font-size: 0.83rem;
   color: var(--ed-muted);
 }
@@ -492,7 +500,12 @@
    question this row is asked. */
 .ed-range-len {
   flex: none;
-  padding: 0.12rem 0.45rem;
+  /* PADDING, not a margin: the badge's box is already centred on the row, and
+     a margin would drag its fill off centre along with the label. Splitting
+     the original 0.12rem (1.92px) unevenly lifts the text inside its own pill
+     and leaves the pill exactly where it is - the sum is unchanged, so the
+     badge's height is too. */
+  padding: 0.97px 0.45rem 2.87px;
   border-radius: 6px;
   background: var(--ed-accent-soft);
   color: #fff;
@@ -502,6 +515,8 @@
 
 .ed-range-fits {
   flex: 1;
+  margin-top: -0.725px;
+  margin-bottom: 0.725px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
