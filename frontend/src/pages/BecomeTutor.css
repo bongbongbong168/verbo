@@ -229,7 +229,7 @@
 }
 
 .bt-field textarea {
-  resize: vertical;
+  resize: none;
 }
 
 .bt-field input:focus,

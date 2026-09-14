@@ -82,6 +82,24 @@ html {
   zoom: var(--app-scale);
 }
 
+/* NO RESIZE GRABBER ON ANY TEXTAREA, ANYWHERE. The browser's default handle is
+   a little diagonal notch in the bottom-right corner that belongs to the UA,
+   not to this app: it is drawn in the UA's own grey, it ignores the field's
+   border radius, and dragging it produces a box no layout here expects. Set
+   once at the root rather than per stylesheet, because the per-page rules are
+   exactly how eleven textareas ended up disagreeing — nine allowed vertical
+   resizing and two did not.
+
+   An element selector, so any page rule that needs to opt back in still can
+   with a single class. Nothing does today: the `resize: vertical` in
+   BookingDialog, EditDrawer, BecomeTutor, Classes, FindTutor, TutorApplications
+   and TutorProfileDetail were all changed to `none` alongside this, or they
+   would outrank it on specificity and the handle would survive on precisely
+   the forms it was reported on. */
+textarea {
+  resize: none;
+}
+
 /* The app-wide base face.
 
    This file only ever declared @font-face blocks — nothing set a font-family on

@@ -327,7 +327,7 @@
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.9rem;
-  resize: vertical;
+  resize: none;
 }
 
 .ta-actions {

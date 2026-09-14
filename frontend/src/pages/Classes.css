@@ -918,7 +918,7 @@ form.cl-entry-action {
   font-size: 0.9rem;
   color: var(--cl-text);
   outline: none;
-  resize: vertical;
+  resize: none;
 }
 
 .cl-field input:focus,
@@ -1462,7 +1462,7 @@ form.cl-entry-action {
   font-family: inherit;
   font-size: 0.85rem;
   outline: none;
-  resize: vertical;
+  resize: none;
 }
 
 .gr-grade input {
@@ -1765,7 +1765,7 @@ form.cl-entry-action {
 }
 
 .ci-area {
-  resize: vertical;
+  resize: none;
   line-height: 1.5;
 }
 

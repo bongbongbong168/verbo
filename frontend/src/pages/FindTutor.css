@@ -302,18 +302,30 @@
   margin-bottom: 0.8rem;
 }
 
+/* FLEX-START, NOT CENTER, AND THAT IS THE HALF THAT MATTERS ON A WRAPPED ROW.
+   Centring puts the mark in the middle of the whole text block, so a languages
+   line long enough to take two lines left its glyph floating in the gutter
+   between them, 7.08px below the line it labels. Measured on a real card.
+   Anchored to the top it sits on line one wherever the text ends up. */
 .ft-meta-row {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   color: var(--ft-text);
   font-size: 0.84rem;
 }
 
+/* An SVG's box IS its ink, so the mark has no cap band of its own to centre
+   against the label's. From the row's top the first line's cap centre is
+   8.917px and half this mark is 8, which is the whole correction. Equal and
+   opposite so the row's height does not change with it, and margins rather
+   than `position: relative` for a sub-pixel nudge. */
 .ft-meta-row svg {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  margin-top: 0.917px;
+  margin-bottom: -0.917px;
   color: var(--ft-text-muted);
 }
 
@@ -345,7 +357,7 @@
   padding: 0.5rem 0.7rem;
   box-sizing: border-box;
   outline: none;
-  resize: vertical;
+  resize: none;
   margin-bottom: 0.5rem;
 }
 

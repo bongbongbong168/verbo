@@ -1267,7 +1267,7 @@
   background: #f8f7fd;
   border: 1px solid var(--td-border);
   border-radius: 10px;
-  resize: vertical;
+  resize: none;
 }
 
 .td-review-form textarea:focus {
