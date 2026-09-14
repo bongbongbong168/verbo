@@ -123,7 +123,19 @@ class ScanController extends Controller
         // Read before OCR — the upload is deleted in the finally below, so this
         // is the only chance to record how big it was.
         $sizeBytes = $request->file('image')->getSize();
-        $path = $request->file('image')->store('scans');
+        /* THE DISK IS NAMED, and leaving it to the default is what broke Scan in
+           production outright. `FILESYSTEM_DISK` is `public` on the deployed
+           service, so this wrote to storage/app/PUBLIC/scans while the line
+           below built the path as storage/app/scans — tesseract was handed a
+           file that was never there, and every upload came back "Could not read
+           that image. Try a clearer photo", whatever the photo. Read from the
+           production log, which said plainly: cannot read input file ... No such
+           file or directory.
+
+           `local` is also the only correct disk here on its own merits: this is
+           someone's private photograph, and the public disk is published at
+           /storage/... with nothing in front of it. */
+        $path = $request->file('image')->store('scans', 'local');
         $fullPath = storage_path('app/'.$path);
 
         try {
@@ -139,7 +151,7 @@ class ScanController extends Controller
                 'message' => 'Could not read that image. Try a clearer photo, or one with more contrast.',
             ], 422);
         } finally {
-            Storage::delete($path);
+            Storage::disk(local)->delete($path);
         }
 
         $words = collect($dictionary->segment($text))

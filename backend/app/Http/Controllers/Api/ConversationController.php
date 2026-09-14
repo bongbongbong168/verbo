@@ -216,7 +216,15 @@ class ConversationController extends Controller
             $attachment = [
                 // The PRIVATE disk. These are messages between two people, so a
                 // public URL anyone could guess would leak them.
-                'attachment_path' => $upload->store('chat'),
+                /* THE DISK IS NAMED. `FILESYSTEM_DISK` is `public` on the
+                   deployed service, so an unqualified `store()` put message
+                   attachments on the PUBLIC disk — which `storage:link`
+                   publishes at /storage/... with no authentication in front of
+                   it. Verified against production: a chat attachment fetched
+                   with no token answered 200. The route below re-checks who is
+                   asking, and that check is worth nothing if the bytes are also
+                   sitting in the web root. */
+                'attachment_path' => $upload->store('chat', 'local'),
                 'attachment_name' => $upload->getClientOriginalName(),
                 'attachment_mime' => $upload->getClientMimeType(),
                 'attachment_size' => $upload->getSize(),
@@ -295,9 +303,9 @@ class ConversationController extends Controller
     {
         abort_unless($message->conversation->allows($request->user()), 403);
         abort_unless($message->attachment_path, 404);
-        abort_unless(Storage::exists($message->attachment_path), 404);
+        abort_unless(Storage::disk(local)->exists($message->attachment_path), 404);
 
-        return Storage::response(
+        return Storage::disk(local)->response(
             $message->attachment_path,
             $message->attachment_name,
             ['Content-Type' => $message->attachment_mime ?: 'application/octet-stream']
@@ -339,7 +347,7 @@ class ConversationController extends Controller
             // The row cascades; the file on disk does not, and an orphaned
             // upload in a private bucket is unreachable and permanent.
             if ($message->attachment_path) {
-                Storage::delete($message->attachment_path);
+                Storage::disk(local)->delete($message->attachment_path);
             }
 
             $message->delete();

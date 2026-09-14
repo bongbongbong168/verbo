@@ -197,7 +197,14 @@ class TutorApplicationController extends Controller
         $file = $request->file('file');
         // PRIVATE disk. A certificate carries a real name and often a date of
         // birth; a public URL is readable by anyone who ever obtains it.
-        $path = $file->store('tutor-credentials');
+        /* THE DISK IS NAMED — the most sensitive of the three. A credential
+           carries a real name and often a date of birth, and the model goes to
+           some length to keep it unreachable: no `url` accessor, `path` not
+           fillable, never serialised. All of that was undone by an unqualified
+           `store()`, because `FILESYSTEM_DISK` is `public` on the deployed
+           service and the public disk is published at /storage/... with no
+           authentication. */
+        $path = $file->store('tutor-credentials', 'local');
 
         $credential = $profile->credentials()->create([
             'label' => $data['label'] ?? null,
@@ -222,7 +229,7 @@ class TutorApplicationController extends Controller
         $profile = $tutorCredential->tutorProfile;
         abort_unless($profile && (int) $profile->user_id === $request->user()->id, 403);
 
-        Storage::delete($tutorCredential->path);
+        Storage::disk(local)->delete($tutorCredential->path);
         $tutorCredential->delete();
 
         return response()->noContent();
@@ -240,9 +247,9 @@ class TutorApplicationController extends Controller
         $profile = $tutorCredential->tutorProfile;
         $owns = $profile && (int) $profile->user_id === $request->user()->id;
         abort_unless($owns || $request->user()->is_admin, 403);
-        abort_unless(Storage::exists($tutorCredential->path), 404);
+        abort_unless(Storage::disk(local)->exists($tutorCredential->path), 404);
 
-        return Storage::response($tutorCredential->path, $tutorCredential->name);
+        return Storage::disk(local)->response($tutorCredential->path, $tutorCredential->name);
     }
 
     /** The row the queue renders. Deliberately not the whole application. */
