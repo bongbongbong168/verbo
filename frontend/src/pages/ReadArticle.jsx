@@ -14,36 +14,6 @@ import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import "./Read.css";
 import ReaderSwitch from '../components/ReaderSwitch'
 
-/**
- * The standfirst under the title.
- *
- * This was `body_en.slice(0, 140)` — a cut at exactly 140 CHARACTERS, wherever
- * that happened to land. It stopped mid-sentence with no ellipsis, so the line
- * read "...lift yourself up by learning. Whether" and simply ended, which looks
- * like the text failed to load rather than like a summary.
- *
- * It now ends on a word and says it was cut. A sentence boundary is preferred
- * when there is one in range, because a summary that ends on a full stop reads
- * as finished rather than truncated; otherwise it backs up to the last space.
- */
-function summarise(text, limit = 180) {
-  const clean = text.replace(/\s+/g, ' ').trim();
-  if (clean.length <= limit) return clean;
-
-  const window = clean.slice(0, limit);
-  const sentence = Math.max(
-    window.lastIndexOf('. '),
-    window.lastIndexOf('! '),
-    window.lastIndexOf('? '),
-  );
-  // Only take a sentence end if it is not so early that it throws most of it
-  // away — otherwise a short opening line would become the whole summary.
-  if (sentence > limit * 0.6) return window.slice(0, sentence + 1);
-
-  const space = window.lastIndexOf(' ');
-  return `${(space > 0 ? window.slice(0, space) : window).replace(/[,;:]$/, '')}…`;
-}
-
 function formatDate(value) {
   if (!value) return "";
   return new Date(value).toLocaleDateString("en-US", {
@@ -275,7 +245,9 @@ export default function ReadArticle() {
           <div className="rd-featured-body">
             <h2 className="rd-featured-title">{article.title}</h2>
             {article.body_en && (
-              <p className="rd-featured-excerpt">{summarise(article.body_en)}</p>
+              <p className="rd-featured-excerpt">
+                {article.body_en.slice(0, 140)}
+              </p>
             )}
             {/* Learning metadata. Each chip renders only when the article
                 actually carries that field — the five articles written before
