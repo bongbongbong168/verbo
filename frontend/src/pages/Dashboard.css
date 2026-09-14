@@ -382,11 +382,19 @@
   margin: 0;
 }
 
+/* CENTRED ON THE CAP BAND, NOT ON THE BOX — `top: 50%` alone centres the bar
+   on the heading's LINE BOX, and Hellix reserves more ascent than a capital
+   uses, so the box's middle sits above the letters' middle. Measured against a
+   flat-capped `H`: the bar came out 1.65px high of the cap band's centre at
+   this size, and next to a rule three pixels wide that reads as the mark
+   floating off its own heading. The margin hands those pixels back; in `em` so
+   it tracks the font size the way `height: 1.05em` already does. */
 .db-section-title::before {
   content: '';
   position: absolute;
   left: 0;
   top: 50%;
+  margin-top: 0.0955em;
   transform: translateY(-50%);
   width: 3px;
   height: 1.05em;
@@ -966,12 +974,18 @@
   color: var(--db-text-muted);
 }
 
-/* ---- teacher card ---- */
+/* ---- teacher card ----
+   THE PODCAST CARD'S SHELL AND ITS TYPE STACK, deliberately: the two sections
+   sit one above the other in the same column, and two card styles there read as
+   two kinds of product. Everything below mirrors `.db-pod` — the same gap,
+   padding, radius, stroke, shadow, the same 112px cover, and the same
+   muted-eyebrow / bold-headline / middle-line / muted-tail rhythm. What differs
+   is only what a tutor genuinely is. */
 
 .db-teacher {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 3px;
   /* The podcast and read cards both have this; the teacher card did not, and
      that is the whole reason the sections did not line up. Given the same
      `flex-basis: 74%`, content-box added its 20px of padding and 2px of border
@@ -985,6 +999,7 @@
   border-radius: 14px;
   text-decoration: none;
   color: var(--db-text);
+  box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
   transition:
     transform 0.14s ease,
     box-shadow 0.14s ease;
@@ -994,51 +1009,41 @@
    `components/TutorCover` when the profile page's suggestion strip turned out
    to be rendering a bare grey rectangle for the same case this had already
    solved. `font-size` is what scales the generated initial, which is sized in
-   `em` so one component can serve a 92px cover here and a taller one there. */
+   `em` so one component can serve this cover and a taller one there — so the
+   initial has to be scaled along with the box, or the same tutor's letter
+   shrinks relative to their card. 112/92 of the old 1rem. */
 .db-teacher-cover {
-  height: 92px;
-  border-radius: 8px;
-  font-size: 1rem;
+  height: 112px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  font-size: 1.22rem;
 }
 
-/* The avatar rides up over the cover's bottom edge, as in the design. The
-   negative margin sits on the row so the name keeps its own baseline instead
-   of being dragged up with the avatar. */
-.db-teacher-head {
+/* `.db-pod-level`'s slot: the small muted line that says what KIND of thing
+   this is before you read its name. A rating is the tutor's answer to that,
+   and it is the only real number on the card. */
+.db-teacher-rating {
+  font-size: 0.74rem;
+  color: var(--db-text-muted);
+}
+
+/* `.db-pod-title`'s slot, at one line rather than two: an episode title is
+   authored "中文 - English" and needs the second line, a person's name does
+   not. No fade mask for the same reason — the box is sized by its own text, and
+   a downward fade on a box with no independent height eats the glyphs it is
+   meant to soften. Ellipsis is the right backstop here. */
+.db-teacher-name {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  margin-top: -24px;
-  margin-bottom: 0.1rem;
-}
-
-.db-teacher-avatar {
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex: none;
-  overflow: hidden;
-  border-radius: 8px;
-  border: 2px solid var(--db-card);
-  background: var(--db-pill-bg);
-  color: var(--db-accent);
-  font-weight: 700;
-}
-
-.db-teacher-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.db-teacher-name {
-  align-self: flex-end;
-  margin-bottom: 0.15rem;
+  gap: 0.3rem;
   min-width: 0;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 700;
+  line-height: 1.3;
+}
+
+.db-teacher-name-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1048,27 +1053,22 @@
   width: 13px;
   height: 13px;
   flex: none;
-  align-self: flex-end;
-  margin-bottom: 0.3rem;
 }
 
-.db-teacher-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
+/* `.db-pod-author` and `.db-pod-lang`. */
+.db-teacher-lessons {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.db-teacher-lang {
   min-width: 0;
-  font-size: 0.79rem;
-  line-height: 1.25;
+  font-size: 0.72rem;
   color: var(--db-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.db-teacher-meta svg {
-  width: 14px;
-  height: 14px;
-  flex: none;
 }
 
 /* ---- Top Reads ---- */

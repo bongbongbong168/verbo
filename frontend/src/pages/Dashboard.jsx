@@ -204,47 +204,10 @@ function VerifiedIcon() {
   )
 }
 
-function CapIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 4 2.5 8.5 12 13l9.5-4.5L12 4z" />
-      <path d="M6 10.5V16c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-5.5" />
-    </svg>
-  )
-}
-
-function LangIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 6h9M7.5 4v2M10 6c0 4-3.5 7-7 7" />
-      <path d="M6 10.5c1.5 2 3.5 3.2 5.5 3.7" />
-      <path d="m13 20 4-9 4 9M14.4 17h5.2" />
-    </svg>
-  )
-}
-
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="#f5b301" aria-hidden="true">
-      <path d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.8-5.3-2.8-5.3 2.8 1-5.8L3.5 9.7l5.9-.9z" />
-    </svg>
-  )
-}
+/* `CapIcon`, `LangIcon` and `StarIcon` were deleted with the teacher card's
+   meta rows. The podcast card beside it carries no icons on its text lines, so
+   matching it meant losing all three rather than keeping the star alone —
+   one glyph left in a row of three plain lines reads as a leftover. */
 
 /**
  * One mark per goal type, on the app's usual 24 grid at strokeWidth 1.7.
@@ -992,17 +955,29 @@ export default function Dashboard() {
           <section className="db-section">
             <SectionHead title="Recommend Teachers" to="/find-tutor" />
             {tutorQuery.loading ? (
-              <SkeletonCards className="db-grid3" count={3} mediaHeight={96} />
+              <SkeletonCards className="db-grid3" count={3} mediaHeight={112} />
             ) : tutors.length === 0 ? (
               <p className="db-empty">No tutors yet.</p>
             ) : (
               <div className="db-grid3">
                 {tutors.map((t) => (
                   <Link className="db-teacher" key={t.id} to={`/find-tutor/${t.id}`}>
-                    {/* Shared with the profile page's "Teacher you may like"
-                        strip — see `TutorCover` for why it was pulled out.
-                        A tutor with no photo gets a generated cover rather
-                        than a plain grey block: a tone and the initial,
+                    {/* THE PODCAST CARD'S SHAPE, one row down, because the two
+                        sit in the same column and read as one page: a full
+                        cover, then a muted eyebrow, the bold headline, a middle
+                        line and a muted tail. Only what a TUTOR actually is
+                        differs — a rating where the episode has a level, a name
+                        where it has a title, lessons where it has an author.
+
+                        The overlapping avatar that used to ride the cover's
+                        bottom edge is GONE, and not only for the resemblance:
+                        it was a second, smaller copy of the same photograph,
+                        which is the exact thing the profile page's "Teacher you
+                        may like" strip deleted for the same reason.
+
+                        Shared with that strip — see `TutorCover` for why it was
+                        pulled out. A tutor with no photo gets a generated cover
+                        rather than a plain grey block: a tone and the initial,
                         oversized as texture rather than as something to
                         read. */}
                     <TutorCover
@@ -1011,30 +986,22 @@ export default function Dashboard() {
                       photoUrl={t.photo_url}
                       name={t.user.name}
                     />
-                    <span className="db-teacher-head">
-                      <span className="db-teacher-avatar">
-                        {t.photo_url ? (
-                          <img src={t.photo_url} alt="" />
-                        ) : (
-                          t.user.name.charAt(0).toUpperCase()
-                        )}
-                      </span>
-                      <span className="db-teacher-name">{t.user.name}</span>
-                      <VerifiedIcon />
-                    </span>
-                    <span className="db-teacher-meta">
-                      <CapIcon /> {PLACEHOLDER_TEACHER.lessons} Lesson
-                    </span>
-                    <span className="db-teacher-meta">
-                      <LangIcon /> {t.languages_spoken || 'Chinese (Mandarin)'}
-                    </span>
-                    <span className="db-teacher-meta">
-                      {/* No reviews yet reads as "New", not 0 — a zero looks
-                          like a terrible score rather than an absent one. */}
-                      <StarIcon />{' '}
+                    {/* No reviews yet reads as "New", not 0 — a zero looks like
+                        a terrible score rather than an absent one. */}
+                    <span className="db-teacher-rating">
                       {t.reviews_avg_rating != null
                         ? `${t.reviews_avg_rating} Rating`
                         : 'New tutor'}
+                    </span>
+                    <span className="db-teacher-name">
+                      <span className="db-teacher-name-text">{t.user.name}</span>
+                      <VerifiedIcon />
+                    </span>
+                    <span className="db-teacher-lessons">
+                      {PLACEHOLDER_TEACHER.lessons} Lessons
+                    </span>
+                    <span className="db-teacher-lang">
+                      {t.languages_spoken || 'Chinese (Mandarin)'}
                     </span>
                   </Link>
                 ))}
@@ -1046,7 +1013,7 @@ export default function Dashboard() {
           <section className="db-section">
             <SectionHead title="Podcasts" to="/podcast" />
             {podcastQuery.loading ? (
-              <SkeletonCards className="db-grid3" count={3} mediaHeight={96} />
+              <SkeletonCards className="db-grid3" count={3} mediaHeight={112} />
             ) : podcasts.length === 0 ? (
               <p className="db-empty">No podcasts yet.</p>
             ) : (

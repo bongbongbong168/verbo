@@ -231,19 +231,33 @@
   margin: 0;
 }
 
-/* Centred on the name's cap height, not its baseline — see the same fix on
-   .ft-card-verified in FindTutor.css. */
+/* MEASURED ON THE NAME'S CAP BAND — cap top to baseline against a flat-capped
+   `H`, never the ink box of whatever letters the tutor happens to have. Same
+   fix as `.ft-card-verified` in FindTutor.css.
+
+   Two things changed here. The nudge is EQUAL-AND-OPPOSITE MARGINS rather than
+   `position: relative`, which put a one-pixel optical correction into the
+   positioned paint layer for no reason; in a centred flex row the pair moves
+   the item down without changing the row's height. And the two sizes now carry
+   their OWN numbers: a flat -1px was serving an 18px mark beside a 1.95rem
+   name and a 13px mark beside a 1rem one, which cannot be the same
+   correction — measured, they sat 3.31px and 1.74px high respectively. */
 .td-verified {
   display: inline-flex;
   align-self: center;
-  position: relative;
-  top: -1px;
+  margin-top: 2.31px;
+  margin-bottom: -2.31px;
 }
 
 .td-verified svg {
   width: 18px;
   height: 18px;
   display: block;
+}
+
+.td-verified.sm {
+  margin-top: 0.74px;
+  margin-bottom: -0.74px;
 }
 
 .td-verified.sm svg {
@@ -788,10 +802,15 @@
   white-space: nowrap;
 }
 
+/* An SVG's box IS its ink, so centring the flex row centres the glyph's line
+   box against a mark that has none — measured 0.62px high on the label's cap
+   band. Margins again, not `position: relative`. */
 .td-similar-lang svg {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+  margin-top: 0.62px;
+  margin-bottom: -0.62px;
   color: var(--td-text-muted);
 }
 

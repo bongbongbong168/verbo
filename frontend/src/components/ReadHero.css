@@ -645,7 +645,9 @@
    other three slides have room to spare they do not need. */
 .rh-v-pro .rh-title {
   font-size: clamp(1.2rem, 1.7vw, 1.5rem);
-  margin-bottom: 0.3rem;
+  /* The same grouping as the other slides, scaled to this denser one: the
+     title opens the list under it rather than sitting on top of it. */
+  margin-bottom: 0.5rem;
 }
 
 .rh-v-pro .rh-points li {
@@ -654,6 +656,9 @@
 }
 
 .rh-v-pro .rh-points {
-  gap: 0.22rem 1rem;
-  margin: 0.1rem 0 0.6rem;
+  gap: 0.3rem 1rem;
+  /* Ticks are one group, so they breathe a little between themselves and then
+     leave real space before the action — 0.6rem had the button almost touching
+     the last benefit. */
+  margin: 0 0 0.95rem;
 }

@@ -597,9 +597,16 @@
    the nudge that used to centre it on the cap height is measured from there.
    `vertical-align` is the right tool for an inline mark; `align-self` was for
    the flex item it used to be. */
+/* MEASURED, not estimated. The tick's ink IS its box (the path's bbox runs
+   1..23 of a 0 0 24 24 viewBox, so it is centred in its own frame), and the
+   target is the NAME'S CAP BAND — cap top to baseline, never the ink box of
+   whatever letters the tutor happens to have. At -0.18em the mark's centre sat
+   2.47px CSS BELOW that band's centre; -0.0653em is the offset that lands it
+   on it. Re-measure if the font size on `.ft-card-name` changes: this is an
+   em, so it tracks the size, but the SVG is a fixed 18px and does not. */
 .ft-card-verified {
   display: inline-flex;
-  vertical-align: -0.18em;
+  vertical-align: -0.0653em;
 }
 
 .ft-card-verified svg {

@@ -342,11 +342,17 @@ export default function Checkout() {
 
   return (
     <div className="ck">
-      <button type="button" className="ck-back" onClick={() => navigate(-1)}>
-        ← Back
-      </button>
+      {/* ONE CENTRED COLUMN, and Back belongs inside it. The layout is capped
+          at 980px, so on a wide screen it was pinned to the page's left gutter
+          with the whole remainder empty to its right — two cards adrift in a
+          room. Centring only `.ck-layout` would have left Back behind at the
+          old edge, which is why this is a wrapper rather than a margin. */}
+      <div className="ck-col">
+        <button type="button" className="ck-back" onClick={() => navigate(-1)}>
+          ← Back
+        </button>
 
-      <div className="ck-layout">
+        <div className="ck-layout">
         {/* Screen 4: what you are paying for. */}
         <section className="ck-card">
           <h1 className="ck-h1">Booking summary</h1>
@@ -399,9 +405,15 @@ export default function Checkout() {
 
           {clientSecret && stripePromise ? (
             <>
+              {/* THE PROCESSOR IS NEVER NAMED ON SCREEN. The sentence still
+                  has to be true and still has to say the thing that matters —
+                  that Verbo's own server never sees a card number — so it
+                  names the guarantee rather than the vendor. The code below
+                  is unchanged; this is wording, not plumbing. */}
               <p className="ck-secure">
                 <LockIcon />
-                Card details go straight to Stripe and never reach Verbo.
+                Card details go straight to the payment provider and never reach
+                Verbo.
               </p>
 
               {error && <p className="ck-error">{error}</p>}
@@ -426,8 +438,9 @@ export default function Checkout() {
                   processor wired in yet. */}
               <p className="ck-mock">
                 <LockIcon />
-                Demo checkout — no card details are collected and nothing is charged. Add Stripe
-                keys to the backend&rsquo;s .env to take real payments.
+                Demo checkout — no card details are collected and nothing is
+                charged. Add payment keys to the backend&rsquo;s .env to take
+                real payments.
               </p>
 
               {error && <p className="ck-error">{error}</p>}
@@ -438,6 +451,7 @@ export default function Checkout() {
             </>
           )}
         </section>
+        </div>
       </div>
     </div>
   )
