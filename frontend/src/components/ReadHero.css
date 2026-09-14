@@ -99,7 +99,14 @@
 }
 
 .rh-eyebrow {
-  margin: 0 0 0.5rem;
+  /* SPACING IS A GROUPING, not a decreasing series. It ran 0.5 / 0.4 / 0.35 /
+     0.75 — each gap slightly tighter than the last and then a jump, which is
+     what made the block read as cramped at the top and loose at the bottom.
+     The eyebrow names the slide, so it sits near its title; the meta and note
+     are two lines of the same supporting detail, so they are tight to each
+     other and set apart from the headline as a pair; the action gets real air,
+     because it is the one thing here you can do. */
+  margin: 0 0 0.55rem;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -123,7 +130,8 @@
  * `-webkit-line-clamp` — that it makes `scrollHeight > clientHeight` always
  * true — costs nothing here, because nothing tests this element for overflow. */
 .rh-title {
-  margin: 0 0 0.4rem;
+  /* Opens the detail group below it. */
+  margin: 0 0 0.6rem;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: clamp(1.35rem, 2.1vw, 1.8rem);
   font-weight: 700;
@@ -144,7 +152,8 @@
 }
 
 .rh-meta {
-  margin: 0 0 0.35rem;
+  /* Tight to the note under it: one fact split over two lines, not two. */
+  margin: 0 0 0.2rem;
   font-size: 0.86rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
@@ -156,7 +165,7 @@
    fade mask because the box has an independent width (46ch) to clip against;
    the mask rule elsewhere applies where a box shrinks to its own content. */
 .rh-note {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1.15rem;
   font-size: 0.82rem;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.8);
@@ -168,7 +177,7 @@
 
 .rh-meta + .rh-cta,
 .rh-title + .rh-cta {
-  margin-top: 0.75rem;
+  margin-top: 1.15rem;
 }
 
 /* ---- the call to action ---- */
