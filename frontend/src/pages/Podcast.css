@@ -257,6 +257,13 @@
   display: none;
 }
 
+/* The gap between one rail and the next heading. It used to come from a
+   `.pc-shelf` wrapper; every shelf is a `Rail` now, which is a fragment with
+   no box of its own, so the space belongs to the boundary between them. */
+.pc-row + .pc-section-head {
+  margin-top: 2rem;
+}
+
 /* Tabbing into the shelf makes the arrow keys scroll it, so the focus ring has
    to be visible — but only for the keyboard, or a click would ring the row. */
 .pc-row:focus-visible {
@@ -591,10 +598,6 @@
 
 
 /* ---- topic shelves ---- */
-
-.pc-shelf {
-  margin-bottom: 2.2rem;
-}
 
 /* The Dashboard`s treatment, and for its reason: this pill repeats on every
    shelf down the page, so four solid lavender blocks would pull the eye off

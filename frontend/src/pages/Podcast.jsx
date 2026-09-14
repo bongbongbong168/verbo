@@ -63,7 +63,7 @@ function RailArrow({ back }) {
    There is no arrow-shaped hole for the keyboard, either: the row is
    `tabindex="0"`, so arrow keys scroll it natively once tabbed into, and the
    buttons are ordinary buttons. */
-function Rail({ title, children }) {
+function Rail({ title, children, onViewAll }) {
   /* The wheel handler lives in a shared hook — the Dashboard’s pick-up row
      wants exactly the same behaviour, and two copies of it is the drift that
      ReaderSwitch and ArticleCover were each extracted to stop.
@@ -107,6 +107,12 @@ function Rail({ title, children }) {
       <div className="pc-section-head">
         <h2 className="pc-section-title">{title}</h2>
         <div className="pc-rail-nav">
+          {onViewAll && (
+            <button type="button" className="pc-viewall" onClick={onViewAll}>
+              View all
+              <ChevronIcon />
+            </button>
+          )}
           <button type="button" className="pc-rail-btn" onClick={() => page(-1)}
             aria-label={`Scroll ${title} back`}>
             <RailArrow back />
@@ -133,40 +139,32 @@ function ChevronIcon() {
   );
 }
 
-/* ONE SHELF PER TOPIC, the shape the Read page already browses by.
+/* ONE RAIL PER TOPIC, the shape the Read page browses by — and a RAIL, not a
+   static grid.
 
-   Everything below Recommendations used to be a single "Discover new" grid —
+   Everything below Recommendations used to be a single `Discover new` grid:
    every remaining episode in one undifferentiated block, which answers "what
    else is there?" and nothing else. A shelf per topic answers the question
-   people actually arrive with: what is there about travel, about business.
+   people actually arrive with — what is there about travel, about business.
 
-   `View all` filters the page in place rather than routing, because the grid
-   it would navigate to is the one the topic pills already build — a second
-   copy is a second thing to keep true. Same decision, same wording, as Read. */
-function Shelf({ title, items, onViewAll }) {
-  if (!items.length) return null;
+   They were grids at first, and that was the bug behind "when I scroll on the
+   podcast card it should move left or right": a vertical gesture over a box
+   with no vertical overflow scrolls the PAGE, so only the Recommendations row
+   moved sideways and every other card on the page ignored the wheel. One `Rail`
+   for all of them also keeps the arrows, the hidden scrollbar and the wheel
+   handler from drifting apart between the top of the page and the rest of it.
 
-  return (
-    <section className="pc-shelf">
-      <div className="pc-section-head">
-        <h2 className="pc-section-title">{title}</h2>
-        <button type="button" className="pc-viewall" onClick={onViewAll}>
-          View all
-          <ChevronIcon />
-        </button>
-      </div>
-      <div className="pc-grid">
-        {items.map((p) => (
-          <EpisodeCard key={p.id} episode={p} />
-        ))}
-      </div>
-    </section>
-  );
-}
+   `View all` filters the page in place rather than routing: the grid it would
+   navigate to is the one the topic pills already build, and a second copy is a
+   second thing to keep true. Same decision, same wording, as Read. */
 
-/* Four to a shelf: it is what fits the panel at the card`s fixed 289px, and a
-   shelf is meant to tempt rather than empty a topic onto the page. */
-const SHELF_SIZE = 4;
+/* Eight to a rail. Four was the figure while these were grids, where a shelf
+   is meant to tempt rather than empty a topic onto the page — but a rail that
+   holds everything it is given has nothing to scroll, and scrolling is now the
+   point. Eight overflows at any realistic width while still stopping short of
+   the whole library. */
+const SHELF_SIZE = 8;
+
 function EpisodeCard({ episode }) {
   return (
     <div className="pc-card">
@@ -491,35 +489,32 @@ export default function Podcast() {
           {browsing ? (
             <>
               {shelves.map((shelf) => (
-                <Shelf
+                <Rail
                   key={shelf.topic}
                   title={shelf.topic}
-                  items={shelf.items}
                   onViewAll={() => setActiveTopic(shelf.topic)}
-                />
+                >
+                  {shelf.items.map((p) => (
+                    <EpisodeCard key={p.id} episode={p} />
+                  ))}
+                </Rail>
               ))}
 
               {unfiled.length > 0 && (
-                <section className="pc-shelf">
-                  <h2 className="pc-section-title">More episodes</h2>
-                  <div className="pc-grid">
-                    {unfiled.map((p) => (
-                      <EpisodeCard key={p.id} episode={p} />
-                    ))}
-                  </div>
-                </section>
+                <Rail title="More episodes">
+                  {unfiled.map((p) => (
+                    <EpisodeCard key={p.id} episode={p} />
+                  ))}
+                </Rail>
               )}
             </>
           ) : (
             discover.length > 0 && (
-              <section className="pc-shelf">
-                <h2 className="pc-section-title">More in this filter</h2>
-                <div className="pc-grid">
-                  {discover.map((p) => (
-                    <EpisodeCard key={p.id} episode={p} />
-                  ))}
-                </div>
-              </section>
+              <Rail title="More in this filter">
+                {discover.map((p) => (
+                  <EpisodeCard key={p.id} episode={p} />
+                ))}
+              </Rail>
             )
           )}
         </>
