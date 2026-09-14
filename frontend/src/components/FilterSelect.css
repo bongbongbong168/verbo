@@ -12,9 +12,22 @@
 .dd-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.7rem;
-  min-width: 160px;
+  /* `flex-start`, not `space-between`, now that the pill hugs its label: with
+     no spare width there is nothing for space-between to distribute, and it
+     would only matter again if a floor came back. The `gap` is the whole of
+     the space between the word and its chevron. */
+  justify-content: flex-start;
+  gap: 0.5rem;
+  /* NO WIDTH FLOOR. This carried `min-width: 160px`, which is wider than
+     "Price" or "Availability" need, so those two pills sat in a box with a
+     stretch of empty lavender before the chevron while the long one beside
+     them fitted exactly. The floor was buying a tidy column of equal pills —
+     but these are three different words, not a table, and the row already
+     reads as one group through its shared fill and radius.
+
+     Known trade-off: the label changes when a value is chosen, so a pill now
+     resizes as you pick. That is the cost of hugging the text, and it is what
+     was asked for. */
   font-family: 'Hellix', sans-serif;
   font-weight: 500;
   font-size: 0.9rem;

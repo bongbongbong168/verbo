@@ -9,9 +9,12 @@
 .pr-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.7rem;
-  min-width: 140px;
+  /* Matches `.dd-btn` beside it: the pill hugs its label rather than sitting
+     on a width floor, so "Price" is a Price-sized box instead of a stretch of
+     empty lavender before the chevron. `flex-start` because with no spare
+     width there is nothing for space-between to distribute. */
+  justify-content: flex-start;
+  gap: 0.5rem;
   font-family: 'Hellix', sans-serif;
   font-weight: 500;
   font-size: 0.9rem;
