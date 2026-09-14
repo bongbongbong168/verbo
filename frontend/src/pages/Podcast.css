@@ -217,9 +217,18 @@
      value and the control looks dead under the pointer. */
 }
 
-.pc-rail-btn:hover {
+.pc-rail-btn:hover:not(:disabled) {
   background: var(--pc-outline);
   color: #fff;
+}
+
+/* A real muted palette, never `opacity` — fading the stroke and the glyph
+   together at 0.4 drops the arrow to a smudge rather than reading as an
+   arrow that is off. The cursor is the other half of the message. */
+.pc-rail-btn:disabled {
+  border-color: #e3dff2;
+  color: #c6c0da;
+  cursor: default;
 }
 
 .pc-rail-btn svg {

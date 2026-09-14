@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
@@ -68,15 +68,64 @@ function Rail({ title, children, onViewAll }) {
      wants exactly the same behaviour, and two copies of it is the drift that
      ReaderSwitch and ArticleCover were each extracted to stop.
 
-     THE ARROWS CARRY NO STATE, and that is a deliberate simplification.
-     Greying them at the ends needs a measurement that re-runs on scroll and
-     on resize, and every version of that here either failed to update — the
-     row’s scroll-snap swallows programmatic scrolls, so the event it hangs
-     off does not always arrive — or re-rendered itself in a loop, because a
-     fresh state object fed a new children identity back into the effect.
-     scrollBy already clamps at both ends, so a click at the end of the shelf
-     is a harmless no-op, which is all the disabled state was buying. */
+     THE ARROWS KNOW WHERE THE ROW IS, and getting that right took two
+     attempts. A click on the back arrow at the start of a shelf is a no-op —
+     `scrollBy` clamps — so the button looked live and did nothing, which reads
+     as broken rather than as "you are already at the first card".
+
+     The earlier version of this measurement re-rendered in a loop, and the
+     reason is worth keeping: it wrote `setEnds({...})`, a FRESH OBJECT every
+     time, and hung its effect off `children`, whose identity changes on every
+     parent render. Both halves are fixed here — two plain booleans that bail
+     out when unchanged, and an effect that depends only on the (stable) ref.
+     The scroll-snap that used to swallow programmatic scrolls is gone too. */
   const ref = useWheelScroll();
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(true);
+
+  /* One measurement, called from everywhere that can change the answer.
+     `useCallback` with only the ref as a dependency keeps its identity stable,
+     which is what lets the effect below depend on it without re-subscribing. */
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    /* A row with nothing to scroll is at BOTH ends, which greys the pair —
+       correct, and the same answer the wheel handler gives itself. */
+    const start = el.scrollLeft <= 1;
+    const end = el.scrollLeft >= max - 1;
+    setAtStart((p) => (p === start ? p : start));
+    setAtEnd((p) => (p === end ? p : end));
+  }, [ref]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    measure();
+    /* THE SCROLL EVENT IS NOT ENOUGH ON ITS OWN, which is the thing the
+       previous attempt got wrong and gave up over. It does not always arrive
+       here — a programmatic `scrollBy` on a surface that is not compositing
+       moves the row without dispatching one — so `page()` re-measures for
+       itself after it has moved. This listener is for the gestures nothing
+       else sees: the wheel, a trackpad swipe, a touch drag. */
+    el.addEventListener("scroll", measure, { passive: true });
+    /* Both observers are needed and they answer different questions. The
+       resize one catches the row's own box changing (a window resize, the
+       sidebar collapsing); the mutation one catches the CARDS arriving, which
+       changes `scrollWidth` without touching the box — that is the case where
+       a shelf finished loading and its arrows stayed greyed. */
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const mo = new MutationObserver(measure);
+    mo.observe(el, { childList: true, subtree: true });
+
+    return () => {
+      el.removeEventListener("scroll", measure);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [ref, measure]);
 
   /* SMOOTH, WITH A GUARANTEE. A smooth scroll is animated by the browser off
      requestAnimationFrame, and rAF is throttled to a standstill on a surface
@@ -99,6 +148,11 @@ function Rail({ title, children, onViewAll }) {
       if (ref.current && ref.current.scrollLeft === from) {
         ref.current.scrollBy({ left: by, behavior: "auto" });
       }
+      /* Re-measure HERE rather than trusting the scroll event, for the same
+         reason the fallback above exists: the move may have happened without
+         one being dispatched, and then the arrows would still claim the row
+         was where it started. */
+      measure();
     }, 220);
   }
 
@@ -114,10 +168,12 @@ function Rail({ title, children, onViewAll }) {
             </button>
           )}
           <button type="button" className="pc-rail-btn" onClick={() => page(-1)}
+            disabled={atStart}
             aria-label={`Scroll ${title} back`}>
             <RailArrow back />
           </button>
           <button type="button" className="pc-rail-btn" onClick={() => page(1)}
+            disabled={atEnd}
             aria-label={`Scroll ${title} forward`}>
             <RailArrow />
           </button>

@@ -207,12 +207,60 @@
 
 /* The page gutter drops to 16px on a phone, so this has to follow or the bar
    sits inset from everything under it. */
+/* ---- phone ----
+
+   THE BUTTONS GET THEIR OWN ROW. `.ve-text` is `flex: 1` against an action
+   cluster that is `flex: none`, and on a 375px screen that cluster is ~230px
+   wide - so the sentence was left about 110px and ran to NINE lines. The
+   banner came to 430px of an 812px screen, above every page, for a message
+   that is not the subject of any of them. Measured on the Study page.
+
+   `order` rather than new markup: the close button moves up beside the text so
+   row one is mark + sentence + dismiss, and the actions take row two at full
+   width. Nothing changes on a desktop, where they all fit on one line. */
 @media (max-width: 767px) {
   .ve {
     padding: 0.7rem 16px;
   }
 
+  .ve-mark {
+    order: 0;
+  }
+
   .ve-text {
+    order: 1;
+    /* Basis 0, not `auto`. On `auto` the basis is the sentence's own content
+       width, which is far wider than the row - so it wrapped onto a line of
+       its own and left the mark and the dismiss stranded on lines of theirs,
+       three rows for what is one line of information. */
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .ve-close {
+    order: 2;
+  }
+
+  .ve-actions,
+  .ve-form {
+    order: 3;
+    /* `1 0 100%` is what forces the wrap; without the 100% basis they would
+       still try to sit beside the text. */
+    flex: 1 0 100%;
+  }
+
+  /* Full-width targets on the row they now own, rather than two small pills
+     huddled at its left end. */
+  .ve-actions .ve-btn,
+  .ve-actions .ve-btn-quiet,
+  .ve-form .ve-btn,
+  .ve-form .ve-btn-quiet {
+    flex: 1;
+  }
+
+  .ve-form .ve-code {
+    flex: 1;
+    width: auto;
     min-width: 0;
   }
 

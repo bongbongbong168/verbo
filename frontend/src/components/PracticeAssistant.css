@@ -459,7 +459,14 @@
   .pa-anchor {
     left: 8px;
     right: 8px;
-    bottom: 8px;
+    /* ABOVE THE THUMB BAR, NOT ON TOP OF IT. `bottom: 8px` put the panel's
+       bottom edge 8px off the screen floor, and the phone layer's tab bar is
+       68px tall - so the composer, the send button and the last message all
+       sat behind the navigation. Measured: the panel ran to y=804 while the
+       bar started at 744. `64px + env(safe-area-inset-bottom)` is the same
+       reservation every other phone rule in this app uses for that bar, so it
+       stays correct on a notched screen where the bar is taller. */
+    bottom: calc(64px + 14px + env(safe-area-inset-bottom));
     /* Any offset from a desktop drag is dropped here: there is nowhere to
        move a panel to on a 375px screen, and a translation carried over would
        strand it half off the edge. */
@@ -468,7 +475,16 @@
 
   .pa {
     width: auto;
-    height: min(75vh, calc(var(--app-vh) - 90px));
+    /* NO RAW `vh` HERE. iOS Safari resolves `vh` against the viewport with its
+       toolbars collapsed, so `75vh` is taller than the screen actually is
+       while they are showing - the panel grew past the fold on the one browser
+       this rule exists for. `--app-vh` is `dvh`-based and tracks the toolbar.
+       The subtraction is the bar the anchor now clears plus headroom, and the
+       520 cap keeps it the same panel it is on a desktop. */
+    height: min(
+      520px,
+      calc(var(--app-vh) - 64px - 100px - env(safe-area-inset-bottom))
+    );
   }
 
   .pa-head {
@@ -477,7 +493,10 @@
 
   .pa-fab {
     right: 16px;
-    /* Clear of the thumb bar the phone layer puts along the bottom. */
-    bottom: 84px;
+    /* Clear of the thumb bar, stated as that bar's own reservation rather than
+       as the 84px it happens to come to on one device. On a notched iPhone the
+       bar grows by the home indicator and a fixed 84 puts the button behind
+       it. */
+    bottom: calc(64px + 14px + env(safe-area-inset-bottom));
   }
 }
