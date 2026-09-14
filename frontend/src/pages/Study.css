@@ -311,6 +311,31 @@
   text-align: center;
   max-width: 520px;
   margin: 0 auto;
+  animation: st-land 0.44s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* A LANDING, NOT AN ENTRANCE. Frame 0 and frame 100 are both the resting
+   position, so a tab that never composites renders the finished text in the
+   right place — the rule `rh-in` on the Read banner had to be deleted for
+   breaking, and `rh-land` was written to satisfy. No opacity here either: a
+   keyframe starting transparent leaves the title invisible on a surface that
+   never draws. */
+@keyframes st-land {
+  0% {
+    transform: translateY(0);
+  }
+  38% {
+    transform: translateY(4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-active-meta {
+    animation: none;
+  }
 }
 
 .st-active-title {

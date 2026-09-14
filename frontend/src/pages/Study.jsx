@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { useApiData } from '../useApiData'
-import { invalidate } from '../dataCache'
+import { fetchIfStale, hasCache, invalidate } from '../dataCache'
 import DailyUseList from '../components/DailyUseList'
 import StudyEditDrawer from '../components/StudyEditDrawer'
 import Skeleton from '../components/Skeleton'
@@ -42,6 +42,13 @@ function ChevronRight() {
    or the next step interrupts the last. */
 const ADVANCE_EVERY_MS = 2500
 const RESUME_AFTER_MS = 10000
+
+/* How many level details this page will fetch ahead of being asked. One per
+   level for the life of the page, so with the five HSK levels every one ends
+   up warm and no click ever waits. The cap is for a library that grows: past
+   it, prefetching stops rather than quietly turning a rotating carousel into
+   a crawler of the whole curriculum. */
+const WARM_LIMIT = 8
 
 export default function Study() {
   const { token, user } = useAuth()
@@ -105,6 +112,49 @@ export default function Study() {
   }, [])
 
   useEffect(() => () => clearTimeout(resumeTimer.current), [])
+
+  /* WARM THE LEVEL YOU ARE LOOKING AT, so opening it paints from memory.
+     `GET /study-levels` deliberately omits units, so the level page always
+     costs a second request — and against the deployed API that is ~200ms on a
+     good day and a multi-second stall on roughly one request in three, which
+     is exactly the "switching levels loads slowly" this fixes. By the time the
+     centre card is clicked the answer is usually already in the cache, and
+     `useApiData` seeds from the cache during its FIRST render, so the page
+     paints with no skeleton at all.
+
+     IT IS NOT GATED ON `paused`, AND THE FIRST ATTEMPT WAS — which measured
+     as a real hole: gating on "a person moved it" means a level the carousel
+     ROTATED to on its own was never warmed, and clicking the centre card
+     straight after watching it turn still hit the wire. Observed exactly
+     that: warmed 1 and 2, opened 3, skeleton.
+
+     The reason for the gate was a fear of a request every 2.5s forever, and
+     that fear was wrong — `warmedRef` remembers permanently, so the cost is
+     at most ONE request per level for the life of the page, not one per
+     rotation. `WARM_LIMIT` is the honest bound on that for a library larger
+     than this one: past it, prefetching stops and clicks pay their own way. */
+  const warmedRef = useRef(new Set())
+  const activeLevelId = visible[active]?.id
+
+  useEffect(() => {
+    if (!activeLevelId || !token) return undefined
+    if (warmedRef.current.size >= WARM_LIMIT) return undefined
+
+    /* A beat, so paging quickly through five levels warms the one you stop on
+       rather than every one you passed on the way. */
+    const timer = window.setTimeout(() => {
+      const key = `study-level:${activeLevelId}`
+      if (warmedRef.current.has(activeLevelId)) return
+      warmedRef.current.add(activeLevelId)
+      if (hasCache(key)) return
+      /* Swallowed on purpose: this is speculative work nobody asked for, so a
+         failure must be invisible. The real navigation will ask again and
+         report properly if it is still broken. */
+      fetchIfStale(key, () => api.getStudyLevel(token, activeLevelId)).catch(() => {})
+    }, 220)
+
+    return () => window.clearTimeout(timer)
+  }, [activeLevelId, token])
 
   useEffect(() => {
     if (paused || count <= 1) return
@@ -252,7 +302,7 @@ export default function Study() {
             onPointerDown={holdForUser}
             style={
               paused
-                ? { '--st-move': '0.42s', '--st-ease': 'cubic-bezier(0.22, 0.61, 0.36, 1)' }
+                ? { '--st-move': '0.52s', '--st-ease': 'cubic-bezier(0.25, 0.8, 0.25, 1)' }
                 : { '--st-move': '0.8s', '--st-ease': 'cubic-bezier(0.65, 0, 0.35, 1)' }
             }
           >
@@ -324,7 +374,16 @@ export default function Study() {
             </button>
           </div>
 
-          <div className="st-active-meta">
+          {/* KEYED ON THE LEVEL, so the block remounts and replays its landing
+              as the card arrives. Without it the title and the line under it
+              swapped instantly while the artwork was still gliding, which is
+              the half of the switch that read as unfinished.
+
+              `st-land` is a LANDING, never an entrance: it starts and ends at
+              rest and only moves in between, so a tab that never composites
+              shows the text exactly where it belongs rather than nudged or
+              invisible. Same construction as the Read banner's `rh-land`. */}
+          <div className="st-active-meta" key={visible[active]?.id ?? 'none'}>
             <h2 className="st-active-title">{visible[active]?.title}</h2>
             {visible[active]?.description && (
               <p className="st-active-description">{visible[active].description}</p>
