@@ -1552,6 +1552,20 @@
   cursor: default;
 }
 
+/* NO SECOND FRAME. On the article page this card sits INSIDE `.rd-panel`,
+   which already draws the navy outline and the white ground — so the header
+   rendered as a bordered box within a bordered box, two rounded rectangles
+   two centimetres apart saying the same thing. On the Read list the same
+   card stands on the page ground and needs its own edge, which is why the
+   border lives on `.rd-featured` and is dropped here rather than removed.
+   The padding goes with it: the panel is already paying it. */
+.rd-panel > .rd-featured-static {
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: none;
+}
+
 .rd-featured-static:hover {
   box-shadow: none;
 }
