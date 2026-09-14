@@ -522,8 +522,26 @@
   color: var(--td-text);
 }
 
+/* THE STAR IS SIZED AND SEATED TO THE DIGIT'S CAP BAND, because at the same
+   font-size it is neither.
+
+   `★` is not in Hellix, so it comes from the system fallback - and every
+   family in the stack resolves to the same one, measured by advance width, so
+   these numbers are the font's rather than a guess. Its ink runs 0.8224em
+   above the baseline and 0.0822em BELOW it, which is 0.9046em tall against the
+   digit's 0.70313em cap. Co-centred at the same size it therefore overhung the
+   digit at both ends and, worse, crossed the baseline - and a mark dipping
+   under the line the digit sits on reads as sitting lower than it, whatever
+   the centres say. That is the whole complaint; it was never a centring error,
+   it was a size one.
+
+   0.777em makes the star's ink exactly one cap tall (0.9046 x 0.777 = 0.703),
+   and lifting it by its own descent drops that ink onto the baseline - so it
+   now spans the digit's cap band precisely, top and bottom. */
 .td-rsum-star em {
   font-style: normal;
+  font-size: 0.777em;
+  vertical-align: 0.0822em;
   color: #f5b301;
 }
 
