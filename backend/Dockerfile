@@ -18,6 +18,14 @@
 FROM php:8.2-apache-bookworm
 
 # - tesseract-ocr           the binary ScanController shells out to
+#
+#   AND ITS PATH HAS TO BE STATED. `config/ocr.php` defaults to the Windows
+#   install the dev machine uses, so without this the container shells out to
+#   `C:/Program Files/Tesseract-OCR/tesseract.exe`, the process fails, and
+#   ScanController catches it and answers "Could not read that image" — for
+#   EVERY upload, however clear. Scan could never work in production. The ENV
+#   belongs in the image rather than in the service`s variables, because it is
+#   a fact about this filesystem, not a deployment choice.
 # - libzip/libicu           composer and Laravel's own requirements
 # - sqlite3, libsqlite3-dev the database engine
 # - libpng/jpeg/freetype    uploaded article, tutor and avatar images
@@ -38,6 +46,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_sqlite pdo_pgsql zip intl gd \
     && rm -rf /var/lib/apt/lists/*
+
+ENV TESSERACT_PATH=/usr/bin/tesseract
 
 # pdo_pgsql is built even though the app ships on SQLite, so moving to Supabase
 # Postgres later is a change of environment variables (DB_CONNECTION=pgsql plus
