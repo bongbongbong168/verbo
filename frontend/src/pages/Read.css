@@ -1713,3 +1713,26 @@
     padding-left: 0.8rem;
   }
 }
+
+/* ---- Chinese and its translation, paragraph by paragraph ----
+   Only rendered when the two sides genuinely have the same number of
+   paragraphs — see the note in ReadArticle. The English is set quieter and
+   smaller than the Chinese and carries a rule down its left edge, so it reads
+   as a gloss on the line above rather than as more of the passage. */
+
+.rd-pair + .rd-pair {
+  margin-top: 1.5rem;
+}
+
+.rd-pair .rd-body-cn {
+  margin: 0;
+}
+
+.rd-pair-en {
+  margin: 0.55rem 0 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--rd-border);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--rd-text-muted);
+}
