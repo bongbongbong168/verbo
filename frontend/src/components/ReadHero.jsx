@@ -44,15 +44,6 @@ const PRO_POINTS = [
   'Ad-free learning',
 ]
 
-function Arrow() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3.5 8h9M8.5 4l4 4-4 4" />
-    </svg>
-  )
-}
-
 function Chevron({ back = false }) {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"
@@ -86,7 +77,6 @@ function ArticleSlide({ eyebrow, article, note, cta }) {
         {note && <p className="rh-note">{note}</p>}
         <Link to={`/read/${article.id}`} className="rh-cta">
           {cta}
-          <Arrow />
         </Link>
       </div>
       {/* The same generated cover the cards below use, so the banner is
@@ -129,7 +119,6 @@ function ProgressSlide({ week }) {
         </div>
         <Link to="/vocabulary" className="rh-cta rh-cta-ghost">
           Your vocabulary
-          <Arrow />
         </Link>
       </div>
 
@@ -160,7 +149,6 @@ function ProSlide() {
         </ul>
         <Link to="/upgrade" className="rh-cta">
           Upgrade to Pro
-          <Arrow />
         </Link>
       </div>
 

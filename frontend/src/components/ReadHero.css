@@ -202,34 +202,6 @@
   background: #3b3459;
 }
 
-/* THE PADDING ABOVE IS A CAP-BAND CORRECTION FOR THE TEXT, AND IT MUST NOT
-   REACH THE ARROW — the same trap the onboarding step mark documents.
-
-   `calc(0.6rem - 1px)` / `calc(0.6rem + 1px)` slides the whole content box up
-   by 1px so Hellix's glyphs, which sit low in their line box, land on the
-   button's centre. That works: the text measures 0.21px off, inside the
-   half-pixel where this codebase stops correcting. But an SVG's box IS its
-   ink, so it had no low-sitting ink to fix and simply rode the shift up with
-   the text — measured 1.1 painted px high, 10.7 above against 12.91 below.
-
-   The margins hand that pixel back. Equal and opposite rather than
-   `position: relative`, which would move the arrow into the positioned paint
-   layer for a one-pixel nudge; 1px whole rather than the step mark's half,
-   because that one SHRANK its content box (moving the centre by half the
-   change) while this one TRANSLATES it (moving it by all of it). */
-.rh-cta svg {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  margin-top: 1px;
-  margin-bottom: -1px;
-  transition: transform 0.15s ease;
-}
-
-.rh-cta:hover svg {
-  transform: translateX(2px);
-}
-
 .rh-cta:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
