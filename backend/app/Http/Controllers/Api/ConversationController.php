@@ -31,7 +31,10 @@ class ConversationController extends Controller
 
         $tutorThreads = Conversation::where('type', Conversation::TYPE_TUTOR)
             ->where(fn ($q) => $q->where('tutor_id', $user->id)->orWhere('student_id', $user->id))
-            ->with(['tutor:id,name', 'student:id,name'])
+            /* `avatar_path` rides along because the appended `avatar_url`
+               accessor reads it — selecting only id and name is what left every
+               thread row in the list drawing a letter tile. */
+            ->with(['tutor:id,name,avatar_path', 'student:id,name,avatar_path'])
             ->get();
 
         $courseThreads = Conversation::where('type', Conversation::TYPE_COURSE)
@@ -376,6 +379,30 @@ class ConversationController extends Controller
      * tutor side of the thread, not the viewer's — in a tutor thread the person
      * you are looking at is whichever of the two you are not.
      */
+    /** The other person in a tutor thread — whoever I am not. */
+    private function counterpartUser(Conversation $c, User $user): ?User
+    {
+        if ($c->type !== Conversation::TYPE_TUTOR) {
+            return null;
+        }
+
+        return (int) $c->tutor_id === $user->id ? $c->student : $c->tutor;
+    }
+
+    /** What a thread row says happened last. */
+    private function previewOf(?Message $m): ?string
+    {
+        if (! $m) {
+            return null;
+        }
+
+        if (trim((string) $m->body) !== '') {
+            return $m->body;
+        }
+
+        return $m->attachment_path ? 'Sent an attachment' : null;
+    }
+
     private function counterpartProfile(Conversation $c, User $user): ?TutorProfile
     {
         if ($c->type !== Conversation::TYPE_TUTOR) {
@@ -407,12 +434,22 @@ class ConversationController extends Controller
             'id' => $c->id,
             'type' => $c->type,
             'title' => $this->titleFor($c, $user),
-            'photo_url' => optional($this->counterpartProfile($c, $user))->photo_url,
+            /* THE ACCOUNT PICTURE WINS, THE TUTOR PHOTO IS THE FALLBACK — the
+               rule the message rows already follow, which this list did not. It
+               read the tutor PROFILE only, so a student counterpart (who has no
+               profile) always came back null and the row drew an initial, while
+               that same person's face appeared on every bubble inside the
+               thread. Two answers to one question. */
+            'photo_url' => $this->counterpartUser($c, $user)?->avatar_url
+                ?: optional($this->counterpartProfile($c, $user))->photo_url,
             'subtitle' => $c->type === Conversation::TYPE_COURSE
                 ? $c->course?->liveEnrollments()->count().' students'
                 : null,
             'last_message_at' => $c->last_message_at,
-            'preview' => optional($c->messages()->latest('id')->first())->body,
+            /* An attachment with no words is a perfectly good message here, and
+               its body is an empty string — so a thread you had just sent a
+               picture to read "No messages yet". Say what was actually sent. */
+            'preview' => $this->previewOf($c->messages()->latest('id')->first()),
             // Your own messages never count against you.
             'unread' => $c->messages()
                 ->where('sender_id', '!=', $user->id)
