@@ -86,3 +86,86 @@
 .rs-switch.on .rs-knob {
   left: 15px;
 }
+
+/* ---- motion ----
+
+   THE KNOB'S POSITION AND THE TRACK'S COLOUR STAY STATIC, and that is not
+   negotiable here: they ARE the state. A transition only advances while the tab
+   composites frames, so a sliding thumb is left at its start by a backgrounded
+   tab and the switch reads as OFF immediately after being turned on — the same
+   failure the Settings switch and every `*-in` keyframe in this app avoid.
+
+   What CAN move is decoration laid OVER that state, and the rule for it is the
+   one the streak flame and the onboarding rail established: THE START POSITION
+   MUST BE THE RESTING POSITION. Both keyframes below open and close at rest, so
+   a frozen compositor shows exactly the static switch — the knob at its correct
+   end, the track its correct colour — rather than anything half-played.
+
+   They play on the frame the class lands, which is what makes flipping the
+   switch feel like an action rather than a repaint. A switch already on at page
+   load plays the pop once; it rests at identity, so that costs nothing. */
+
+@keyframes rs-pop {
+  0% {
+    transform: scale(1);
+  }
+  38% {
+    /* Squashed along the direction of travel, the way a real toggle's thumb
+       would be — a uniform scale reads as the dot being resized. */
+    transform: scale(1.22, 0.88);
+  }
+  70% {
+    transform: scale(0.94, 1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Parked OUTSIDE the track at rest, so a stalled animation leaves a plainly
+   filled track rather than a highlight stopped halfway down it. Same
+   construction as `ob-trace` on the onboarding connector. */
+@keyframes rs-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.rs-switch.on .rs-knob {
+  animation: rs-pop 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* The light that runs the track as it fills. `overflow: hidden` on the track is
+   what keeps it inside the pill; the band itself is wider than it needs to be so
+   its soft edges are never visible parked. */
+.rs-switch.on .rs-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: rs-sweep 0.52s ease-out;
+}
+
+.rs-track {
+  overflow: hidden;
+}
+
+/* Safe to strip outright precisely because the knob's position and the track's
+   colour are static — removing the motion leaves the switch saying exactly what
+   it said with it. */
+@media (prefers-reduced-motion: reduce) {
+  .rs-switch.on .rs-knob,
+  .rs-switch.on .rs-track::after {
+    animation: none;
+  }
+}
