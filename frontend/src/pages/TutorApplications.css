@@ -120,11 +120,22 @@
 /* ---- two panels ----
    Held as `fr` so the split survives any width, same as Messages. Both scroll
    internally: a long queue must not walk the decision buttons off screen. */
+/* THE TWO PANELS ARE THE SAME HEIGHT. `align-items: start` let each take its
+   own content height, so with one application in the queue the list ended
+   31.6px above the detail card beside it — measured 371.6 against 403.3 — and
+   the row read as two cards that had slipped apart. Stretch is the default,
+   so the fix is the absence of that line.
+
+   Worth recording what was NOT wrong here, because it looked wrong twice: the
+   panels appeared to overflow their grid tracks, rendering 325.7 and 670.6
+   against tracks of 296.1 and 609.7. That is exactly 1.1x, and 1.1 is
+   `--app-scale` — `getBoundingClientRect` returns painted pixels while
+   `getComputedStyle` returns CSS pixels, and #root is zoomed. The tracks were
+   always right. Convert before comparing the two. */
 .ta-body {
   display: grid;
   grid-template-columns: 340fr 700fr;
   gap: 1.4rem;
-  align-items: start;
 }
 
 .ta-list,
@@ -145,8 +156,19 @@
   padding: 1.4rem 1.5rem;
 }
 
+/* A panel holding nothing but its prompt CENTRES that prompt. One sentence
+   pinned to the top-left corner of a 400px empty card reads as content that
+   failed to arrive rather than as an instruction. `:has` is what keeps this
+   scoped to the empty case without a second class from the JSX, and where it
+   is unsupported the panel simply keeps today's top-left line. */
+.ta-detail:has(> .ta-empty) {
+  display: grid;
+  place-items: center;
+}
+
 .ta-empty {
-  margin: 1.2rem;
+  margin: 0;
+  text-align: center;
   font-size: 0.9rem;
   color: var(--ta-muted);
 }
