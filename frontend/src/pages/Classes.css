@@ -1968,10 +1968,17 @@ form.cl-entry-action {
   color: var(--cl-text);
 }
 
+/* An SVG's box IS its ink, so it has no cap band of its own to centre against
+   the label's - `align-items: center` lines the mark up with the LINE BOX and
+   Hellix reserves more ascent than "1 Student" uses. Measured 0.859px high.
+   Equal-and-opposite margins rather than `position: relative`, which would
+   move a sub-pixel nudge into the positioned paint layer. */
 .cl-mini-icon {
   width: 17px;
   height: 17px;
   flex: none;
+  margin-top: 0.859px;
+  margin-bottom: -0.859px;
   color: var(--cl-accent);
 }
 

@@ -52,6 +52,23 @@ function Forward10Icon() {
   )
 }
 
+/* One mark with three states, rather than three drawings: the speaker cone is
+   always there and the waves come and go with the level, so the glyph reports
+   the volume as well as the button's purpose. Muted crosses it out instead of
+   showing a silent cone, because a cone with no waves already means "quiet"
+   and the two would be indistinguishable at 17px. */
+function VolumeIcon({ level, muted }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" />
+      {!muted && level > 0.02 && <path d="M15.6 9.6a3.6 3.6 0 0 1 0 4.8" />}
+      {!muted && level > 0.55 && <path d="M18.1 7.2a7 7 0 0 1 0 9.6" />}
+      {muted && <path d="M16.5 10l4 4M20.5 10l-4 4" />}
+    </svg>
+  )
+}
+
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const m = Math.floor(seconds / 60)
@@ -90,6 +107,34 @@ export default function PodcastEpisode() {
      duration; seeking before `loadedmetadata` is discarded by the browser. */
   const [resumedFrom, setResumedFrom] = useState(null)
   const pendingResumeRef = useRef(null)
+
+  /* VOLUME IS REMEMBERED ACROSS EPISODES, because it is a property of where
+     you are listening rather than of what you are listening to — turning it
+     down on a train and having the next episode come back at full is the one
+     behaviour nobody wants. Kept in `localStorage` rather than on the server:
+     it is per-device by nature, and it must be right on the first frame, so a
+     round trip would be both wrong and late.
+
+     Read lazily inside `useState` so the first render already has the real
+     value and the slider never jumps from 1 to the stored number. A bad or
+     hand-edited entry falls back to full rather than to silence — an app that
+     opens muted for no visible reason reads as broken audio. */
+  const [volume, setVolume] = useState(() => {
+    try {
+      const raw = localStorage.getItem('pe-volume')
+      /* THE NULL CHECK IS THE WHOLE POINT. `Number(null)` is 0, not NaN, so
+         reading a key that was never written and handing it straight to a
+         range check returns a perfectly valid ZERO — every first-time visitor
+         got a silent player and no reason why. Caught by measuring the
+         element: `audio.volume` was 0 on a fresh load. */
+      if (raw === null || raw === '') return 1
+      const n = Number(raw)
+      return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1
+    } catch {
+      return 1
+    }
+  })
+  const [muted, setMuted] = useState(false)
   /* The last position actually sent, so the timer can skip a write when
      nothing has moved — a paused tab should cost no requests at all. */
   const sentPositionRef = useRef(-1)
@@ -279,6 +324,31 @@ export default function PodcastEpisode() {
     reportProgress(true)
   }
 
+  /* The element is the source of truth for what you hear, so the state is
+     pushed ONTO it rather than read from it. It runs on every change instead
+     of only on mount because the <audio> is remounted whenever the episode's
+     `audio_url` changes, and a fresh element starts at volume 1. */
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    el.volume = volume
+    el.muted = muted
+  }, [volume, muted, podcast?.audio_url])
+
+  function changeVolume(next) {
+    const v = Math.min(Math.max(next, 0), 1)
+    setVolume(v)
+    /* Dragging back up is how you unmute — leaving the mute flag on while the
+       slider says 60% would show one thing and do another. */
+    if (v > 0) setMuted(false)
+    try {
+      localStorage.setItem('pe-volume', String(v))
+    } catch {
+      /* Private windows and blocked site data both throw here. The volume
+         still works for this session; only remembering it is lost. */
+    }
+  }
+
   function skip(seconds) {
     const el = audioRef.current
     if (!el) return
@@ -436,6 +506,36 @@ export default function PodcastEpisode() {
                     <span>{formatTime(currentTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
+                </div>
+
+                {/* VOLUME. The button and the slider are one control: the
+                    button is the fast path (silence it now, put it back) and
+                    the slider is the fine one, and they share a single piece
+                    of state so they can never disagree.
+
+                    `input[type=range]` rather than a hand-built track. It is
+                    keyboard-operable, draggable and announced correctly for
+                    free, and this is a control people expect to behave
+                    exactly like every other volume slider they have used. */}
+                <div className="pe-volume">
+                  <button
+                    type="button"
+                    className="pe-volume-btn"
+                    onClick={() => setMuted((m) => !m)}
+                    aria-label={muted ? 'Unmute' : 'Mute'}
+                  >
+                    <VolumeIcon level={volume} muted={muted} />
+                  </button>
+                  <input
+                    className="pe-volume-slider"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={muted ? 0 : volume}
+                    onChange={(e) => changeVolume(Number(e.target.value))}
+                    aria-label="Volume"
+                  />
                 </div>
               </div>
             ) : (
