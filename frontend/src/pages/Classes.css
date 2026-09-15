@@ -148,6 +148,11 @@
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
 }
 
+/* NO CHIP BEHIND THE MARK - the glyph alone. The pale rounded fill put a
+   second shape behind every icon on this page, five of them down one screen,
+   which read as a row of buttons rather than as labels on the things beside
+   them. The BOX keeps its size so nothing next to it moves; only the fill and
+   its corner go. Same removal on `.cl-panel-mark` and `.cl-card-icon`. */
 .cl-entry-mark {
   display: flex;
   align-items: center;
@@ -155,8 +160,6 @@
   width: 42px;
   height: 42px;
   flex: none;
-  border-radius: 13px;
-  background: var(--cl-well);
   color: var(--cl-accent);
 }
 
@@ -568,8 +571,6 @@ form.cl-entry-action {
   flex: none;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
-  background: var(--cl-well);
   color: var(--cl-accent);
 }
 
@@ -692,8 +693,6 @@ form.cl-entry-action {
   width: 28px;
   height: 28px;
   flex: none;
-  border-radius: 9px;
-  background: var(--cl-well);
   color: var(--cl-accent);
 }
 

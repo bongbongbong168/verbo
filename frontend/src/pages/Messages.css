@@ -30,12 +30,15 @@
 /* The heading row: title left, tools right. The bottom margin moved here from
    the h1 so the two sit on one baseline rather than the title pushing the
    buttons down with it. */
+/* The panels sit lower than the title, rather than immediately under it —
+   the same spacing the Tutor applications page was given, so the two admin-ish
+   screens open the same way. */
 .ms-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.3rem;
+  margin-bottom: 2rem;
 }
 
 .ms-tools {

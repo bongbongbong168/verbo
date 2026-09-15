@@ -55,10 +55,16 @@
   gap: 0.6rem;
 }
 
+/* The whole body sits lower than it did. Under the rule the filter row and
+   the panels were both tight against what came before them, so the page ran
+   straight from its title into its content with nothing between. The rule
+   gets a little more room beneath it and the tabs a lot more, which is the
+   half that matters: the tabs belong with the heading above them, and the
+   panels are the separate thing they filter. */
 .ta-divider {
   border: none;
   border-top: 1px solid var(--ta-border);
-  margin: 0 0 1.4rem;
+  margin: 0 0 1.8rem;
 }
 
 .ta-error {
@@ -77,14 +83,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 2rem;
 }
 
 .ta-tab {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.5rem 1.05rem;
+  /* Asymmetric by measurement. Centring an inline-flex centres its LINE BOX,
+     and Hellix reserves more ascent than these labels use, so the words sat
+     0.881px below the pill's middle - measured on the cap band against a
+     flat-capped `H`, never the ink of "Awaiting review", which carries a
+     descender that "Rejected" does not. The pair sums to the original 0.5rem,
+     so the pill's height is untouched and only the text moves. */
+  padding: calc(0.5rem - 0.881px) 1.05rem calc(0.5rem + 0.881px);
   border: 1px solid var(--ta-border);
   border-radius: 999px;
   background: #fff;
@@ -102,14 +114,19 @@
   color: #fff;
 }
 
+/* The badge's BOX was already dead centre on the pill; its digit was not,
+   sitting 1.236px low inside its own 20px line box for the usual reason. The
+   lift is a bottom pad with the line height cut by the same amount, so the
+   badge stays exactly 20px tall and only the number moves. Doubled because a
+   pad on a box sized by its line height shifts the text by half its value. */
 .ta-count {
   min-width: 20px;
-  padding: 0 0.35rem;
+  padding: 0 0.35rem 1.68px;
   border-radius: 999px;
   background: var(--ta-accent-light);
   color: #fff;
   font-size: 0.75rem;
-  line-height: 20px;
+  line-height: calc(20px - 1.68px);
   text-align: center;
 }
 
