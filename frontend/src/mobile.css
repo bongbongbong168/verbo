@@ -669,6 +669,51 @@
     margin-right: 0 !important;
   }
 
+  /* ---- MORE TEXT ON SCREEN ----
+
+     Measured on a 375px phone before this: SEVEN Han characters to a line,
+     six with the pinyin showing, and 63 characters of article filling 582px
+     of height — you read a sentence a screen at a time.
+
+     The desktop values were written for a 875px column and moved to the phone
+     untouched. The costly one is not the font size but the TRACKING: 0.25em
+     is 5.2px added after every character, a quarter of each glyph's own width,
+     spent on a line that has 288px to give. It is there so the tokens read as
+     separate words on a wide column, and at 0.1em they still do at this size.
+
+     The size comes down a step as well, but only a step — this is reading
+     material in a script whose strokes need room, so the floor is legibility,
+     not density. The pinyin above each character rides the same `em`, so it
+     scales with it and needs no rule of its own. */
+  .rd-body-cn {
+    font-size: 1.08rem;
+    letter-spacing: 0.1em;
+    line-height: 1.9;
+  }
+
+  /* Ruby mode pays twice, once per character and again per word: every token
+     is an `inline-flex` box carrying its own side margins, and a Chinese word
+     is one or two characters, so those margins land constantly. */
+  .rd-body-ruby .rd-word {
+    margin: 0 0.06em 0.3em;
+  }
+
+  /* THE PODCAST TRANSCRIPT TAKES THE SAME VALUES, and that is not scope creep
+     - it is the rule this codebase keeps relearning. `.pe-transcript` is a
+     copy of `.rd-body-cn` down to the 1.3rem and the 0.25em, and every time
+     one of these tokenized surfaces has been changed alone they have drifted
+     (the reading-aid switch's cap-band pad, the photo-less tutor cover, the
+     two section toggles). One reading experience, one set of numbers. */
+  .pe-transcript {
+    font-size: 1.08rem;
+    letter-spacing: 0.1em;
+    line-height: 1.9;
+  }
+
+  .pe-transcript-ruby .pe-word {
+    margin: 0 0.06em 0.3em;
+  }
+
   .rd-thumb {
     width: 104px !important;
     min-width: 104px;
