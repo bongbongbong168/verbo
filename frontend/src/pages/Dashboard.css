@@ -1118,6 +1118,60 @@
   gap: 18px;
 }
 
+/* ---- the list lands when the filter changes ----
+
+   A LANDING, NEVER AN ENTRANCE, which is the only kind of motion this app
+   allows: frame 0 and frame 100 are both the resting position, so a tab that
+   is not compositing renders the finished list exactly where it belongs. An
+   entrance starting at `opacity: 0` or an offset would leave the rows
+   invisible or displaced there - the bug that blanked the account popover and
+   left the Read banner 11px off its padding.
+
+   The rows are staggered by a POSITIVE delay, one row at a time. A negative
+   delay would start an animation part-way through its timeline, which throws
+   frame 0 away and reintroduces exactly the failure this construction avoids
+   - the same reason the streak flame desyncs its embers by duration instead.
+   Waiting at the resting position is free. */
+@keyframes db-read-land {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.db-reads .db-read {
+  animation: db-read-land 0.42s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+}
+
+/* Five rows is the whole list, so the ladder is written out rather than
+   generated. The last one starts 160ms in, which is short enough that the
+   list still reads as one movement. */
+.db-reads .db-read:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.db-reads .db-read:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.db-reads .db-read:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.db-reads .db-read:nth-child(5) {
+  animation-delay: 0.16s;
+}
+
+/* Safe to strip outright precisely because every keyframe rests at the static
+   position - removing the motion leaves the list saying what it already said. */
+@media (prefers-reduced-motion: reduce) {
+  .db-reads .db-read {
+    animation: none;
+  }
+}
+
 /* Rows are filled with the page background, not white — they read as insets
    in the panel rather than cards floating on it. */
 .db-read {

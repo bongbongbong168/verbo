@@ -1043,7 +1043,12 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <div className="db-reads">
+            {/* KEYED ON THE FILTER, so switching pills remounts the list and
+                replays its landing. Without it the rows were replaced between
+                one frame and the next, which is the thing that read as abrupt:
+                the pill moved, and the content under it had simply already
+                changed. See `db-read-land` for why the motion is safe. */}
+            <div className="db-reads" key={readFilter}>
               {articleQuery.loading ? (
                 <>
                   <Skeleton style={{ height: 74 }} />
