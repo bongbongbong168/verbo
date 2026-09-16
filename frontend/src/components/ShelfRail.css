@@ -1,0 +1,134 @@
+/* The shared scrolling shelf. Prefix `sr-`.
+
+   Values are the app's palette written out rather than a page's tokens, for
+   the same reason ReaderSwitch does it: the point of this file is that every
+   shelf gets the SAME control, and reading a per-page variable would reopen
+   the drift it was extracted to close. */
+
+.sr {
+  position: relative;
+}
+
+/* The row itself carries only the scrolling. Its card widths, gaps and padding
+   stay with the page's own class, which is passed in alongside this one. */
+.sr-row {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* NO SCROLLBAR UNDER THE SHELF. The browser's own bar was the widest, greyest
+   thing in the section and made the row read as spilling out of the panel
+   rather than continuing past it. The two jobs it did are given back by the
+   arrows and by the wheel handler in `useWheelScroll`. */
+.sr-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* CENTRED ON THE ROW, ON ITS EDGE. `top: 50%` with a half-height pull-back
+   rather than `inset-block: 0; margin: auto`, because the row's height is set
+   by its cards and can change between shelves - this tracks it without the
+   button needing to know. */
+.sr-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-top: -19px;
+  padding: 0;
+  border: 1px solid #e3dff2;
+  border-radius: 50%;
+  background: #fff;
+  color: #2b2643;
+  /* Navy-tinted like every shadow in this app - neutral black greys the
+     lavender it sits over. */
+  box-shadow: 0 4px 14px rgba(28, 23, 48, 0.18);
+  cursor: pointer;
+
+  /* HIDDEN AT REST, SHOWN ON HOVER. Same construction as the Read banner's
+     collapsing controls, and safe for the same reason: nothing is REVEALED by
+     the transition that the page depends on, so a stalled one leaves the shelf
+     in its resting look - which is a row you can still swipe, wheel and tab
+     into. The arrows are a shortcut, never the only way through. */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease;
+}
+
+.sr-arrow-back {
+  /* Half the button hangs off the row's edge, so it overlaps the card rather
+     than covering it - you can still see what you are paging away from. */
+  left: -19px;
+}
+
+.sr-arrow-next {
+  right: -19px;
+}
+
+.sr:hover .sr-arrow:not(:disabled),
+.sr:focus-within .sr-arrow:not(:disabled) {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* AT THE END OF THE ROW THE ARROW IS GONE, not greyed. A disabled control
+   overlaying artwork is a smudge on the card; there is simply nothing in that
+   direction, and an empty edge says so more clearly. This also answers the
+   older complaint that clicking back on the first card "showed nothing" -
+   there is now nothing there to click. */
+.sr-arrow:disabled {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The fill IS the feedback, so it is not transitioned - a transition that
+   never gets a frame leaves the control looking dead under the pointer. */
+.sr-arrow:hover:not(:disabled) {
+  background: #6a6191;
+  border-color: #6a6191;
+  color: #fff;
+}
+
+.sr-arrow:focus-visible {
+  opacity: 1;
+  visibility: visible;
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+.sr-arrow svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* A TOUCH SCREEN HAS NO HOVER, so there they stay out permanently - the same
+   floor the Read banner's controls and the Vocabulary Bank's row menu keep.
+   Pulled inside the row's edge as well, since there is no pointer to aim with
+   and a button half off the shelf is half off the screen at the ends. */
+@media (hover: none) {
+  .sr-arrow:not(:disabled) {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .sr-arrow-back {
+    left: 2px;
+  }
+
+  .sr-arrow-next {
+    right: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-arrow {
+    transition: none;
+  }
+}

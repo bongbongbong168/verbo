@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
@@ -7,7 +7,7 @@ import { invalidate } from "../dataCache";
 import PageTools from "../components/PageTools";
 import PodcastEditDrawer from "../components/PodcastEditDrawer";
 import { SkeletonCards } from "../components/Skeleton";
-import useWheelScroll from "../hooks/useWheelScroll";
+import ShelfRail from "../components/ShelfRail";
 import "./Podcast.css";
 
 /* Stable identity for an absent list — a fresh [] each render would re-run
@@ -40,148 +40,42 @@ function PlayIcon() {
   );
 }
 
-function RailArrow({ back }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={back ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
-    </svg>
-  );
-}
-
 /* A SHELF WITH NO SCROLLBAR UNDER IT. The row was a plain `overflow-x: auto`,
    so the browser drew its own scrub bar across the page — the widest, greyest
    thing in the section, and it made the shelf read as spilling out of the
    panel rather than continuing past it.
 
-   The bar is hidden and the two jobs it did are given back properly: buttons in
-   the heading row, and the wheel. The buttons sit BESIDE THE TITLE rather than
-   floating over the first and last card, so nothing overlaps the artwork and
-   the shelf keeps exactly the left and right edges the `Discover new` grid
-   below it has — the alignment that was actually being complained about.
+   The bar is hidden and the two jobs it did are given back properly: the wheel,
+   and paging arrows laid OVER the row's edges. Those arrows used to sit beside
+   the title; they were moved onto the row because from the heading they were a
+   long way from the thing they move and gave no clue which shelf they belonged
+   to when two sat close together.
 
-   There is no arrow-shaped hole for the keyboard, either: the row is
+   There is no arrow-shaped hole for the keyboard either: the row is
    `tabindex="0"`, so arrow keys scroll it natively once tabbed into, and the
-   buttons are ordinary buttons. */
+   overlay buttons are ordinary buttons that appear on `:focus-within`. */
 function Rail({ title, children, onViewAll }) {
-  /* The wheel handler lives in a shared hook — the Dashboard’s pick-up row
-     wants exactly the same behaviour, and two copies of it is the drift that
-     ReaderSwitch and ArticleCover were each extracted to stop.
-
-     THE ARROWS KNOW WHERE THE ROW IS, and getting that right took two
-     attempts. A click on the back arrow at the start of a shelf is a no-op —
-     `scrollBy` clamps — so the button looked live and did nothing, which reads
-     as broken rather than as "you are already at the first card".
-
-     The earlier version of this measurement re-rendered in a loop, and the
-     reason is worth keeping: it wrote `setEnds({...})`, a FRESH OBJECT every
-     time, and hung its effect off `children`, whose identity changes on every
-     parent render. Both halves are fixed here — two plain booleans that bail
-     out when unchanged, and an effect that depends only on the (stable) ref.
-     The scroll-snap that used to swallow programmatic scrolls is gone too. */
-  const ref = useWheelScroll();
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(true);
-
-  /* One measurement, called from everywhere that can change the answer.
-     `useCallback` with only the ref as a dependency keeps its identity stable,
-     which is what lets the effect below depend on it without re-subscribing. */
-  const measure = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    /* A row with nothing to scroll is at BOTH ends, which greys the pair —
-       correct, and the same answer the wheel handler gives itself. */
-    const start = el.scrollLeft <= 1;
-    const end = el.scrollLeft >= max - 1;
-    setAtStart((p) => (p === start ? p : start));
-    setAtEnd((p) => (p === end ? p : end));
-  }, [ref]);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return undefined;
-
-    measure();
-    /* THE SCROLL EVENT IS NOT ENOUGH ON ITS OWN, which is the thing the
-       previous attempt got wrong and gave up over. It does not always arrive
-       here — a programmatic `scrollBy` on a surface that is not compositing
-       moves the row without dispatching one — so `page()` re-measures for
-       itself after it has moved. This listener is for the gestures nothing
-       else sees: the wheel, a trackpad swipe, a touch drag. */
-    el.addEventListener("scroll", measure, { passive: true });
-    /* Both observers are needed and they answer different questions. The
-       resize one catches the row's own box changing (a window resize, the
-       sidebar collapsing); the mutation one catches the CARDS arriving, which
-       changes `scrollWidth` without touching the box — that is the case where
-       a shelf finished loading and its arrows stayed greyed. */
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    const mo = new MutationObserver(measure);
-    mo.observe(el, { childList: true, subtree: true });
-
-    return () => {
-      el.removeEventListener("scroll", measure);
-      ro.disconnect();
-      mo.disconnect();
-    };
-  }, [ref, measure]);
-
-  /* SMOOTH, WITH A GUARANTEE. A smooth scroll is animated by the browser off
-     requestAnimationFrame, and rAF is throttled to a standstill on a surface
-     that is not compositing — measured here once: the click registered and
-     `scrollLeft` never left 0. That is why this was instant for a while.
-
-     The honest fix is not to give up the easing but to check it happened: ask
-     for smooth, then a moment later, if the row has not moved at all, jump it.
-     A real tab eases; a stalled one still ends up where the click asked for.
-     The frozen-compositor rule is about state that never arrives, and a scroll
-     position carries none — the worst case here is a row that moves without
-     animating. */
-  function page(dir) {
-    const el = ref.current;
-    if (!el) return;
-    const from = el.scrollLeft;
-    const by = dir * el.clientWidth * 0.8;
-    el.scrollBy({ left: by, behavior: "smooth" });
-    window.setTimeout(() => {
-      if (ref.current && ref.current.scrollLeft === from) {
-        ref.current.scrollBy({ left: by, behavior: "auto" });
-      }
-      /* Re-measure HERE rather than trusting the scroll event, for the same
-         reason the fallback above exists: the move may have happened without
-         one being dispatched, and then the arrows would still claim the row
-         was where it started. */
-      measure();
-    }, 220);
-  }
-
+  /* The scrolling, the wheel handler, the ends detection and the paging arrows
+     all live in `ShelfRail` now — the Dashboard wants the identical behaviour,
+     and two copies of it is the drift `SectionToggle`, `ArticleCover` and
+     `ReaderSwitch` were each extracted to stop. What stays here is this page's
+     own heading row and its card sizing, which the row class carries in. */
   return (
     <>
       <div className="pc-section-head">
         <h2 className="pc-section-title">{title}</h2>
-        <div className="pc-rail-nav">
-          {onViewAll && (
+        {onViewAll && (
+          <div className="pc-rail-nav">
             <button type="button" className="pc-viewall" onClick={onViewAll}>
               View all
               <ChevronIcon />
             </button>
-          )}
-          <button type="button" className="pc-rail-btn" onClick={() => page(-1)}
-            disabled={atStart}
-            aria-label={`Scroll ${title} back`}>
-            <RailArrow back />
-          </button>
-          <button type="button" className="pc-rail-btn" onClick={() => page(1)}
-            disabled={atEnd}
-            aria-label={`Scroll ${title} forward`}>
-            <RailArrow />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-      <div className="pc-row" ref={ref} tabIndex={0}>
+      <ShelfRail className="pc-row" label={title}>
         {children}
-      </div>
+      </ShelfRail>
     </>
   );
 }

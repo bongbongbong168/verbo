@@ -12,7 +12,7 @@ import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import FlameMark from '../components/FlameMark'
 import './Dashboard.css'
-import useWheelScroll from '../hooks/useWheelScroll'
+import ShelfRail from '../components/ShelfRail'
 
 /* The design's Top Reads filter is four content categories that do not exist in
    the data. `articles.type` is the real dimension, so the pills are built from
@@ -517,11 +517,6 @@ function ReadCard({ article }) {
 export default function Dashboard() {
   const { token, user } = useAuth()
 
-  /* The pick-up shelf runs past the panel edge and fades; the wheel is what
-     lets a plain mouse reach the rest of it. Shared with the podcast shelf —
-     see hooks/useWheelScroll for why the listener is attached by hand. */
-  const pickupRef = useWheelScroll()
-
   /* ONE REQUEST PER SECTION, each painting the moment its own data lands.
      This was a single `Promise.all` over eight calls behind one
      `if (loading) return <p>Loading...</p>`, so the entire page waited on the
@@ -880,7 +875,13 @@ export default function Dashboard() {
             {/* Rendered straight down the recency order — the first slot is
                 wide whatever lands in it, so the most recent thing leads the
                 row regardless of which module it came from. */}
-            <div className="db-pickup" ref={pickupRef}>
+            {/* The paging arrows, the ends detection and the wheel handler all
+                come from `ShelfRail`, the same component the podcast shelves
+                use — one behaviour for every scrolling row in the app rather
+                than a second copy that drifts. The row keeps its own class, so
+                the card widths, the gaps and the shadow clearance below are
+                untouched. */}
+            <ShelfRail className="db-pickup" label="Pick up where you left off">
               {pickup.tiles.map((tile) =>
                 tile.kind === 'study_unit' ? (
                   <Link key={tile.key} className="db-study" to={tile.to}>
@@ -948,7 +949,7 @@ export default function Dashboard() {
                 ) : (
                   <p className="db-empty">Nothing to study yet — check back soon.</p>
                 ))}
-            </div>
+            </ShelfRail>
           </section>
 
           {/* ---- Recommend Teachers ---- */}

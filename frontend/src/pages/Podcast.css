@@ -179,62 +179,9 @@
    matches all four, which is why it is uneven. Getting the sides wrong is what
    left a hard vertical edge slicing the shadow beside each card. Don't trim
    any of it back. */
-/* The heading and the shelf's own controls share one row, so the buttons never
-   sit over a card and the shelf keeps the same left and right edges as the
-   `.pc-grid` below it. */
-.pc-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.2rem;
-}
+/* `.pc-rail-btn` was deleted with the heading-row arrows. The paging
+   buttons live on `.sr-arrow` in ShelfRail now, laid over the row itself. */
 
-.pc-section-head .pc-section-title {
-  margin-bottom: 0;
-}
-
-.pc-rail-nav {
-  display: flex;
-  gap: 0.4rem;
-  flex: none;
-}
-
-.pc-rail-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex: none;
-  border: 1px solid var(--pc-outline);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--pc-outline);
-  cursor: pointer;
-  /* The fill IS the feedback, so it is not transitioned — the rule this app
-     follows everywhere: a transition that never gets a frame sits at its start
-     value and the control looks dead under the pointer. */
-}
-
-.pc-rail-btn:hover:not(:disabled) {
-  background: var(--pc-outline);
-  color: #fff;
-}
-
-/* A real muted palette, never `opacity` — fading the stroke and the glyph
-   together at 0.4 drops the arrow to a smudge rather than reading as an
-   arrow that is off. The cursor is the other half of the message. */
-.pc-rail-btn:disabled {
-  border-color: #e3dff2;
-  color: #c6c0da;
-  cursor: default;
-}
-
-.pc-rail-btn svg {
-  width: 15px;
-  height: 15px;
-}
 
 .pc-row {
   display: flex;
@@ -269,7 +216,9 @@
 /* The gap between one rail and the next heading. It used to come from a
    `.pc-shelf` wrapper; every shelf is a `Rail` now, which is a fragment with
    no box of its own, so the space belongs to the boundary between them. */
-.pc-row + .pc-section-head {
+/* The row is wrapped by `.sr` now, so the sibling of the next heading is that
+   wrapper rather than the row itself. */
+.sr + .pc-section-head {
   margin-top: 2rem;
 }
 
