@@ -1132,36 +1132,52 @@
    frame 0 away and reintroduces exactly the failure this construction avoids
    - the same reason the streak flame desyncs its embers by duration instead.
    Waiting at the resting position is free. */
+/* IT IS A FADE, AND IT RESTS AT FULLY OPAQUE RATHER THAN AT ZERO. A keyframe
+   beginning at `opacity: 0` is the one thing this app never ships: the list
+   also plays this on mount, so a Dashboard opened in a background tab - a
+   restored session, a middle-click - would render every row INVISIBLE and
+   leave them that way for as long as that tab went undrawn. That is exactly
+   how the account popover once came up blank.
+
+   Dipping instead of fading up costs nothing visually, because at the moment
+   this plays the old rows are already gone: the eye meets the new ones at
+   0.35 and watches them come up, which is a fade-in in everything but its
+   resting value. The small lift underneath gives it somewhere to arrive. */
 @keyframes db-read-land {
   0% {
+    opacity: 1;
     transform: translateY(0);
   }
-  35% {
-    transform: translateY(-5px);
+  22% {
+    opacity: 0.35;
+    transform: translateY(-3px);
   }
   100% {
+    opacity: 1;
     transform: translateY(0);
   }
 }
 
+/* Fast, as asked: 0.28s against the 0.42 it replaced, on a curve that leaves
+   quickly and settles. */
 .db-reads .db-read {
-  animation: db-read-land 0.42s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+  animation: db-read-land 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* Five rows is the whole list, so the ladder is written out rather than
-   generated. The last one starts 160ms in, which is short enough that the
-   list still reads as one movement. */
+   generated. The last starts 120ms in, short enough that the list still
+   reads as one movement rather than five. */
 .db-reads .db-read:nth-child(2) {
-  animation-delay: 0.04s;
+  animation-delay: 0.03s;
 }
 .db-reads .db-read:nth-child(3) {
-  animation-delay: 0.08s;
+  animation-delay: 0.06s;
 }
 .db-reads .db-read:nth-child(4) {
-  animation-delay: 0.12s;
+  animation-delay: 0.09s;
 }
 .db-reads .db-read:nth-child(5) {
-  animation-delay: 0.16s;
+  animation-delay: 0.12s;
 }
 
 /* Safe to strip outright precisely because every keyframe rests at the static
