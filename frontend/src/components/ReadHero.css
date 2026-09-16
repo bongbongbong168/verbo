@@ -495,7 +495,17 @@
    title already says which article it is — while the illustration shrinks and
    stays, since it is the whole reason the banner does not read as a slab. */
 @media (max-width: 1080px) {
-  .rh {
+  /* The two illustrated variants are named explicitly, and doubled, for the
+     same reason as in the phone block below: they declare their own 300px art
+     column at equal specificity but LATER in the file, so a plain `.rh` rule
+     inside a media query never reached them. Measured at a 1000px window,
+     where the banner gets ~382px: the grid resolved to `81.9px 300px`, which
+     left the headline 82px and stacked it 148px tall inside a banner fixed at
+     240. The whole point of this breakpoint is that the art shrinks and the
+     TEXT keeps the room. */
+  .rh,
+  .rh.rh-v-week,
+  .rh.rh-v-pro {
     grid-template-columns: minmax(0, 1fr) 148px;
     gap: 1.2rem;
   }
@@ -533,7 +543,17 @@
   /* Height goes back to auto: the text stacks, so a fixed 240 would either
      clip a wrapped title or leave dead space. The slides differ by a line or
      two at this width, a far smaller jump than the desktop one. */
-  .rh {
+  /* THE VARIANTS HAVE TO BE NAMED HERE, and leaving them out was a real bug.
+     `.rh-v-week` and `.rh-v-pro` set their own two-column template, at the
+     same (0,1,0) specificity as `.rh` but LATER in the file - so inside this
+     media query the plain `.rh` reset lost and the 300px art column survived
+     on a phone. Measured at 375px: the grid computed to `0px 300px`, the text
+     column was ZERO wide, every word wrapped onto its own line and the banner
+     stood 521.5px tall against the other slides' 267. Doubling the class is
+     what makes this independent of source order. */
+  .rh,
+  .rh.rh-v-week,
+  .rh.rh-v-pro {
     grid-template-columns: minmax(0, 1fr);
     gap: 1.2rem;
     height: auto;
