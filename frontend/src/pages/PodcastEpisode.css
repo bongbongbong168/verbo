@@ -401,6 +401,14 @@
   box-shadow: inset 0 -2px 0 0 #c9bdf3;
 }
 
+/* Dropped 2px, same as `.rd-word.saved` — see the note there. Vertical
+   padding on an inline box paints without moving anything, and the ruby view
+   is excluded because its word is `inline-flex`, where it would grow the
+   line. */
+.pe-transcript:not(.pe-transcript-ruby) .pe-word.saved {
+  padding-bottom: 2px;
+}
+
 .pe-word:hover,
 .pe-word.active {
   background: #6a6191;

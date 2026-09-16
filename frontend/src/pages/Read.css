@@ -1637,6 +1637,19 @@
   box-shadow: inset 0 -2px 0 0 #c9bdf3;
 }
 
+/* THE UNDERLINE SITS 2px LOWER THAN THE INLINE BOX'S FLOOR. Han characters
+   have essentially no descender, so that floor is right against the glyph and
+   the mark read as touching the character rather than underlining it.
+
+   Vertical padding on an INLINE box paints without affecting layout, so this
+   drops the mark and moves no text — which is also why it is scoped away from
+   the ruby view, where `.rd-word` is `inline-flex` and the same padding would
+   grow the line. The stacked view needs no correction anyway: the pinyin sits
+   above and the character already clears the box's bottom. */
+.rd-body-cn:not(.rd-body-ruby) .rd-word.saved {
+  padding-bottom: 2px;
+}
+
 .rd-word:hover,
 .rd-word.active {
   background: #6a6191;

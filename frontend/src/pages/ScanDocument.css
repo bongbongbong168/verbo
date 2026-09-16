@@ -290,8 +290,14 @@
   box-shadow: 0 0 0 2px #6a6191;
 }
 
-/* Quietly marks what is already in the bank, without shouting over the text */
+/* Quietly marks what is already in the bank, without shouting over the text.
+   Dropped 2px off the inline box's floor, the same as `.rd-word.saved` and
+   `.pe-word.saved` — Han characters have no descender, so that floor is right
+   against the glyph and the mark read as touching it. Vertical padding on an
+   inline box paints without affecting layout, so nothing moves. This page has
+   no ruby view, so it needs no scoping. */
 .sd-token.saved {
+  padding-bottom: 2px;
   box-shadow: inset 0 -2px 0 0 #c9bdf3;
 }
 
