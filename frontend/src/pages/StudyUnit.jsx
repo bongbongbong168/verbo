@@ -530,13 +530,32 @@ export default function StudyUnit() {
                         {savedWords[w.hanzi] ? <TickIcon /> : <PlusIcon />}
                       </button>
 
+                      {/* Same playing indicator as a dialogue line's button, so
+                          "this is talking" looks one way on the page: filled,
+                          moving bars, and a second press stops it. */}
                       <button
                         type="button"
                         className={'un-speak-btn' + (speakingId === w.id ? ' speaking' : '')}
-                        onClick={() => speak(w)}
-                        aria-label={`Pronounce ${w.hanzi}`}
+                        onClick={() => {
+                          if (speakingId === w.id) {
+                            window.speechSynthesis?.cancel()
+                            setSpeakingId(null)
+                            return
+                          }
+                          speak(w)
+                        }}
+                        aria-label={speakingId === w.id ? `Stop ${w.hanzi}` : `Pronounce ${w.hanzi}`}
+                        aria-pressed={speakingId === w.id}
                       >
-                        <SpeakerIcon />
+                        {speakingId === w.id ? (
+                          <span className="un-eq" aria-hidden="true">
+                            <span />
+                            <span />
+                            <span />
+                          </span>
+                        ) : (
+                          <SpeakerIcon />
+                        )}
                       </button>
                     </div>
 

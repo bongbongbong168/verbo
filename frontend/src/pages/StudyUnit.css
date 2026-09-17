@@ -429,9 +429,9 @@
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease;
+  /* No colour transitions: the speaking fill below is STATE, and a colour
+     easing toward white that never gets a frame would leave dark bars on the
+     purple fill. Hover is instant for the same reason as everywhere else. */
 }
 
 .un-speak-btn:hover {
@@ -439,9 +439,11 @@
   color: var(--un-accent);
 }
 
-.un-speak-btn.speaking {
-  border-color: var(--un-accent);
-  color: var(--un-accent);
+.un-speak-btn.speaking,
+.un-speak-btn.speaking:hover {
+  border-color: #a89ce3;
+  background: #a89ce3;
+  color: #fff;
 }
 
 .un-speak-btn svg {
