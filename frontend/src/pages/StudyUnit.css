@@ -1296,12 +1296,13 @@
    design, so keeping `.un-panel`'s white background and border here put a
    white bordered card inside another white bordered card. */
 .un-quiz-panel {
-  /* THE SAME PADDING AS `.un-cu-panel`, the Culture tab beside it, so the two
-     cards share an inset, a width and a top edge and switching tabs does not
-     move the card under you. The bottom still clears the card's 12px navy
-     band - padding, because a margin on the card would collapse through this
-     borderless parent and reserve nothing. */
-  padding: 5.5rem 1.6rem 6.5rem;
+  /* Same 1.6rem side inset as `.un-cu-panel`, so the card keeps the Culture
+     card's width - but NOT its 5.5rem top. That tall top belongs to the
+     Culture design; here it left ~150px of empty page between the tab row and
+     the card, which read as the content failing to load. The bottom clears
+     the card's 12px navy band and its drop shadow - padding, because a margin
+     on the card would collapse through this borderless parent. */
+  padding: 1.2rem 1.6rem 4rem;
   overflow: visible;
   background: none;
   border: none;

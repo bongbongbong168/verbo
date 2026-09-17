@@ -105,16 +105,6 @@
   color: var(--ql-muted);
 }
 
-.ql-count {
-  margin: 0.9rem 0 0;
-  padding: 0.24rem 0.7rem 0.32rem;
-  border-radius: 8px;
-  background: var(--ql-well);
-  color: var(--ql-accent);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
 .ql-start {
   display: inline-flex;
   align-items: center;

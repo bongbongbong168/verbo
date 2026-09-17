@@ -33,13 +33,6 @@ export default function StudyQuizLauncher({ unitId, questionCount = 0, vocabular
     )
   }
 
-  const madeOf =
-    questionCount > 0 && vocabRounds > 0
-      ? `${questionCount} written for this unit and ${vocabRounds} built from its vocabulary`
-      : questionCount > 0
-        ? 'written for this unit'
-        : 'built from this unit’s vocabulary'
-
   return (
     <div className="ql">
       {/* The artwork gets its own stage and the copy its own column, so a card
@@ -55,10 +48,6 @@ export default function StudyQuizLauncher({ unitId, questionCount = 0, vocabular
         <p className="ql-lede">
           Reinforce what you’ve learned through practical exercises designed to improve your
           understanding, vocabulary and grammar.
-        </p>
-
-        <p className="ql-count">
-          {total} question{total === 1 ? '' : 's'} in one run — {madeOf}.
         </p>
 
         <Link to={`/study/units/${unitId}/quiz`} className="ql-start">
