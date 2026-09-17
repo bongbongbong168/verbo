@@ -1950,8 +1950,8 @@ a.db-course:hover {
   width: 34px;
   height: 34px;
   flex: none;
-  border-radius: 50%;
-  background: var(--db-pill-bg);
+  /* No circle behind the glyph - the icon alone, as asked. The 34px box stays
+     so the label and bar beside it do not move. */
   color: var(--db-accent);
 }
 
@@ -1983,10 +1983,6 @@ a.db-course:hover {
 .db-goal.done {
   border-color: transparent;
   background: var(--db-goal-done-well);
-}
-
-.db-goal.done .db-goal-mark {
-  background: var(--db-card);
 }
 
 /* A plain bar. It used to carry the count inside, which is why it was 18px
