@@ -25,14 +25,17 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
   align-items: center;
-  gap: clamp(1.8rem, 3.5vw, 3.2rem);
+  gap: 2.8rem;
   box-sizing: border-box;
   /* 2px narrower and inset 1px: the Culture card has no border, so at a full
      100% this card's 1px outline sat one pixel outside it on each side. */
   width: calc(100% - 2px);
   min-height: 501px;
   margin: 1px;
-  padding: 2.4rem clamp(2rem, 4vw, 3.4rem);
+  /* EVEN ON ALL FOUR SIDES. It was 2.4rem top and bottom against up to 3.4rem
+     at the sides, so the tinted stage sat 43px from the top and bottom edges
+     but 61px from the left - a frame visibly thicker on one side. */
+  padding: 2.4rem;
   border: 1px solid var(--ql-stroke);
   border-radius: 20px;
   background: #fff;
@@ -42,7 +45,13 @@
   /* The navy band beneath the card - the design's signature, the same one the
      Culture card wears. A HARD offset shadow (no blur, no spread): a solid
      slab under the bottom edge that follows the 20px radius for free. */
-  box-shadow: 0 12px 0 0 var(--ql-stroke);
+  /* The band, then a soft drop shadow under the whole card so it lifts off
+     the page rather than sitting flat on it. One list - a second box-shadow
+     declaration would replace the band instead of adding to it. Navy-tinted
+     like every shadow in the app; neutral black greys the lavender page. */
+  box-shadow:
+    0 12px 0 0 var(--ql-stroke),
+    0 24px 44px rgba(28, 23, 48, 0.16);
 }
 
 /* The artwork's stage. A tinted well gives the left half a shape of its own,
@@ -125,12 +134,30 @@
   font-size: 1.05rem;
   font-weight: 600;
   text-decoration: none;
+  /* Only the lift eases. The fill and the shadow land instantly - they are the
+     feedback, and a transition that never gets a frame would leave the button
+     looking dead under the pointer. Rests where it started. */
+  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ql-start {
+    transition: none;
+  }
 }
 
 /* Instant — the fill IS the feedback, and a transition that never gets a frame
    leaves the button looking dead under the pointer. */
 .ql-start:hover {
   background: var(--ql-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(106, 97, 145, 0.35);
+}
+
+/* A press settles back down, so a tap gets a physical answer too. */
+.ql-start:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(106, 97, 145, 0.3);
 }
 
 .ql-start:focus-visible {
