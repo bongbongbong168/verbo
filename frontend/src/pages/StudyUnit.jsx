@@ -149,6 +149,8 @@ export default function StudyUnit() {
      when it opened inline. */
   const [explaining, setExplaining] = useState(null)
   const [speakingId, setSpeakingId] = useState(null)
+  /* The utterance that currently owns `speakingId` - see `speakText`. */
+  const currentUtteranceRef = useRef(null)
 
   const [showEdit, setShowEdit] = useState(false)
 
@@ -249,8 +251,20 @@ export default function StudyUnit() {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'zh-CN'
     utterance.rate = 0.85
-    utterance.onend = () => setSpeakingId(null)
-    utterance.onerror = () => setSpeakingId(null)
+    /* ONLY THE CURRENT UTTERANCE MAY CLEAR THE INDICATOR. `cancel()` above does
+       not end the previous utterance on the spot - its `onend`/`onerror`
+       fires a moment LATER, after this function has already marked the new
+       word as speaking. Unguarded, that late callback wiped the new word's
+       state, which is why clicking quickly from one word to the next showed no
+       bars at all: the indicator was set, then erased by the word you left. */
+    currentUtteranceRef.current = utterance
+    const done = () => {
+      if (currentUtteranceRef.current !== utterance) return
+      currentUtteranceRef.current = null
+      setSpeakingId(null)
+    }
+    utterance.onend = done
+    utterance.onerror = done
     setSpeakingId(id)
     window.speechSynthesis.speak(utterance)
     return utterance
@@ -295,8 +309,17 @@ export default function StudyUnit() {
         setPlayingAll(false)
         return
       }
-      u.onend = () => sayFrom(i + 1)
+      /* Same guard as `speakText`: pressing a single line mid-conversation
+         cancels this utterance, and its late callback must not advance the
+         chain or wipe the line that replaced it. */
+      u.onend = () => {
+        if (currentUtteranceRef.current !== u) return
+        sayFrom(i + 1)
+      }
       u.onerror = () => {
+        if (currentUtteranceRef.current !== u) return
+        currentUtteranceRef.current = null
+        playingAllRef.current = false
         setPlayingAll(false)
         setSpeakingId(null)
       }
