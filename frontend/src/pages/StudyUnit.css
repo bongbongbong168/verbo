@@ -775,7 +775,8 @@
 }
 
 @media (max-width: 860px) {
-  .un-cu-panel {
+  .un-cu-panel,
+  .un-quiz-panel {
     padding: 2rem 1rem 2.5rem;
   }
 
@@ -1295,10 +1296,12 @@
    design, so keeping `.un-panel`'s white background and border here put a
    white bordered card inside another white bordered card. */
 .un-quiz-panel {
-  /* The 12px bottom pad reserves the card's navy band. A margin on the card
-     would COLLAPSE through this parent now that it has no padding or border,
-     reserving nothing — padding here cannot collapse. */
-  padding: 0 0 12px;
+  /* THE SAME PADDING AS `.un-cu-panel`, the Culture tab beside it, so the two
+     cards share an inset, a width and a top edge and switching tabs does not
+     move the card under you. The bottom still clears the card's 12px navy
+     band - padding, because a margin on the card would collapse through this
+     borderless parent and reserve nothing. */
+  padding: 5.5rem 1.6rem 6.5rem;
   overflow: visible;
   background: none;
   border: none;

@@ -10,67 +10,94 @@
   --ql-text: #1c1730;
   --ql-muted: #726c88;
 
-  display: flex;
-  flex-direction: column;
+  /* AS BIG AS THE CULTURE CARD BEFORE IT, measured: that card is 883px wide
+     and 551px tall at 1440 (801x501 CSS), this one was 770x476 and centred,
+     so moving between the two tabs made the page change size under you. It
+     now spans the same width (the panel supplies the same 1.6rem inset) and
+     holds the same height.
+
+     TWO HALVES, NOT ONE STRETCHED STACK. The design's centred column was
+     drawn for a narrow card; widening that same column leaves a thin strip of
+     content marooned in a wide box, which is exactly what reads as stretched.
+     At this width the artwork gets its own tinted stage on the left and the
+     copy its own column on the right, so both halves are filled. The phone
+     block below goes back to the design's single centred column. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
   align-items: center;
+  gap: clamp(1.8rem, 3.5vw, 3.2rem);
   box-sizing: border-box;
-  /* Widened to land on the design's landscape proportion (~1.6:1). The card
-     was 1.41 at 620 — it carries one line the design does not (the real
-     question count), so the width absorbs that rather than the content being
-     cut to fit. */
-  max-width: 700px;
-  /* No bottom margin — the band's height is reserved by `.un-quiz-panel`'s
-     padding, because a margin here would collapse through it. */
-  margin: 0 auto;
-  padding: 1.9rem 2rem 2rem;
+  /* 2px narrower and inset 1px: the Culture card has no border, so at a full
+     100% this card's 1px outline sat one pixel outside it on each side. */
+  width: calc(100% - 2px);
+  min-height: 501px;
+  margin: 1px;
+  padding: 2.4rem clamp(2rem, 4vw, 3.4rem);
   border: 1px solid var(--ql-stroke);
   border-radius: 20px;
   background: #fff;
-  text-align: center;
+  text-align: left;
   font-family: 'Hellix', system-ui, sans-serif;
   color: var(--ql-text);
-  /* The navy band beneath the card — the design's signature, the same one the
-     Culture card wears. A HARD offset shadow (no blur, no spread) rather than
-     a soft one: it is a solid slab showing under the bottom edge, and it
-     follows the 20px radius for free. The bottom margin reserves its height so
-     it does not sit on whatever follows. */
+  /* The navy band beneath the card - the design's signature, the same one the
+     Culture card wears. A HARD offset shadow (no blur, no spread): a solid
+     slab under the bottom edge that follows the 20px radius for free. */
   box-shadow: 0 12px 0 0 var(--ql-stroke);
 }
 
-/* Height-driven, so the artwork keeps its own aspect whatever the card width
-   does. Transparent PNG — the background was flood-filled from the edges, so
-   the shirt collar and the owl's face kept their whites. */
+/* The artwork's stage. A tinted well gives the left half a shape of its own,
+   so the illustration sits IN something rather than floating in white. */
+.ql-stage {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  min-height: 320px;
+  padding: 1.6rem;
+  border-radius: 16px;
+  background: var(--ql-well);
+}
+
+/* Height-driven, so the artwork keeps its own aspect whatever the card does.
+   Transparent PNG - the background was flood-filled from the edges, so the
+   shirt collar and the owl's face kept their whites. Larger than the design's
+   150px because it now fills a stage rather than capping a column; still a
+   height, never a width, so it scales without distorting. */
 .ql-art {
   display: block;
-  /* Sized so the card lands near the design's landscape proportion (~1.6:1)
-     rather than the portrait shape a taller illustration produced. */
-  height: 150px;
-  width: auto;
-  max-width: 100%;
-  margin-bottom: 0.7rem;
+  /* Width-driven with a height CAP, never both fixed. A fixed height plus
+     `max-width: 100%` squeezed it to 0.85 of its own proportion the moment
+     the stage was narrower than the drawing - measured, then fixed. */
+  width: 100%;
+  max-width: 346px;
+  height: auto;
+  max-height: 250px;
+  object-fit: contain;
+}
+
+.ql-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .ql-heading {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 700;
   letter-spacing: -0.015em;
 }
 
 .ql-lede {
-  margin: 0.5rem 0 0;
-  /* Held narrower than the card so the two lines break near the design's
-     measure instead of running the full width. */
-  max-width: 430px;
-  font-size: 0.95rem;
-  line-height: 1.55;
+  margin: 0.7rem 0 0;
+  /* A reading measure, not the column's full width. */
+  max-width: 38ch;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--ql-muted);
 }
 
-/* What the run actually contains — the one line on this card that differs per
-   unit, so it is set apart from the static description above it. */
 .ql-count {
-  margin: 0.55rem 0 0;
+  margin: 0.9rem 0 0;
   padding: 0.24rem 0.7rem 0.32rem;
   border-radius: 8px;
   background: var(--ql-well);
@@ -83,8 +110,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 250px;
-  margin-top: 1.2rem;
+  min-width: 220px;
+  margin-top: 1.6rem;
   /* Asymmetric: Hellix reserves more ascent than this label uses, so a
      symmetric pad leaves the glyphs sitting low. The 1px taken off each side
      pays for the border below, so adding the stroke does not make the button
@@ -120,8 +147,11 @@
 }
 
 @media (max-width: 620px) {
+  /* Auto width here, so the 150px cap scales the drawing down in proportion
+     instead of leaving a full-width box around a shorter image. */
   .ql-art {
-    height: 150px;
+    width: auto;
+    max-height: 150px;
   }
 
   /* NOT full width. `width: 100%` was here to stop the 250px min-width
@@ -137,5 +167,35 @@
     max-width: 100%;
     padding-left: 2.4rem;
     padding-right: 2.4rem;
+  }
+}
+
+/* ---- phone ----
+   Back to the design's single centred column. Two halves at 300px would give
+   the heading a 130px line and the artwork a stamp-sized stage. */
+@media (max-width: 767px) {
+  .ql {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    gap: 1rem;
+    padding: 1.6rem 1.3rem 1.8rem;
+    text-align: center;
+  }
+
+  .ql-stage {
+    min-height: 0;
+    padding: 1rem;
+  }
+
+  .ql-art {
+    height: 150px;
+  }
+
+  .ql-copy {
+    align-items: center;
+  }
+
+  .ql-heading {
+    font-size: 1.5rem;
   }
 }

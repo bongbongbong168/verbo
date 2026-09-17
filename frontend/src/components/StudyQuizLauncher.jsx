@@ -42,22 +42,29 @@ export default function StudyQuizLauncher({ unitId, questionCount = 0, vocabular
 
   return (
     <div className="ql">
-      <img className="ql-art" src={illustration} alt="" />
+      {/* The artwork gets its own stage and the copy its own column, so a card
+          as wide as the Culture card holds two real halves instead of one
+          narrow stack floating in the middle of a wide box. */}
+      <div className="ql-stage">
+        <img className="ql-art" src={illustration} alt="" />
+      </div>
 
-      <h3 className="ql-heading">Practice Exercises</h3>
+      <div className="ql-copy">
+        <h3 className="ql-heading">Practice Exercises</h3>
 
-      <p className="ql-lede">
-        Reinforce what you’ve learned through practical exercises designed to improve your
-        understanding, vocabulary and grammar.
-      </p>
+        <p className="ql-lede">
+          Reinforce what you’ve learned through practical exercises designed to improve your
+          understanding, vocabulary and grammar.
+        </p>
 
-      <p className="ql-count">
-        {total} question{total === 1 ? '' : 's'} in one run — {madeOf}.
-      </p>
+        <p className="ql-count">
+          {total} question{total === 1 ? '' : 's'} in one run — {madeOf}.
+        </p>
 
-      <Link to={`/study/units/${unitId}/quiz`} className="ql-start">
-        Start Quiz
-      </Link>
+        <Link to={`/study/units/${unitId}/quiz`} className="ql-start">
+          Start Quiz
+        </Link>
+      </div>
     </div>
   )
 }
