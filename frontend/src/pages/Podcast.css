@@ -179,8 +179,29 @@
    matches all four, which is why it is uneven. Getting the sides wrong is what
    left a hard vertical edge slicing the shadow beside each card. Don't trim
    any of it back. */
-/* `.pc-rail-btn` was deleted with the heading-row arrows. The paging
-   buttons live on `.sr-arrow` in ShelfRail now, laid over the row itself. */
+/* The heading and View all share one row: title left, View all hard right.
+   THESE RULES WERE LOST BY ACCIDENT when the old arrow buttons were deleted -
+   the cleanup cut from the comment above `.pc-section-head` down to the last
+   `.pc-rail-btn` rule, taking this row's own layout with it, so View all fell
+   under the title on the left. Restored as they were; only `.pc-rail-btn`
+   stays gone, since the paging arrows live on `.sr-arrow` in ShelfRail. */
+.pc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.pc-section-head .pc-section-title {
+  margin-bottom: 0;
+}
+
+.pc-rail-nav {
+  display: flex;
+  gap: 0.4rem;
+  flex: none;
+}
 
 
 .pc-row {
