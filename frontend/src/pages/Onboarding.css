@@ -361,6 +361,30 @@
   }
 }
 
+/* THE STEP YOU ARE ON PULSES. Before this the bar only lit the steps BEHIND
+   you, so "Step 2 of 5" showed one filled segment and four identical empty
+   ones, and nothing in the bar said which of those four was the question on
+   screen. The current segment now carries the fill and breathes.
+
+   The pulse RESTS AT FULL, the rule every animation here follows: 0% and 100%
+   are the lit segment and it only dims in between, so a tab that stops
+   compositing shows a solid segment where you are rather than an empty one.
+   Opacity rather than colour, so the compositor runs it without repainting. */
+.ob-seg.current {
+  background: var(--ob-fill);
+  animation: ob-seg-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ob-seg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .ob-count {
   margin: 0 0 1.2rem;
   font-size: 0.75rem;
@@ -410,7 +434,8 @@
      and the bar saying exactly what they said with it. */
   .ob-step.done::before,
   .ob-step.here .ob-step-mark::after,
-  .ob-seg.on {
+  .ob-seg.on,
+  .ob-seg.current {
     animation: none;
   }
 }

@@ -333,7 +333,14 @@ export default function Onboarding() {
           ) : (
             <div className="ob-progress" aria-hidden="true">
               {STEPS.map((s, i) => (
-                <span className={"ob-seg" + (i <= step - 1 ? " on" : "")} key={s.key} />
+                <span
+                  className={
+                    "ob-seg" +
+                    (i < step ? " on" : "") +
+                    (i === step ? " current" : "")
+                  }
+                  key={s.key}
+                />
               ))}
             </div>
           )}
