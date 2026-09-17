@@ -921,7 +921,9 @@
   background: #fffbed;
   border: 1.5px solid #000;
   border-radius: 12px;
-  padding: 1.5rem 1.6rem 1.1rem;
+  /* Right padding clears the play button pinned to that edge: its 38px, its
+     1.1rem inset and a gap, so text wraps short of it. */
+  padding: 1.5rem calc(1.1rem + 38px + 1rem) 1.1rem 1.6rem;
 }
 
 .un-line.alt {
@@ -1058,28 +1060,94 @@
 
 /* ---- per-line audio ---- */
 
+/* PINNED TO THE LINE'S RIGHT EDGE, vertically centred on the card. The card
+   reserves the room on its right (see `.un-line` above) so a long line wraps
+   before it reaches the button instead of running underneath it. */
 .un-line-say {
-  display: inline-grid;
+  position: absolute;
+  top: 50%;
+  right: 1.1rem;
+  display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  margin-left: 0.4rem;
+  width: 38px;
+  height: 38px;
+  margin-top: -19px;
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(168, 156, 227, 0.18);
+  background: rgba(168, 156, 227, 0.2);
   color: #6a6191;
   cursor: pointer;
-  vertical-align: middle;
 }
 
+/* Static fills - the colour IS the feedback, so it is not transitioned. */
 .un-line-say:hover {
-  background: rgba(168, 156, 227, 0.34);
+  background: rgba(168, 156, 227, 0.36);
+}
+
+.un-line-say:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
 }
 
 .un-line-say svg {
-  width: 14px;
+  width: 18px;
+  height: 18px;
+}
+
+/* PLAYING. Solid accent and white bars: the state is this class, so it is
+   correct the frame playback starts whether or not the bars ever move. */
+.un-line-say.playing {
+  background: #a89ce3;
+  color: #fff;
+}
+
+.un-line-say.playing:hover {
+  background: #6a6191;
+}
+
+.un-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
   height: 14px;
+}
+
+.un-eq span {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: un-eq 0.9s ease-in-out infinite;
+}
+
+/* Desynced by DURATION, never a negative delay: a negative delay starts part
+   way through the timeline and throws away frame 0, which is the resting
+   position. Every bar rests at full height, so a tab that stops compositing
+   still shows three solid bars - a playing indicator, not a blank one. */
+.un-eq span:nth-child(2) {
+  animation-duration: 0.7s;
+}
+
+.un-eq span:nth-child(3) {
+  animation-duration: 1.1s;
+}
+
+@keyframes un-eq {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-eq span {
+    animation: none;
+  }
 }
 
 /* The line currently being spoken during full playback. A left rule plus a

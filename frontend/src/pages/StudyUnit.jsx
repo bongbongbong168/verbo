@@ -627,17 +627,46 @@ export default function StudyUnit() {
                     }
                   >
                     {line.speaker && <span className="un-line-speaker">{line.speaker}</span>}
-                    {canSpeak && (
-                      <button
-                        type="button"
-                        className="un-line-say"
-                        onClick={() => speakText(line.chinese, `line-${line.id}`)}
-                        aria-label={`Play this line`}
-                        title="Play this line"
-                      >
-                        <SpeakerIcon />
-                      </button>
-                    )}
+                    {canSpeak && (() => {
+                      const lineId = `line-${line.id}`
+                      const playing = speakingId === lineId
+                      return (
+                        /* ON THE RIGHT OF THE LINE, and it says when it is
+                           talking. It sat above the text on the left, where it
+                           read as a label rather than a control, and nothing
+                           changed while the line was being spoken - you pressed
+                           it and had to listen to find out whether it worked.
+                           While this line plays the button fills and its glyph
+                           becomes moving bars; pressing it then stops the line.
+                           The playing look is a CLASS, so it is right on the
+                           first frame; the bars' motion is only decoration. */
+                        <button
+                          type="button"
+                          className={'un-line-say' + (playing ? ' playing' : '')}
+                          onClick={() => {
+                            if (playing && !playingAllRef.current) {
+                              window.speechSynthesis?.cancel()
+                              setSpeakingId(null)
+                              return
+                            }
+                            speakText(line.chinese, lineId)
+                          }}
+                          aria-label={playing ? 'Stop this line' : 'Play this line'}
+                          aria-pressed={playing}
+                          title={playing ? 'Stop' : 'Play this line'}
+                        >
+                          {playing ? (
+                            <span className="un-eq" aria-hidden="true">
+                              <span />
+                              <span />
+                              <span />
+                            </span>
+                          ) : (
+                            <SpeakerIcon />
+                          )}
+                        </button>
+                      )
+                    })()}
                     <p className="un-line-chinese">
                       {/* Real tokens now, not bare characters. The page's Alt+1
                           listener reads `hoveredWordRef`, and until the backend
