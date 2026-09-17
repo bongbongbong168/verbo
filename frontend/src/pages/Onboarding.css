@@ -294,15 +294,14 @@
   flex: 1;
   min-width: 0;
   display: grid;
-  place-items: center;
-  /* THE CARD SITS ABOVE CENTRE, not on it. Dead centre put the question low
-     on a tall screen, with the eye landing on empty space above it first. The
-     extra room is reserved BELOW, so the card is still centred in what is left
-     and keeps a steady position as its height changes from one question to the
-     next - pinning it to the top instead would make short steps jump up and
-     tall ones spill down. In `--app-vh`, never raw `vh`, because #root is
-     zoomed and `vh` is not. */
-  padding: 1rem 0 calc(1rem + var(--app-vh) * 0.12);
+  /* TOP-ALIGNED WITH THE DARK PANEL BESIDE IT. Centred, the card started 44px
+     below the panel's top edge, so the two halves of the screen began at
+     different heights and read as misaligned. The card's top now sits on the
+     same line as the panel's, and its height is free to vary downward from
+     question to question - a fixed top stays still while a centred card would
+     shift up and down with every step. */
+  place-items: start center;
+  padding: 0;
 }
 
 .ob-card {
