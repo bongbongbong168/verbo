@@ -306,9 +306,9 @@ class ConversationController extends Controller
     {
         abort_unless($message->conversation->allows($request->user()), 403);
         abort_unless($message->attachment_path, 404);
-        abort_unless(Storage::disk(local)->exists($message->attachment_path), 404);
+        abort_unless(Storage::disk('local')->exists($message->attachment_path), 404);
 
-        return Storage::disk(local)->response(
+        return Storage::disk('local')->response(
             $message->attachment_path,
             $message->attachment_name,
             ['Content-Type' => $message->attachment_mime ?: 'application/octet-stream']
@@ -350,7 +350,7 @@ class ConversationController extends Controller
             // The row cascades; the file on disk does not, and an orphaned
             // upload in a private bucket is unreachable and permanent.
             if ($message->attachment_path) {
-                Storage::disk(local)->delete($message->attachment_path);
+                Storage::disk('local')->delete($message->attachment_path);
             }
 
             $message->delete();

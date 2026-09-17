@@ -229,7 +229,7 @@ class TutorApplicationController extends Controller
         $profile = $tutorCredential->tutorProfile;
         abort_unless($profile && (int) $profile->user_id === $request->user()->id, 403);
 
-        Storage::disk(local)->delete($tutorCredential->path);
+        Storage::disk('local')->delete($tutorCredential->path);
         $tutorCredential->delete();
 
         return response()->noContent();
@@ -247,9 +247,9 @@ class TutorApplicationController extends Controller
         $profile = $tutorCredential->tutorProfile;
         $owns = $profile && (int) $profile->user_id === $request->user()->id;
         abort_unless($owns || $request->user()->is_admin, 403);
-        abort_unless(Storage::disk(local)->exists($tutorCredential->path), 404);
+        abort_unless(Storage::disk('local')->exists($tutorCredential->path), 404);
 
-        return Storage::disk(local)->response($tutorCredential->path, $tutorCredential->name);
+        return Storage::disk('local')->response($tutorCredential->path, $tutorCredential->name);
     }
 
     /** The row the queue renders. Deliberately not the whole application. */

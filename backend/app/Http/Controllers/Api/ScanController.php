@@ -151,7 +151,7 @@ class ScanController extends Controller
                 'message' => 'Could not read that image. Try a clearer photo, or one with more contrast.',
             ], 422);
         } finally {
-            Storage::disk(local)->delete($path);
+            Storage::disk('local')->delete($path);
         }
 
         $words = collect($dictionary->segment($text))
