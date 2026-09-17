@@ -981,11 +981,6 @@
   cursor: default;
 }
 
-.ob-next svg {
-  width: 15px;
-  height: 15px;
-}
-
 .ob-error {
   margin: 1rem 0 0;
   padding: 0.6rem 0.9rem;
@@ -1184,15 +1179,6 @@
   transform: translateY(-1px);
 }
 
-/* The arrow leads, which is what says "forward" before the label is read. */
-.ob-next svg {
-  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-.ob-next:hover:not(:disabled) svg {
-  transform: translateX(3px);
-}
-
 .ob-back:hover:not(:disabled) {
   transform: translateX(-2px);
 }
@@ -1218,8 +1204,7 @@
   .ob-row,
   .ob-chip,
   .ob-next,
-  .ob-back,
-  .ob-next svg {
+  .ob-back {
     transition: none;
   }
 }

@@ -78,22 +78,6 @@ function CloseIcon() {
   );
 }
 
-function ArrowIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M5 12h13M12 5.5 18.5 12 12 18.5" />
-    </svg>
-  );
-}
-
 /* The five questions, in the spec's order (§3 steps 2-6). `title` is the
    spec's own copy from §11 — it is deliberately a question, not a label, so
    each screen reads as someone asking rather than a form demanding.
@@ -459,7 +443,7 @@ export default function Onboarding() {
               onClick={() => setStep((s) => Math.max(0, s - 1))}
               disabled={step === 0 || busy}
             >
-              ← Back
+              Back
             </button>
 
             {!last && (
@@ -485,7 +469,6 @@ export default function Onboarding() {
                   : answered
                     ? "Continue"
                     : "Continue"}
-              <ArrowIcon />
             </button>
           </div>
         </div>
