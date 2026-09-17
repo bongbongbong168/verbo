@@ -295,7 +295,14 @@
   min-width: 0;
   display: grid;
   place-items: center;
-  padding: 1rem 0;
+  /* THE CARD SITS ABOVE CENTRE, not on it. Dead centre put the question low
+     on a tall screen, with the eye landing on empty space above it first. The
+     extra room is reserved BELOW, so the card is still centred in what is left
+     and keeps a steady position as its height changes from one question to the
+     next - pinning it to the top instead would make short steps jump up and
+     tall ones spill down. In `--app-vh`, never raw `vh`, because #root is
+     zoomed and `vh` is not. */
+  padding: 1rem 0 calc(1rem + var(--app-vh) * 0.12);
 }
 
 .ob-card {
