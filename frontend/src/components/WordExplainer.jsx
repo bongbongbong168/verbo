@@ -36,6 +36,28 @@ export default function WordExplainer({ token, word, onClose }) {
     }
   }, [token, word])
 
+  /* THE PAGE BEHIND DOES NOT SCROLL WHILE THIS IS OPEN. A wheel or swipe that
+     reached the end of the panel's own content carried on into the page, so
+     the list moved behind the dialog you were reading. The root is locked for
+     as long as a word is shown and restored exactly as it was.
+
+     The scrollbar's width is handed back as padding while it is hidden: this
+     app pins `html { overflow-y: scroll }` precisely so the layout never
+     shifts sideways when a scrollbar comes and goes, and hiding it here would
+     otherwise jolt everything behind the scrim 15px to the right. */
+  useEffect(() => {
+    if (!word) return undefined
+    const root = document.documentElement
+    const gutter = window.innerWidth - root.clientWidth
+    const prev = { overflow: root.style.overflow, paddingRight: root.style.paddingRight }
+    root.style.overflow = 'hidden'
+    if (gutter > 0) root.style.paddingRight = `${gutter}px`
+    return () => {
+      root.style.overflow = prev.overflow
+      root.style.paddingRight = prev.paddingRight
+    }
+  }, [word])
+
   // Esc closes, matching every other dismissible overlay in the app.
   useEffect(() => {
     function onKey(e) {

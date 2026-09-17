@@ -112,6 +112,10 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  /* Scrolling to the end of the panel stops here instead of chaining on
+     to the page - the half of the lock iOS needs, where a touch drag can
+     still reach a scroll container the root lock does not cover. */
+  overscroll-behavior: contain;
   padding: 1.2rem 1.4rem 1.4rem;
 }
 
@@ -244,7 +248,9 @@
   display: inline-block;
   margin-top: 0.45rem;
   font-size: 0.76rem;
-  font-weight: 600;
+  /* Regular, not 600: where a sentence came from is a footnote, and in bold it
+     competed with the sentence above it for the eye. */
+  font-weight: 400;
   color: #6a6191;
   text-decoration: none;
 }
