@@ -111,6 +111,11 @@ return [
         'key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-3-flash-preview'),
         'timeout' => env('GEMINI_TIMEOUT', 20),
+        // Scan's reader. Defaults to the assistant's model; longer timeout
+        // because an image upload is bigger than a chat turn. A failure here
+        // falls back to Tesseract rather than failing the scan.
+        'ocr_model' => env('GEMINI_OCR_MODEL'),
+        'ocr_timeout' => env('GEMINI_OCR_TIMEOUT', 30),
     ],
 
     /*
