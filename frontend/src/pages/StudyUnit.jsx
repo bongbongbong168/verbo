@@ -163,6 +163,15 @@ export default function StudyUnit() {
     loadUnit()
   }, [token, id])
 
+  /* A NEW LESSON STARTS AT THE TOP. The router keeps this page mounted
+     between lessons and does not reset scroll, so pressing Next - which lives
+     at the bottom - landed you at the bottom of the next lesson, past its
+     title and its tabs. Keyed on `id` alone so saving a word or switching a
+     tab never jumps the page. */
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
   /* Seeded from the shared cache rather than converted to `useApiData`: the
      unit lives in BOTH state and a ref (the Alt+1 listener reads the ref to
      dodge a stale closure) and is rewritten by the edit drawer, so priming the
@@ -186,9 +195,14 @@ export default function StudyUnit() {
     const applyTab = (data) => {
       if (tabApplied) return
       tabApplied = true
-      if (data.level?.category === 'daily' && (data.texts || []).length) {
-        setActiveTab('reading')
-      }
+      /* BOTH BRANCHES SET IT, not only the Daily Use one. Moving to the next
+         lesson changes the URL but React keeps this same component mounted, so
+         `activeTab` carried over from the lesson you left - finish lesson 1 on
+         its Quiz tab, press Next, and lesson 2 opened on its Quiz too. Each
+         lesson now opens on its own first tab. */
+      setActiveTab(
+        data.level?.category === 'daily' && (data.texts || []).length ? 'reading' : 'vocabulary',
+      )
     }
 
     if (cached) {
