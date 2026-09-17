@@ -1137,3 +1137,89 @@
     padding-right: 1rem;
   }
 }
+
+/* ---- hover motion ----
+
+   TRANSFORM IS THE ONLY THING THAT MOVES, and the reason is on this page
+   already. `.ob-row.on` and `.ob-chip.on` carry their SELECTED state partly in
+   `box-shadow`, so a transition on shadow would animate the answer itself - and
+   a transition that never gets a frame leaves it at its start value, which is a
+   picked row showing no ring. That is the quiz page's frozen-verdict trap. The
+   lift eases; the border, fill and shadow land instantly, because they are the
+   feedback and a stalled ease would leave the control looking dead.
+
+   Every hover rests where it started, so a tab that never composites shows the
+   plain row, not one stuck half-raised. */
+.ob-row,
+.ob-chip,
+.ob-next,
+.ob-back {
+  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ob-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(28, 23, 48, 0.08);
+}
+
+/* ONE shadow list: a second `box-shadow` REPLACES the first, so without this a
+   selected row would lose its inset ring the moment it was hovered - the same
+   trap the saved-word underline and the notification bell hit. */
+.ob-row.on:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--ob-fill),
+    0 6px 16px rgba(28, 23, 48, 0.08);
+}
+
+.ob-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(28, 23, 48, 0.09);
+}
+
+.ob-chip.on:hover {
+  box-shadow: 0 5px 14px rgba(168, 156, 227, 0.5);
+}
+
+.ob-next:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* The arrow leads, which is what says "forward" before the label is read. */
+.ob-next svg {
+  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ob-next:hover:not(:disabled) svg {
+  transform: translateX(3px);
+}
+
+.ob-back:hover:not(:disabled) {
+  transform: translateX(-2px);
+}
+
+/* A press settles back onto the surface, so a tap on a phone - where there is
+   no hover - still gets a physical answer. */
+.ob-row:active,
+.ob-chip:active,
+.ob-next:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+@media (hover: none) {
+  .ob-row:hover,
+  .ob-chip:hover,
+  .ob-next:hover:not(:disabled),
+  .ob-back:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-row,
+  .ob-chip,
+  .ob-next,
+  .ob-back,
+  .ob-next svg {
+    transition: none;
+  }
+}
