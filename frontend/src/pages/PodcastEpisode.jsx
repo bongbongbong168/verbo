@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { exampleFor } from '../sentence'
 import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
+import { noteRecentView } from '../recentViews'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import WordPopover from '../components/WordPopover'
 import PodcastEditDrawer from '../components/PodcastEditDrawer'
@@ -167,9 +168,7 @@ export default function PodcastEpisode() {
       if (isFresh(key)) {
         // Still record the visit — opening it again is a real visit, and the
         // Dashboard's recency row is built from exactly this.
-        api.recordView(token, 'podcast', id).catch(() => {})
-        // The recency order changed, so the Dashboard's cached copy is stale.
-        invalidate('recent-views:3')
+        noteRecentView(token, 'podcast', id, { kind: 'podcast', podcast: { id: cached.id, title: cached.title, level: cached.level, image_url: cached.image_url } })
         return
       }
     } else {
@@ -193,8 +192,7 @@ export default function PodcastEpisode() {
         // Record the visit so the Dashboard's "Pick up where you left off"
         // row can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
-        api.recordView(token, 'podcast', id).catch(() => {})
-        invalidate('recent-views:3')
+        noteRecentView(token, 'podcast', id, { kind: 'podcast', podcast: { id: data.id, title: data.title, level: data.level, image_url: data.image_url } })
       })
       // Only a failure that leaves the page with nothing is worth showing.
       .catch((err) => !podcastRef.current && setError(err.message))

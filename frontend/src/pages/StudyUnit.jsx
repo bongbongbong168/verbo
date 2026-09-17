@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
+import { noteRecentView } from '../recentViews'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
@@ -213,8 +214,7 @@ export default function StudyUnit() {
       if (isFresh(key)) {
         // Opening it again is a real visit, and the Dashboard's recency row is
         // built from exactly this — so record it and drop that cached row.
-        api.recordView(token, 'study_unit', id).catch(() => {})
-        invalidate('recent-views:3')
+        noteRecentView(token, 'study_unit', id)
         return
       }
     } else {
@@ -232,8 +232,7 @@ export default function StudyUnit() {
         // Record the visit so the Dashboard's "Pick up where you left off"
         // tile can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
-        api.recordView(token, 'study_unit', id).catch(() => {})
-        invalidate('recent-views:3')
+        noteRecentView(token, 'study_unit', id)
       })
       // Only a failure that leaves the page with nothing is worth showing.
       .catch((err) => !unitRef.current && setError(err.message))

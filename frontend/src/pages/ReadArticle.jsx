@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { exampleFor } from "../sentence";
 import { invalidate, isFresh, readCache, writeCache } from "../dataCache";
+import { noteRecentView } from '../recentViews';
 import Skeleton, { SkeletonText } from "../components/Skeleton";
 import WordPopover from "../components/WordPopover";
 import PageTools from "../components/PageTools";
@@ -125,11 +126,28 @@ export default function ReadArticle() {
      duplicate of the first. Both are fire-and-forget: failing to record a visit
      must never stop the article rendering, and there is nothing useful to tell
      the reader about it. */
-  function recordVisit() {
+  function recordVisit(a) {
     api.recordArticleView(token, id).catch(() => {});
-    api.recordView(token, 'article', id).catch(() => {});
-    // The recency order just changed, so the Dashboard's cached row is stale.
-    invalidate('recent-views:3');
+    /* Moves this article to the front of the Dashboard's cached recency row
+       when the article is in hand - see recentViews.js for why this replaced
+       an invalidate. */
+    noteRecentView(
+      token,
+      'article',
+      id,
+      a && {
+        kind: 'article',
+        article: {
+          id: a.id,
+          title: a.title,
+          type: a.type,
+          category: a.category,
+          hsk_level: a.hsk_level,
+          image_url: a.image_url,
+          reading_minutes: a.reading_minutes,
+        },
+      },
+    );
   }
 
   /* Seeded from the shared cache rather than converted to `useApiData`: this
@@ -147,7 +165,7 @@ export default function ReadArticle() {
       // Fresh enough that refetching buys nothing — but the VIEW is still
       // recorded, because opening it again is a real read.
       if (isFresh(`article:${id}`)) {
-        recordVisit();
+        recordVisit(cached);
         return;
       }
     } else {
@@ -160,7 +178,7 @@ export default function ReadArticle() {
         setArticle(data);
         articleRef.current = data;
         writeCache(`article:${id}`, data);
-        recordVisit();
+        recordVisit(data);
       })
       // Only surface a failure that leaves the reader with nothing — a stalled
       // refresh behind an article already on screen is not worth an error.

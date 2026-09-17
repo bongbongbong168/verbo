@@ -651,6 +651,13 @@ export default function Dashboard() {
      something already in it. Capped at three, which is what the design draws. */
   const pickup = useMemo(() => {
     const tiles = []
+    /* NO SUGGESTIONS UNTIL HISTORY IS KNOWN. Suggestions exist to PAD a row that
+       real history cannot fill, so they can only be placed once that history
+       has arrived - built earlier, the padding study tile took the first slot
+       on its own and was then shoved aside when the real row landed. That was
+       the HSK card flashing up before the podcast you had just opened. While
+       history is loading the row stays empty, which renders the skeleton. */
+    if (recentQuery.loading) return { tiles, fromHistory: 0 }
     const seen = new Set()
     // Number() on both sides: SQLite returns ids as strings on list endpoints,
     // so a bare === silently never matches and every bar would go missing.
@@ -705,7 +712,7 @@ export default function Dashboard() {
     }
 
     return { tiles: tiles.slice(0, PICKUP_SLOTS), fromHistory }
-  }, [recents, studyUnit, podcasts, levels])
+  }, [recents, studyUnit, podcasts, levels, recentQuery.loading])
 
   const visibleReads = useMemo(() => {
     // Shared with the Read page, so the same three articles lead in the same
