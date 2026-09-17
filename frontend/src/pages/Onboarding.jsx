@@ -474,7 +474,7 @@ export default function Onboarding() {
                 className="ob-skip"
                 onClick={() => setStep((s) => s + 1)}
               >
-                Skip for now
+                Skip
               </button>
             )}
 
