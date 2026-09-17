@@ -13,7 +13,11 @@ use Illuminate\Support\Facades\Log;
  * blurred, Chinese mixed with English - comes back as fragments or noise.
  * Gemini reads those well, so it goes first.
  *
- * IT ONLY TRANSCRIBES. The prompt forbids translation, pinyin and commentary,
+ * CHINESE ONLY, AND IT ONLY TRANSCRIBES. Scan exists to find Chinese to learn,
+ * so English lines, logos and UI labels are left out rather than cluttering the
+ * document and the word list.
+ *
+ * It only transcribes. The prompt forbids translation, pinyin and commentary,
  * because the rest of Scan (segmentation, pinyin, meanings) comes from the
  * app's own CC-CEDICT pipeline, exactly as Read, Podcast and Study do. Letting
  * the model supply meanings here would give scanned words a second, different
@@ -33,16 +37,24 @@ class GeminiOcrService
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     private const PROMPT = <<<'TXT'
-    Transcribe every piece of text visible in this image, exactly as written.
+    Transcribe the CHINESE text in this image.
 
     Rules:
-    - Output ONLY the text from the image. No introduction, no explanation, no
-      notes, no markdown, no code fences.
-    - Keep the original characters. Do not translate. Do not add pinyin.
-    - Keep simplified or traditional characters as they appear.
-    - Keep the reading order and put each separate line on its own line.
-    - Include any English, numbers and punctuation that appear, as written.
-    - If there is no readable text at all, output nothing.
+    - Output ONLY Chinese text. Leave out any line that is entirely English or
+      another language, and leave out logos, watermarks, page numbers and UI
+      labels that are not Chinese.
+    - Keep numbers, prices and units that are part of a Chinese phrase
+      (for example 38元, 3楼, 10点).
+    - Keep the original characters exactly. Do not translate. Do not add pinyin.
+      Do not correct or rewrite the text.
+    - Use Chinese full-width punctuation (，。：；！？“”（）) and never put spaces
+      between Chinese characters.
+    - Keep the reading order. Put each separate line, heading or menu item on
+      its own line, and leave one blank line between separate paragraphs or
+      sections.
+    - Output only the text: no introduction, no explanation, no markdown, no
+      code fences.
+    - If there is no Chinese text at all, output nothing.
     TXT;
 
     public static function configured(): bool
