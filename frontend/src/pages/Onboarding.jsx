@@ -164,7 +164,7 @@ const EMPTY = {
  * all.
  */
 export default function Onboarding() {
-  const { token, user, setUser } = useAuth();
+  const { token, user, setUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const [options, setOptions] = useState(null);
@@ -447,8 +447,23 @@ export default function Onboarding() {
             <button
               type="button"
               className="ob-back"
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-              disabled={step === 0 || busy}
+              /* ON THE FIRST QUESTION, BACK LEAVES THE FLOW. It used to be
+                 disabled there, which left someone who had just signed up with
+                 no way out of onboarding except answering or skipping it. There
+                 is no earlier question to return to, so it goes back to the
+                 sign-in screen - and it signs out on the way, because the login
+                 page does not redirect a signed-in visitor, so arriving there
+                 still holding a token would show a form for an account that is
+                 already open. Every later step still just steps back. */
+              onClick={async () => {
+                if (step === 0) {
+                  await logout();
+                  navigate("/login", { replace: true });
+                  return;
+                }
+                setStep((s) => Math.max(0, s - 1));
+              }}
+              disabled={busy}
             >
               Back
             </button>
