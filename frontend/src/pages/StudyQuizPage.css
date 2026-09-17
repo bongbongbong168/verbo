@@ -145,7 +145,11 @@
 
 .qp-points,
 .qp-kind {
-  padding: 0.25rem 0.8rem;
+  /* Asymmetric by measurement: symmetric padding centred the LINE BOX and Hellix
+     reserves more ascent than these short labels use, so both sat 1.067px low
+     on the cap band. The pair sums to the original 0.25rem, so the pill keeps
+     its height and only the text moves. */
+  padding: calc(0.25rem - 1.067px) 0.8rem calc(0.25rem + 1.067px);
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
