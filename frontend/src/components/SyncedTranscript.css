@@ -58,24 +58,23 @@
   padding-bottom: 2px;
 }
 
-/* THE WORD BEING SPOKEN: the app's solid lavender with navy text (5.6:1),
-   distinct from the hover's darker purple with white text, so a word that is
-   both playing and pointed at still reads as one or the other. No
-   transition, same rule as `.tt-seg-on`. */
+/* THE WORD BEING SPOKEN: the same deep purple and white as a hovered word,
+   asked for so the two read as one "this word" mark. No transition, same
+   rule as `.tt-seg-on`. */
 .tt-on {
-  background: #a89ce3;
-  color: #1c1730;
-  box-shadow: 0 0 0 2px #a89ce3;
+  background: #6a6191;
+  color: #fff;
+  box-shadow: 0 0 0 2px #6a6191;
 }
 
 .tt-saved.tt-on {
   box-shadow:
-    0 0 0 2px #a89ce3,
-    inset 0 -2px 0 0 #6a6191;
+    0 0 0 2px #6a6191,
+    inset 0 -2px 0 0 #c9bdf3;
 }
 
-.tt-ruby .tt-on .tt-py {
-  color: #2b2643;
+.tt-on .tt-py {
+  color: #fff;
 }
 
 .tt-word:hover {
@@ -108,6 +107,13 @@
 
 .tt-ruby .tt-saved {
   padding-bottom: 0;
+}
+
+/* letter-spacing lands AFTER the last character too, so the characters sat
+   left of the pinyin centred above them by half a spacing. The same amount
+   on the left balances it. */
+.tt-ruby .tt-hz {
+  padding-left: 0.05em;
 }
 
 .tt-py {
