@@ -929,10 +929,17 @@
   background: #fff;
 }
 
-/* Focus is the border alone. A 3px lavender halo was tried and read as a
-   smudged drop shadow round the card. */
+/* A real drop shadow - offset downward, navy-tinted like every shadow in
+   the app - rather than the even 3px halo tried first, which read as a
+   smudge round the card. It deepens while you type; static, never
+   transitioned. */
+.rd-cm-new {
+  box-shadow: 0 2px 8px rgba(43, 38, 67, 0.06);
+}
+
 .rd-cm-new:focus-within {
   border-color: var(--rd-accent-light);
+  box-shadow: 0 8px 22px rgba(43, 38, 67, 0.12);
 }
 
 .rd-cm-new-who {
