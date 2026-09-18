@@ -10,6 +10,7 @@ import WordPopover from '../components/WordPopover'
 import PodcastEditDrawer from '../components/PodcastEditDrawer'
 import './PodcastEpisode.css'
 import ReaderSwitch from '../components/ReaderSwitch'
+import PageTools from '../components/PageTools'
 import SyncedTranscript from '../components/SyncedTranscript'
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
@@ -528,6 +529,14 @@ export default function PodcastEpisode() {
 
   return (
     <div className="pe">
+      {/* Messages, notifications and the account menu, top right as on the
+          Podcast page this one is opened from. */}
+      <div className="pe-topbar">
+        <div className="pe-topbar-icons">
+          <PageTools />
+        </div>
+      </div>
+
       {error && <p className="pe-error">{error}</p>}
 
       <div className="pe-card">

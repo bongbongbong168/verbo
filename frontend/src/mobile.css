@@ -828,6 +828,7 @@
      still above the 32px minimum a fingertip needs. */
   .rd-topbar-icons,
   .pc-topbar-icons,
+  .pe-topbar-icons,
   .ft-header-icons,
   .sc-topbar-icons {
     gap: 0.4rem;
