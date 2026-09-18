@@ -93,6 +93,27 @@ return [
                credentials and user data in the clear without saying so — so it
                is env-driven and should be `require` against Supabase. */
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            /* ON FOR SUPABASE'S TRANSACTION POOLER (port 6543), and that pooler
+               is the fix for a real outage. The session pooler (5432) gives every
+               connected client its own server connection for the life of the
+               session, and the pool is small: with Apache running one PHP worker
+               per request, a burst of page loads - the Dashboard alone fires eight
+               calls - hit "(EMAXCONNSESSION) max clients reached in session mode"
+               and every request failed until some closed. The transaction pooler
+               hands a server connection out only for the length of each query or
+               transaction, so the same traffic shares a few connections.
+
+               What it gives up is server-side prepared statements: a statement
+               prepared inside one transaction is not on the connection the next
+               one gets. Emulated prepares have PDO interpolate the (still
+               escaped) values client-side instead, so nothing is prepared on the
+               server. Measured from the production container before switching:
+               both ports answered, prepared queries worked on 6543 with this set,
+               and 6543 was 47ms against 106ms on 5432. Off by default so local
+               SQLite and a plain Postgres keep native prepares. */
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_EMULATE_PREPARES => filter_var(env('DB_EMULATE_PREPARES', false), FILTER_VALIDATE_BOOL),
+            ] : [],
         ],
 
         'sqlsrv' => [
