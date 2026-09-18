@@ -485,8 +485,13 @@
   animation: sb-comet 3s linear infinite;
 }
 
+/* Clipped to the BUTTON'S OWN CURVE, not its box. overflow alone clips to a
+   square, and at each corner the outer half of the stroke sits inside that
+   square, so the ring bulged past the rounded edge there. An outer svg is a
+   replaced element, so border-radius clips its content like an img. */
 .sb-beam {
   overflow: hidden;
+  border-radius: 12px;
 }
 
 /* The same comet, blurred and left unclipped, so it haloes out past the
