@@ -89,11 +89,46 @@
   min-width: 0;
 }
 
+/* SIDE BY SIDE, THE INFO COLUMN IS THE COVER'S HEIGHT: title flush with the
+   cover's top, player flush with its bottom, the host row between. It ran
+   ~12px past the cover before, so the two halves of the card ended on
+   different lines. A min-height rather than a height, so a long title or the
+   resume note grows the column instead of overlapping the player. */
+@media (min-width: 861px) {
+  .pe-card-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 167px;
+  }
+
+  .pe-card-info .pe-title,
+  .pe-card-info .pe-author-row {
+    margin-bottom: 0.6rem;
+  }
+
+  /* The title's line box starts above its letters (half-leading plus the
+     room Hellix keeps over a capital), which left the caps 0.334em below the
+     cover's top edge. Measured against a flat-capped H; in em so it holds at
+     every size the clamp picks. */
+  .pe-card-info .pe-title {
+    margin-top: -0.334em;
+  }
+
+  /* Starts under the info column, where it used to sit. Two classes: the
+     base .pe-resumed rule comes later in the file and its margin shorthand
+     would otherwise reset this. */
+  .pe-card .pe-resumed {
+    margin-left: calc(290px + 1.8rem);
+  }
+}
+
 .pe-title {
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-weight: 700;
-  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
-  line-height: 1.25;
+  /* Smaller than before so title, host and player fit the cover's height. */
+  font-size: clamp(1.25rem, 1.9vw, 1.6rem);
+  line-height: 1.2;
   margin: 0 0 1.1rem;
 }
 
@@ -614,20 +649,14 @@
    The seek itself is silent, so without this a listener is dropped six minutes
    into an episode with no explanation, which reads as a bug rather than a
    convenience. Says where it resumed and offers the way back. */
-/* THE RESUME NOTE TAKES ITS OWN LINE, ABOVE THE TRANSPORT. It is a flex child
-   of `.pe-player`, so at `flex: 0 1 auto` it sat INLINE, left of the skip and
-   play buttons - which pushed the whole transport sideways and left the play
-   button nowhere near the middle of the row it controls. It is a message
-   about the player, not a part of it, so it belongs on a line of its own.
-   `order: -1` puts it above without touching the JSX, since the markup has it
-   before the controls already and only the basis needs saying. */
+/* THE RESUME NOTE IS ITS OWN LINE UNDER THE COVER-AND-PLAYER ROW. Inside
+   the player it first sat inline and pushed the transport sideways, then on
+   a line above it and pushed the player below the cover's bottom edge. */
 .pe-resumed {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  flex: 0 0 100%;
-  order: -1;
-  margin: 0 0 0.2rem;
+  margin: 1rem 0 0;
   font-size: 0.85rem;
   color: var(--pe-text-muted);
 }

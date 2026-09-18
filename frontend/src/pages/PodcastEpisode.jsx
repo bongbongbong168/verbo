@@ -590,15 +590,6 @@ export default function PodcastEpisode() {
                   }}
                 />
 
-                {resumedFrom != null && (
-                  <p className="pe-resumed">
-                    Picked up from {formatTime(resumedFrom)}
-                    <button type="button" className="pe-resumed-reset" onClick={startOver}>
-                      Start over
-                    </button>
-                  </p>
-                )}
-
                 <div className="pe-controls">
                   <button type="button" className="pe-skip" onClick={() => skip(-10)} aria-label="Back 10 seconds">
                     <Replay10Icon />
@@ -721,6 +712,17 @@ export default function PodcastEpisode() {
             )}
           </div>
         </div>
+
+        {/* Under the cover-and-player row, not inside it: in the info column
+            it added a line and pushed the player below the cover's edge. */}
+        {resumedFrom != null && (
+          <p className="pe-resumed">
+            Picked up from {formatTime(resumedFrom)}
+            <button type="button" className="pe-resumed-reset" onClick={startOver}>
+              Start over
+            </button>
+          </p>
+        )}
 
         {podcast.bio && (
           <>
