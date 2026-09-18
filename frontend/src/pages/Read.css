@@ -880,12 +880,15 @@
   font-weight: 700;
 }
 
+/* The bar spans the CAPITALS, not the line box: measured against a
+   flat-capped H, the caps run 0.332em to 0.160em from the box's top and
+   bottom. The old 0.15em/0.15em sat 1.58px high and ran 3.35px above them. */
 .rd-sec-title::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0.15em;
-  bottom: 0.15em;
+  top: 0.332em;
+  bottom: 0.16em;
   width: 3px;
   border-radius: 2px;
   background: var(--rd-accent-light);
@@ -897,6 +900,10 @@
      height is unchanged and only the text moves. */
 
   padding: calc(0.1rem - 1.017px) 0.5rem calc(0.1rem + 1.017px);
+  /* Onto the title's cap band: centring on the line box left the pill
+     1.58px high beside the capitals. Equal and opposite margins move it
+     without changing the row's height or paint order. */
+  margin: 1.58px 0 -1.58px;
   border-radius: 999px;
   background: #f1edfc;
   color: var(--rd-accent);
