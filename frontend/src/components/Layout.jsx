@@ -10,6 +10,22 @@ import logoMark from "../assets/sidebar/logo-mark.svg";
 import owlPro from "../assets/sidebar/owl-pro.png";
 import "./Layout.css";
 
+/* The Pro button's travelling light, as [length, colour] in percent of the
+   border. SVG has no gradient ALONG a stroke, so the tail is built from
+   stacked dashes: each is shorter and brighter than the one under it and
+   they all end at the same point, which reads as a violet comet with a
+   near-white head. A dashed stroke also moves at an even speed round the
+   whole pill, where the old rotating conic gradient raced along the long
+   edges and crawled round the ends. */
+const COMET_LEN = 46;
+const COMET = [
+  [46, "rgba(95, 73, 203, 0.55)"],
+  [34, "#7e68c8"],
+  [22, "#b69cff"],
+  [11, "#e6dcff"],
+  [4, "#ffffff"],
+];
+
 /* Optical normalisation, measured with getBBox() rather than guessed.
  *
  * Every glyph below is drawn on the same 24 grid, but their INK boxes were not
@@ -522,6 +538,21 @@ export default function Layout() {
               that draw the travelling border light — a bare text node cannot
               take a z-index, so it would be painted under the fill. */}
           <NavLink to="/upgrade" className="sb-promo-btn">
+            {/* The comet: five dashes of one rect, shortest and brightest
+                in front, all sharing the same leading edge (see COMET). */}
+            <svg className="sb-beam" aria-hidden="true">
+              {COMET.map(([len, color]) => (
+                <rect
+                  key={len}
+                  width="100%"
+                  height="100%"
+                  rx="12"
+                  pathLength="100"
+                  stroke={color}
+                  strokeDasharray={`0 ${COMET_LEN - len} ${len} ${100 - COMET_LEN}`}
+                />
+              ))}
+            </svg>
             <span className="sb-promo-btn-label">Get Verbo+</span>
           </NavLink>
         </div>

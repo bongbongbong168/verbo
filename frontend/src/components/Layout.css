@@ -422,10 +422,9 @@
 /* Full width, so the card ends on one decisive edge-to-edge action rather
    than a pill floating in the corner under an illustration.
 
-   THE BORDER CARRIES A TRAVELLING LIGHT, built from a rotating conic
-   gradient clipped to the button's shape: `::before` is the gradient,
-   `::after` is the fill inset by 2px, so all that survives is a bright arc
-   running round a 2px ring. The button itself is transparent — the fill
+   THE BORDER CARRIES A TRAVELLING LIGHT: `.sb-beam` is an svg comet running
+   round the outline, and `::after` is the fill inset by 2px, so all that
+   survives is a bright arc running round a 2px ring. The button itself is transparent — the fill
    lives on `::after` — which is why hover and the disabled palette below
    target that layer rather than this one.
 
@@ -466,22 +465,29 @@
   cursor: pointer;
 }
 
-/* The light. `inset: -75%` makes the gradient square large enough that its
-   corners still cover the button at every angle — at -50% the corners sweep
-   inside the edges and the beam blinks out four times a turn. */
-.sb-promo-btn::before {
-  content: '';
+/* The light: a purple comet drawn as dashes on a rect that traces the
+   button's own outline (COMET in Layout.jsx). The stroke is 4px centred on
+   the edge and the svg clips the outer half, so 2px shows inside - exactly
+   the ring `::after` leaves uncovered. Violets are the app's own (#5f49cb,
+   #7e68c8 from the logo and Sidebar.png) rising to a white head. */
+.sb-beam {
   position: absolute;
-  inset: -75%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 250deg,
-    rgba(255, 255, 255, 0.35) 300deg,
-    #ffffff 342deg,
-    rgba(255, 255, 255, 0.5) 352deg,
-    transparent 360deg
-  );
-  animation: sb-beam 3.6s linear infinite;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sb-beam rect {
+  fill: none;
+  stroke-width: 4;
+  /* Butt, never round: each dasharray opens with a zero-length dash, and a
+     round cap draws that as a dot on the rim. */
+  stroke-linecap: butt;
+  /* Frame 0 parks the comet on the top edge: a finished-looking highlight,
+     so a tab that never composites still shows a sensible button. */
+  animation: sb-comet 3s linear infinite;
 }
 
 /* The fill, inset so a 2px ring of the gradient shows through. */
@@ -507,9 +513,11 @@
   background: #bcb2ec;
 }
 
-@keyframes sb-beam {
+/* Negative offset walks the dash forward along the path, so the bright
+   end leads. 100 = one lap, since every rect has pathLength="100". */
+@keyframes sb-comet {
   to {
-    transform: rotate(1turn);
+    stroke-dashoffset: -100;
   }
 }
 
@@ -517,9 +525,15 @@
    not a slower one. The ring goes quietly solid rather than disappearing, so
    the shape stays the same. */
 @media (prefers-reduced-motion: reduce) {
-  .sb-promo-btn::before {
+  .sb-beam rect {
     animation: none;
-    background: rgba(255, 255, 255, 0.28);
+    stroke: rgba(255, 255, 255, 0.28);
+    stroke-dasharray: none;
+  }
+
+  /* Five solid copies would stack their alpha into a bright ring. */
+  .sb-beam rect + rect {
+    display: none;
   }
 }
 
