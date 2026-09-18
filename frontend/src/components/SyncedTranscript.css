@@ -13,6 +13,10 @@
    click to jump, so a column of times was only taking width. */
 .tt-seg {
   padding: 0.35rem 0.8rem;
+  /* Cancelled by an equal negative margin, so the Chinese starts on the same
+     edge as the switches and hint above it and only the current line's tint
+     reaches out past it. */
+  margin: 0 -0.8rem;
   border-radius: 12px;
   /* Static, never transitioned: the current line has to read as current in a
      tab that is not compositing frames. */
@@ -130,6 +134,7 @@
 @media (max-width: 767px) {
   .tt-seg {
     padding: 0.3rem 0.55rem;
+    margin: 0 -0.55rem;
   }
 
   .tt-line {
