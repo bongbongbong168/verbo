@@ -423,8 +423,8 @@
    than a pill floating in the corner under an illustration.
 
    THE BORDER CARRIES A TRAVELLING LIGHT: `.sb-beam` is an svg comet running
-   round the outline, and `::after` is the fill inset by 3px, so all that
-   survives is a bright arc running round a 3px ring. The button itself is transparent — the fill
+   round the outline, and `::after` is the fill inset by 2px, so all that
+   survives is a bright arc running round a 2px ring. The button itself is transparent — the fill
    lives on `::after` — which is why hover and the disabled palette below
    target that layer rather than this one.
 
@@ -465,8 +465,8 @@
 }
 
 /* The light: a purple comet drawn as dashes on a rect that traces the
-   button's own outline (COMET in Layout.jsx). The stroke is 6px centred on
-   the edge and the svg clips the outer half, so 3px shows inside - exactly
+   button's own outline (COMET in Layout.jsx). The stroke is 4px centred on
+   the edge and the svg clips the outer half, so 2px shows inside - exactly
    the ring `::after` leaves uncovered. Violets are the app's own (#5f49cb,
    #7e68c8 from the logo and Sidebar.png) rising to a white head.
 
@@ -482,7 +482,7 @@
   pointer-events: none;
   /* Frame 0 parks the comet on the top edge: a finished-looking highlight,
      so a tab that never composites still shows a sensible button. */
-  animation: sb-comet 3s linear infinite;
+  animation: sb-comet 4.2s linear infinite;
 }
 
 /* Clipped to the BUTTON'S OWN CURVE, not its box. overflow alone clips to a
@@ -498,14 +498,14 @@
    rim. Its inner half sits under the fill and is never seen. */
 .sb-beam-glow {
   overflow: visible;
-  filter: blur(5px);
-  opacity: 0.9;
+  filter: blur(4px);
+  opacity: 0.8;
 }
 
 .sb-beam rect,
 .sb-beam-glow rect {
   fill: none;
-  stroke-width: 6;
+  stroke-width: 4;
   /* Butt, never round: each dasharray opens with a zero-length dash, and a
      round cap draws that as a dot on the rim. */
   stroke-linecap: butt;
@@ -515,8 +515,8 @@
 .sb-promo-btn::after {
   content: '';
   position: absolute;
-  inset: 3px;
-  border-radius: 9px;
+  inset: 2px;
+  border-radius: 10px;
   background: var(--sb-accent);
 }
 
