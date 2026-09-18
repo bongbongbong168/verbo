@@ -912,22 +912,77 @@
   border-top: 1px solid var(--rd-border);
 }
 
+/* The composer: a comment card (see .rd-cm) that lights up while focused.
+   Static colours only, as everywhere in this app. */
 .rd-cm-new {
-  display: flex;
-  gap: 0.7rem;
-  margin-bottom: 1.4rem;
+  margin: 1.1rem 0 1.4rem;
+  padding: 1rem 1.15rem 0.85rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 14px;
+  background: #fff;
 }
 
-.rd-cm-new-body {
+.rd-cm-new:focus-within {
+  border-color: var(--rd-accent-light);
+  box-shadow: 0 0 0 3px #f1edfc;
+}
+
+.rd-cm-new-who {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  flex: 1;
   min-width: 0;
 }
 
-.rd-cm-new textarea,
+.rd-cm-new-sub {
+  font-size: 0.78rem;
+  color: #8a86a0;
+}
+
+/* Frameless: the card is its frame. Starts under the name, not the face,
+   so it reads as the words of the person named above it. */
+.rd-cm-new textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.7rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--rd-text);
+  resize: none;
+  min-height: 4.8em;
+  outline: none;
+}
+
+.rd-cm-new-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--rd-border);
+}
+
+.rd-cm-new-hint {
+  font-size: 0.76rem;
+  color: #8a86a0;
+}
+
+.rd-cm-new-hint kbd {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 5px;
+  background: #fbfaff;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--rd-text-muted);
+}
+
 .rd-cm-edit textarea {
   width: 100%;
   box-sizing: border-box;
@@ -952,7 +1007,6 @@
   outline: none;
 }
 
-.rd-cm-new textarea:focus,
 .rd-cm-edit textarea:focus {
   border-color: var(--rd-accent-light);
   background: #fff;
@@ -966,7 +1020,9 @@
      value, so the box height is unchanged and only the text moves. */
   border: none;
   border-radius: 9px;
-  background: var(--rd-accent-light);
+  /* The app's deep purple, white on it at ~6:1. The pale lavender this used
+     read as already disabled even when it was not. */
+  background: #6a6191;
   color: #fff;
   font-family: inherit;
   font-size: 0.85rem;
@@ -975,11 +1031,14 @@
 }
 
 .rd-cm-send:hover:not(:disabled) {
-  background: var(--rd-accent);
+  background: #5a527f;
 }
 
+/* Disabled is a grey of its own, not a faded purple, so "nothing to post
+   yet" cannot be mistaken for "posting". */
 .rd-cm-send:disabled {
-  opacity: 0.5;
+  background: #e7e5ee;
+  color: #a4a1b3;
   cursor: default;
 }
 

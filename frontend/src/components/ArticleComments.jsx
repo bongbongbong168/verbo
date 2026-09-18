@@ -293,6 +293,14 @@ export default function ArticleComments({ articleId, onCountChange }) {
     }
   }
 
+  function post() {
+    if (busy || !draft.trim()) return;
+    run(async () => {
+      await api.addArticleComment(token, articleId, draft);
+      setDraft("");
+    });
+  }
+
   const total = items.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0);
 
   return (
@@ -303,30 +311,48 @@ export default function ArticleComments({ articleId, onCountChange }) {
       </div>
 
       {user ? (
+        /* THE COMPOSER IS A COMMENT CARD WAITING TO BE FILLED: the same box,
+           the same face-and-name row, so what you write already looks like
+           where it will land. The field has no frame of its own - the card
+           is the frame, and it lights up while you are in it. */
         <form
           className="rd-cm-new"
           onSubmit={(e) => {
             e.preventDefault();
-            run(async () => {
-              await api.addArticleComment(token, articleId, draft);
-              setDraft("");
-            });
+            post();
           }}
         >
-          <Face name={user.name} src={user.avatar_url} />
-          <div className="rd-cm-new-body">
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Ask a question or share what you noticed…"
-              rows={2}
-            />
+          <div className="rd-cm-head">
+            <Face name={user.name} src={user.avatar_url} />
+            <span className="rd-cm-new-who">
+              <span className="rd-cm-name">{user.name}</span>
+              <span className="rd-cm-new-sub">Commenting publicly</span>
+            </span>
+          </div>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // Ctrl/Cmd+Enter posts; a plain Enter is a new line.
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                post();
+              }
+            }}
+            placeholder="Ask a question or share what you noticed…"
+            rows={3}
+            aria-label="Write a comment"
+          />
+          <div className="rd-cm-new-foot">
+            <span className="rd-cm-new-hint">
+              <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to post
+            </span>
             <button
               type="submit"
               className="rd-cm-send"
               disabled={busy || !draft.trim()}
             >
-              Post comment
+              Post
             </button>
           </div>
         </form>
