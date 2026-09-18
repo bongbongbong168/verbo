@@ -15,10 +15,21 @@ function timeAgo(iso) {
   }).format(new Date(iso));
 }
 
+/* Five soft tints for the initial circle, picked from the name so the same
+   person always wears the same one - the review-card look, where a list of
+   circles in one colour reads as one person talking to themselves. */
+const TONES = 5;
+
+function toneFor(name) {
+  let h = 0;
+  for (const ch of name || "?") h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h % TONES;
+}
+
 function Face({ name, src }) {
   if (src) return <img className="rd-cm-face" src={src} alt="" />;
   return (
-    <span className="rd-cm-face rd-cm-initial">
+    <span className={`rd-cm-face rd-cm-initial rd-cm-tone-${toneFor(name)}`}>
       {(name || "?").charAt(0).toUpperCase()}
     </span>
   );
@@ -62,18 +73,20 @@ function Row({
   setReplyDraft,
 }) {
   const isEditing = editing === c.id;
+  /* A CARD PER COMMENT: the face, name and time across the top, the words
+     beneath at the card's full width, the actions last and quiet. */
   return (
-    <li className={`rd-cm${isReply ? " rd-cm-reply" : ""}`}>
-      <Face name={c.user?.name} src={c.user?.avatar_url} />
+    <div className={`rd-cm${isReply ? " rd-cm-reply" : ""}`}>
+      <div className="rd-cm-head">
+        <Face name={c.user?.name} src={c.user?.avatar_url} />
+        <span className="rd-cm-name">{c.user?.name || "Someone"}</span>
+        <span className="rd-cm-time">
+          {timeAgo(c.created_at)}
+          {c.edited && " · edited"}
+        </span>
+      </div>
 
       <div className="rd-cm-body">
-        <div className="rd-cm-head">
-          <span className="rd-cm-name">{c.user?.name || "Someone"}</span>
-          <span className="rd-cm-time">
-            {timeAgo(c.created_at)}
-            {c.edited && " · edited"}
-          </span>
-        </div>
 
         {isEditing ? (
           <form
@@ -194,7 +207,7 @@ function Row({
           </form>
         )}
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -319,7 +332,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
 
       <ul className="rd-cm-list">
         {items.map((c) => (
-          <div key={c.id}>
+          <li key={c.id} className="rd-cm-thread">
             <Row
               c={c}
               token={token}
@@ -338,8 +351,8 @@ export default function ArticleComments({ articleId, onCountChange }) {
             {c.replies?.length > 0 && (
               <ul className="rd-cm-replies">
                 {c.replies.map((r) => (
+                  <li key={r.id}>
                   <Row
-                    key={r.id}
                     c={r}
                     isReply
                     token={token}
@@ -355,10 +368,11 @@ export default function ArticleComments({ articleId, onCountChange }) {
                     replyDraft={replyDraft}
                     setReplyDraft={setReplyDraft}
                   />
+                  </li>
                 ))}
               </ul>
             )}
-          </div>
+          </li>
         ))}
       </ul>
     </section>

@@ -1004,73 +1004,105 @@
   padding: 0;
 }
 
-.rd-cm {
+.rd-cm-list {
   display: flex;
-  gap: 0.7rem;
-  padding: 0.8rem 0;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
 }
 
-/* Replies are indented and carry a rule, so one level of nesting is obvious
-   without a second avatar size or a different card. */
+/* ONE CARD PER COMMENT, built to the supplied review list: white, a pale
+   hairline, soft corners, the face-name-time row across the top and the
+   words at the card's full width beneath it. */
+.rd-cm {
+  padding: 1rem 1.15rem 0.8rem;
+  border: 1px solid var(--rd-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+/* A reply is a card too, stepped in under its parent so the one level of
+   nesting still reads at a glance. */
 .rd-cm-replies {
-  margin-left: 1.6rem;
-  padding-left: 1.1rem;
-  border-left: 2px solid var(--rd-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.6rem 0 0 2.2rem;
+}
+
+.rd-cm-reply {
+  background: #fcfbff;
+}
+
+.rd-cm-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .rd-cm-face {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   background: #f1edfc;
-  color: var(--rd-accent);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.rd-cm-reply .rd-cm-face {
-  width: 28px;
-  height: 28px;
-  font-size: 0.75rem;
-}
-
-.rd-cm-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.rd-cm-head {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.rd-cm-name {
+  color: #2b2643;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
+.rd-cm-reply .rd-cm-face {
+  width: 34px;
+  height: 34px;
+  font-size: 0.8rem;
+}
+
+/* Soft tints, one per person - see TONES in ArticleComments. Dark initial
+   on all five, so each clears contrast comfortably. */
+.rd-cm-tone-0 { background: #e4dcfb; }
+.rd-cm-tone-1 { background: #ffe1d2; }
+.rd-cm-tone-2 { background: #d9f0e3; }
+.rd-cm-tone-3 { background: #d8e8fb; }
+.rd-cm-tone-4 { background: #fbefc9; }
+
+.rd-cm-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* Pushed to the card's right edge, as in the reference. */
 .rd-cm-time {
-  font-size: 0.74rem;
-  color: #9a95ab;
+  flex: none;
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: #8a86a0;
+}
+
+.rd-cm-body {
+  min-width: 0;
 }
 
 .rd-cm-text {
-  margin: 0.25rem 0 0;
-  font-size: 0.92rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+/* Quiet, in the slot the reference uses for its grey meta line. The
+   negative inset lines the first button's text up with the words above. */
 .rd-cm-tools {
   display: flex;
   gap: 0.15rem;
-  margin-top: 0.3rem;
+  margin: 0.45rem 0 0 -0.5rem;
 }
 
 .rd-cm-tools button {
@@ -1724,8 +1756,7 @@
   }
 
   .rd-cm-replies {
-    margin-left: 0.6rem;
-    padding-left: 0.8rem;
+    margin-left: 1rem;
   }
 }
 
