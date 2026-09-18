@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Database\PostgresConnection;
 use App\Mail\BrevoTransport;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,7 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        // Booleans as 'true'/'false' on Postgres - see the class for why the
+        // transaction pooler makes Laravel's default integer binding fail.
+        Connection::resolverFor('pgsql', fn ($pdo, $database, $prefix, $config) => new PostgresConnection($pdo, $database, $prefix, $config));
     }
 
     /**
