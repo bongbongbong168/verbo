@@ -1167,8 +1167,11 @@
   margin: 0.45rem 0 0 -0.5rem;
 }
 
+/* Cap-band pair, measured against a flat-capped H: symmetric padding left
+   "Reply" 0.95px low inside its hover pill. Sums to the original, so the
+   pill height is unchanged. */
 .rd-cm-tools button {
-  padding: 0.2rem 0.5rem;
+  padding: calc(0.2rem - 0.95px) 0.5rem calc(0.2rem + 0.95px);
   border: none;
   border-radius: 7px;
   background: none;
