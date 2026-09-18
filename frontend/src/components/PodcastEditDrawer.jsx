@@ -60,6 +60,10 @@ function SyncTab({ podcast, onChange }) {
   const [error, setError] = useState(null)
   const [armed, setArmed] = useState(false)
   const disarm = useRef(null)
+  /* Hand corrections, keyed by line index, held until "Save lines". Only
+     the lines actually changed are sent. */
+  const [edits, setEdits] = useState({})
+  const [flash, setFlash] = useState(null)
 
   useEffect(() => {
     let live = true
@@ -110,8 +114,28 @@ function SyncTab({ podcast, onChange }) {
     }
   }
 
+  async function saveLines() {
+    const lines = Object.entries(edits).map(([index, text]) => ({ index: Number(index), text }))
+    if (!lines.length) return
+    setBusy(true)
+    setError(null)
+    setFlash(null)
+    try {
+      const next = await api.editTimedTranscript(token, podcast.id, lines)
+      setInfo(next)
+      setEdits({})
+      setFlash(`Saved ${lines.length} ${lines.length === 1 ? 'line' : 'lines'}`)
+      onChange?.(next)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const status = info?.status || podcast.timed_transcript_status || 'not_processed'
   const done = status === 'completed'
+  const changed = Object.keys(edits).length
 
   return (
     <>
@@ -162,6 +186,52 @@ function SyncTab({ podcast, onChange }) {
       )}
 
       {error && <p className="ed-sync-error">{error}</p>}
+
+      {done && info?.segments?.length > 0 && (
+        <div className="ed-field">
+          <span>Lines</span>
+          <p className="ed-hint">
+            Fix anything WhisperX misheard, or clear a line to remove it. Words you keep stay
+            on their original timing; new words are fitted into the gap around them.
+          </p>
+          <ol className="ed-sync-lines">
+            {info.segments.map((seg, i) => {
+              const value = edits[i] ?? seg.text
+              const dirty = i in edits && edits[i] !== seg.text
+              return (
+                <li key={i} className={'ed-sync-line' + (dirty ? ' is-dirty' : '')}>
+                  <textarea
+                    rows={Math.min(4, Math.max(1, Math.ceil(value.length / 28)))}
+                    value={value}
+                    placeholder="(line will be removed)"
+                    onChange={(e) => {
+                      const text = e.target.value
+                      setFlash(null)
+                      setEdits((prev) => {
+                        const next = { ...prev }
+                        if (text === seg.text) delete next[i]
+                        else next[i] = text
+                        return next
+                      })
+                    }}
+                  />
+                </li>
+              )
+            })}
+          </ol>
+          <div className="ed-sync-save">
+            <button type="button" className="ed-btn-primary" onClick={saveLines} disabled={busy || !changed}>
+              {busy ? 'Saving…' : changed ? `Save ${changed} ${changed === 1 ? 'line' : 'lines'}` : 'Save lines'}
+            </button>
+            {changed > 0 && (
+              <button type="button" className="ed-btn-ghost" onClick={() => setEdits({})} disabled={busy}>
+                Undo changes
+              </button>
+            )}
+            {flash && <span className="ed-sync-flash">{flash}</span>}
+          </div>
+        </div>
+      )}
     </>
   )
 }

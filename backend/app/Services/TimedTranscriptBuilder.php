@@ -83,6 +83,53 @@ class TimedTranscriptBuilder
         ];
     }
 
+    /**
+     * Rewrite one saved line with the admin's corrected text, keeping the
+     * timings of every character that survives the edit.
+     *
+     * The line's old words are turned back into per-character times (a
+     * word's span shared evenly across its characters), and the new text is
+     * run through the same walk an import uses: characters still there keep
+     * their time, removed ones simply drop out, and added ones borrow the gap
+     * around them as `estimated`. So cutting "Mommy Chinese" out of a
+     * sentence leaves every Chinese word on its original moment.
+     *
+     * @return array[] the replacement lines - none if the text was cleared,
+     *                 several if a sentence end was typed into it
+     */
+    public function editLine(array $line, string $text): array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return [];
+        }
+
+        $chars = [];
+        foreach ($line['words'] ?? [] as $token) {
+            $letters = mb_str_split($token['text'] ?? '');
+            $start = $token['start'] ?? null;
+            $end = $token['end'] ?? null;
+            $timed = ($token['type'] ?? null) === 'word' && $start !== null && $end !== null;
+            $step = $timed && $letters ? ($end - $start) / count($letters) : 0;
+
+            foreach ($letters as $k => $ch) {
+                $chars[] = [
+                    'char' => $ch,
+                    'start' => $timed ? round($start + $k * $step, 3) : null,
+                    'end' => $timed ? round($start + ($k + 1) * $step, 3) : null,
+                    'score' => $timed ? ($token['confidence'] ?? null) : null,
+                ];
+            }
+        }
+
+        return $this->segment([
+            'start' => $line['start'] ?? null,
+            'end' => $line['end'] ?? null,
+            'text' => $text,
+            'chars' => $chars,
+        ]);
+    }
+
     /** Counts for the admin's status line: how much of it is actually timed. */
     public static function stats(array $transcript): array
     {

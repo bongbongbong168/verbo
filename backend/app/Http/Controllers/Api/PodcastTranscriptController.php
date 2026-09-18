@@ -88,6 +88,50 @@ class PodcastTranscriptController extends Controller
         return $this->show($request, $podcast->refresh());
     }
 
+    /**
+     * Correct lines by hand - what WhisperX misheard, or what should not be
+     * in the transcript at all. `lines` is [{index, text}]; an empty text
+     * deletes the line. Indexes refer to the transcript as the admin loaded
+     * it, so every edit is applied against that one snapshot.
+     */
+    public function update(Request $request, Podcast $podcast, TimedTranscriptBuilder $builder)
+    {
+        abort_unless($request->user()->is_admin, 403);
+
+        $data = $request->validate([
+            'lines' => ['required', 'array', 'max:5000'],
+            'lines.*.index' => ['required', 'integer', 'min:0'],
+            'lines.*.text' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $transcript = $podcast->timed_transcript;
+        if ($podcast->timed_transcript_status !== 'completed' || ! is_array($transcript)) {
+            return response()->json(['message' => 'This episode has no synced transcript to edit.'], 409);
+        }
+
+        $edits = collect($data['lines'])->keyBy('index');
+        $segments = [];
+        foreach ($transcript['segments'] as $i => $line) {
+            if (! $edits->has($i)) {
+                $segments[] = $line;
+
+                continue;
+            }
+            foreach ($builder->editLine($line, (string) ($edits[$i]['text'] ?? '')) as $rebuilt) {
+                $segments[] = $rebuilt;
+            }
+        }
+
+        if ($segments === []) {
+            return response()->json(['message' => 'That would delete every line. Remove the synced transcript instead.'], 422);
+        }
+
+        $transcript['segments'] = $segments;
+        $podcast->saveTimedTranscript($transcript);
+
+        return $this->show($request, $podcast->refresh());
+    }
+
     public function destroy(Request $request, Podcast $podcast)
     {
         abort_unless($request->user()->is_admin, 403);

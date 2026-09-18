@@ -182,6 +182,54 @@ class PodcastTimedTranscriptTest extends TestCase
             ->assertJsonPath('segments', []);
     }
 
+    public function test_editing_a_line_keeps_the_timing_of_the_words_that_stay(): void
+    {
+        $podcast = $this->podcast();
+        $podcast->saveTimedTranscript(app(TimedTranscriptBuilder::class)->build($this->raw('今天Mommy学习中文。')));
+        Sanctum::actingAs(User::where('is_admin', true)->first());
+
+        $before = collect($this->words($podcast->fresh()->timed_transcript))->keyBy('text');
+
+        $this->patchJson("/api/podcasts/{$podcast->id}/timed-transcript", ['lines' => [['index' => 0, 'text' => '今天学习中文。']]])
+            ->assertOk()
+            ->assertJsonPath('segments.0.text', '今天学习中文。');
+
+        $after = collect($this->words($podcast->fresh()->timed_transcript))->keyBy('text');
+        $this->assertSame(['今天', '学习', '中文'], $after->keys()->all());
+        foreach (['今天', '学习', '中文'] as $w) {
+            $this->assertSame($before[$w]['start'], $after[$w]['start']);
+            $this->assertSame($before[$w]['end'], $after[$w]['end']);
+        }
+    }
+
+    public function test_an_added_word_is_estimated_and_an_empty_line_is_deleted(): void
+    {
+        $podcast = $this->podcast();
+        $podcast->saveTimedTranscript(app(TimedTranscriptBuilder::class)->build($this->raw('今天中文。你好。')));
+        Sanctum::actingAs(User::where('is_admin', true)->first());
+
+        $this->patchJson("/api/podcasts/{$podcast->id}/timed-transcript", ['lines' => [
+            ['index' => 0, 'text' => '今天学习中文。'],
+            ['index' => 1, 'text' => ''],
+        ]])->assertOk();
+
+        $t = $podcast->fresh()->timed_transcript;
+        $this->assertCount(1, $t['segments']);
+        $learn = collect($this->words($t))->firstWhere('text', '学习');
+        $this->assertTrue($learn['estimated']);
+        $this->assertNotNull($learn['start']);
+    }
+
+    public function test_a_listener_cannot_edit_lines(): void
+    {
+        $podcast = $this->podcast();
+        $podcast->saveTimedTranscript(app(TimedTranscriptBuilder::class)->build($this->raw('你好。')));
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->patchJson("/api/podcasts/{$podcast->id}/timed-transcript", ['lines' => [['index' => 0, 'text' => '']]])
+            ->assertForbidden();
+    }
+
     public function test_the_episode_form_cannot_write_the_status(): void
     {
         $podcast = $this->podcast();

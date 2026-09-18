@@ -258,6 +258,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // importing and clearing check is_admin inside the controller.
     Route::get('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'show']);
     Route::post('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'store']);
+    Route::patch('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'update']);
     Route::delete('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'destroy']);
     Route::post('/podcasts', [PodcastController::class, 'store']);
     Route::put('/podcasts/{podcast}', [PodcastController::class, 'update']);

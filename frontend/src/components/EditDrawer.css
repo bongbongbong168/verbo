@@ -7,7 +7,10 @@
 .ed-scrim {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* 70, level with the booking and course dialogs. At 60 it sat UNDER the
+     phone tab bar (.mb-tabs, 62), which covered the bottom of every drawer
+     and hid whatever Save button was down there. */
+  z-index: 70;
   background: rgba(28, 23, 48, 0.42);
   display: flex;
   justify-content: flex-end;
@@ -378,6 +381,50 @@
   margin: 0;
   font-size: 0.82rem;
   color: #b3402f;
+}
+
+.ed-sync-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-sync-line textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* An edited line wears the accent so the admin can see what Save will send. */
+.ed-sync-line.is-dirty textarea {
+  border-color: #6a6191;
+  background: #f6f3ff;
+}
+
+/* Stuck to the drawer's bottom edge while the line list scrolls. A sticky
+   inset is measured inside the scroller's padding, so bottom: 0 parked it
+   2.4rem above the edge (.ed-body's padding) with lines showing through
+   underneath; the negative inset and matching padding close that gap. */
+.ed-sync-save {
+  position: sticky;
+  bottom: -2.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 0 calc(0.7rem + 2.4rem);
+  background: #fff;
+  box-shadow: 0 -1px 0 #e7e3f6;
+}
+
+.ed-sync-flash {
+  font-size: 0.82rem;
+  color: #2f7a4f;
 }
 
 .ed-hint code {

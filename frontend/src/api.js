@@ -614,6 +614,9 @@ export const api = {
     formData.append('file', file)
     return requestMultipart(`/podcasts/${id}/timed-transcript`, formData, token)
   },
+  /* Hand corrections: [{index, text}], an empty text deleting that line. */
+  editTimedTranscript: (token, id, lines) =>
+    request(`/podcasts/${id}/timed-transcript`, { method: 'PATCH', body: { lines }, token }),
   deleteTimedTranscript: (token, id) =>
     request(`/podcasts/${id}/timed-transcript`, { method: 'DELETE', token }),
   getContinueListening: (token, limit = 3) =>
