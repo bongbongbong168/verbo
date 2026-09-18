@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+# Audio copied here for testing, and the transcripts made from it.
+samples/
+*.timed.json

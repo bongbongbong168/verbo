@@ -1,0 +1,184 @@
+/* The word-timed podcast transcript (prefix `tt-`).
+   Type, spacing and the hover/saved marks are deliberately the same as
+   `.pe-transcript` / `.pe-word`, so switching between the synced view and
+   the plain one changes what lights up, not how Chinese is set. */
+
+.tt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* One sentence per row, its start time in a gutter on the left - the time is
+   also the "play this line" button. */
+.tt-seg {
+  display: grid;
+  grid-template-columns: 3.1rem minmax(0, 1fr);
+  column-gap: 0.9rem;
+  align-items: baseline;
+  padding: 0.35rem 0.6rem 0.35rem 0.4rem;
+  border-radius: 12px;
+  /* Static, never transitioned: the current line has to read as current in a
+     tab that is not compositing frames. */
+}
+
+.tt-seg-on {
+  background: #f6f3ff;
+  box-shadow: inset 3px 0 0 #a89ce3;
+}
+
+.tt-time {
+  justify-self: start;
+  padding: 0.15rem 0.35rem;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-family: 'Hellix', system-ui, sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #8a84a3;
+  cursor: pointer;
+}
+
+.tt-time:hover {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.tt-time:disabled {
+  cursor: default;
+  background: none;
+  color: #c3bfd4;
+}
+
+.tt-seg-on .tt-time {
+  color: #6a6191;
+}
+
+.tt-line {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 2;
+  letter-spacing: 0.25em;
+  color: #1c1730;
+}
+
+.tt-word {
+  cursor: pointer;
+  border-radius: 5px;
+  /* Centres the fill under letter-spacing; see `.pe-word` for the why. */
+  padding-left: 0.25em;
+  margin-left: -0.25em;
+}
+
+/* Not in the audio's timeline (the aligner could not place it, and there was
+   no gap to borrow). Hoverable for its meaning, but it cannot be jumped to. */
+.tt-untimed {
+  cursor: help;
+}
+
+.tt-saved {
+  box-shadow: inset 0 -2px 0 0 #c9bdf3;
+  padding-bottom: 2px;
+}
+
+/* THE WORD BEING SPOKEN. Soft lavender rather than the hover's solid fill, so
+   the two never look like the same thing when the pointer rests on a word
+   that is also playing. No transition, same rule as `.tt-seg-on`. */
+.tt-on {
+  background: #ddd4fb;
+  color: #2b2643;
+  box-shadow: 0 0 0 2px #ddd4fb;
+}
+
+.tt-saved.tt-on {
+  box-shadow:
+    0 0 0 2px #ddd4fb,
+    inset 0 -2px 0 0 #a89ce3;
+}
+
+.tt-word:hover {
+  background: #6a6191;
+  color: #fff;
+  box-shadow: 0 0 0 2px #6a6191;
+}
+
+.tt-saved:hover {
+  box-shadow:
+    0 0 0 2px #6a6191,
+    inset 0 -2px 0 0 #c9bdf3;
+}
+
+/* ---- pinyin stacked over each word, as in `.pe-transcript-ruby` ---- */
+
+.tt-ruby .tt-line {
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+}
+
+.tt-ruby .tt-word {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: bottom;
+  margin: 0 0.14em 0.35em;
+  padding-left: 0;
+}
+
+.tt-ruby .tt-saved {
+  padding-bottom: 0;
+}
+
+.tt-py {
+  font-family: 'Hellix', system-ui, sans-serif;
+  font-size: 0.62em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: #6a6191;
+  white-space: nowrap;
+}
+
+.tt-word:hover .tt-py {
+  color: #fff;
+}
+
+.tt-en {
+  grid-column: 2;
+  margin: 0.1rem 0 0.2rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #726c88;
+}
+
+@media (max-width: 767px) {
+  /* The time gutter moves above the line: 3rem of a 340px column is too much
+     to give to a number. */
+  .tt-seg {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.35rem 0.5rem;
+  }
+
+  .tt-time {
+    margin-bottom: -0.2rem;
+  }
+
+  .tt-line {
+    font-size: 1.08rem;
+    letter-spacing: 0.1em;
+  }
+
+  .tt-word {
+    padding-left: 0.1em;
+    margin-left: -0.1em;
+  }
+
+  .tt-en {
+    grid-column: 1;
+  }
+}

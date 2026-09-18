@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -10,6 +10,7 @@ import WordPopover from '../components/WordPopover'
 import PodcastEditDrawer from '../components/PodcastEditDrawer'
 import './PodcastEpisode.css'
 import ReaderSwitch from '../components/ReaderSwitch'
+import SyncedTranscript from '../components/SyncedTranscript'
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
    the form that used them — the crop has to satisfy both the list card
@@ -150,6 +151,41 @@ export default function PodcastEpisode() {
   const [showPinyin, setShowPinyin] = useState(false)
   const [showTranslation, setShowTranslation] = useState(false)
 
+  /* The word-timed transcript, when one has been imported. Fetched only then
+     (the episode payload says so in `timed_transcript_status`), and cached
+     under its own key so reopening the episode does not refetch it. */
+  const [timed, setTimed] = useState(null)
+  const [showSynced, setShowSynced] = useState(true)
+  const timedReady = podcast?.timed_transcript_status === 'completed'
+
+  useEffect(() => {
+    if (!timedReady) {
+      setTimed(null)
+      return
+    }
+    const key = `podcast-timed:${id}`
+    const cached = readCache(key)
+    if (cached) {
+      setTimed(cached)
+      if (isFresh(key)) return
+    }
+    let live = true
+    api
+      .getTimedTranscript(token, id)
+      .then((data) => {
+        if (!live) return
+        const segments = data.status === 'completed' ? data.segments : null
+        setTimed(segments)
+        if (segments) writeCache(key, segments)
+      })
+      // The plain transcript is still on the page, so a failure here only
+      // costs the synced view; there is nothing worth interrupting for.
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [token, id, timedReady, podcast?.timed_transcript_at])
+
   useEffect(() => {
     loadPodcast()
   }, [token, id])
@@ -212,7 +248,9 @@ export default function PodcastEpisode() {
         // point back at the thing this word was actually heard in.
         source_type: 'podcast',
         source_id: current?.id,
-        example: exampleFor(current?.tokens, word),
+        // A synced word carries the line it was heard in; a plain-transcript
+        // word is looked up in the authored text as before.
+        example: word.example ?? exampleFor(current?.tokens, word),
       })
       setLastSaved(word.text)
       setSaved((prev) => ({ ...prev, [word.text]: true }))
@@ -300,6 +338,28 @@ export default function PodcastEpisode() {
       onLeave()
     }
   }, [token])
+
+  /* Stable identities, so the memoised synced transcript does not re-render
+     every time the player's clock ticks. */
+  const hoverTimedWord = useCallback((tok, rect, seg) => {
+    const word = { ...tok, example: seg.text }
+    hoveredWordRef.current = word
+    setHovered({ tok: word, rect })
+  }, [])
+
+  const leaveTimedWord = useCallback((tok) => {
+    if (hoveredWordRef.current?.text === tok.text) hoveredWordRef.current = null
+    setHovered((cur) => (cur?.tok?.text === tok.text ? null : cur))
+  }, [])
+
+  const seekTo = useCallback((seconds) => {
+    const el = audioRef.current
+    if (!el) return
+    el.currentTime = seconds
+    setCurrentTime(seconds)
+    // Clicking a word means "let me hear that" - start it if it was paused.
+    if (el.paused) el.play().catch(() => {})
+  }, [])
 
   function togglePlay() {
     const el = audioRef.current
@@ -402,6 +462,8 @@ export default function PodcastEpisode() {
   /* Chinese-only episodes stay valid: the Translation switch renders disabled
      with a reason rather than opening onto a blank pane. */
   const hasEnglish = Boolean(podcast.transcript_en && podcast.transcript_en.trim())
+  /* Synced needs audio to sync to; without it the plain transcript stands. */
+  const synced = Boolean(timed && timed.length && podcast.audio_url && showSynced)
 
   return (
     <div className="pe">
@@ -614,6 +676,15 @@ export default function PodcastEpisode() {
               Chinese — pinyin stacks above each word and the English sits
               underneath as its own passage. */}
           <div className="pe-aids">
+            {timed && timed.length > 0 && podcast.audio_url && (
+              <ReaderSwitch
+                label="Sync with audio"
+                on={showSynced}
+                onChange={() => setShowSynced((v) => !v)}
+                title="Highlight each word as it is spoken"
+              />
+            )}
+
             <ReaderSwitch
               label="Pinyin"
               on={showPinyin}
@@ -639,7 +710,22 @@ export default function PodcastEpisode() {
             )}
           </div>
 
-          <p className="pe-hint">Hover a word and press Alt+1 to save it to your flashcard bank.</p>
+          <p className="pe-hint">
+            {synced
+              ? 'Click a word to play from it. Hover a word and press Alt+1 to save it to your flashcard bank.'
+              : 'Hover a word and press Alt+1 to save it to your flashcard bank.'}
+          </p>
+          {synced ? (
+            <SyncedTranscript
+              segments={timed}
+              audioRef={audioRef}
+              showPinyin={showPinyin}
+              saved={saved}
+              onHoverWord={hoverTimedWord}
+              onLeaveWord={leaveTimedWord}
+              onSeek={seekTo}
+            />
+          ) : (
           <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
             {podcast.tokens.map((tok, idx) =>
               tok.type === 'word' ? (
@@ -674,6 +760,7 @@ export default function PodcastEpisode() {
               )
             )}
           </p>
+          )}
 
           {/* `transcript_en` is one free-text block, not per-line pairs, so it
               renders as its own passage under the Chinese rather than
@@ -696,6 +783,20 @@ export default function PodcastEpisode() {
           key={podcast.updated_at || podcast.id}
           podcast={podcast}
           onSave={handleUpdate}
+          onTimedChange={(info) => {
+            /* Patched in place, NOT reloaded: a reload with the cache dropped
+               shows the skeleton, which unmounts this drawer mid-task. The
+               changed timestamp is what makes the effect above refetch. */
+            invalidate(`podcast-timed:${id}`)
+            const next = {
+              ...podcastRef.current,
+              timed_transcript_status: info.status,
+              timed_transcript_at: info.processed_at,
+            }
+            podcastRef.current = next
+            setPodcast(next)
+            writeCache(`podcast:${id}`, next)
+          }}
           onClose={() => setEditing(false)}
         />
       )}

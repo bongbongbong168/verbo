@@ -576,6 +576,18 @@ The suggestion strip at the foot of `TutorProfileDetail` (`.td-similar*`).
 - **The resume seek waits for `loadedmetadata`** — a seek before the element knows its duration is silently discarded — and it is **announced**: `.pe-resumed` says "Picked up from 3:21" with a Start over. Being dropped six minutes into an episode with no explanation reads as a bug, not a convenience.
 - **The card's progress bar is drawn only when a duration is known.** The client learns it at `loadedmetadata`, so a row written before that has a position and no total, and a bar with an invented denominator would be the one untrue thing on the card.
 
+### Podcast synced transcript — WhisperX offline, import online
+
+Word-timed transcript per episode: the spoken word lights up, clicking a word plays from it. `tools/transcriber/process_podcast.py` (WhisperX, own venv, see its README) writes text + a time per CHARACTER; `App\Services\TimedTranscriptBuilder` turns that into sentence lines of CC-CEDICT words with pinyin/meaning via `DictionaryService::annotate()`; it is stored on `podcasts.timed_transcript` (json, `$hidden`, not fillable) with `timed_transcript_status` (not_processed|processing|completed|failed), `_error`, `_at`.
+
+- **WhisperX never runs on the server.** No GPU, no Python, no queue worker. The admin runs it locally (`php artisan podcast:transcribe {id}` / `--all` for the local DB) and uploads the JSON in the episode drawer's **Sync** tab for production (`POST /podcasts/{id}/timed-transcript`, admin; `GET` for listeners; `DELETE` clears). There is deliberately no "process now" endpoint.
+- **WhisperX's own word grouping is ignored** — for Chinese it is one char per "word". The builder maps the dictionary segmentation back onto char timings by index, so `chars` must stay one-to-one with `text`.
+- Whisper returns ~30s windows; the builder cuts them into sentences and converts half-width punctuation after Han to full-width (1:1, so indices hold). Traditional -> Simplified happens in Python BEFORE alignment, because the zh aligner's vocab is Simplified.
+- Untimed words (digits, Latin) borrow the gap between timed neighbours, split by length, flagged `estimated`.
+- A bad upload is refused (422) and the existing transcript survives. Timed saves use `saveWithoutTouching()` — bumping `updated_at` remounts the edit drawer (it is keyed on it).
+- **`components/SyncedTranscript.jsx` (prefix `tt-`) never puts the playhead in React state**: flattened sorted timeline, binary search, direct `classList` swaps on two spans. rAF while playing + `timeupdate`/`seeked` for background tabs and paused seeks. Memoised; the page passes stable `useCallback` handlers. Highlight classes are static (frozen-compositor rule). Auto-scroll only when the line leaves the viewport, and pauses 6s after a wheel/touch/key scroll.
+- After an import the page patches `timed_transcript_status/_at` in place rather than reloading — a reload with the cache dropped shows the skeleton and unmounts the drawer.
+
 ### The reading-aid switch — one control, three pages
 
 `components/ReaderSwitch.jsx` + `.css` (prefix `rs-`) is the Pinyin / Translation switch, used by `ReadArticle`, `PodcastEpisode` and `StudyUnit`.

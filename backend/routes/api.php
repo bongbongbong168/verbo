@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\LearningController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PodcastController;
+use App\Http\Controllers\Api\PodcastTranscriptController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\QuoteController;
@@ -253,6 +254,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/podcasts/continue', [PodcastController::class, 'continueListening']);
     Route::get('/podcasts/{podcast}', [PodcastController::class, 'show']);
     Route::put('/podcasts/{podcast}/progress', [PodcastController::class, 'saveProgress']);
+    // The synced, word-timed transcript. Reading is for every listener;
+    // importing and clearing check is_admin inside the controller.
+    Route::get('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'show']);
+    Route::post('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'store']);
+    Route::delete('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'destroy']);
     Route::post('/podcasts', [PodcastController::class, 'store']);
     Route::put('/podcasts/{podcast}', [PodcastController::class, 'update']);
     Route::delete('/podcasts/{podcast}', [PodcastController::class, 'destroy']);

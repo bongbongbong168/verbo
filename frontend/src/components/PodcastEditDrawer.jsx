@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { api } from '../api'
 import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
 
@@ -35,7 +37,136 @@ const TOPICS = [
 const COVER_ASPECT = 261 / 150
 const COVER_WIDTH = 720
 
-export default function PodcastEditDrawer({ podcast, onSave, onClose }) {
+const STATUS_LABELS = {
+  not_processed: 'Not processed',
+  processing: 'Processing',
+  completed: 'Completed',
+  failed: 'Failed',
+}
+
+/**
+ * The synced-transcript tab. It saves on its own, against its own endpoint,
+ * at its own moment - the same reason the tutor drawer's tabs do - so the
+ * form's Save button is not shown here.
+ *
+ * WhisperX is NOT run from here. It needs Python and a GPU, which the server
+ * has neither of; the admin runs tools/transcriber on their own machine and
+ * uploads the .json it writes. See tools/transcriber/README.md.
+ */
+function SyncTab({ podcast, onChange }) {
+  const { token } = useAuth()
+  const [info, setInfo] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [armed, setArmed] = useState(false)
+  const disarm = useRef(null)
+
+  useEffect(() => {
+    let live = true
+    api
+      .getTimedTranscript(token, podcast.id)
+      .then((data) => live && setInfo(data))
+      .catch((err) => live && setError(err.message))
+    return () => {
+      live = false
+      clearTimeout(disarm.current)
+    }
+  }, [token, podcast.id])
+
+  async function upload(file) {
+    setBusy(true)
+    setError(null)
+    try {
+      const next = await api.uploadTimedTranscript(token, podcast.id, file)
+      setInfo(next)
+      onChange?.(next)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Arms on the first click and acts on the second, disarming on a timer -
+  // the pattern every other delete in the app uses.
+  async function remove() {
+    if (!armed) {
+      setArmed(true)
+      disarm.current = setTimeout(() => setArmed(false), 4000)
+      return
+    }
+    clearTimeout(disarm.current)
+    setArmed(false)
+    setBusy(true)
+    setError(null)
+    try {
+      const next = await api.deleteTimedTranscript(token, podcast.id)
+      setInfo(next)
+      onChange?.(next)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const status = info?.status || podcast.timed_transcript_status || 'not_processed'
+  const done = status === 'completed'
+
+  return (
+    <>
+      <div className="ed-field">
+        <span>Synced transcript</span>
+        <p className="ed-sync-status">
+          <strong className={'ed-sync-badge ed-sync-' + status}>{STATUS_LABELS[status] || status}</strong>
+          {done && info?.stats && (
+            <>
+              {' '}
+              {info.stats.segments} lines · {info.stats.timed_words} of {info.stats.words} words timed
+              {info.processed_at && <> · {new Date(info.processed_at).toLocaleDateString()}</>}
+            </>
+          )}
+        </p>
+        {status === 'failed' && info?.error && <p className="ed-sync-error">{info.error}</p>}
+      </div>
+
+      <p className="ed-hint">
+        Words light up as the audio plays, and clicking one plays from it. Make the file on
+        your own computer with <code>php artisan podcast:transcribe {podcast.id}</code> (or{' '}
+        <code>process_podcast.py</code>), then upload the .json it writes. Pinyin and meanings
+        are added here from the app&rsquo;s dictionary.
+      </p>
+
+      {!podcast.audio_url && (
+        <p className="ed-hint">This episode has no audio yet, so there is nothing to sync to.</p>
+      )}
+
+      <label className={'ed-btn-ghost' + (busy ? ' is-busy' : '')}>
+        {busy ? 'Working…' : done ? 'Replace with a new file' : status === 'failed' ? 'Retry with a file' : 'Upload transcript (.json)'}
+        <input
+          type="file"
+          accept=".json,application/json"
+          disabled={busy}
+          onChange={(e) => {
+            const picked = e.target.files[0]
+            e.target.value = ''
+            if (picked) upload(picked)
+          }}
+        />
+      </label>
+
+      {(done || status === 'failed') && (
+        <button type="button" className="ed-btn-ghost" onClick={remove} disabled={busy}>
+          {armed ? 'Click again to remove' : 'Remove synced transcript'}
+        </button>
+      )}
+
+      {error && <p className="ed-sync-error">{error}</p>}
+    </>
+  )
+}
+
+export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedChange }) {
   const editing = Boolean(podcast)
 
   const [tab, setTab] = useState('Episode')
@@ -104,7 +235,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose }) {
       <EditDrawer
         title={editing ? 'Edit episode' : 'New episode'}
         subtitle={editing ? podcast.title : 'Publish to the Podcast section'}
-        tabs={['Episode', 'Transcript', 'Media']}
+        tabs={editing ? ['Episode', 'Transcript', 'Media', 'Sync'] : ['Episode', 'Transcript', 'Media']}
         tab={tab}
         onTabChange={setTab}
         onClose={onClose}
@@ -252,11 +383,15 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose }) {
             </>
           )}
 
+          {tab === 'Sync' && editing && <SyncTab podcast={podcast} onChange={onTimedChange} />}
+
+          {tab !== 'Sync' && (
           <div className="ed-actions">
             <button type="submit" className="ed-btn-primary" disabled={busy}>
               {busy ? 'Saving…' : editing ? 'Save changes' : 'Publish'}
             </button>
           </div>
+          )}
         </form>
       </EditDrawer>
 

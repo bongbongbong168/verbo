@@ -45,10 +45,74 @@ class Podcast extends Model
         'host',
     ];
 
+    /* The timed transcript and its state are NOT fillable: only the import
+       path (TimedTranscriptController / podcast:transcribe) may write them,
+       so the ordinary episode form can never blank one by omission. */
+
+    /* Never in the episode payload. It can run to hundreds of KB, and the
+       episode is loaded far more often than the synced view is - it has its
+       own endpoint. The error is admin-facing and also has its own route. */
+    protected $hidden = [
+        'timed_transcript',
+        'timed_transcript_error',
+    ];
+
+    protected $casts = [
+        'timed_transcript' => 'array',
+        'timed_transcript_at' => 'datetime',
+    ];
+
+    public const TIMED_STATUSES = ['not_processed', 'processing', 'completed', 'failed'];
+
     protected $appends = [
         'audio_url',
         'image_url',
     ];
+
+    /* The only three ways the timed transcript changes. forceFill because
+       none of these columns are fillable, on purpose - see above.
+
+       None of them bump updated_at. That column means "the episode was
+       edited", and the episode page keys its edit drawer on it, so an import
+       stamping it remounted the drawer and threw the admin back to the first
+       tab. */
+    public function saveTimedTranscript(array $transcript): void
+    {
+        $this->forceFill([
+            'timed_transcript' => $transcript,
+            'timed_transcript_status' => 'completed',
+            'timed_transcript_error' => null,
+            'timed_transcript_at' => now(),
+        ])->saveWithoutTouching();
+    }
+
+    public function markTimedTranscript(string $status, ?string $error = null): void
+    {
+        $this->forceFill([
+            'timed_transcript_status' => $status,
+            'timed_transcript_error' => $error,
+        ])->saveWithoutTouching();
+    }
+
+    public function clearTimedTranscript(): void
+    {
+        $this->forceFill([
+            'timed_transcript' => null,
+            'timed_transcript_status' => 'not_processed',
+            'timed_transcript_error' => null,
+            'timed_transcript_at' => null,
+        ])->saveWithoutTouching();
+    }
+
+    private function saveWithoutTouching(): void
+    {
+        $this->timestamps = false;
+        try {
+            $this->save();
+        } finally {
+            $this->timestamps = true;
+        }
+    }
 
     public function user()
     {

@@ -606,6 +606,16 @@ export const api = {
       body: { position_seconds: Math.round(positionSeconds), duration_seconds: durationSeconds ? Math.round(durationSeconds) : null },
       token,
     }),
+  /* The word-timed transcript. Its own call rather than part of the episode
+     payload: it can run to hundreds of KB and is only needed once one exists. */
+  getTimedTranscript: (token, id) => request(`/podcasts/${id}/timed-transcript`, { token }),
+  uploadTimedTranscript: (token, id, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return requestMultipart(`/podcasts/${id}/timed-transcript`, formData, token)
+  },
+  deleteTimedTranscript: (token, id) =>
+    request(`/podcasts/${id}/timed-transcript`, { method: 'DELETE', token }),
   getContinueListening: (token, limit = 3) =>
     request(`/podcasts/continue?limit=${limit}`, { token }),
   /* The Daily Use shelves in one call — recommended, popular and
