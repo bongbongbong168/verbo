@@ -14,17 +14,57 @@ import "./Layout.css";
    border. SVG has no gradient ALONG a stroke, so the tail is built from
    stacked dashes: each is shorter and brighter than the one under it and
    they all end at the same point, which reads as a violet comet with a
-   near-white head. A dashed stroke also moves at an even speed round the
-   whole pill, where the old rotating conic gradient raced along the long
-   edges and crawled round the ends. */
-const COMET_LEN = 46;
-const COMET = [
-  [46, "rgba(95, 73, 203, 0.55)"],
-  [34, "#7e68c8"],
-  [22, "#b69cff"],
-  [11, "#e6dcff"],
-  [4, "#ffffff"],
+   white head. A dashed stroke also moves at an even speed round the whole
+   pill, where the old rotating conic gradient raced along the long edges
+   and crawled round the ends.
+
+   32 steps, not a handful: five dashes drew five visible bands and read as
+   choppy. At 32 each step is ~1.5% of the border (about 7px) with a small
+   colour change, which the blurred glow copy smooths the rest of the way. */
+const COMET_LEN = 50;
+const COMET_STEPS = 32;
+const COMET_RAMP = [
+  [0, [95, 73, 203]],
+  [0.4, [126, 104, 200]],
+  [0.8, [182, 156, 255]],
+  [0.94, [230, 220, 255]],
+  [1, [255, 255, 255]],
 ];
+
+function cometColor(t) {
+  let i = 1;
+  while (COMET_RAMP[i][0] < t) i++;
+  const [t0, a] = COMET_RAMP[i - 1];
+  const [t1, b] = COMET_RAMP[i];
+  const k = (t - t0) / (t1 - t0);
+  const [r, g, bl] = a.map((v, j) => Math.round(v + (b[j] - v) * k));
+  // The tail end fades in over its first third, so it grows out of the rim.
+  const alpha = Math.min(1, 0.15 + t / 0.35);
+  return `rgba(${r}, ${g}, ${bl}, ${alpha.toFixed(2)})`;
+}
+
+const COMET = Array.from({ length: COMET_STEPS }, (_, i) => {
+  const t = i / (COMET_STEPS - 1);
+  return [+(COMET_LEN * (1 - i / COMET_STEPS)).toFixed(2), cometColor(t)];
+});
+
+function Comet({ className }) {
+  return (
+    <svg className={className} aria-hidden="true">
+      {COMET.map(([len, color]) => (
+        <rect
+          key={len}
+          width="100%"
+          height="100%"
+          rx="12"
+          pathLength="100"
+          stroke={color}
+          strokeDasharray={`0 ${COMET_LEN - len} ${len} ${100 - COMET_LEN}`}
+        />
+      ))}
+    </svg>
+  );
+}
 
 /* Optical normalisation, measured with getBBox() rather than guessed.
  *
@@ -538,21 +578,10 @@ export default function Layout() {
               that draw the travelling border light — a bare text node cannot
               take a z-index, so it would be painted under the fill. */}
           <NavLink to="/upgrade" className="sb-promo-btn">
-            {/* The comet: five dashes of one rect, shortest and brightest
-                in front, all sharing the same leading edge (see COMET). */}
-            <svg className="sb-beam" aria-hidden="true">
-              {COMET.map(([len, color]) => (
-                <rect
-                  key={len}
-                  width="100%"
-                  height="100%"
-                  rx="12"
-                  pathLength="100"
-                  stroke={color}
-                  strokeDasharray={`0 ${COMET_LEN - len} ${len} ${100 - COMET_LEN}`}
-                />
-              ))}
-            </svg>
+            {/* The comet twice: a blurred copy underneath for the glow,
+                and the crisp stroke on top (see COMET). */}
+            <Comet className="sb-beam-glow" />
+            <Comet className="sb-beam" />
             <span className="sb-promo-btn-label">Get Verbo+</span>
           </NavLink>
         </div>
