@@ -31,13 +31,6 @@ const HOLD_SECONDS = 0.6
    voice for this long. */
 const FOLLOW_PAUSE_MS = 6000
 
-function formatTime(seconds) {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
 function SyncedTranscript({ segments, audioRef, showPinyin, saved, onHoverWord, onLeaveWord, onSeek }) {
   /* Every timed word in play order, with where it lives on the page. Built
      once per transcript, so the per-frame work is a binary search over plain
@@ -199,16 +192,6 @@ function SyncedTranscript({ segments, audioRef, showPinyin, saved, onHoverWord, 
             segEls.current[si] = node
           }}
         >
-          <button
-            type="button"
-            className="tt-time"
-            onClick={() => seg.start != null && play(seg.start)}
-            disabled={seg.start == null}
-            aria-label={seg.start != null ? `Play from ${formatTime(seg.start)}` : undefined}
-          >
-            {seg.start != null ? formatTime(seg.start) : '--:--'}
-          </button>
-
           <p className="tt-line">
             {seg.words.map((tok, wi) => {
               if (tok.type !== 'word') return <span key={wi}>{tok.text}</span>
