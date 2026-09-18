@@ -18,11 +18,9 @@
      tab that is not compositing frames. */
 }
 
-/* The line being spoken: a firmer tint and a bar the full height of it, so
-   it can be found at a glance while reading ahead. */
+/* The line being spoken: a tint alone, no side bar. */
 .tt-seg-on {
   background: #f1edfc;
-  box-shadow: inset 4px 0 0 #7e68c8;
 }
 
 .tt-line {
