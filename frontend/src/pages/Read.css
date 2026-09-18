@@ -445,11 +445,14 @@
 
 /* ---- outlined content panel ---- */
 
+/* FLUSH WITH THE TOOLS ROW, not indented. Its 30px tab-in left the card
+   sitting inside the title's left edge and the icons' right edge - the two
+   edges the page already draws - so the page had two left margins. */
 .rd-panel {
   border: 1px solid var(--rd-outline);
   border-radius: 16px;
   padding: 1.6rem;
-  margin: 0 var(--rd-indent);
+  margin: 0;
   background: var(--rd-panel-bg);
 }
 
