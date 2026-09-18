@@ -2,17 +2,33 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 
+/* Always relative, however old - "3 months ago", "1 year ago" - as the
+   review cards this list is built to do. The exact date sits in the hover
+   title for anyone who needs it. */
+const UNITS = [
+  ["year", 31536000],
+  ["month", 2592000],
+  ["week", 604800],
+  ["day", 86400],
+  ["hour", 3600],
+  ["minute", 60],
+];
+
 function timeAgo(iso) {
   if (!iso) return "";
   const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (secs < 60) return "Just now";
-  if (secs < 3600) return `${Math.floor(secs / 60)} min ago`;
-  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
-  if (secs < 604800) return `${Math.floor(secs / 86400)}d ago`;
-  return new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(iso));
+  for (const [unit, size] of UNITS) {
+    const n = Math.floor(secs / size);
+    if (n >= 1) return `${n} ${unit}${n === 1 ? "" : "s"} ago`;
+  }
+  return "Just now";
+}
+
+function fullDate(iso) {
+  return iso
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "long", timeStyle: "short" }).format(new Date(iso))
+    : undefined;
 }
 
 /* Five soft tints for the initial circle, picked from the name so the same
@@ -80,7 +96,7 @@ function Row({
       <div className="rd-cm-head">
         <Face name={c.user?.name} src={c.user?.avatar_url} />
         <span className="rd-cm-name">{c.user?.name || "Someone"}</span>
-        <span className="rd-cm-time">
+        <span className="rd-cm-time" title={fullDate(c.created_at)}>
           {timeAgo(c.created_at)}
           {c.edited && " · edited"}
         </span>
