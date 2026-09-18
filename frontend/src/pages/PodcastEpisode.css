@@ -98,13 +98,23 @@
   .pe-card-info {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     min-height: 167px;
   }
 
-  .pe-card-info .pe-title,
+  /* Title and host stay together at the top; only the player is pushed to
+     the bottom. space-between spread all three evenly, so a one-line title
+     left a gap under it as big as the one above the player and the host
+     floated between them, belonging to neither. */
+  .pe-card-info .pe-title {
+    margin-bottom: 0.75rem;
+  }
+
   .pe-card-info .pe-author-row {
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .pe-card-info .pe-player {
+    margin-top: auto;
   }
 
   /* The title's line box starts above its letters (half-leading plus the
