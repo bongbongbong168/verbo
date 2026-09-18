@@ -980,7 +980,9 @@ export default function StudyUnit() {
            holds a spacer and Next stays on the right at lesson 1. */}
       {/* Always shown now: the Done toggle belongs to every lesson, including
           one with no neighbours. */}
-      {(
+      {/* The wrapper is only a size container: the bar stacks by its OWN
+          width, which the sidebar makes very different from the window's. */}
+      <div className="un-lessonnav-wrap">
         <nav className="un-lessonnav" aria-label="Lessons in this topic">
           {unit.previous_unit ? (
             <Link className="un-lessonnav-prev" to={`/study/units/${unit.previous_unit.id}`}>
@@ -1025,7 +1027,7 @@ export default function StudyUnit() {
             </Link>
           )}
         </nav>
-      )}
+      </div>
 
       {showEdit && user?.is_admin && (
         <StudyUnitEditDrawer
