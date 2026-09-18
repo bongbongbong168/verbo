@@ -58,9 +58,14 @@
 /* 290/167 = 1.74, the same ratio the list cards use. The two views share one
    uploaded image, so they must agree — otherwise whatever the cropper framed
    gets re-cropped here by object-fit and the framing is lost. */
+/* The card stroke on the cover too, as the design draws it - a photo with
+   no edge floated on the white. border-box so the stroke eats into the frame
+   rather than growing it past the 290x167 the cropper cut to. */
 .pe-cover {
   width: 290px;
   height: 167px;
+  box-sizing: border-box;
+  border: 2px solid var(--pe-outline);
   border-radius: 16px;
   overflow: hidden;
   flex-shrink: 0;
@@ -99,13 +104,17 @@
   margin-bottom: 1.3rem;
 }
 
+/* A rounded square with the card stroke, as in the design, rather than a
+   circle - it matches the cover beside it. */
 .pe-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--pe-outline);
+  border-radius: 9px;
   flex-shrink: 0;
   background: linear-gradient(135deg, var(--pe-accent-light), var(--pe-accent));
   color: #fff;
@@ -127,17 +136,22 @@
 
 /* ---- custom audio player ---- */
 
+/* ONE ROW - buttons, bar, speaker - as the design draws it. It wrapped the
+   bar under the buttons whenever the info column was under ~440px (a 1280
+   window), because the bar demanded 200px and the gaps 1.4rem. The bar's
+   floor is 110px now and the gaps 0.9rem, so the row holds down to a
+   ~330px column and only wraps on a phone. */
 .pe-player {
   display: flex;
   align-items: center;
-  gap: 1.4rem;
+  gap: 0.9rem;
   flex-wrap: wrap;
 }
 
 .pe-controls {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.5rem;
   flex-shrink: 0;
 }
 
@@ -203,34 +217,47 @@
    means the row still wraps safely on a narrow screen. */
 .pe-progress-wrap {
   flex: 1;
-  min-width: 200px;
+  min-width: 110px;
   /* 0.45rem is the times' own margin-top; 0.85rem is its measured rendered
      height (13.6px). Together they mirror exactly what sits below the bar. */
   padding-top: calc(0.45rem + 0.85rem);
 }
 
+/* The hit area is taller than the 5px it draws: a bar that thin is hard to
+   grab, and it is dragged now as well as clicked. The padding is clipped out
+   of the background so the extra height stays invisible, and the equal
+   negative margin keeps the layout where it was. touch-action: none keeps a
+   horizontal drag on a phone from scrolling the page instead. */
 .pe-progress {
   position: relative;
   height: 5px;
+  padding: 8px 0;
+  margin: -8px 0;
+  background-clip: content-box;
   border-radius: 999px;
-  background: #ded9ee;
+  background-color: #dcd9e6;
   cursor: pointer;
+  touch-action: none;
 }
 
 .pe-progress-fill {
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 0;
   border-radius: 999px;
   background: var(--pe-outline);
 }
 
+/* Bigger, as the design draws it: the handle is what says the bar can be
+   dragged. */
 .pe-progress-handle {
   position: absolute;
   top: 50%;
-  width: 11px;
-  height: 11px;
+  left: 0;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   background: var(--pe-outline);
   transform: translate(-50%, -50%);
@@ -242,6 +269,7 @@
   justify-content: space-between;
   margin-top: 0.45rem;
   font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
   color: var(--pe-text-muted);
 }
 
@@ -702,6 +730,23 @@
   border-radius: 50%;
   background: var(--pe-outline);
   cursor: pointer;
+}
+
+/* TUCKED AWAY UNTIL WANTED, so the transport reads as the design's: play
+   and one long bar. The speaker stays - it mutes in one click - and the
+   slider opens beside it on hover or keyboard focus. No transition: the
+   slider being there IS the feedback, and a reveal that only moved while
+   frames arrive would leave it hidden under the pointer. Touch screens have
+   no hover, so they keep it open. */
+@media (hover: hover) {
+  .pe-volume:not(:hover):not(:focus-within) .pe-volume-slider {
+    width: 0;
+    visibility: hidden;
+  }
+
+  .pe-volume:not(:hover):not(:focus-within) {
+    gap: 0;
+  }
 }
 
 .pe-volume-slider::-moz-range-thumb {

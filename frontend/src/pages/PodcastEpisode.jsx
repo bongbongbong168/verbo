@@ -413,12 +413,74 @@ export default function PodcastEpisode() {
     el.currentTime = Math.min(Math.max(el.currentTime + seconds, 0), el.duration || 0)
   }
 
-  function handleSeek(e) {
+  /* THE BAR IS PAINTED EVERY FRAME, NOT ON `timeupdate`. That event fires
+     about four times a second, so a bar driven by it stepped along in jumps.
+     requestAnimationFrame moves it smoothly while playing, and writes straight
+     to the two elements instead of through state, so the page does not
+     re-render sixty times a second. `timeupdate` still paints too: rAF is
+     throttled to nothing in a background tab, and the bar must be right when
+     the listener comes back. */
+  const fillRef = useRef(null)
+  const handleRef = useRef(null)
+  const draggingRef = useRef(false)
+
+  const paintProgress = useCallback((seconds) => {
     const el = audioRef.current
+    const total = el && Number.isFinite(el.duration) ? el.duration : 0
+    const pct = total > 0 ? Math.min(Math.max(seconds / total, 0), 1) * 100 : 0
+    if (fillRef.current) fillRef.current.style.width = `${pct}%`
+    if (handleRef.current) handleRef.current.style.left = `${pct}%`
+  }, [])
+
+  useEffect(() => {
+    if (!playing) return undefined
+    let frame = 0
+    const tick = () => {
+      const el = audioRef.current
+      if (el && !draggingRef.current) paintProgress(el.currentTime)
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [playing, paintProgress])
+
+  function seekFromPointer(e) {
+    const el = audioRef.current
+    const bar = e.currentTarget
     if (!el || !Number.isFinite(el.duration)) return
-    const rect = e.currentTarget.getBoundingClientRect()
+    const rect = bar.getBoundingClientRect()
     const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1)
     el.currentTime = ratio * el.duration
+    setCurrentTime(el.currentTime)
+    paintProgress(el.currentTime)
+  }
+
+  /* Press and drag to scrub, as well as click. Pointer capture keeps the drag
+     alive when the pointer leaves the thin bar, which it always does. */
+  function startScrub(e) {
+    draggingRef.current = true
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Throws if the pointer is already gone; the click still seeks.
+    }
+    seekFromPointer(e)
+  }
+
+  function moveScrub(e) {
+    if (draggingRef.current) seekFromPointer(e)
+  }
+
+  function endScrub() {
+    draggingRef.current = false
+  }
+
+  /* Arrow keys on the focused bar, since it is a slider to a keyboard user. */
+  function scrubKey(e) {
+    if (e.key === 'ArrowRight') skip(5)
+    else if (e.key === 'ArrowLeft') skip(-5)
+    else return
+    e.preventDefault()
   }
 
   /* The drawer owns the fields, the busy flag and the error. Reloading is what
@@ -458,7 +520,6 @@ export default function PodcastEpisode() {
      was still showing `user.name`, which is why it read "admin" and
      "BannerVerify" — the same thing the cards were fixed for. */
   const author = podcast.host || podcast.user?.name || ''
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
   /* Chinese-only episodes stay valid: the Translation switch renders disabled
      with a reason rather than opening onto a blank pane. */
   const hasEnglish = Boolean(podcast.transcript_en && podcast.transcript_en.trim())
@@ -503,9 +564,14 @@ export default function PodcastEpisode() {
                     setPlaying(false)
                     reportProgress(true)
                   }}
-                  onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                  onTimeUpdate={(e) => {
+                    setCurrentTime(e.currentTarget.currentTime)
+                    if (!draggingRef.current) paintProgress(e.currentTarget.currentTime)
+                  }}
+                  onSeeked={(e) => paintProgress(e.currentTarget.currentTime)}
                   onLoadedMetadata={(e) => {
                     setDuration(e.currentTarget.duration)
+                    paintProgress(e.currentTarget.currentTime)
                     // Now the seek will stick. Applied once, then cleared, so a
                     // later metadata event cannot yank the listener back.
                     const at = pendingResumeRef.current
@@ -553,14 +619,24 @@ export default function PodcastEpisode() {
                 <div className="pe-progress-wrap">
                   <div
                     className="pe-progress"
-                    onClick={handleSeek}
-                    role="progressbar"
+                    onPointerDown={startScrub}
+                    onPointerMove={moveScrub}
+                    onPointerUp={endScrub}
+                    onPointerCancel={endScrub}
+                    onKeyDown={scrubKey}
+                    tabIndex={0}
+                    role="slider"
+                    aria-label="Seek"
                     aria-valuemin={0}
                     aria-valuemax={Math.round(duration)}
                     aria-valuenow={Math.round(currentTime)}
+                    aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
                   >
-                    <span className="pe-progress-fill" style={{ width: `${progress}%` }} />
-                    <span className="pe-progress-handle" style={{ left: `${progress}%` }} />
+                    {/* No inline width: paintProgress owns it. A style prop
+                        here would be re-applied on every render with a value
+                        up to a quarter-second old and tug the bar backwards. */}
+                    <span ref={fillRef} className="pe-progress-fill" />
+                    <span ref={handleRef} className="pe-progress-handle" />
                   </div>
                   <div className="pe-times">
                     <span>{formatTime(currentTime)}</span>
