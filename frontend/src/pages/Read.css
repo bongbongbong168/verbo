@@ -929,9 +929,10 @@
   background: #fff;
 }
 
+/* Focus is the border alone. A 3px lavender halo was tried and read as a
+   smudged drop shadow round the card. */
 .rd-cm-new:focus-within {
   border-color: var(--rd-accent-light);
-  box-shadow: 0 0 0 3px #f1edfc;
 }
 
 .rd-cm-new-who {
