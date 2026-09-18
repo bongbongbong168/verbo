@@ -339,7 +339,10 @@ export default function ReadArticle() {
 
   return (
     <div className="rd">
+      {/* The page title lives in the tools row, as on Read and Podcast, so
+          it costs no height of its own above the article. */}
       <div className="rd-topbar">
+        <h1 className="rd-title">Read Station</h1>
         <div className="rd-topbar-icons">
           <PageTools />
         </div>
@@ -347,9 +350,8 @@ export default function ReadArticle() {
 
       <hr className="rd-divider" />
 
-      <div className="rd-heading-row">
-        <h1 className="rd-heading">Read Station</h1>
-        {user?.is_admin && (
+      {user?.is_admin && (
+        <div className="rd-heading-row rd-heading-row-end">
           <div className="rd-admin-actions">
             <button
               type="button"
@@ -366,8 +368,8 @@ export default function ReadArticle() {
               Delete
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {error && <p className="rd-error">{error}</p>}
 
