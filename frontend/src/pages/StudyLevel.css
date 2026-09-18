@@ -242,6 +242,42 @@
   box-shadow: 0 0 0 0 var(--sl-outline);
 }
 
+/* FINISHED: greyed rather than hidden. The card drops to a grey ground and
+   a grey stroke, the text to grey, and a "Done" tag sits at the end - so
+   what is left to do stands out and what is done recedes. Static, like
+   every other state here. */
+.sl-module-done {
+  --sl-outline: #b9b6c6;
+  background: #f1f0f5;
+  color: #8a869a;
+}
+
+.sl-module-done .sl-module-meta {
+  color: #a4a1b3;
+}
+
+.sl-module-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: center;
+  flex: none;
+  margin-left: auto;
+  /* Cap-band pair as on the app's other small pills: symmetric padding
+     leaves Hellix sitting low. */
+  padding: calc(0.3rem - 0.9px) 0.7rem calc(0.3rem + 0.9px);
+  border-radius: 999px;
+  background: #e3e1ea;
+  color: #6f6b82;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.sl-module-check svg {
+  width: 14px;
+  height: 14px;
+}
+
 .sl-module-label {
   display: flex;
   align-items: center;

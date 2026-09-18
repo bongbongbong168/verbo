@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\StudyLevel;
 use App\Models\StudyUnit;
+use App\Models\StudyUnitCompletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -165,14 +166,26 @@ class StudyLevelController extends Controller
      * Units carry vocabulary/grammar counts so the module cards can show
      * "27 words · 3 Grammar" without the frontend fetching each unit.
      */
-    public function show(StudyLevel $studyLevel)
+    public function show(Request $request, StudyLevel $studyLevel)
     {
-        return $studyLevel->load([
+        $studyLevel->load([
             'units' => fn ($q) => $q
                 ->select('id', 'study_level_id', 'lesson_label', 'title', 'description')
                 ->withCount(['vocabulary', 'grammarPoints'])
                 ->orderBy('id'),
         ]);
+
+        /* Which of these the viewer has finished, in one query, so the module
+           list can grey out the lessons already done. */
+        $done = StudyUnitCompletion::where('user_id', $request->user()->id)
+            ->whereIn('study_unit_id', $studyLevel->units->pluck('id'))
+            ->pluck('study_unit_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $studyLevel->units->each(fn ($unit) => $unit->setAttribute('completed', in_array((int) $unit->id, $done, true)));
+
+        return $studyLevel;
     }
 
     public function store(Request $request)

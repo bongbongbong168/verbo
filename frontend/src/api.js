@@ -626,6 +626,9 @@ export const api = {
   getDailyUse: (token) => request('/study-levels/daily', { token }),
   getStudyLevels: (token) => request('/study-levels', { token }),
   getStudyLevel: (token, id) => request(`/study-levels/${id}`, { token }),
+  // The viewer's own "finished this lesson" mark.
+  completeStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'POST', token }),
+  uncompleteStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'DELETE', token }),
   // Multipart: a level carries a carousel cover plus a module-page banner.
   createStudyLevel: (token, level) =>
     requestMultipart('/study-levels', studyLevelFormData(level), token),

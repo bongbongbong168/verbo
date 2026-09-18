@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { invalidate, isFresh, readCache, writeCache } from '../dataCache'
 import { noteRecentView } from '../recentViews'
+import { setLessonDone } from '../studyProgress'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
@@ -296,6 +297,23 @@ export default function StudyUnit() {
    * while playing stops — a play button with no way to stop is a trap on a
    * long dialogue.
    */
+  /* Finished, or taken back. The page flips at once and the write follows;
+     a failure puts the flag back rather than leaving the button lying. */
+  function markDone(done) {
+    const current = unitRef.current
+    if (!current || Boolean(current.completed) === done) return
+    const apply = (value) => {
+      setUnit((prev) => {
+        if (!prev) return prev
+        const next = { ...prev, completed: value }
+        unitRef.current = next
+        return next
+      })
+    }
+    apply(done)
+    setLessonDone(token, current.id, done).catch(() => apply(!done))
+  }
+
   function playConversation() {
     if (!canSpeak || !currentText?.lines?.length) return
 
@@ -311,6 +329,9 @@ export default function StudyUnit() {
     setPlayingAll(true)
 
     const sayFrom = (i) => {
+      /* Played through to the last line: that is finishing the lesson's
+         listening, so the lesson counts as done. Stopping part-way does not. */
+      if (i >= lines.length && playingAllRef.current) markDone(true)
       // Stopped, or ran off the end.
       if (i >= lines.length || !playingAllRef.current) {
         setPlayingAll(false)
@@ -957,7 +978,9 @@ export default function StudyUnit() {
            cannot ever do anything is worse than its absence. `justify-content:
            space-between` on one child would pull it left, so the empty side
            holds a spacer and Next stays on the right at lesson 1. */}
-      {(unit.previous_unit || unit.next_unit) && (
+      {/* Always shown now: the Done toggle belongs to every lesson, including
+          one with no neighbours. */}
+      {(
         <nav className="un-lessonnav" aria-label="Lessons in this topic">
           {unit.previous_unit ? (
             <Link className="un-lessonnav-prev" to={`/study/units/${unit.previous_unit.id}`}>
@@ -969,6 +992,20 @@ export default function StudyUnit() {
           ) : (
             <span className="un-lessonnav-spacer" />
           )}
+
+          {/* Set automatically when the whole conversation has been played or
+              the practice run finished; this is the manual way either way. */}
+          <button
+            type="button"
+            className={'un-done-btn' + (unit.completed ? ' un-done-btn-on' : '')}
+            onClick={() => markDone(!unit.completed)}
+            aria-pressed={Boolean(unit.completed)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12.5l4.2 4.2L19 7" />
+            </svg>
+            {unit.completed ? 'Done' : 'Mark as done'}
+          </button>
 
           {unit.next_unit ? (
             <Link className="un-lessonnav-next" to={`/study/units/${unit.next_unit.id}`}>

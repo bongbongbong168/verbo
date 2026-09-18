@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { buildMatchQuestion, buildVocabQuestions } from '../studyQuiz'
+import { setLessonDone } from '../studyProgress'
 import './StudyQuizPage.css'
 
 /* Every question is worth the same, so the score is just a count times this.
@@ -205,6 +206,9 @@ export default function StudyQuizPage() {
   function advance() {
     if (index + 1 >= total) {
       setDone(true)
+      // Reaching the end of the practice run finishes the lesson. Fire and
+      // forget: the results screen must not wait on it or fail with it.
+      setLessonDone(token, id, true).catch(() => {})
       return
     }
     setIndex((i) => i + 1)

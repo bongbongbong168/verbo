@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\StudyLevelController;
 use App\Http\Controllers\Api\RecentViewController;
 use App\Http\Controllers\Api\StudyQuizQuestionController;
 use App\Http\Controllers\Api\StudyTextController;
+use App\Http\Controllers\Api\StudyUnitCompletionController;
 use App\Http\Controllers\Api\StudyUnitController;
 use App\Http\Controllers\Api\StudyVocabularyController;
 use App\Http\Controllers\Api\TutorAvailabilityController;
@@ -276,6 +277,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/study-levels/{studyLevel}/units', [StudyUnitController::class, 'store']);
     Route::get('/study-units/{studyUnit}', [StudyUnitController::class, 'show']);
+    // The viewer's own "finished this lesson" mark.
+    Route::post('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'store']);
+    Route::delete('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'destroy']);
     Route::put('/study-units/{studyUnit}', [StudyUnitController::class, 'update']);
     Route::delete('/study-units/{studyUnit}', [StudyUnitController::class, 'destroy']);
     Route::post('/study-units/{studyUnit}/culture-images', [StudyUnitController::class, 'storeCultureImage']);

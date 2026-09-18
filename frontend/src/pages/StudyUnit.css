@@ -1317,10 +1317,12 @@
    button in the row; going back is a correction and should not compete with
    it. Two matching buttons would make them read as equal choices. */
 
+/* Three columns - Previous, Done, Next - with the outer two equal, so the
+   Done toggle sits dead centre however long either lesson name is. */
 .un-lessonnav {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   margin-top: 1.4rem;
   padding: 0.85rem 1.1rem;
@@ -1332,10 +1334,17 @@
   border-radius: 16px;
 }
 
-/* Holds Next on the right at lesson 1, where there is no Previous.
-   `space-between` with a single child would pull it left instead. */
+/* Holds the first column at lesson 1, where there is no Previous. */
 .un-lessonnav-spacer {
-  flex: 1;
+  min-width: 0;
+}
+
+.un-lessonnav-prev {
+  justify-self: start;
+}
+
+.un-lessonnav-next {
+  justify-self: end;
 }
 
 /* No box, no fill — text on the bar's own ground, exactly as drawn. */
@@ -1351,6 +1360,44 @@
 
 .un-lessonnav-prev:hover {
   color: var(--un-accent);
+}
+
+/* The lesson's done toggle, between Previous and Next. Outlined until the
+   lesson is finished, then filled - the fill IS the state, never
+   transitioned. */
+.un-done-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  padding: calc(0.55rem - 0.9px) 1rem calc(0.55rem + 0.9px);
+  border: 1px solid var(--un-outline);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--un-outline);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.un-done-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.un-done-btn:hover {
+  background: #f1edfc;
+}
+
+.un-done-btn-on {
+  background: #6a6191;
+  border-color: #6a6191;
+  color: #fff;
+}
+
+.un-done-btn-on:hover {
+  background: #5a527f;
 }
 
 .un-lessonnav-next {
@@ -1447,9 +1494,18 @@
     font-size: 0.9rem;
   }
 
+  /* Too narrow for three across: Done takes the top row on its own, and
+     Previous / Next share the row beneath. */
   .un-lessonnav {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.6rem;
     padding: 0.7rem;
+  }
+
+  .un-done-btn {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
   }
 
   .un-lessonnav-next {

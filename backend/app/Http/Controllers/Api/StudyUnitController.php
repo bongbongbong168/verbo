@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\StudyCultureImage;
 use App\Models\StudyLevel;
 use App\Models\StudyUnit;
+use App\Models\StudyUnitCompletion;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class StudyUnitController extends Controller
 {
-    public function show(StudyUnit $studyUnit, DictionaryService $dictionary)
+    public function show(Request $request, StudyUnit $studyUnit, DictionaryService $dictionary)
     {
         // The unit page reuses the level's banner styling, so it needs the
         // label, blurb and accent colour alongside the title.
@@ -131,6 +132,10 @@ class StudyUnitController extends Controller
                lesson would misrepresent where the learner is. */
             'previous_unit' => $index > 0 ? $neighbour($index - 1) : null,
             'next_unit' => $neighbour($index === false ? null : $index + 1),
+            // Whether THIS viewer has finished the lesson.
+            'completed' => StudyUnitCompletion::where('user_id', $request->user()->id)
+                ->where('study_unit_id', $studyUnit->id)
+                ->exists(),
         ]);
     }
 

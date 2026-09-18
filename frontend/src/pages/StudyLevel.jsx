@@ -173,7 +173,12 @@ export default function StudyLevel() {
           <ul className="sl-modules">
             {units.map((unit) => (
               <li key={unit.id}>
-                <Link className="sl-module" to={`/study/units/${unit.id}`}>
+                {/* A finished lesson greys out and says so, but stays a link:
+                    going back over a lesson is ordinary revision. */}
+                <Link
+                  className={'sl-module' + (unit.completed ? ' sl-module-done' : '')}
+                  to={`/study/units/${unit.id}`}
+                >
                   <span className="sl-module-label">{unit.lesson_label || unit.title}</span>
                   <span className="sl-module-divider" aria-hidden="true" />
                   <span className="sl-module-body">
@@ -182,6 +187,14 @@ export default function StudyLevel() {
                       {unit.vocabulary_count ?? 0} words &nbsp;{unit.grammar_points_count ?? 0} Grammar
                     </span>
                   </span>
+                  {unit.completed && (
+                    <span className="sl-module-check">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12.5l4.2 4.2L19 7" />
+                      </svg>
+                      Done
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
