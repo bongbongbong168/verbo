@@ -59,6 +59,7 @@ class VoiceStudy extends Command
 
         $this->info("Making {$jobs->count()} clips...");
         $made = 0;
+        $failedInARow = 0;
         foreach ($jobs as $i => [$kind, $text, $voice]) {
             if ($i > 0) {
                 sleep((int) $this->option('delay'));
@@ -70,13 +71,27 @@ class VoiceStudy extends Command
             $label = $voice ? "{$kind}/{$voice}" : $kind;
             if ($speech->urlFor($text, $kind, $voice)) {
                 $made++;
+                $failedInARow = 0;
                 $this->line("  ok   {$label}  {$text}");
             } else {
-                $this->warn("  fail {$label}  {$text} (see laravel.log; re-run later)");
+                $this->warn("  fail {$label}  {$text}");
+                /* Twice in a row, even after waiting out the per-minute limit,
+                   means the free tier's DAILY limit (10) is spent. Stop rather
+                   than retry all day; the allowance resets at midnight
+                   Pacific time. */
+                if (++$failedInARow >= 2) {
+                    $this->warn("Stopped: today's free allowance looks used up. Run again after it resets.");
+                    break;
+                }
             }
         }
 
         $this->info("Done: {$made} of {$jobs->count()} made.");
+
+        // Ready to ship: copy the new clips into resources/speech for the deploy.
+        if ($made > 0) {
+            $this->call('speech:bundle');
+        }
 
         return self::SUCCESS;
     }

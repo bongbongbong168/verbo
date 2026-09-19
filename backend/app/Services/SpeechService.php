@@ -97,7 +97,7 @@ class SpeechService
         return Cache::has(self::COOLDOWN_KEY);
     }
 
-    private function path(string $text, string $kind, ?string $voice): string
+    public function path(string $text, string $kind, ?string $voice = null): string
     {
         $key = implode('|', [$this->model(), $this->voiceName($voice), self::STYLES[$kind] ?? $kind, trim($text)]);
 

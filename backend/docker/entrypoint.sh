@@ -76,6 +76,14 @@ php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
 
+# Study's audio clips ship inside the deploy (resources/speech, made on the dev
+# machine against the free tier's 10-a-day limit). Copy any missing ones onto
+# the volume; this only ever adds files. Not fatal: a missing clip just plays
+# in the browser's voice. The chown is because this runs as root and the app
+# (www-data) must still be able to add clips it makes itself.
+php artisan speech:bundle --install || true
+chown -R www-data:www-data /var/www/html/storage/app/public/speech 2>/dev/null || true
+
 # One-shot publish of the bundled content library (database/content/), OFF
 # unless CONTENT_IMPORT=1 is set on the service.
 #
