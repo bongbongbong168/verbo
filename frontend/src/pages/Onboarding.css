@@ -293,26 +293,47 @@
 .ob-main {
   flex: 1;
   min-width: 0;
-  display: grid;
-  /* TOP-ALIGNED WITH THE DARK PANEL BESIDE IT. Centred, the card started 44px
-     below the panel's top edge, so the two halves of the screen began at
-     different heights and read as misaligned. The card's top now sits on the
-     same line as the panel's, and its height is free to vary downward from
-     question to question - a fixed top stays still while a centred card would
-     shift up and down with every step. */
-  place-items: start center;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
   padding: 0;
 }
 
+/* THE CARD IS AS TALL AS THE DARK PANEL, centred beside it. Two earlier
+   shapes both failed: centred at its own height it jumped up and down every
+   step (the steps measure 364 to 727px), and top-aligned it left a big empty
+   gap under short steps ("the card should be in the middle"). Matching the
+   panel fixes both - the frame never moves, the halves of the screen start
+   and end on the same lines, and a tall step simply grows the card.
+   Inside, progress sits at the top, the buttons at the bottom, and the
+   question is centred in the space between. */
 .ob-card {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 620px;
-  padding: 2rem 2.2rem 1.6rem;
+  max-width: 700px;
+  padding: 2.4rem 2.8rem 1.9rem;
   border: 1px solid var(--ob-edge);
-  border-radius: 22px;
+  border-radius: 24px;
   background: var(--ob-card);
   box-shadow: 0 10px 34px rgba(28, 23, 48, 0.1);
+}
+
+.ob-card > .ob-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.ob-card > .ob-foot {
+  margin-top: 0;
+}
+
+.ob-card.ob-card-loading {
+  align-self: center;
 }
 
 .ob-card-loading {
@@ -448,15 +469,15 @@
 
 .ob-title {
   margin: 0;
-  font-size: 1.55rem;
+  font-size: 1.85rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
 
 .ob-lede {
-  margin: 0.5rem 0 1.4rem;
-  font-size: 0.92rem;
+  margin: 0.5rem 0 1.6rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--ob-muted);
 }
@@ -511,12 +532,12 @@
   justify-content: space-between;
   gap: 1rem;
   /* Was 13.6px/13.6px, measured 20.5 above / 18.5 below → 1px low. */
-  padding: 12.6px 1.05rem 14.6px;
+  padding: 14.1px 1.2rem 16.3px;
   border: 1px solid var(--ob-line);
   border-radius: 12px;
   background: #fbfaff;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--ob-text);
   text-align: left;
@@ -559,7 +580,7 @@
 .ob-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: 11px;
 }
 
 .ob-chip {
@@ -568,12 +589,12 @@
   gap: 0.45rem;
   /* Was 7.68/8.96, which under-corrected — measured 13.72 above / 11.99 below,
      still 0.86px low. */
-  padding: 6.82px 0.95rem 9.82px;
+  padding: 8.04px 1.1rem 10.6px;
   border: 1px solid var(--ob-line);
-  border-radius: 11px;
+  border-radius: 12px;
   background: #fff;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ob-text);
   cursor: pointer;
@@ -1028,6 +1049,17 @@
   .ob {
     flex-direction: column;
     padding: 1rem;
+  }
+
+  /* The desktop card pads 2.8rem a side for a 700px column; on a phone that
+     left the title four lines deep. */
+  .ob-card {
+    padding: 1.6rem 1.3rem 1.3rem;
+    border-radius: 20px;
+  }
+
+  .ob-title {
+    font-size: 1.5rem;
   }
 
   /* The panel shrinks to a banner so the question comes first. */
