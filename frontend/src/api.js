@@ -434,6 +434,13 @@ export const api = {
     })
     return requestMultipart(`/tutors/${profileId}/profile`, formData, token)
   },
+  // JSON, so an empty list can clear them - see TutorController::updateSpecialties.
+  updateTutorSpecialties: (token, profileId, specialties, main) =>
+    request(`/tutors/${profileId}/specialties`, {
+      method: 'PUT',
+      body: { specialties, main_specialty: main },
+      token,
+    }),
   saveTutorProfile: (
     token,
     { bio, subjects, hourly_rate, languages_spoken, availability, photo, video_url },

@@ -73,8 +73,45 @@ class TutorController extends Controller
             'options' => [
                 'chinese_levels' => TutorProfile::CHINESE_LEVELS,
                 'teaches_levels' => TutorProfile::TEACHES_LEVELS,
+                'specialties' => TutorProfile::specialtyOptions(),
             ],
         ];
+    }
+
+    /**
+     * Validation for the specialty pair, shared by the application and the
+     * edit drawer. `$required` is true for a new application: an applicant
+     * who says nothing about what they teach cannot be judged.
+     */
+    private static function specialtyRules(bool $required): array
+    {
+        return [
+            'specialties' => [$required ? 'required' : 'nullable', 'array', $required ? 'min:1' : 'min:0', 'max:'.count(TutorProfile::SPECIALTIES)],
+            'specialties.*' => ['distinct', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
+            'main_specialty' => ['nullable', 'string', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
+        ];
+    }
+
+    /**
+     * The main specialty must be one of the chosen ones; when it is missing
+     * or no longer chosen, the first chosen one takes its place, and an
+     * empty choice clears it. Applied only when specialties were sent, so a
+     * drawer tab that does not touch them leaves them alone.
+     */
+    private static function settleMainSpecialty(array $data): array
+    {
+        if (! array_key_exists('specialties', $data)) {
+            unset($data['main_specialty']);
+
+            return $data;
+        }
+
+        $chosen = array_values(array_unique($data['specialties'] ?? []));
+        $data['specialties'] = $chosen;
+        $main = $data['main_specialty'] ?? null;
+        $data['main_specialty'] = in_array($main, $chosen, true) ? $main : ($chosen[0] ?? null);
+
+        return $data;
     }
 
     public function showProfile(Request $request, TutorProfile $tutorProfile)
@@ -135,7 +172,20 @@ class TutorController extends Controller
             ->filter(fn ($l) => ! $l->is_trial && $l->price !== null && $l->price > 0)
             ->min('price');
 
+        /* Resolved for display, main one first, so the page never needs the
+           option list just to print a label. Keys no longer in the list are
+           dropped rather than shown as raw slugs. */
+        $specialtyList = collect($tutorProfile->specialties ?? [])
+            ->filter(fn ($key) => isset(TutorProfile::SPECIALTIES[$key]))
+            ->sortBy(fn ($key) => $key === $tutorProfile->main_specialty ? 0 : 1)
+            ->map(fn ($key) => ['key' => $key, 'main' => $key === $tutorProfile->main_specialty] + TutorProfile::SPECIALTIES[$key])
+            ->values();
+
         return array_merge($tutorProfile->toArray(), [
+            'specialty_list' => $specialtyList,
+            // For the edit drawer, which may be opened by an admin editing
+            // someone else and so cannot rely on GET /tutor-profile.
+            'specialty_options' => TutorProfile::specialtyOptions(),
             'review_count' => $count,
             'review_average' => $count ? round($tutorProfile->reviews->avg('rating'), 1) : null,
             'trial_used' => $trialUsed,
@@ -179,7 +229,9 @@ class TutorController extends Controller
             // profile a visitor might follow. One rule covers both: it pulls
             // URLs out of free text, so a plain URL field needs nothing extra.
             'video_url' => ['nullable', 'url', 'max:500', new NoUnsafeLinks],
-        ]);
+        ] + self::specialtyRules(true));
+
+        $data = self::settleMainSpecialty($data);
 
         /* Queried, not read off `$request->user()->tutorProfile`. That is a
            cached relation: once something has touched it earlier in the same
@@ -298,6 +350,24 @@ class TutorController extends Controller
         return response()->json(
             $tutorProfile->fresh()->load('user:id,name,email', 'lessons', 'resumeEntries')
         );
+    }
+
+    /**
+     * Set a profile's teaching specialties and which one is the main.
+     *
+     * Its own JSON endpoint rather than a field on updateProfile(): that one is
+     * multipart for the photo, and multipart has no way to send an EMPTY list,
+     * so a tutor could never clear their last specialty through it.
+     */
+    public function updateSpecialties(Request $request, TutorProfile $tutorProfile)
+    {
+        self::authorizeProfile($request, $tutorProfile);
+
+        $data = self::settleMainSpecialty($request->validate(self::specialtyRules(false)) + ['specialties' => []]);
+
+        $tutorProfile->update($data);
+
+        return $this->showProfile($request, $tutorProfile->fresh());
     }
 
     /**

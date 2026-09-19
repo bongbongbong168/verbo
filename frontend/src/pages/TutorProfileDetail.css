@@ -120,17 +120,21 @@
   grid-column: 1;
   grid-row: 2;
 }
-.td-resume {
+.td-specialties {
   grid-column: 1;
   grid-row: 3;
 }
-.td-reviews {
+.td-resume {
   grid-column: 1;
   grid-row: 4;
 }
-.td-similar {
+.td-reviews {
   grid-column: 1;
   grid-row: 5;
+}
+.td-similar {
+  grid-column: 1;
+  grid-row: 6;
 }
 
 /* A flex child of the sticky rail now, so it no longer places itself on the
@@ -146,6 +150,77 @@
      two flex children of the rail that travels, not a card that travels on its
      own. */
   min-width: 0;
+}
+
+/* ---- teaching specialties ----
+   Cards in the same family as the "Teacher you may like" strip: white, the
+   page's 1px navy stroke, 14px corners. The main one is tinted and tagged. */
+.td-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.td-spec {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--td-edge);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.td-spec-main {
+  background: #f8f6ff;
+}
+
+.td-spec-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f1edfc;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.td-spec-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.td-spec-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--td-text);
+}
+
+.td-spec-tag {
+  padding: calc(0.1rem - 0.7px) 0.45rem calc(0.1rem + 0.7px);
+  border-radius: 999px;
+  background: #6a6191;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.td-spec-blurb {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--td-text-muted);
 }
 
 .td-card {
@@ -270,6 +345,36 @@
   font-size: 1rem;
   font-weight: 600;
   margin: 0.15rem 0 0;
+}
+
+/* "Specializes in" + the main specialty, under the role. The pill is the
+   page's pale lavender with the accent text, as every tag on this page. */
+.td-mainspec {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+}
+
+.td-mainspec-label {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--td-text-muted);
+}
+
+/* Cap-band pair as on the app's other small pills. */
+.td-mainspec-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: calc(0.28rem - 0.9px) 0.7rem calc(0.28rem + 0.9px);
+  border-radius: 999px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* The bookmark used to sit directly in the header's flex row; it now shares a
@@ -1147,6 +1252,7 @@
      nothing at all. The items are these six. */
   .td-profile,
   .td-stats,
+  .td-specialties,
   .td-resume,
   .td-reviews,
   .td-similar,
@@ -1175,14 +1281,17 @@
   .td-lessons {
     order: 4;
   }
-  .td-resume {
+  .td-specialties {
     order: 5;
   }
-  .td-reviews {
+  .td-resume {
     order: 6;
   }
-  .td-similar {
+  .td-reviews {
     order: 7;
+  }
+  .td-similar {
+    order: 8;
   }
 
   /* One row per card once the page is a single column. The 160px floor here

@@ -6,6 +6,7 @@ import { invalidate } from '../dataCache'
 import ImageCropper from '../components/ImageCropper'
 import PageTools from '../components/PageTools'
 import './BecomeTutor.css'
+import SpecialtyPicker from '../components/SpecialtyPicker'
 
 /**
  * Apply to teach on Verbo — and, after submitting, the status of that
@@ -66,7 +67,7 @@ export default function BecomeTutor() {
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
-  const [options, setOptions] = useState({ chinese_levels: [], teaches_levels: [] })
+  const [options, setOptions] = useState({ chinese_levels: [], teaches_levels: [], specialties: [] })
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [credentials, setCredentials] = useState([])
@@ -76,6 +77,7 @@ export default function BecomeTutor() {
   // rather than retypes.
   const [form, setForm] = useState({
     country: '', chinese_level: '', teaches_levels: [], years_experience: '',
+    specialties: [], main_specialty: null,
     subjects: '', languages_spoken: '', bio: '', teaching_style: '',
     availability: '', hourly_rate: '', video_url: '',
   })
@@ -110,6 +112,7 @@ export default function BecomeTutor() {
           setForm({
             country: p.country || '', chinese_level: p.chinese_level || '',
             teaches_levels: p.teaches_levels || [],
+            specialties: p.specialties || [], main_specialty: p.main_specialty || null,
             years_experience: p.years_experience ?? '',
             subjects: p.subjects || '', languages_spoken: p.languages_spoken || '',
             bio: p.bio || '', teaching_style: p.teaching_style || '',
@@ -295,6 +298,25 @@ export default function BecomeTutor() {
                 ))}
               </div>
             </Field>
+            {/* A div, not <Field>: Field is a <label>, and a label full of
+                buttons forwards a click on its text to the first one. */}
+            <div className="bt-field">
+              <span className="bt-label">
+                Teaching specialties
+                <i className="bt-req" aria-hidden="true">*</i>
+              </span>
+              <SpecialtyPicker
+                options={options.specialties || []}
+                value={form.specialties}
+                main={form.main_specialty}
+                onChange={(next, nextMain) =>
+                  setForm((f) => ({ ...f, specialties: next, main_specialty: nextMain }))
+                }
+              />
+              <small className="bt-hint">
+                Choose what you actually teach, and star the one you are best at.
+              </small>
+            </div>
             <div className="bt-row">
               <Field label="Subjects and skills" required>
                 <input value={form.subjects} onChange={set('subjects')} placeholder="Speaking, Grammar, Business Chinese" />

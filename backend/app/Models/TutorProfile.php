@@ -39,6 +39,33 @@ class TutorProfile extends Model
 
     public const TEACHES_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'HSK preparation'];
 
+    /**
+     * Teaching specialties a tutor can claim, keyed by a stable slug.
+     *
+     * A FIXED LIST, not free text: a learner can only compare tutors, and a
+     * future filter can only match them, if two tutors who both teach HSK
+     * preparation call it the same thing. The description is written once
+     * here so every profile explains a specialty the same way. Ships in the
+     * API as options so no client keeps its own copy.
+     */
+    public const SPECIALTIES = [
+        'conversational' => ['label' => 'Conversational Chinese', 'emoji' => '🗣️', 'blurb' => 'Practice natural conversations and build everyday speaking confidence.'],
+        'speaking' => ['label' => 'Speaking Practice', 'emoji' => '💬', 'blurb' => 'Build fluency through guided conversation and live correction.'],
+        'hsk' => ['label' => 'HSK Preparation', 'emoji' => '📚', 'blurb' => 'Prepare for HSK exams with structured lessons, vocabulary and practice tests.'],
+        'everyday' => ['label' => 'Everyday Chinese', 'emoji' => '🏙️', 'blurb' => 'Useful Chinese for daily situations and real conversations.'],
+        'travel' => ['label' => 'Travel Chinese', 'emoji' => '✈️', 'blurb' => 'Phrases and conversations for getting around Chinese-speaking places.'],
+        'pronunciation' => ['label' => 'Pronunciation', 'emoji' => '🔊', 'blurb' => 'Improve tones, pronunciation and speaking accuracy.'],
+    ];
+
+    /** The option list as the client wants it: an ordered array, key included. */
+    public static function specialtyOptions(): array
+    {
+        return collect(self::SPECIALTIES)
+            ->map(fn ($s, $key) => ['key' => $key] + $s)
+            ->values()
+            ->all();
+    }
+
     protected $fillable = [
         'bio',
         'subjects',
@@ -57,10 +84,13 @@ class TutorProfile extends Model
         'teaches_levels',
         'years_experience',
         'teaching_style',
+        'specialties',
+        'main_specialty',
     ];
 
     protected $casts = [
         'teaches_levels' => 'array',
+        'specialties' => 'array',
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
         'allows_pre_booking_questions' => 'boolean',

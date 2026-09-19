@@ -28,6 +28,7 @@ class TutorApplicationTest extends TestCase
             'country' => 'China',
             'chinese_level' => 'Native speaker',
             'teaches_levels' => ['Beginner', 'HSK preparation'],
+            'specialties' => ['hsk', 'conversational'],
             'years_experience' => 3,
         ], $overrides);
     }

@@ -191,6 +191,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Profile-scoped rather than hung off /tutor-profile, so an admin can edit
     // a seeded tutor through the same drawer the tutor uses on themselves.
     Route::post('/tutors/{tutorProfile}/profile', [TutorController::class, 'updateProfile']);
+    Route::put('/tutors/{tutorProfile}/specialties', [TutorController::class, 'updateSpecialties']);
     Route::post('/tutors/{tutorProfile}/lessons', [TutorLessonController::class, 'store']);
     Route::delete('/tutor-lessons/{lesson}', [TutorLessonController::class, 'destroy']);
     Route::post('/tutors/{tutorProfile}/reviews', [TutorReviewController::class, 'store']);

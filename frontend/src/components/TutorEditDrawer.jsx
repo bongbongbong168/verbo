@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
+import SpecialtyPicker from './SpecialtyPicker'
 
-const TABS = ['Profile', 'Hours', 'Resume', 'Lessons', 'Courses']
+const TABS = ['Profile', 'Specialties', 'Hours', 'Resume', 'Lessons', 'Courses']
 
 /* 0 = Sunday, matching Carbon::dayOfWeek and the day_of_week column. Listed
    Monday-first because that is how a teaching week reads. */
@@ -135,6 +136,11 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [cropSource, setCropSource] = useState(null)
   const [savingProfile, setSavingProfile] = useState(false)
 
+  // --- specialties tab ---
+  const [specs, setSpecs] = useState(tutor.specialties || [])
+  const [mainSpec, setMainSpec] = useState(tutor.main_specialty || null)
+  const [savingSpecs, setSavingSpecs] = useState(false)
+
   // --- hours tab ---
   /* The whole week as `day -> [{start, end}]`, posted in one go: the endpoint
      is a wholesale replace, so the editor must always know the complete
@@ -224,6 +230,25 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       setError(err.message)
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  /* Its own endpoint (JSON), not part of the profile save: that one is
+     multipart for the photo, which cannot send an empty list. */
+  async function handleSaveSpecialties(e) {
+    e.preventDefault()
+    setError(null)
+    setSavingSpecs(true)
+    try {
+      const updated = await api.updateTutorSpecialties(token, tutor.id, specs, mainSpec)
+      setSpecs(updated.specialties || [])
+      setMainSpec(updated.main_specialty || null)
+      onChange(updated)
+      flash('Specialties saved')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSavingSpecs(false)
     }
   }
 
@@ -631,6 +656,27 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
 
           <button type="submit" className="ed-btn-primary" disabled={savingProfile}>
             {savingProfile ? 'Saving…' : 'Save profile'}
+          </button>
+        </form>
+      )}
+
+      {tab === 'Specialties' && (
+        <form className="ed-form" onSubmit={handleSaveSpecialties}>
+          <p className="ed-note">
+            Choose everything you actually teach. Star the one you are best at - it shows
+            under your name.
+          </p>
+          <SpecialtyPicker
+            options={tutor.specialty_options || []}
+            value={specs}
+            main={mainSpec}
+            onChange={(next, nextMain) => {
+              setSpecs(next)
+              setMainSpec(nextMain)
+            }}
+          />
+          <button type="submit" className="ed-btn-primary" disabled={savingSpecs}>
+            {savingSpecs ? 'Saving…' : 'Save specialties'}
           </button>
         </form>
       )}

@@ -1,0 +1,120 @@
+/* The specialty picker (prefix `spk-`). Each option is a row card in the
+   app's language: white, a pale hairline, 12px corners; chosen rows take the
+   pale lavender and the accent stroke, the same pair every selected chip in
+   the app uses. States are static - the fill IS the state. */
+.spk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spk-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.6rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.spk-on {
+  border-color: #a89ce3;
+  background: #f8f6ff;
+}
+
+.spk-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  color: #1c1730;
+  cursor: pointer;
+}
+
+.spk-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f1edfc;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.spk-on .spk-mark {
+  background: #fff;
+}
+
+.spk-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.spk-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.spk-blurb {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #726c88;
+}
+
+/* Only on chosen rows. Outlined until it is the main, then filled. */
+.spk-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  padding: calc(0.3rem - 0.8px) 0.6rem calc(0.3rem + 0.8px);
+  border: 1px solid #a89ce3;
+  border-radius: 999px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6a6191;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.spk-main svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.spk-main-on {
+  background: #6a6191;
+  border-color: #6a6191;
+  color: #fff;
+}
+
+.spk-main-on svg {
+  fill: currentColor;
+}
+
+.spk-pick:focus-visible,
+.spk-main:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+  border-radius: 10px;
+}

@@ -497,6 +497,8 @@ export default function TutorProfileDetail() {
   // An admin edits on behalf of the seeded tutors, whose accounts have no
   // usable password — the same rule the API enforces in authorizeProfile.
   const canEdit = Boolean(isSelf || user?.is_admin)
+  const specialties = tutor.specialty_list || []
+  const mainSpecialty = specialties.find((sp) => sp.main) || null
   const video = resolveVideo(tutor.video_url)
   const booked = alreadyBooked || justSent
   const resumeEntries = (tutor.resume_entries || []).filter((e) => e.section === resumeTab)
@@ -536,6 +538,16 @@ export default function TutorProfileDetail() {
                   </span>
                 </p>
                 <p className="td-role">{tutor.subjects || 'Chinese Teacher'}</p>
+                {/* The one thing this tutor is best at, before anything else. */}
+                {mainSpecialty && (
+                  <p className="td-mainspec">
+                    <span className="td-mainspec-label">Specializes in</span>
+                    <span className="td-mainspec-pill">
+                      <span aria-hidden="true">{mainSpecialty.emoji}</span>
+                      {mainSpecialty.label}
+                    </span>
+                  </p>
+                )}
               </div>
 
               <div className="td-head-actions">
@@ -594,6 +606,38 @@ export default function TutorProfileDetail() {
               <span>Experience</span>
             </div>
           </section>
+
+          {/* ---- teaching specialties ----
+               Between who the tutor is and their resume: what you can book
+               them FOR comes before where they studied. Chosen by the tutor
+               from a fixed list (TutorProfile::SPECIALTIES), main one first.
+               Hidden from visitors when empty; the tutor and admins get a
+               nudge instead. */}
+          {(specialties.length > 0 || canEdit) && (
+            <section className="td-specialties">
+              <h2 className="td-h2">Teaching Specialties</h2>
+              {specialties.length === 0 ? (
+                <p className="td-empty-inline">
+                  No specialties yet. Add them from Edit profile so learners know what to book you for.
+                </p>
+              ) : (
+                <ul className="td-spec-grid">
+                  {specialties.map((sp) => (
+                    <li key={sp.key} className={'td-spec' + (sp.main ? ' td-spec-main' : '')}>
+                      <span className="td-spec-mark" aria-hidden="true">{sp.emoji}</span>
+                      <span className="td-spec-body">
+                        <span className="td-spec-title">
+                          {sp.label}
+                          {sp.main && <span className="td-spec-tag">Main</span>}
+                        </span>
+                        <span className="td-spec-blurb">{sp.blurb}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           {/* ---- resume ---- */}
           <section className="td-resume">
