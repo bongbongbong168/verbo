@@ -259,17 +259,68 @@
   left: 0;
   right: 0;
   z-index: 1;
+  display: flex;
+  gap: 3px;
   height: 8px;
+}
+
+.qp-seg {
+  flex: 1;
   background: #e2dbf8;
 }
 
-/* Static width, no transition — the bar must be right on the first paint even
-   if the tab never composites another frame. */
-.qp-progress span {
+/* Same construction as the sign-up bar (.ob-seg): the lit class IS the
+   state, and the glint is a decoration parked outside the segment at rest.
+   A CSS animation starts when its property is first applied, so only the
+   segment that has just lit plays it - the ones behind it already have. */
+.qp-seg.on {
+  background-color: var(--qp-accent);
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  background-repeat: no-repeat;
+  background-size: 30px 100%;
+  background-position: -30px 0;
+  animation: qp-seg-lit 0.55s ease-out;
+}
+
+@keyframes qp-seg-lit {
+  from {
+    background-position: -30px 0;
+  }
+  to {
+    background-position: calc(100% + 30px) 0;
+  }
+}
+
+/* The question on screen breathes. It RESTS AT FULL: 0% and 100% are the
+   solid colour, so a tab that never composites shows a plainly lit segment. */
+.qp-seg.current {
+  background: var(--qp-fill);
+  animation: qp-seg-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes qp-seg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Long runs: one continuous bar. Static width, no transition. */
+.qp-fill {
   display: block;
   height: 100%;
   border-radius: 0 999px 999px 0;
   background: var(--qp-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qp-seg.on,
+  .qp-seg.current {
+    animation: none;
+  }
 }
 
 /* ---- question ---- */
@@ -364,6 +415,11 @@
   flex: none;
   width: 30px;
   height: 30px;
+  /* The letter's cap band sat 1.27px low (measured against a flat-capped H);
+     a bottom pad of twice that, inside a border-box, lifts it to centre
+     without changing the circle. */
+  box-sizing: border-box;
+  padding-bottom: 2.54px;
   border-radius: 50%;
   background: var(--qp-stroke);
   color: #fff;

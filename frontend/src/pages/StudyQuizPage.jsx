@@ -15,6 +15,9 @@ import './StudyQuizPage.css'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
+/* Past this many questions the progress bar stops drawing one segment each. */
+const MAX_SEGMENTS = 24
+
 function BackIcon() {
   return (
     <svg
@@ -488,10 +491,28 @@ export default function StudyQuizPage() {
             <p className="qp-count">
               {mode === 'redo' ? 'Redo · ' : ''}Question {index + 1} of {total}
             </p>
-            {/* Fills as questions are answered, so the bar is empty on
-                question 1 and full on the results. */}
-            <div className="qp-progress">
-              <span style={{ width: `${(index / total) * 100}%` }} />
+            {/* One segment per question, as on the sign-up flow: the ones
+                behind you are lit (a glint runs across a segment the moment
+                it lights), the one you are on pulses. A long run falls back
+                to one continuous bar, since 30 slivers say nothing. */}
+            <div
+              className="qp-progress"
+              role="progressbar"
+              aria-label="Quiz progress"
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-valuenow={index}
+            >
+              {total <= MAX_SEGMENTS ? (
+                list.map((q, i) => (
+                  <span
+                    key={i}
+                    className={`qp-seg${i < index ? ' on' : i === index ? ' current' : ''}`}
+                  />
+                ))
+              ) : (
+                <span className="qp-fill" style={{ width: `${(index / total) * 100}%` }} />
+              )}
             </div>
 
             <div className="qp-question">
