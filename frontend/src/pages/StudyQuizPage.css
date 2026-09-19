@@ -218,7 +218,7 @@
 }
 
 /* Once answered the row is settled, so it sits back down flat. */
-.qp-option:disabled:not(.correct):not(.wrong) {
+.qp-option:disabled:not(.correct):not(.yours) {
   box-shadow: var(--qp-sh-xs);
 }
 
@@ -248,9 +248,9 @@
 
 /* The colour carries the verdict, not the animation: a keyframe that never
    gets frames would otherwise leave the answer unmarked. */
-/* The verdict shadow is tinted to its own colour, so the right answer glows
-   green and a wrong one red — the depth reinforces the state instead of being
-   the same neutral drop under both. */
+/* The right answer glows green; a miss is NOT red. It gets the app's own
+   lavender and a "Your answer" tag - the answer is the thing to look at, not
+   the mistake. The other options fade back so the two that matter stand out. */
 .qp-option.correct {
   background: var(--qp-ok-bg);
   border-color: var(--qp-ok-edge);
@@ -261,18 +261,6 @@
 
 .qp-option.correct .qp-letter {
   background: var(--qp-ok);
-}
-
-.qp-option.wrong {
-  background: var(--qp-no-bg);
-  border-color: var(--qp-no-edge);
-  color: var(--qp-no);
-  box-shadow: 0 4px 14px rgba(176, 42, 42, 0.22);
-  animation: qp-shake 0.35s ease-out;
-}
-
-.qp-option.wrong .qp-letter {
-  background: var(--qp-no);
 }
 
 /* Transform only. This used to animate box-shadow too, which overrode the
@@ -289,19 +277,6 @@
   }
   100% {
     transform: scale(1);
-  }
-}
-
-@keyframes qp-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-4px);
-  }
-  75% {
-    transform: translateX(4px);
   }
 }
 
@@ -458,100 +433,364 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qp-option.correct,
-  .qp-option.wrong {
+  .qp-option.correct {
     animation: none;
   }
 }
 
-/* ---- matching round ---- */
+/* ---- after Check ---- */
 
-.qp-match {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
+.qp-option.yours {
+  background: #fff;
+  border-color: var(--qp-fill);
+  border-style: dashed;
+  color: var(--qp-accent);
+  box-shadow: var(--qp-sh-xs);
 }
 
-.qp-match-col {
+.qp-option.yours .qp-letter {
+  background: var(--qp-fill);
+}
+
+.qp-option.faded {
+  opacity: 0.55;
+}
+
+.qp-option.correct .qp-letter svg {
+  width: 15px;
+  height: 15px;
+}
+
+.qp-option-tag {
+  flex: none;
+  margin-left: auto;
+  padding: calc(0.2rem - 0.8px) 0.55rem calc(0.2rem + 0.8px);
+  border-radius: 999px;
+  background: var(--qp-well);
+  color: var(--qp-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* The feedback line under the answers. Green when right; the app's lavender,
+   with a "here is how it goes" tone, when not. Never red. */
+.qp-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1.3rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--qp-border);
+}
+
+.qp-feedback.good {
+  background: var(--qp-ok-bg);
+  border-color: var(--qp-ok-edge);
+}
+
+.qp-feedback.learn {
+  background: var(--qp-well);
+  border-color: var(--qp-fill);
+}
+
+.qp-feedback-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.qp-feedback.good .qp-feedback-mark {
+  background: var(--qp-ok);
+}
+
+.qp-feedback.learn .qp-feedback-mark {
+  background: var(--qp-accent);
+}
+
+.qp-feedback-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.qp-feedback-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.qp-feedback.good .qp-feedback-title {
+  color: var(--qp-ok);
+}
+
+.qp-feedback.learn .qp-feedback-title {
+  color: var(--qp-accent);
+}
+
+.qp-feedback-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: var(--qp-muted);
+}
+
+.qp-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  color: var(--qp-muted);
+}
+
+/* A second action beside the solid one on the results screen. */
+.qp-ghost {
+  padding: 0.85rem 1.3rem;
+  border: 1px solid var(--qp-stroke);
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--qp-text);
+  cursor: pointer;
+}
+
+.qp-ghost:hover {
+  background: var(--qp-well);
+}
+
+/* ---- results: what to look at again ---- */
+
+.qp-review-pill {
+  margin: 0;
+  padding: calc(0.3rem - 0.9px) 0.8rem calc(0.3rem + 0.9px);
+  border-radius: 999px;
+  background: var(--qp-well);
+  color: var(--qp-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.qp-review {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 620px;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.qp-review-item {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--qp-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.qp-review-q {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.qp-review-a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+
+.qp-review-ans {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  color: var(--qp-ok);
+}
+
+.qp-review-ans svg {
+  width: 14px;
+  height: 14px;
+}
+
+.qp-review-you,
+.qp-review-muted {
+  color: var(--qp-muted);
+}
+
+/* ---- matching: wires ----
+   Two columns with a channel between them; one SVG over the whole box draws
+   the wires in CSS pixels (see MatchWires for the measuring). Every state is
+   a static class, so nothing depends on an animation advancing. */
+
+.qp-wires {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px minmax(0, 1fr);
+  margin-top: 1.5rem;
+  user-select: none;
+}
+
+.qp-wires-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.qp-wires-col {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
-.qp-tile {
+.qp-wtile {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 62px;
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 1.2rem;
   box-sizing: border-box;
-  background: var(--qp-card);
   border: 1px solid var(--qp-stroke);
   border-radius: 14px;
+  background: var(--qp-card);
   font-family: inherit;
   font-size: 1rem;
   font-weight: 700;
   color: var(--qp-text);
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
   box-shadow: var(--qp-sh-sm);
-  /* transform only — see .qp-option. */
   transition: transform 0.14s ease;
 }
 
-.qp-tile:hover:not(:disabled) {
+.qp-wtile:hover:not(:disabled) {
   border-color: var(--qp-fill);
   transform: translateY(-2px);
   box-shadow: var(--qp-sh-hover);
 }
 
-.qp-tile-hanzi {
+.qp-wtile:disabled {
+  cursor: default;
+}
+
+.qp-wtile-hanzi {
   font-size: 1.5rem;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
 }
 
-/* The held tile is the one waiting for its partner. */
-.qp-tile.held {
+/* Linked tiles take their wire's colour on the edge. */
+.qp-wtile.linked {
+  border-color: var(--wire);
+  box-shadow: 0 0 0 1px var(--wire), var(--qp-sh-sm);
+}
+
+.qp-wtile.held {
   background: var(--qp-well);
   border-color: var(--qp-fill);
-  color: var(--qp-accent);
   box-shadow: 0 4px 12px rgba(168, 156, 227, 0.4);
 }
 
-/* A matched pair is finished business — it settles flat rather than keeping
-   the lift, so the tiles still in play are the ones standing off the page. */
-.qp-tile.done {
+.qp-wtile.ok {
   background: var(--qp-ok-bg);
   border-color: var(--qp-ok-edge);
   color: var(--qp-ok);
-  cursor: default;
   box-shadow: var(--qp-sh-xs);
-  animation: qp-pop 0.45s ease-out;
 }
 
-.qp-tile.missed {
-  background: var(--qp-no-bg);
-  border-color: var(--qp-no-edge);
-  color: var(--qp-no);
-  box-shadow: 0 4px 14px rgba(176, 42, 42, 0.22);
-  animation: qp-shake 0.35s ease-out;
+.qp-wtile.off {
+  border-color: var(--qp-fill);
+  border-style: dashed;
+  box-shadow: var(--qp-sh-xs);
 }
 
-.qp-tile:disabled {
-  cursor: default;
+/* The connector: a ring on the inner edge of the tile, where the wire
+   attaches. */
+.qp-wdot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  box-sizing: border-box;
+  border: 2px solid var(--qp-stroke);
+  border-radius: 50%;
+  background: #fff;
+  z-index: 3;
 }
 
-.qp-match-note {
-  margin: 1rem 0 0;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--qp-muted);
-  text-align: center;
+.qp-wtile-left .qp-wdot {
+  right: -8px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .qp-tile.done,
-  .qp-tile.missed {
-    animation: none;
+.qp-wtile-right .qp-wdot {
+  left: -8px;
+}
+
+.qp-wtile.linked .qp-wdot {
+  border-color: var(--wire);
+  background: var(--wire);
+}
+
+.qp-wtile.ok .qp-wdot {
+  border-color: var(--qp-ok);
+  background: var(--qp-ok);
+}
+
+.qp-wire {
+  fill: none;
+  stroke: var(--wire, var(--qp-fill));
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.qp-wire.ghost {
+  stroke: var(--qp-fill);
+  stroke-dasharray: 6 6;
+}
+
+.qp-wire.ok {
+  stroke: var(--qp-ok);
+}
+
+.qp-wire.off {
+  stroke: #c9c5d8;
+  stroke-width: 2.5;
+}
+
+/* The link that should have been made, drawn beside the wrong one. */
+.qp-wire.fix {
+  stroke: var(--qp-ok);
+  stroke-width: 2.5;
+  stroke-dasharray: 5 6;
+}
+
+@media (max-width: 860px) {
+  .qp-wires {
+    grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  }
+
+  .qp-wtile {
+    padding: 0.7rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .qp-wtile-hanzi {
+    font-size: 1.3rem;
+  }
+
+  .qp-state-actions {
+    flex-direction: column;
   }
 }
