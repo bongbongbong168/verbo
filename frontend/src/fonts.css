@@ -23,16 +23,49 @@ html {
   overflow-y: scroll;
 }
 
-/* One scrollbar for the whole app: thin, a lavender thumb, no track. The
-   browser's grey default showed up in every dialog and panel that scrolls
-   (reported on the word explanation) and matched nothing else on screen.
-   Standard properties only: in Chrome 121+ they switch off any
-   ::-webkit-scrollbar styling, so the two would fight. A class that hides a
-   scrollbar (`scrollbar-width: none`) or themes its own (the sidebar) still
-   wins, since a class outranks `*`. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #c9c1ee transparent;
+/* One scrollbar for the whole app: a rounded lavender thumb, no track, NO
+   ARROW BUTTONS. The browser's grey default showed up in every dialog and
+   panel that scrolls (reported on the word explanation).
+
+   Chromium gets the ::-webkit-scrollbar pseudo-elements, because they are the
+   only way to drop the arrows - `scrollbar-width: thin` still draws them on
+   Windows. That means the standard properties must NOT be set for Chromium:
+   in Chrome 121+ setting either one switches the pseudo-elements off. So the
+   standard pair is only for browsers without the pseudo-elements (Firefox).
+   A class that hides a scrollbar (`scrollbar-width: none`) or themes its own
+   (the sidebar) still wins - it opts that element out of the webkit styling. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c9c1ee transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* The transparent border inset the pill from the edge so it floats as a
+   soft rounded bar instead of a slab against the side. */
+::-webkit-scrollbar-thumb {
+  background: #d3ccf2;
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #b3a8e8;
 }
 
 /* Global UI scale. `zoom` rather than a root font-size because the app mixes
