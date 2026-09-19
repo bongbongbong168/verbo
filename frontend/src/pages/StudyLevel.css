@@ -265,7 +265,10 @@
   margin-left: auto;
   /* Cap-band pair as on the app's other small pills: symmetric padding
      leaves Hellix sitting low. */
-  padding: calc(0.3rem - 0.9px) 0.7rem calc(0.3rem + 0.9px);
+  /* Sideways too: the tick's viewBox carries ~3px of empty space on its
+     left, so equal padding left the ink 2.6px further from the left edge
+     than "Done" is from the right (measured 14.16 / 11.58). */
+  padding: calc(0.3rem - 0.9px) calc(0.7rem + 1.3px) calc(0.3rem + 0.9px) calc(0.7rem - 1.3px);
   /* A rounded box like the card it sits in, not a pill. */
   border-radius: 8px;
   background: #e3e1ea;
