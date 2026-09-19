@@ -213,15 +213,6 @@
   box-shadow: var(--qp-sh-hover);
 }
 
-.qp-option:disabled {
-  cursor: default;
-}
-
-/* Once answered the row is settled, so it sits back down flat. */
-.qp-option:disabled:not(.correct):not(.yours) {
-  box-shadow: var(--qp-sh-xs);
-}
-
 .qp-letter {
   display: grid;
   place-items: center;
@@ -244,40 +235,6 @@
   background: var(--qp-well);
   border-color: var(--qp-fill);
   box-shadow: 0 4px 12px rgba(168, 156, 227, 0.35);
-}
-
-/* The colour carries the verdict, not the animation: a keyframe that never
-   gets frames would otherwise leave the answer unmarked. */
-/* The right answer glows green; a miss is NOT red. It gets the app's own
-   lavender and a "Your answer" tag - the answer is the thing to look at, not
-   the mistake. The other options fade back so the two that matter stand out. */
-.qp-option.correct {
-  background: var(--qp-ok-bg);
-  border-color: var(--qp-ok-edge);
-  color: var(--qp-ok);
-  box-shadow: 0 4px 14px rgba(31, 122, 69, 0.25);
-  animation: qp-pop 0.45s ease-out;
-}
-
-.qp-option.correct .qp-letter {
-  background: var(--qp-ok);
-}
-
-/* Transform only. This used to animate box-shadow too, which overrode the
-   static verdict shadow — and since a tab that never composites holds the
-   animation at keyframe 0, the correct answer's green glow rendered as
-   `0 0 0 0`, i.e. nothing at all. Same rule as everywhere else here: the
-   resting style carries the state, the animation is ornament on top. */
-@keyframes qp-pop {
-  0% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.015);
-  }
-  100% {
-    transform: scale(1);
-  }
 }
 
 /* ---- footer ---- */
@@ -432,111 +389,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .qp-option.correct {
-    animation: none;
-  }
-}
-
-/* ---- after Check ---- */
-
-.qp-option.yours {
-  background: #fff;
-  border-color: var(--qp-fill);
-  border-style: dashed;
-  color: var(--qp-accent);
-  box-shadow: var(--qp-sh-xs);
-}
-
-.qp-option.yours .qp-letter {
-  background: var(--qp-fill);
-}
-
-.qp-option.faded {
-  opacity: 0.55;
-}
-
-.qp-option.correct .qp-letter svg {
-  width: 15px;
-  height: 15px;
-}
-
-.qp-option-tag {
-  flex: none;
-  margin-left: auto;
-  padding: calc(0.2rem - 0.8px) 0.55rem calc(0.2rem + 0.8px);
-  border-radius: 999px;
-  background: var(--qp-well);
-  color: var(--qp-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-/* The feedback line under the answers. Green when right; the app's lavender,
-   with a "here is how it goes" tone, when not. Never red. */
-.qp-feedback {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  margin-top: 1.3rem;
-  padding: 0.9rem 1.1rem;
-  border-radius: 14px;
-  border: 1px solid var(--qp-border);
-}
-
-.qp-feedback.good {
-  background: var(--qp-ok-bg);
-  border-color: var(--qp-ok-edge);
-}
-
-.qp-feedback.learn {
-  background: var(--qp-well);
-  border-color: var(--qp-fill);
-}
-
-.qp-feedback-mark {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: #fff;
-}
-
-.qp-feedback.good .qp-feedback-mark {
-  background: var(--qp-ok);
-}
-
-.qp-feedback.learn .qp-feedback-mark {
-  background: var(--qp-accent);
-}
-
-.qp-feedback-mark svg {
-  width: 18px;
-  height: 18px;
-}
-
-.qp-feedback-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.qp-feedback.good .qp-feedback-title {
-  color: var(--qp-ok);
-}
-
-.qp-feedback.learn .qp-feedback-title {
-  color: var(--qp-accent);
-}
-
-.qp-feedback-sub {
-  margin: 0.15rem 0 0;
-  font-size: 0.88rem;
-  color: var(--qp-muted);
-}
-
 .qp-hint {
   margin: 0.45rem 0 0;
   font-size: 0.88rem;
@@ -560,7 +412,7 @@
   background: var(--qp-well);
 }
 
-/* ---- results: what to look at again ---- */
+/* ---- results ---- */
 
 .qp-review-pill {
   margin: 0;
@@ -570,59 +422,6 @@
   color: var(--qp-accent);
   font-size: 0.82rem;
   font-weight: 700;
-}
-
-.qp-review {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  width: 100%;
-  max-width: 620px;
-  margin: 0.9rem 0 0;
-  padding: 0;
-  list-style: none;
-  text-align: left;
-}
-
-.qp-review-item {
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--qp-border);
-  border-radius: 12px;
-  background: #fff;
-}
-
-.qp-review-q {
-  margin: 0;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.qp-review-a {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 1rem;
-  margin: 0.35rem 0 0;
-  font-size: 0.9rem;
-  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-}
-
-.qp-review-ans {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 700;
-  color: var(--qp-ok);
-}
-
-.qp-review-ans svg {
-  width: 14px;
-  height: 14px;
-}
-
-.qp-review-you,
-.qp-review-muted {
-  color: var(--qp-muted);
 }
 
 /* ---- matching: wires ----
@@ -702,19 +501,6 @@
   box-shadow: 0 4px 12px rgba(168, 156, 227, 0.4);
 }
 
-.qp-wtile.ok {
-  background: var(--qp-ok-bg);
-  border-color: var(--qp-ok-edge);
-  color: var(--qp-ok);
-  box-shadow: var(--qp-sh-xs);
-}
-
-.qp-wtile.off {
-  border-color: var(--qp-fill);
-  border-style: dashed;
-  box-shadow: var(--qp-sh-xs);
-}
-
 /* The connector: a ring on the inner edge of the tile, where the wire
    attaches. */
 .qp-wdot {
@@ -743,11 +529,6 @@
   background: var(--wire);
 }
 
-.qp-wtile.ok .qp-wdot {
-  border-color: var(--qp-ok);
-  background: var(--qp-ok);
-}
-
 .qp-wire {
   fill: none;
   stroke: var(--wire, var(--qp-fill));
@@ -758,22 +539,6 @@
 .qp-wire.ghost {
   stroke: var(--qp-fill);
   stroke-dasharray: 6 6;
-}
-
-.qp-wire.ok {
-  stroke: var(--qp-ok);
-}
-
-.qp-wire.off {
-  stroke: #c9c5d8;
-  stroke-width: 2.5;
-}
-
-/* The link that should have been made, drawn beside the wrong one. */
-.qp-wire.fix {
-  stroke: var(--qp-ok);
-  stroke-width: 2.5;
-  stroke-dasharray: 5 6;
 }
 
 @media (max-width: 860px) {
@@ -792,5 +557,208 @@
 
   .qp-state-actions {
     flex-direction: column;
+  }
+}
+
+/* ---- footer extras ---- */
+
+.qp-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.qp-retry {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- results: every question, marked ----
+   One card per question with a rail down its left edge in its verdict's
+   colour, so the page reads as right / wrong at a glance before a word is
+   read. Wrong is marked plainly now: this is the one place the learner
+   asked to see it, after the run rather than during it. */
+
+.qp-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 680px;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.qp-res {
+  --res: var(--qp-ok);
+  --res-bg: var(--qp-ok-bg);
+  position: relative;
+  padding: 0.9rem 1.1rem 0.95rem 1.35rem;
+  border: 1px solid var(--qp-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--qp-sh-xs);
+  overflow: hidden;
+}
+
+.qp-res::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--res);
+}
+
+.qp-res-wrong {
+  --res: var(--qp-no);
+  --res-bg: var(--qp-no-bg);
+}
+
+.qp-res-skipped {
+  --res: var(--qp-muted);
+  --res-bg: var(--qp-well);
+}
+
+.qp-res-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.qp-res-num {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--qp-well);
+  color: var(--qp-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.qp-res-q {
+  flex: 1;
+  min-width: 0;
+  margin: 0.15rem 0 0;
+  font-size: 0.97rem;
+  font-weight: 700;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  color: var(--qp-text);
+}
+
+.qp-res-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: none;
+  padding: calc(0.22rem - 0.8px) 0.6rem calc(0.22rem + 0.8px) 0.45rem;
+  border-radius: 999px;
+  background: var(--res-bg);
+  color: var(--res);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.qp-res-tag svg {
+  width: 13px;
+  height: 13px;
+  margin: 0.8px 0 -0.8px;
+}
+
+.qp-res-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.55rem 0 0 calc(24px + 0.7rem);
+}
+
+.qp-res-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin: 0;
+  font-size: 0.92rem;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+}
+
+.qp-res-key {
+  flex: none;
+  width: 6.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--qp-muted);
+}
+
+.qp-res-ans {
+  font-weight: 700;
+  color: var(--qp-ok);
+}
+
+.qp-res-yours {
+  font-weight: 600;
+  color: var(--qp-no);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.qp-res-muted {
+  color: var(--qp-muted);
+}
+
+/* Matching: one row per word - your link struck through where it was wrong,
+   the right meaning beside it. */
+.qp-res-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.55rem 0 0 calc(24px + 0.7rem);
+  padding: 0;
+  list-style: none;
+}
+
+.qp-res-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.6rem;
+  font-size: 0.92rem;
+}
+
+.qp-res-hanzi {
+  min-width: 2.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  color: var(--qp-text);
+}
+
+.qp-res-arrow {
+  color: var(--qp-muted);
+}
+
+@media (max-width: 860px) {
+  .qp-res-lines,
+  .qp-res-pairs {
+    margin-left: 0;
+  }
+
+  .qp-res-key {
+    width: 5.2rem;
+  }
+
+  .qp-foot-left {
+    gap: 1rem;
   }
 }
