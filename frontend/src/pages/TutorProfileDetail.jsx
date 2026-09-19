@@ -198,23 +198,6 @@ function TagIcon() {
   )
 }
 
-function MessageIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="13" rx="2.5" />
-      <path d="m4 7 8 5.5L20 7" />
-    </svg>
-  )
-}
-
 /**
  * Always five stars, filled up to `count`.
  *
@@ -504,10 +487,6 @@ export default function TutorProfileDetail() {
   const resumeEntries = (tutor.resume_entries || []).filter((e) => e.section === resumeTab)
   const reviews = tutor.reviews || []
   const myReview = user ? reviews.find((r) => Number(r.user_id) === Number(user.id)) : null
-  const languages = (tutor.languages_spoken || '')
-    .split(',')
-    .map((l) => l.trim())
-    .filter(Boolean)
 
   return (
     <div className="td">

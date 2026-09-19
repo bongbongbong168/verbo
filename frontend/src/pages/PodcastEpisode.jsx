@@ -569,7 +569,7 @@ export default function PodcastEpisode() {
                      all pause the element directly and never touch our handler,
                      so a listener who stops with the keyboard would have lost
                      their place. This fires however it was paused. */
-                  onPause={(e) => {
+                  onPause={() => {
                     setPlaying(false)
                     reportProgress(true)
                   }}

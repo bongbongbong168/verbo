@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -149,6 +149,7 @@ export default function StudyQuizPage() {
 
   const [marking, setMarking] = useState(false)
   const [results, setResults] = useState(null) // marked list, set at the end
+  const markingRef = useRef(false)
 
   useEffect(() => {
     let live = true
@@ -243,6 +244,11 @@ export default function StudyQuizPage() {
      ones go to the server, which alone knows `correct_option` - it is hidden
      from every GET so the key never reaches the network tab. */
   async function finish(all) {
+    /* A REF, not the `marking` state: a double-click on Finish (or a held
+       Enter) lands twice inside one render, where the state still reads
+       false, and marked the run twice with duplicate server checks. */
+    if (markingRef.current) return
+    markingRef.current = true
     setMarking(true)
     setError(null)
     try {
@@ -286,6 +292,7 @@ export default function StudyQuizPage() {
     } catch (err) {
       setError(err.message)
     } finally {
+      markingRef.current = false
       setMarking(false)
     }
   }
@@ -297,7 +304,15 @@ export default function StudyQuizPage() {
     function onKey(e) {
       if (e.target.closest?.('input, textarea')) return
       if (e.key === 'Enter') {
-        if (e.target.closest?.('button')) return // the focused button handles it
+        /* Clicking an answer leaves focus ON that answer, so Enter used to
+           land on it and simply re-pick it - Enter never continued after a
+           mouse pick. On the answer already picked, Enter continues; on any
+           other answer it still picks it, which is what a keyboard user
+           tabbing through the options expects. Other buttons (Back, Skip,
+           Continue, the wire tiles) keep their own Enter. */
+        const opt = e.target.closest?.('.qp-option')
+        if (opt && opt.getAttribute('aria-checked') !== 'true') return
+        if (!opt && e.target.closest?.('button')) return
         e.preventDefault()
         next()
         return

@@ -90,7 +90,6 @@ export default function ReadArticle() {
   const [lastSaved, setLastSaved] = useState(null);
   const [saved, setSaved] = useState({});
   const [hovered, setHovered] = useState(null);
-  const [lang, setLang] = useState("cn");
   /* Pinyin and translation are INDEPENDENT switches, not one EN/CN swap: the
      Chinese is the learning content and must stay on screen while either aid
      is showing. */

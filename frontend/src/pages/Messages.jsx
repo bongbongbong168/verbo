@@ -27,14 +27,6 @@ const cardDateFmt = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
   month: 'short',
 })
-const lessonFmt = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  hour: 'numeric',
-  minute: '2-digit',
-})
-
 /* "Stickers" are emoji, inserted into the message text — a real sticker set
    would need artwork, licensing and its own storage, and none of that helps
    someone arrange a Chinese lesson. Weighted toward what a tutor and student

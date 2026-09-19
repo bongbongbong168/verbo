@@ -332,8 +332,11 @@
   margin-top: 0;
 }
 
+/* The loading card sits straight in `.ob` (a flex row) with no panel beside
+   it, so it needs its own centring on both axes - it used to render in the
+   top-left corner while the options loaded. */
 .ob-card.ob-card-loading {
-  align-self: center;
+  margin: auto;
 }
 
 .ob-card-loading {
