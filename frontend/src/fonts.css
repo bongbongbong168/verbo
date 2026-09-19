@@ -23,6 +23,18 @@ html {
   overflow-y: scroll;
 }
 
+/* One scrollbar for the whole app: thin, a lavender thumb, no track. The
+   browser's grey default showed up in every dialog and panel that scrolls
+   (reported on the word explanation) and matched nothing else on screen.
+   Standard properties only: in Chrome 121+ they switch off any
+   ::-webkit-scrollbar styling, so the two would fight. A class that hides a
+   scrollbar (`scrollbar-width: none`) or themes its own (the sidebar) still
+   wins, since a class outranks `*`. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c1ee transparent;
+}
+
 /* Global UI scale. `zoom` rather than a root font-size because the app mixes
    rem with hard pixel values — the 90px page gutters, the tutor card's 340px
    height, the 223px video that keeps two columns level. font-size would scale
