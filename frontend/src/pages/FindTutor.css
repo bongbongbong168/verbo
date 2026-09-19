@@ -971,10 +971,11 @@
   background: rgba(28, 23, 48, 0.72);
   border: none;
   border-radius: 6px;
-  /* Cap-band centred: the label sat 1.14px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.22rem - 1.14px) 0.45rem calc(0.22rem + 1.14px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 700. The pair sums to the old padding. */
+  padding: calc(0.22rem - 0.086em) 0.45rem calc(0.22rem + 0.086em);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease;

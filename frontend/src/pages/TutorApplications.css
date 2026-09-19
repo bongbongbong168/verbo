@@ -96,7 +96,7 @@
      flat-capped `H`, never the ink of "Awaiting review", which carries a
      descender that "Rejected" does not. The pair sums to the original 0.5rem,
      so the pill's height is untouched and only the text moves. */
-  padding: calc(0.5rem - 0.881px) 1.05rem calc(0.5rem + 0.881px);
+  padding: calc(0.5rem - 0.076em) 1.05rem calc(0.5rem + 0.076em);
   border: 1px solid var(--ta-border);
   border-radius: 999px;
   background: #fff;

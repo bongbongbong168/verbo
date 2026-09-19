@@ -35,10 +35,11 @@
   background: #f1edfc;
   border: 1px solid transparent;
   border-radius: 999px;
-  /* Cap-band centred: the label sat 1.04px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.55rem - 1.04px) 1.1rem calc(0.55rem + 1.04px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 500. The pair sums to the old padding. */
+  padding: calc(0.55rem - 0.071em) 1.1rem calc(0.55rem + 0.071em);
   cursor: pointer;
   text-align: left;
 }
@@ -76,9 +77,10 @@
   width: 14px;
   height: 14px;
   flex: none;
-  /* Hands back the label's cap-band lift, so the icon stays centred. */
-  margin-top: 1.04px;
-  margin-bottom: -1.04px;
+  /* Hands back the label's cap-band lift (same em, same font-size), so the
+     icon stays centred. */
+  margin-top: 0.071em;
+  margin-bottom: -0.071em;
 }
 
 /* The chevron points the other way while open — the direction is the state, so

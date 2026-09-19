@@ -76,7 +76,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 1.3rem 0.68rem;
+  /* Cap-band pair in em (Hellix 600 sits 0.076em low); sums to 1.28rem. */
+  padding: calc(0.64rem - 0.076em) 1.3rem calc(0.64rem + 0.076em);
   border: none;
   border-radius: 999px;
   background: none;
@@ -457,7 +458,7 @@
     /* Equal halves, so the pill does not resize as the selection moves. */
     flex: 1;
     justify-content: center;
-    padding: 0.6rem 0.9rem 0.68rem;
+    padding: calc(0.64rem - 0.076em) 0.9rem calc(0.64rem + 0.076em);
     font-size: 0.88rem;
   }
 

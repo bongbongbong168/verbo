@@ -133,10 +133,11 @@
   background: var(--rd-accent);
   border: none;
   border-radius: 999px;
-  /* Cap-band centred: the label sat 0.96px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.55rem - 0.96px) 1.2rem calc(0.55rem + 0.96px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(0.55rem - 0.076em) 1.2rem calc(0.55rem + 0.076em);
   cursor: pointer;
 }
 
@@ -695,10 +696,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  /* Cap-band centred: the label sat 0.8px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.5rem - 0.8px) 0.95rem calc(0.5rem + 0.8px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(0.5rem - 0.076em) 0.95rem calc(0.5rem + 0.076em);
   border: 1px solid var(--rd-border);
   border-radius: 999px;
   background: #fff;
@@ -713,9 +715,10 @@
   width: 17px;
   height: 17px;
   flex: none;
-  /* Hands back the label's cap-band lift, so the icon stays centred. */
-  margin-top: 0.8px;
-  margin-bottom: -0.8px;
+  /* Hands back the label's cap-band lift (same em, same font-size), so the
+     icon stays centred. */
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
 }
 
 /* Instant — the colour is the state, not an animation. */
@@ -830,7 +833,9 @@
 
 .rd-share-link button {
   flex: none;
-  padding: 0.45rem 0.85rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.45rem - 0.076em) 0.85rem calc(0.45rem + 0.076em);
   border: none;
   border-radius: 8px;
   background: var(--rd-accent-light);
@@ -1651,10 +1656,11 @@
   background: var(--rd-panel-bg);
   border: 1px solid #f6c6c1;
   border-radius: 999px;
-  /* Cap-band centred: the label sat 0.97px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.55rem - 0.97px) 1.2rem calc(0.55rem + 0.97px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(0.55rem - 0.076em) 1.2rem calc(0.55rem + 0.076em);
   cursor: pointer;
 }
 

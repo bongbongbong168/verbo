@@ -178,19 +178,21 @@
   background: #fff;
   border: none;
   border-radius: 999px;
-  /* Cap-band centred: the label sat 0.99px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.65rem - 0.99px) 1.4rem calc(0.65rem + 0.99px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 700. The pair sums to the old padding. */
+  padding: calc(0.65rem - 0.086em) 1.4rem calc(0.65rem + 0.086em);
   cursor: pointer;
 }
 
 .sd-btn svg {
   width: 17px;
   height: 17px;
-  /* Hands back the label's cap-band lift, so the icon stays centred. */
-  margin-top: 0.99px;
-  margin-bottom: -0.99px;
+  /* Hands back the label's cap-band lift (same em, same font-size), so the
+     icon stays centred. */
+  margin-top: 0.086em;
+  margin-bottom: -0.086em;
 }
 
 .sd-btn-ghost {
@@ -324,10 +326,11 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
-  /* Cap-band centred: the label sat 0.99px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.35rem - 0.99px) 0.75rem calc(0.35rem + 0.99px) 0.4rem;
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(0.35rem - 0.076em) 0.75rem calc(0.35rem + 0.076em) 0.4rem;
   border: 1px solid var(--sd-border, #e7e3f6);
   border-radius: 999px;
   background: #fff;
@@ -354,9 +357,10 @@
   flex: none;
   border-radius: 999px;
   background: #e2dff0;
-  /* Hands back the label's cap-band lift, so the icon stays centred. */
-  margin-top: 0.99px;
-  margin-bottom: -0.99px;
+  /* Hands back the label's cap-band lift (same em, same font-size), so the
+     track stays centred. */
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
 }
 
 .sd-switch.on .sd-switch-track {
@@ -492,10 +496,11 @@
   background: var(--sd-card-dark);
   border: none;
   border-radius: 999px;
-  /* Cap-band centred: the label sat 1.42px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(0.4rem - 1.42px) 0.9rem calc(0.4rem + 1.42px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(0.4rem - 0.076em) 0.9rem calc(0.4rem + 0.076em);
   cursor: pointer;
   flex-shrink: 0;
 }

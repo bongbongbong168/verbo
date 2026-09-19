@@ -372,10 +372,11 @@
 
 .cx-cta {
   width: 100%;
-  /* Cap-band centred: the label sat 1.19px low, measured
-     against a flat-capped H. The pair sums to the old padding, so the box
-     keeps its size and only the text moves. */
-  padding: calc(11px - 1.19px) 20px calc(11px + 1.19px);
+  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
+     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
+     at 400px against a flat-capped H), so the pair is in em and holds at every
+     size and screen; this label is 600. The pair sums to the old padding. */
+  padding: calc(11px - 0.076em) 20px calc(11px + 0.076em);
   border: none;
   border-radius: 8px;
   background: var(--cx-accent-soft);

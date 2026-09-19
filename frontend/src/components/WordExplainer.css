@@ -268,7 +268,9 @@
 
 .wx-got {
   width: 100%;
-  padding: 0.85rem 1rem 0.92rem;
+  /* Cap-band pair: Hellix 700 sits 0.086em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.885rem - 0.086em) 1rem calc(0.885rem + 0.086em);
   border: 1px solid #2b2643;
   border-radius: 12px;
   background: #a89ce3;

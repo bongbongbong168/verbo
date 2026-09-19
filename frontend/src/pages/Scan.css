@@ -864,7 +864,9 @@
 
 .sc-share-copy {
   flex: none;
-  padding: 0.6rem 1.1rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.6rem - 0.076em) 1.1rem calc(0.6rem + 0.076em);
   border: none;
   border-radius: 9px;
   background: #6a6191;
@@ -883,7 +885,9 @@
 }
 
 .sc-share-stop {
-  padding: 0.55rem 1rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.55rem - 0.076em) 1rem calc(0.55rem + 0.076em);
   border: 1px solid #f0c9c5;
   border-radius: 9px;
   background: #fdecea;
@@ -895,7 +899,9 @@
 }
 
 .sc-share-done {
-  padding: 0.55rem 1.1rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.55rem - 0.076em) 1.1rem calc(0.55rem + 0.076em);
   border: 1px solid #e7e3f6;
   border-radius: 9px;
   background: none;

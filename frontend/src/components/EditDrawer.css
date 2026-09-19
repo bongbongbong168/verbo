@@ -297,7 +297,9 @@
 
 .ed-btn-primary {
   align-self: flex-start;
-  padding: 0.62rem 1.3rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.62rem - 0.076em) 1.3rem calc(0.62rem + 0.076em);
   border: none;
   border-radius: 10px;
   background: var(--ed-accent);
@@ -319,7 +321,9 @@
 .ed-btn-ghost,
 .ed-form label.ed-btn-ghost {
   display: inline-block;
-  padding: 0.48rem 0.9rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.48rem - 0.076em) 0.9rem calc(0.48rem + 0.076em);
   border: 1px solid var(--ed-border);
   border-radius: 9px;
   background: none;
@@ -653,7 +657,9 @@
 
 .ed-range-add {
   align-self: flex-start;
-  padding: 0.45rem 0.85rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.45rem - 0.076em) 0.85rem calc(0.45rem + 0.076em);
   border: 1px dashed var(--ed-border);
   border-radius: 9px;
   background: none;
@@ -675,7 +681,9 @@
 }
 
 .ed-slots-actions button {
-  padding: 0.25rem 0.6rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.25rem - 0.076em) 0.6rem calc(0.25rem + 0.076em);
   border: 1px solid var(--ed-border);
   border-radius: 999px;
   background: #fff;
@@ -843,7 +851,9 @@
 }
 
 .ed-group-actions .ed-btn-ghost {
-  padding: 0.3rem 0.6rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.3rem - 0.076em) 0.6rem calc(0.3rem + 0.076em);
   font-size: 0.8rem;
 }
 
@@ -925,7 +935,9 @@
 }
 
 .ed-daychip {
-  padding: 0.45rem 0;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.45rem - 0.076em) 0 calc(0.45rem + 0.076em);
   border: 1px solid var(--ed-border);
   border-radius: 9px;
   background: #fff;

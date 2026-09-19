@@ -283,7 +283,9 @@
 
 .nm-all {
   display: block;
-  padding: 0.75rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(0.75rem - 0.076em) 0.75rem calc(0.75rem + 0.076em);
   border-top: 1px solid #e7e3f6;
   background: #fff;
   color: #6a6191;

@@ -152,11 +152,11 @@
   outline-offset: 2px;
 }
 
-/* The label sat 1.11px low on the row (cap band, measured) while the icon
-   is centred; equal-and-opposite margins lift only the text. */
+/* Hellix 400 sits 0.063em low in its line box (cap band, measured at 400px)
+   while the icon is centred; equal-and-opposite margins lift only the text. */
 .sb-nav-label {
-  margin-top: -1.11px;
-  margin-bottom: 1.11px;
+  margin-top: -0.063em;
+  margin-bottom: 0.063em;
 }
 
 .sb-nav-icon {

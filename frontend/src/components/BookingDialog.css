@@ -288,7 +288,9 @@
 }
 
 .bk-time {
-  padding: 9px 2px;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(9px - 0.076em) 2px calc(9px + 0.076em);
   box-sizing: border-box;
   border: 1px solid var(--bk-pill-edge);
   border-radius: 8px;
@@ -397,7 +399,9 @@
 
 .bk-cta {
   width: 100%;
-  padding: 11px 20px;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box (measured at
+     400px against a flat-capped H). The pair sums to the old padding. */
+  padding: calc(11px - 0.076em) 20px calc(11px + 0.076em);
   border: none;
   border-radius: 8px;
   background: var(--bk-accent-soft);

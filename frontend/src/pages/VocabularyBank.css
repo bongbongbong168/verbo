@@ -164,11 +164,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  /* Optical correction for the LABEL, iterated: 11.52 symmetric sat 1px low
-     and 10.52/12.52 was still 0.5px low. The extra 0.58 on each side is what
-     brings the button to the search field's exact height beside it — it does
-     not change the 3px asymmetry, so the text stays centred. */
-  padding: 10.6px 1.3rem 13.6px;
+  /* Cap-band pair in em (Hellix 600: 0.076em). The 12.1px base (24.2 total)
+     is what matches the search field's height beside it. It was a hand-
+     iterated 1.5px lift, which the app-wide audit measured 0.66px HIGH. */
+  padding: calc(12.1px - 0.076em) 1.3rem calc(12.1px + 0.076em);
   border: 1px solid var(--vb-edge);
   border-radius: 12px;
   background: var(--vb-fill);
@@ -202,8 +201,9 @@
    Positioning it would lift the icon into the positioned paint layer for a
    1.5px nudge it does not need. */
 .vb-review svg {
-  margin-top: 1.51px;
-  margin-bottom: -1.51px;
+  /* Hands back the label's cap-band lift (same em, same font-size). */
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
   width: 13px;
   height: 13px;
 }
