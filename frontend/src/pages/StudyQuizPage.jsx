@@ -25,22 +25,6 @@ function BackIcon() {
   )
 }
 
-function FlagIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 21V4M6 4h11l-2 3.5L17 11H6" />
-    </svg>
-  )
-}
-
 function ChevronIcon() {
   return (
     <svg
@@ -546,12 +530,10 @@ export default function StudyQuizPage() {
               <div className="qp-foot-left">
                 {index > 0 && (
                   <button type="button" className="qp-skip" onClick={back}>
-                    <BackIcon />
                     Back
                   </button>
                 )}
                 <button type="button" className="qp-skip" onClick={skip}>
-                  <FlagIcon />
                   Skip
                 </button>
               </div>
