@@ -1245,6 +1245,14 @@
   gap: 1.5rem;
   max-height: 520px;
   overflow-y: auto;
+  /* Still scrolls (wheel, touch, keyboard); the bar itself is hidden, as
+     asked - it ran down the card's white inner edge. Firefox reads
+     `scrollbar-width`, Chrome and Safari need the pseudo-element. */
+  scrollbar-width: none;
+}
+
+.un-newwords-body::-webkit-scrollbar {
+  display: none;
 }
 
 .un-newwords-empty {
