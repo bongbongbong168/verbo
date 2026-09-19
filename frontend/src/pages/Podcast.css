@@ -147,7 +147,10 @@
   background: var(--pc-accent);
   border: none;
   border-radius: 999px;
-  padding: 0.55rem 1.2rem;
+  /* Cap-band centred: the label sat 0.99px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.55rem - 0.99px) 1.2rem calc(0.55rem + 0.99px);
   cursor: pointer;
   flex-shrink: 0;
 }

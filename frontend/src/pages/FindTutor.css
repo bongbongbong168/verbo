@@ -971,7 +971,10 @@
   background: rgba(28, 23, 48, 0.72);
   border: none;
   border-radius: 6px;
-  padding: 0.22rem 0.45rem;
+  /* Cap-band centred: the label sat 1.14px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.22rem - 1.14px) 0.45rem calc(0.22rem + 1.14px);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease;

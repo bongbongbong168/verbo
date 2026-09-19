@@ -178,13 +178,19 @@
   background: #fff;
   border: none;
   border-radius: 999px;
-  padding: 0.65rem 1.4rem;
+  /* Cap-band centred: the label sat 0.99px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.65rem - 0.99px) 1.4rem calc(0.65rem + 0.99px);
   cursor: pointer;
 }
 
 .sd-btn svg {
   width: 17px;
   height: 17px;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 0.99px;
+  margin-bottom: -0.99px;
 }
 
 .sd-btn-ghost {
@@ -318,7 +324,10 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
-  padding: 0.35rem 0.75rem 0.35rem 0.4rem;
+  /* Cap-band centred: the label sat 0.99px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.35rem - 0.99px) 0.75rem calc(0.35rem + 0.99px) 0.4rem;
   border: 1px solid var(--sd-border, #e7e3f6);
   border-radius: 999px;
   background: #fff;
@@ -345,6 +354,9 @@
   flex: none;
   border-radius: 999px;
   background: #e2dff0;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 0.99px;
+  margin-bottom: -0.99px;
 }
 
 .sd-switch.on .sd-switch-track {
@@ -480,7 +492,10 @@
   background: var(--sd-card-dark);
   border: none;
   border-radius: 999px;
-  padding: 0.4rem 0.9rem;
+  /* Cap-band centred: the label sat 1.42px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.4rem - 1.42px) 0.9rem calc(0.4rem + 1.42px);
   cursor: pointer;
   flex-shrink: 0;
 }

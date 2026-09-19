@@ -38,7 +38,10 @@
 }
 
 .tl-tab {
-  padding: 0.4rem 0.9rem;
+  /* Cap-band centred: the label sat 1.13px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.4rem - 1.13px) 0.9rem calc(0.4rem + 1.13px);
   border: none;
   border-radius: 999px;
   background: var(--tl-soft);

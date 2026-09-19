@@ -484,7 +484,10 @@
   align-items: center;
   gap: 0.4rem;
   box-sizing: border-box;
-  padding: 0.85rem 1.4rem;
+  /* Cap-band centred: the label sat 1.25px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.85rem - 1.25px) 1.4rem calc(0.85rem + 1.25px);
   /* Outlined like the boxes around it, and deliberately the ONE control here
      with no drop shadow — the outline is what defines it, and a glow under a
      already-solid lavender fill only muddied it. */
@@ -512,6 +515,9 @@
 .qp-next svg {
   width: 15px;
   height: 15px;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 1.25px;
+  margin-bottom: -1.25px;
 }
 
 /* ---- end / empty states ---- */
@@ -605,7 +611,10 @@
 
 /* A second action beside the solid one on the results screen. */
 .qp-ghost {
-  padding: 0.85rem 1.3rem;
+  /* Cap-band centred: the label sat 1.25px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.85rem - 1.25px) 1.3rem calc(0.85rem + 1.25px);
   border: 1px solid var(--qp-stroke);
   border-radius: 10px;
   background: #fff;

@@ -372,7 +372,10 @@
 
 .cx-cta {
   width: 100%;
-  padding: 11px 20px;
+  /* Cap-band centred: the label sat 1.19px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(11px - 1.19px) 20px calc(11px + 1.19px);
   border: none;
   border-radius: 8px;
   background: var(--cx-accent-soft);

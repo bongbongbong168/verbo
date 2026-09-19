@@ -152,6 +152,13 @@
   outline-offset: 2px;
 }
 
+/* The label sat 1.11px low on the row (cap band, measured) while the icon
+   is centred; equal-and-opposite margins lift only the text. */
+.sb-nav-label {
+  margin-top: -1.11px;
+  margin-bottom: 1.11px;
+}
+
 .sb-nav-icon {
   width: 19px;
   height: 19px;

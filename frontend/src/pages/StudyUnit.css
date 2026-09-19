@@ -113,7 +113,10 @@
   font-weight: 500;
   border: 1.5px solid #000;
   border-radius: 999px;
-  padding: 0.36rem 1rem;
+  /* Cap-band centred: the label sat 0.95px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.36rem - 0.95px) 1rem calc(0.36rem + 0.95px);
 }
 
 /* Position is a fact, not a badge — it should not compete with the level. */
@@ -193,7 +196,10 @@
   /* 2px on every tab so switching the active one never shifts the row */
   border: 2px solid #ebebeb;
   border-radius: 12px;
-  padding: 0.7rem 1.2rem;
+  /* Cap-band centred: the label sat 1.24px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.7rem - 1.24px) 1.2rem calc(0.7rem + 1.24px);
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -253,7 +259,10 @@
   align-items: center;
   gap: 0.4rem;
   margin-left: auto;
-  padding: 0.42rem 0.85rem;
+  /* Cap-band centred: the label sat 0.67px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.42rem - 0.67px) 0.85rem calc(0.42rem + 0.67px);
   border: 1px solid var(--un-panel-border);
   border-radius: 10px;
   background: var(--un-card);
@@ -267,6 +276,9 @@
 .un-edit svg {
   width: 15px;
   height: 15px;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 0.67px;
+  margin-bottom: -0.67px;
 }
 
 .un-edit:hover {
@@ -350,7 +362,10 @@
   background: var(--un-card);
   border: 1px solid var(--un-control-border);
   border-radius: 10px;
-  padding: 0.55rem 1.1rem;
+  /* Cap-band centred: the label sat 0.99px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.55rem - 0.99px) 1.1rem calc(0.55rem + 0.99px);
   cursor: pointer;
   flex-shrink: 0;
   transition:
@@ -1409,7 +1424,9 @@
   align-self: stretch;
   gap: 0.5rem;
   flex: none;
-  padding: 0 1.1rem;
+  /* Cap-band: the label sat 0.94px low. The box is stretched to the bar, so
+     it is lifted by trimming the content box from below (half of 1.88). */
+  padding: 0 1.1rem 1.88px;
   border: 1px solid var(--un-outline);
   border-radius: 10px;
   background: #fff;
@@ -1426,6 +1443,9 @@
   width: 16px;
   height: 16px;
   flex: none;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 0.94px;
+  margin-bottom: -0.94px;
 }
 
 .un-done-btn:hover {
@@ -1465,8 +1485,11 @@
 }
 
 /* One line, clipped rather than wrapped: a name that wrapped would make the
-   pill two rows tall and pull the bar out of shape. */
+   pill two rows tall and pull the bar out of shape. The margins lift it
+   0.91px onto the pill's centre (cap band, measured) without moving the
+   chevron beside it. */
 .un-lessonnav-name {
+  margin: -0.91px 0 0.91px;
   font-family: 'Hellix', sans-serif;
   font-size: 0.95rem;
   font-weight: 600;

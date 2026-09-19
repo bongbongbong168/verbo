@@ -393,7 +393,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
+  /* Cap-band centred: the label sat 0.88px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.45rem - 0.88px) 0.85rem calc(0.45rem + 0.88px);
   border: 1px solid var(--td-edge-soft);
   border-radius: 10px;
   background: none;
@@ -408,6 +411,9 @@
 .td-edit svg {
   width: 15px;
   height: 15px;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 0.88px;
+  margin-bottom: -0.88px;
 }
 
 .td-edit:hover {
@@ -1070,7 +1076,10 @@
   font-weight: 700;
   font-size: 1.05rem;
   border-radius: 8px;
-  padding: 0.8rem;
+  /* Cap-band centred: the label sat 1.52px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.8rem - 1.52px) 0.8rem calc(0.8rem + 1.52px);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -1105,6 +1114,9 @@
 .td-btn-ghost svg {
   width: 17px;
   height: 17px;
+  /* Hands back the label's cap-band lift, so the icon stays centred. */
+  margin-top: 1.52px;
+  margin-bottom: -1.52px;
 }
 
 .td-btn-primary:disabled,
@@ -1332,7 +1344,10 @@
    belongs to this section rather than looking bolted on. */
 .td-review-add {
   flex: none;
-  padding: 0.5rem 1rem;
+  /* Cap-band centred: the label sat 0.85px low, measured
+     against a flat-capped H. The pair sums to the old padding, so the box
+     keeps its size and only the text moves. */
+  padding: calc(0.5rem - 0.85px) 1rem calc(0.5rem + 0.85px);
   border: 1px solid var(--td-edge-soft);
   border-radius: 10px;
   background: none;
