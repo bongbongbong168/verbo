@@ -1,12 +1,8 @@
 /* Study quiz page. Prefix `qp-`.
-   Laid out from design/study/quizz.png, measured not eyeballed: a 1231x810
-   white card on the page ground, ~925px of content inside it, an 8px progress
-   bar, a tinted question block with two pills, a 2x2 answer grid with circular
-   letter badges, and Skip / Next Question beneath.
-
-   Colours are this app's palette rather than the mockup's neutral greys — the
-   design's #7d76a1 pill is already a theme colour, and its grey question block
-   becomes the theme's pale lavender so the page sits with the rest of Study. */
+   Started from design/study/quizz.png; restyled after a supplied reference
+   (a question framed by illustrations on a tinted, lightly patterned card,
+   progress along the top edge, one column of answer rows). Colours are the
+   app palette throughout. */
 
 .qp-page {
   --qp-page: #f9f8fe;
@@ -75,40 +71,196 @@
   height: 17px;
 }
 
-/* The card from the export: 1231 wide with 810 of height, so it holds its
-   proportions instead of collapsing around a short question. */
+/* A stage rather than a form: the lavender ground carries a faint dot
+   texture and the illustrations sit around its edges, the way the supplied
+   reference frames its question with objects from the subject's world. The
+   content is one centred column, so the art has the sides to itself. */
 .qp-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  container-type: inline-size;
   box-sizing: border-box;
   max-width: 1231px;
-  min-height: 560px;
+  min-height: 620px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 3rem clamp(1.5rem, 6vw, 9.3rem);
-  background: var(--qp-card);
+  padding: 3.6rem 2rem 2.8rem;
+  background-color: #f1edfc;
+  background-image: radial-gradient(#ddd5f6 1.2px, transparent 1.7px);
+  background-size: 22px 22px;
   border: 1px solid var(--qp-stroke);
   border-radius: 20px;
   box-shadow: var(--qp-sh-lg);
 }
 
+/* Everything the learner reads sits above the art. */
+.qp-card > :not(.qp-art):not(.qp-progress) {
+  position: relative;
+  z-index: 1;
+}
+
+/* One column for the question, the answers and the buttons. */
+.qp-count,
+.qp-question,
+.qp-options,
+.qp-foot,
+.qp-card > .qp-error {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- the art ----
+   Cut from the supplied sheet (tudy (8).png). The pagoda and bamboo are
+   one-colour watermarks recoloured navy, so their strength is set here by
+   opacity. The motion is a slow bob that starts and ends at rest - stuck at
+   frame 0 it is simply the still picture. */
+
+.qp-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.qp-art img {
+  position: absolute;
+  display: block;
+  height: auto;
+  user-select: none;
+}
+
+.qp-art-blossom {
+  top: 0;
+  right: 0;
+  width: 270px;
+}
+
+.qp-art-cloud {
+  top: 70px;
+  left: -46px;
+  width: 230px;
+  opacity: 0.55;
+}
+
+.qp-art-pagoda {
+  bottom: -6px;
+  left: 18px;
+  width: 190px;
+  opacity: 0.07;
+}
+
+.qp-art-books {
+  bottom: 34px;
+  left: 128px;
+  width: 132px;
+  animation: qp-bob 5.2s ease-in-out infinite;
+}
+
+.qp-art-bamboo {
+  right: 150px;
+  bottom: -8px;
+  width: 170px;
+  opacity: 0.08;
+}
+
+.qp-art-phones {
+  right: 56px;
+  bottom: 40px;
+  width: 104px;
+  rotate: -9deg;
+  animation: qp-bob 6.1s ease-in-out infinite;
+}
+
+@keyframes qp-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* The column is 600px; the art needs the sides. Shrink it first, then keep
+   only the blossom. Container widths are the CONTENT box (card minus ~70px
+   of padding): at a 1440 screen the card is 860 and its content ~790. */
+@container (max-width: 1080px) {
+  .qp-art-cloud {
+    width: 170px;
+    left: -60px;
+  }
+
+  /* Here the column leaves ~130px a side (the card is ~860 at a 1440
+     screen), so these tuck into the corners clear of Skip and Continue. */
+  .qp-art-books {
+    left: 16px;
+    bottom: 12px;
+    width: 80px;
+  }
+
+  .qp-art-phones {
+    right: 16px;
+    bottom: 16px;
+    width: 70px;
+  }
+
+  .qp-art-bamboo {
+    right: 70px;
+  }
+}
+
+/* `.qp-art` in front on purpose: `.qp-art img { display: block }` is
+   (0,1,1) and outranks a bare `.qp-art-books`, which is how the art first
+   stayed on screen at phone width. */
+@container (max-width: 700px) {
+  .qp-art .qp-art-cloud,
+  .qp-art .qp-art-bamboo,
+  .qp-art .qp-art-books,
+  .qp-art .qp-art-phones,
+  .qp-art .qp-art-pagoda {
+    display: none;
+  }
+
+  .qp-art-blossom {
+    width: 130px;
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qp-art img {
+    animation: none;
+  }
+}
+
 /* ---- progress ---- */
 
 .qp-count {
-  margin: 0 0 0.55rem;
-  font-size: 0.92rem;
-  font-weight: 500;
+  margin-bottom: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--qp-accent);
 }
 
+/* Along the card's top edge, as in the reference - the card's radius and
+   overflow shape its ends. */
 .qp-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
   height: 8px;
-  margin-bottom: 1.6rem;
-  border-radius: 999px;
-  background: var(--qp-border);
-  overflow: hidden;
-  /* Inset, not a drop shadow — the track is a groove the fill sits in, so it
-     should read as carved rather than raised. */
-  box-shadow: inset 0 1px 2px rgba(28, 23, 48, 0.12);
+  background: #e2dbf8;
 }
 
 /* Static width, no transition — the bar must be right on the first paint even
@@ -116,31 +268,22 @@
 .qp-progress span {
   display: block;
   height: 100%;
-  border-radius: 999px;
-  background: var(--qp-bar);
-  box-shadow: var(--qp-sh-xs);
+  border-radius: 0 999px 999px 0;
+  background: var(--qp-accent);
 }
 
-/* ---- question block ---- */
+/* ---- question ---- */
 
 .qp-question {
-  padding: 1.15rem 1.4rem 1.5rem;
-  box-sizing: border-box;
-  /* The same navy stroke the card and the answer boxes carry — this block was
-     the only structural box on the page without one, which left it reading as
-     a wash of colour rather than as a box like everything around it. */
-  border: 1px solid var(--qp-stroke);
-  border-radius: 12px;
-  background: var(--qp-well);
-  box-shadow: var(--qp-sh-md);
+  text-align: center;
 }
 
 .qp-tags {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
 }
 
 .qp-points,
@@ -169,26 +312,28 @@
 
 .qp-prompt {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: 1.7rem;
   font-weight: 700;
   line-height: 1.35;
 }
 
 /* ---- answers ---- */
 
+/* One column of rows, as in the reference: the eye runs down the choices
+   instead of zig-zagging across a grid. */
 .qp-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 1.8rem;
 }
 
 .qp-option {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  min-height: 76px;
-  padding: 0.9rem 1.15rem;
+  min-height: 60px;
+  padding: 0.7rem 1rem;
   box-sizing: border-box;
   background: var(--qp-card);
   border: 1px solid var(--qp-stroke);
@@ -231,10 +376,17 @@
   min-width: 0;
 }
 
+/* Picked is FILLED, the reference's one loud row. Navy text, never white:
+   white on this lavender measures ~1.9:1. The badge inverts to stay seen. */
 .qp-option.picked {
-  background: var(--qp-well);
-  border-color: var(--qp-fill);
-  box-shadow: 0 4px 12px rgba(168, 156, 227, 0.35);
+  background: var(--qp-fill);
+  border-color: var(--qp-stroke);
+  box-shadow: 0 6px 16px rgba(106, 97, 145, 0.35);
+}
+
+.qp-option.picked .qp-letter {
+  background: #fff;
+  color: var(--qp-stroke);
 }
 
 /* ---- footer ---- */
@@ -431,6 +583,11 @@
 
 .qp-wires {
   position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 110px minmax(0, 1fr);
   margin-top: 1.5rem;

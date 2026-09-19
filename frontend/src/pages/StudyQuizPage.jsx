@@ -5,6 +5,12 @@ import { api } from '../api'
 import { buildMatchQuestion, buildVocabQuestions, shuffle } from '../studyQuiz'
 import { setLessonDone } from '../studyProgress'
 import MatchWires from '../components/MatchWires'
+import artBlossom from '../assets/quiz/blossom.webp'
+import artCloud from '../assets/quiz/cloud.webp'
+import artPagoda from '../assets/quiz/pagoda.webp'
+import artBooks from '../assets/quiz/books.webp'
+import artBamboo from '../assets/quiz/bamboo.webp'
+import artPhones from '../assets/quiz/headphones.webp'
 import './StudyQuizPage.css'
 
 const LETTERS = ['A', 'B', 'C', 'D']
@@ -419,6 +425,15 @@ export default function StudyQuizPage() {
       </button>
 
       <div className="qp-card">
+        {/* Scenery only: hidden from assistive tech and from the pointer. */}
+        <div className="qp-art" aria-hidden="true">
+          <img className="qp-art-pagoda" src={artPagoda} alt="" />
+          <img className="qp-art-bamboo" src={artBamboo} alt="" />
+          <img className="qp-art-cloud" src={artCloud} alt="" />
+          <img className="qp-art-blossom" src={artBlossom} alt="" />
+          <img className="qp-art-books" src={artBooks} alt="" />
+          <img className="qp-art-phones" src={artPhones} alt="" />
+        </div>
         {total === 0 ? (
           <div className="qp-state">
             <p className="qp-state-title">Nothing to quiz yet</p>
