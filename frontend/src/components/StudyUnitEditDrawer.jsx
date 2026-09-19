@@ -139,6 +139,41 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
+  /* Who speaks in a conversation and in which voice. Derived from the lines,
+     so a speaker added a moment ago is here at once; the saved choice comes
+     from the server, and the default mirrors StudyText::voiceFor - speakers
+     alternate boy, girl in the order they first speak. */
+  const speakersOf = (t) => {
+    const names = [...new Set(t.lines.map((l) => (l.speaker || '').trim()).filter(Boolean))]
+    return names.map((name, i) => ({
+      name,
+      voice: (t.speakers || []).find((s) => s.name === name)?.voice || (i % 2 === 0 ? 'boy' : 'girl'),
+    }))
+  }
+
+  const setVoice = (t, name, voice) => {
+    const voices = Object.fromEntries(speakersOf(t).map((s) => [s.name, s.name === name ? voice : s.voice]))
+    run(
+      `voice-${t.id}`,
+      () => api.setStudyTextVoices(token, t.id, voices),
+      (saved) => {
+        patch({
+          texts: texts.map((x) =>
+            x.id === t.id
+              ? {
+                  ...x,
+                  speakers: saved.speakers,
+                  // The old clips were in the old voice: let the page ask again.
+                  lines: x.lines.map((l) => ({ ...l, audio_url: null })),
+                }
+              : x
+          ),
+        })
+        say('Voice saved')
+      }
+    )
+  }
+
   const deleteLine = (id) =>
     run(
       `line-${id}`,
@@ -396,6 +431,35 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
 
           {currentText && (
             <>
+              {speakersOf(currentText).length > 0 && (
+                <div className="ed-group ed-add">
+                  <p className="ed-group-title">Voices</p>
+                  <p className="ed-hint">Each speaker is read aloud in a boy&apos;s or a girl&apos;s voice.</p>
+                  <ul className="ed-voices">
+                    {speakersOf(currentText).map((s) => (
+                      <li className="ed-voice" key={s.name}>
+                        <span className="ed-voice-name">{s.name}</span>
+                        <span className="ed-voice-toggle" role="radiogroup" aria-label={`Voice for ${s.name}`}>
+                          {['boy', 'girl'].map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              role="radio"
+                              aria-checked={s.voice === v}
+                              className={s.voice === v ? 'on' : ''}
+                              disabled={busy === `voice-${currentText.id}`}
+                              onClick={() => s.voice !== v && setVoice(currentText, s.name, v)}
+                            >
+                              {v === 'boy' ? 'Boy' : 'Girl'}
+                            </button>
+                          ))}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="ed-group ed-add">
                 <p className="ed-group-title">Lines in “{currentText.title}”</p>
                 {currentText.lines.length === 0 ? (

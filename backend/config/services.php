@@ -123,6 +123,16 @@ return [
         // Scan's reader. Defaults to the assistant's model; longer timeout
         // because an image upload is bigger than a chat turn. A failure here
         // falls back to Tesseract rather than failing the scan.
+        // Study's spoken audio (SpeechService). Generated once per text and
+        // saved, so the free tier's low rate limit only meets first plays.
+        // The voice is any of Gemini's prebuilt voices (Kore, Puck, Leda...).
+        'tts_model' => env('GEMINI_TTS_MODEL', 'gemini-3.1-flash-tts-preview'),
+        // Words use the teacher voice; conversations give each speaker a
+        // boy's or a girl's voice (StudyText::voiceFor).
+        'tts_voice' => env('GEMINI_TTS_VOICE', 'Kore'),
+        'tts_voice_boy' => env('GEMINI_TTS_VOICE_BOY', 'Puck'),
+        'tts_voice_girl' => env('GEMINI_TTS_VOICE_GIRL', 'Leda'),
+        'tts_timeout' => env('GEMINI_TTS_TIMEOUT', 30),
         'ocr_model' => env('GEMINI_OCR_MODEL'),
         'ocr_timeout' => env('GEMINI_OCR_TIMEOUT', 30),
     ],

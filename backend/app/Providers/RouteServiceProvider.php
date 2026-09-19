@@ -75,5 +75,12 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('ai', function (Request $request) {
             return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Study audio: a first play of a whole conversation asks for every
+        // line at once, so this is looser than 'ai' - but it still spends the
+        // same shared Gemini quota, so it is its own bucket, per user.
+        RateLimiter::for('speech', function (Request $request) {
+            return Limit::perMinute(40)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

@@ -300,6 +300,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/study-units/{studyUnit}/texts', [StudyTextController::class, 'store']);
     Route::delete('/study-texts/{studyText}', [StudyTextController::class, 'destroy']);
     Route::post('/study-texts/{studyText}/lines', [StudyTextController::class, 'storeLine']);
+    Route::put('/study-texts/{studyText}/voices', [StudyTextController::class, 'voices']);
     Route::delete('/study-text-lines/{studyTextLine}', [StudyTextController::class, 'destroyLine']);
 
     Route::post('/study-units/{studyUnit}/grammar', [StudyGrammarPointController::class, 'store']);
@@ -399,4 +400,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/practice-chat/status', [PracticeChatController::class, 'status']);
     Route::post('/practice-chat', [PracticeChatController::class, 'store'])->middleware('throttle:ai');
+
+    // Study's spoken audio. Made once per word or line, then a static file.
+    Route::post('/study-speech', [\App\Http\Controllers\Api\StudySpeechController::class, 'store'])->middleware('throttle:speech');
 });

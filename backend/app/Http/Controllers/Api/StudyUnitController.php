@@ -8,12 +8,13 @@ use App\Models\StudyLevel;
 use App\Models\StudyUnit;
 use App\Models\StudyUnitCompletion;
 use App\Services\DictionaryService;
+use App\Services\SpeechService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class StudyUnitController extends Controller
 {
-    public function show(Request $request, StudyUnit $studyUnit, DictionaryService $dictionary)
+    public function show(Request $request, StudyUnit $studyUnit, DictionaryService $dictionary, SpeechService $speech)
     {
         // The unit page reuses the level's banner styling, so it needs the
         // label, blurb and accent colour alongside the title.
@@ -80,10 +81,28 @@ class StudyUnitController extends Controller
            speaker, and segmenting across a speaker change would invent words
            that span two people talking. */
         foreach ($payload['texts'] ?? [] as $ti => $text) {
+            $model = $studyUnit->texts[$ti];
+            // Who is in the conversation and which voice each gets - the edit
+            // drawer shows these as Boy / Girl switches.
+            $payload['texts'][$ti]['speakers'] = array_map(fn ($name) => [
+                'name' => $name,
+                'voice' => $model->voiceFor($name),
+            ], $model->speakers());
+
             foreach ($text['lines'] ?? [] as $li => $line) {
                 $payload['texts'][$ti]['lines'][$li]['tokens'] =
                     filled($line['chinese']) ? $dictionary->annotate($line['chinese']) : [];
+                $payload['texts'][$ti]['lines'][$li]['audio_url'] = filled($line['chinese'])
+                    ? $speech->existingUrl($line['chinese'], 'line', $model->voiceFor($line['speaker'] ?? null))
+                    : null;
             }
+        }
+
+        /* The clips that already exist ride along, so a play is a plain file
+           and never a request; only a word nobody has played yet goes through
+           POST /study-speech to be made. */
+        foreach ($payload['vocabulary'] ?? [] as $i => $word) {
+            $payload['vocabulary'][$i]['audio_url'] = $speech->existingUrl($word['hanzi'], 'word');
         }
 
         /* Where this lesson sits in its topic, and what follows it.
@@ -132,6 +151,8 @@ class StudyUnitController extends Controller
                lesson would misrepresent where the learner is. */
             'previous_unit' => $index > 0 ? $neighbour($index - 1) : null,
             'next_unit' => $neighbour($index === false ? null : $index + 1),
+            // Whether natural audio can be made at all on this install.
+            'speech_available' => SpeechService::configured(),
             // Whether THIS viewer has finished the lesson.
             'completed' => StudyUnitCompletion::where('user_id', $request->user()->id)
                 ->where('study_unit_id', $studyUnit->id)

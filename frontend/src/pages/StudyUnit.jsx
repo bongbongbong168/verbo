@@ -151,8 +151,11 @@ export default function StudyUnit() {
      when it opened inline. */
   const [explaining, setExplaining] = useState(null)
   const [speakingId, setSpeakingId] = useState(null)
-  /* The utterance that currently owns `speakingId` - see `speakText`. */
-  const currentUtteranceRef = useRef(null)
+  /* The playback that currently owns `speakingId` - see `speakText`. */
+  const playbackRef = useRef(null)
+  /* Clips made during this visit (`word-12` / `line-40` -> url), so a word
+     played twice asks the server once. */
+  const clipUrlsRef = useRef({})
 
   const [showEdit, setShowEdit] = useState(false)
 
@@ -240,53 +243,104 @@ export default function StudyUnit() {
       .finally(() => setLoading(false))
   }
 
-  /**
-   * Pronunciation uses the browser's built-in speech synthesis, so there is
-   * no audio to record or store. Falls back silently where unsupported.
-   */
   function speak(word) {
-    speakText(word.hanzi, word.id)
+    speakText(word.hanzi, word.id, { kind: 'word', id: word.id, url: word.audio_url })
+  }
+
+  /** Stop whatever is playing, whichever voice it is using. */
+  function stopVoice() {
+    const current = playbackRef.current
+    playbackRef.current = null
+    current?.stop()
   }
 
   /**
    * Say one piece of Chinese aloud.
    *
-   * The browser's own speech synthesis, which the vocabulary list already used
-   * — deliberately not a cloud TTS service. Nothing has to be recorded, stored,
-   * paid for or kept in step with the text: a line edited in the drawer is
-   * spoken correctly the next time it is played, where a generated audio file
-   * would silently go stale. The cost is that the voice depends on what the
-   * reader's OS has installed, and a machine with no Chinese voice simply
-   * stays quiet rather than mispronouncing it in English.
+   * A NATURAL VOICE FIRST, THE BROWSER'S AS A FALLBACK. The browser's own
+   * speech synthesis sounded robotic and differed per device, so Study now
+   * plays clips made by Gemini's TTS model (see SpeechService): a clip that
+   * already exists arrives as `url` on the unit payload and is just a file;
+   * one nobody has played yet is made on the server the first time (a few
+   * seconds) and remembered here. No key, a quota refusal or a failed file
+   * all drop to the browser's voice, so a word is never unplayable. A clip
+   * never goes stale: editing a line changes its text, which changes the
+   * clip the server looks up.
+   *
+   * `onDone(ok)` fires once, when THIS playback ends by itself - never after
+   * it was replaced or stopped. That guard is the old utterance rule kept:
+   * stopping one voice fires its end callback a moment LATER, after the next
+   * word has been marked as speaking, and unguarded that late callback wiped
+   * the new word's indicator (clicking quickly from word to word showed no
+   * bars at all).
    */
-  function speakText(text, id) {
-    if (typeof window === 'undefined' || !window.speechSynthesis || !text) return null
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'zh-CN'
-    utterance.rate = 0.85
-    /* ONLY THE CURRENT UTTERANCE MAY CLEAR THE INDICATOR. `cancel()` above does
-       not end the previous utterance on the spot - its `onend`/`onerror`
-       fires a moment LATER, after this function has already marked the new
-       word as speaking. Unguarded, that late callback wiped the new word's
-       state, which is why clicking quickly from one word to the next showed no
-       bars at all: the indicator was set, then erased by the word you left. */
-    currentUtteranceRef.current = utterance
-    const done = () => {
-      if (currentUtteranceRef.current !== utterance) return
-      currentUtteranceRef.current = null
-      setSpeakingId(null)
+  function speakText(text, id, source, onDone) {
+    if (!text) return
+    stopVoice()
+    const handle = {
+      stopped: false,
+      audio: null,
+      stop() {
+        this.stopped = true
+        if (this.audio) this.audio.pause()
+        if (typeof window !== 'undefined') window.speechSynthesis?.cancel()
+      },
     }
-    utterance.onend = done
-    utterance.onerror = done
+    playbackRef.current = handle
     setSpeakingId(id)
-    window.speechSynthesis.speak(utterance)
-    return utterance
+
+    const finish = (ok) => {
+      if (playbackRef.current !== handle) return
+      playbackRef.current = null
+      setSpeakingId(null)
+      onDone?.(ok)
+    }
+    const browserVoice = () => {
+      if (handle.stopped) return
+      if (typeof window === 'undefined' || !window.speechSynthesis) return finish(false)
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'zh-CN'
+      utterance.rate = 0.85
+      utterance.onend = () => finish(true)
+      utterance.onerror = () => finish(false)
+      window.speechSynthesis.speak(utterance)
+    }
+    const playFile = (url) => {
+      if (handle.stopped) return
+      const audio = new Audio(url)
+      handle.audio = audio
+      audio.onended = () => finish(true)
+      const fallback = () => {
+        handle.audio = null
+        browserVoice()
+      }
+      audio.onerror = fallback
+      audio.play().catch(fallback)
+    }
+
+    const key = source && `${source.kind}-${source.id}`
+    const known = source && (source.url || clipUrlsRef.current[key])
+    if (known) return playFile(known)
+    if (source && unitRef.current?.speech_available) {
+      api
+        .studySpeech(token, source.kind, source.id)
+        .then((r) => {
+          clipUrlsRef.current[key] = r.url
+          playFile(r.url)
+        })
+        .catch(browserVoice)
+      return
+    }
+    browserVoice()
   }
+
+  // Leaving the page stops the voice rather than letting it talk over the next.
+  useEffect(() => stopVoice, [])
 
   /** Is speech available at all? Used to hide the controls rather than offer
    *  buttons that would do nothing. */
-  const canSpeak = typeof window !== 'undefined' && !!window.speechSynthesis
+  const canSpeak =
+    Boolean(unit?.speech_available) || (typeof window !== 'undefined' && !!window.speechSynthesis)
 
   /**
    * Read the whole conversation, line by line, highlighting the current one.
@@ -314,14 +368,18 @@ export default function StudyUnit() {
     setLessonDone(token, current.id, done).catch(() => apply(!done))
   }
 
+  function stopConversation() {
+    playingAllRef.current = false
+    stopVoice()
+    setPlayingAll(false)
+    setSpeakingId(null)
+  }
+
   function playConversation() {
     if (!canSpeak || !currentText?.lines?.length) return
 
     if (playingAllRef.current) {
-      playingAllRef.current = false
-      window.speechSynthesis.cancel()
-      setPlayingAll(false)
-      setSpeakingId(null)
+      stopConversation()
       return
     }
 
@@ -329,34 +387,29 @@ export default function StudyUnit() {
     setPlayingAll(true)
 
     const sayFrom = (i) => {
+      // Stopped.
+      if (!playingAllRef.current) return
       /* Played through to the last line: that is finishing the lesson's
          listening, so the lesson counts as done. Stopping part-way does not. */
-      if (i >= lines.length && playingAllRef.current) markDone(true)
-      // Stopped, or ran off the end.
-      if (i >= lines.length || !playingAllRef.current) {
-        setPlayingAll(false)
-        setSpeakingId(null)
-        return
-      }
-      const u = speakText(lines[i].chinese, `line-${lines[i].id}`)
-      if (!u) {
-        setPlayingAll(false)
-        return
-      }
-      /* Same guard as `speakText`: pressing a single line mid-conversation
-         cancels this utterance, and its late callback must not advance the
-         chain or wipe the line that replaced it. */
-      u.onend = () => {
-        if (currentUtteranceRef.current !== u) return
-        sayFrom(i + 1)
-      }
-      u.onerror = () => {
-        if (currentUtteranceRef.current !== u) return
-        currentUtteranceRef.current = null
+      if (i >= lines.length) {
+        markDone(true)
         playingAllRef.current = false
         setPlayingAll(false)
         setSpeakingId(null)
+        return
       }
+      const line = lines[i]
+      /* `onDone` only fires when this line ends by itself (see speakText), so
+         a line replaced or stopped mid-conversation cannot advance the chain. */
+      speakText(line.chinese, `line-${line.id}`, { kind: 'line', id: line.id, url: line.audio_url }, (ok) => {
+        if (!playingAllRef.current) return
+        if (!ok) {
+          playingAllRef.current = false
+          setPlayingAll(false)
+          return
+        }
+        sayFrom(i + 1)
+      })
     }
 
     playingAllRef.current = true
@@ -595,7 +648,7 @@ export default function StudyUnit() {
                         className={'un-speak-btn' + (speakingId === w.id ? ' speaking' : '')}
                         onClick={() => {
                           if (speakingId === w.id) {
-                            window.speechSynthesis?.cancel()
+                            stopVoice()
                             setSpeakingId(null)
                             return
                           }
@@ -721,11 +774,21 @@ export default function StudyUnit() {
                           className={'un-line-say' + (playing ? ' playing' : '')}
                           onClick={() => {
                             if (playing && !playingAllRef.current) {
-                              window.speechSynthesis?.cancel()
+                              stopVoice()
                               setSpeakingId(null)
                               return
                             }
-                            speakText(line.chinese, lineId)
+                            /* A single line pressed mid-conversation takes
+                               over: the conversation stops, this line plays. */
+                            if (playingAllRef.current) {
+                              playingAllRef.current = false
+                              setPlayingAll(false)
+                            }
+                            speakText(line.chinese, lineId, {
+                              kind: 'line',
+                              id: line.id,
+                              url: line.audio_url,
+                            })
                           }}
                           aria-label={playing ? 'Stop this line' : 'Play this line'}
                           aria-pressed={playing}
@@ -1040,6 +1103,9 @@ export default function StudyUnit() {
              model with no relations, which is why this merges rather than
              replaces — assigning it wholesale would wipe vocabulary/texts. */
           onChange={(updated) => {
+            // An edit can change a speaker's voice; forget this visit's clips
+            // so the next play asks the server for the right one.
+            clipUrlsRef.current = {}
             setUnit((prev) => {
               const next = { ...prev, ...updated }
               unitRef.current = next

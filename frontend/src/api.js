@@ -636,6 +636,10 @@ export const api = {
   // The viewer's own "finished this lesson" mark.
   completeStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'POST', token }),
   uncompleteStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'DELETE', token }),
+  // Natural audio for a word ('word') or a conversation line ('line'), by row
+  // id - never by text, so nobody can spend the quota on arbitrary input.
+  // Resolves {url}; a 503 means fall back to the browser's voice.
+  studySpeech: (token, kind, id) => request('/study-speech', { method: 'POST', body: { kind, id }, token }),
   // Multipart: a level carries a carousel cover plus a module-page banner.
   createStudyLevel: (token, level) =>
     requestMultipart('/study-levels', studyLevelFormData(level), token),
@@ -666,6 +670,9 @@ export const api = {
   deleteStudyText: (token, id) => request(`/study-texts/${id}`, { method: 'DELETE', token }),
   addStudyTextLine: (token, textId, line) =>
     request(`/study-texts/${textId}/lines`, { method: 'POST', body: line, token }),
+  // {speakerName: 'boy' | 'girl'} for one conversation; resolves {speakers}.
+  setStudyTextVoices: (token, textId, voices) =>
+    request(`/study-texts/${textId}/voices`, { method: 'PUT', body: { voices }, token }),
   deleteStudyTextLine: (token, id) =>
     request(`/study-text-lines/${id}`, { method: 'DELETE', token }),
   addStudyVocabulary: (token, unitId, word) =>

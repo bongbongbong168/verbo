@@ -186,7 +186,7 @@ class GeminiService
      * the configured value, so a stale or rotated key in an old message is
      * caught too.
      */
-    private static function redact(string $text): string
+    public static function redact(string $text): string
     {
         return preg_replace('/([?&]key=)[^&\s"\']+/i', '$1REDACTED', $text);
     }
