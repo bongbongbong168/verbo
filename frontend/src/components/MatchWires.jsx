@@ -28,7 +28,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 /* One colour per wire, from hues the app already owns, so crossing wires can
    be told apart and each pair of dots wears its wire's colour. */
-const WIRE_COLOURS = ['#a89ce3', '#fe916a', '#7e68c8', '#7d76a0', '#c3a6f0', '#e79a78']
+const WIRE_COLOURS = ['#a89ce3', '#3d3857', '#7e68c8', '#7d76a0', '#c3a6f0', '#5f49cb']
 
 function curve(a, b) {
   const dx = Math.max(24, (b.x - a.x) * 0.5)
