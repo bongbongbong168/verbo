@@ -608,14 +608,14 @@ Word-timed transcript per episode: the spoken word lights up, clicking a word pl
 
 ### Study audio - Gemini TTS, made once and saved
 
-Study's word and conversation buttons play natural Mandarin from  (), replacing the browser's robotic , which is now only the fallback.
+Study's word and conversation buttons play natural Mandarin from `gemini-3.1-flash-tts-preview` (`App\Services\SpeechService`), replacing the browser's robotic `speechSynthesis`, which is now only the fallback.
 
-- **Made once, then a static file.** A clip is keyed by sha1(model, voice, style brief, text) and saved as  (the Railway volume in production).  adds  to every word and line whose clip exists, so a normal play is just a file. Editing a line changes its hash, so a stale clip can never play. Same word in two units shares one clip.
-- ** names a ROW, never text**, so no account can spend the quota on arbitrary input. Throttle bucket  (40/min per user).
-- **The free tier allows 3 TTS requests a MINUTE** (the 429 says ). After a 429 the service stores a cool-down for the "retry in Ns" Google gives and answers "not now" at once until then, and the page plays the browser voice for that click. Could not open input file: artisan pre-makes clips at 21s apart. It writes to THIS machine's disk, so run it inside the Railway container, not via .
+- **Made once, then a static file.** A clip is keyed by sha1(model, voice, style brief, text) and saved as `storage/app/public/speech/*.wav` (the Railway volume in production). `StudyUnitController::show` adds `audio_url` to every word and line whose clip exists, so a normal play is just a file. Editing a line changes its hash, so a stale clip can never play. Same word in two units shares one clip.
+- **`POST /study-speech {kind: word|line, id}` names a ROW, never text**, so no account can spend the quota on arbitrary input. Throttle bucket `speech` (40/min per user).
+- **The free tier allows 3 TTS requests a MINUTE** (the 429 says `limit: 3`). After a 429 the service stores a cool-down for the "retry in Ns" Google gives and answers "not now" at once until then, and the page plays the browser voice for that click. `php artisan study:voice {unit?}` pre-makes clips 21s apart. It writes to THIS machine's disk, so run it inside the Railway container, not via `railway run`.
 - **Gemini returns raw 16-bit 24kHz PCM**, which is wrapped in a WAV header, with the silence at each end trimmed (a word came back 2.5s long).
-- **Boy and girl voices.**  (json, ) plus . With nothing set, speakers alternate boy, girl in the order they first speak. The unit editor's Reading tab has a Boy / Girl switch per speaker (, admin, keeps only names that really speak). Voices:  (words, default Kore),  (Puck),  (Leda).
-- **The page** ( in StudyUnit.jsx): saved clip, else ask the server and remember the URL for the visit, else the browser voice.  fires only when THAT playback ends by itself, which keeps play-all and the indicator safe when a word is replaced mid-play. Opening the editor's save clears the visit's clip memory, since a voice may have changed.
+- **Boy and girl voices.** `study_texts.speaker_voices` (json, `{name: boy|girl}`) plus `StudyText::voiceFor()`. With nothing set, speakers alternate boy, girl in the order they first speak. The unit editor's Reading tab has a Boy / Girl switch per speaker (`PUT /study-texts/{id}/voices`, admin, keeps only names that really speak). Voices: `GEMINI_TTS_VOICE` (words, default Kore), `GEMINI_TTS_VOICE_BOY` (Puck), `GEMINI_TTS_VOICE_GIRL` (Leda).
+- **The page** (`speakText` in StudyUnit.jsx): saved clip, else ask the server and remember the URL for the visit, else the browser voice. `onDone` fires only when THAT playback ends by itself, which keeps play-all and the indicator safe when a word is replaced mid-play. Saving in the editor clears the visit's clip memory, since a voice may have changed.
 - Free tier: Google may use the text to improve its products; lesson text is public, so that is acceptable here. Never send private text through it.
 
 ### The reading-aid switch — one control, three pages
