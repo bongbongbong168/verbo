@@ -266,16 +266,20 @@
   /* Cap-band pair as on the app's other small pills: symmetric padding
      leaves Hellix sitting low. */
   padding: calc(0.3rem - 0.9px) 0.7rem calc(0.3rem + 0.9px);
-  border-radius: 999px;
+  /* A rounded box like the card it sits in, not a pill. */
+  border-radius: 8px;
   background: #e3e1ea;
   color: #6f6b82;
   font-size: 0.78rem;
   font-weight: 700;
 }
 
+/* The tick's ink sat 1.1px above the label's cap band (measured); equal and
+   opposite margins move it down without changing the row's height. */
 .sl-module-check svg {
   width: 14px;
   height: 14px;
+  margin: 1.1px 0 -1.1px;
 }
 
 .sl-module-label {
