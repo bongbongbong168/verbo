@@ -1,0 +1,23 @@
+/* Confetti overlay. Prefix `cf-`. Over everything on the page, touching nothing:
+   pointer-events: none, so the results screen's buttons stay clickable while
+   it falls. Sized to the viewport through --app-vh (#root carries a zoom). */
+.cf {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* The file is 16:9 and "slice" scales it by HEIGHT on a tall screen, which
+     blew the pieces up to giant ribbons on a phone. Capping the box at 1.2x
+     its width keeps a phone's burst to the top part of the screen - over the
+     score, where the result is - at about half that size. A landscape
+     screen still gets the full height. vw ignores #root's zoom, hence the
+     divide, the same correction --app-vh makes. */
+  height: min(var(--app-vh), calc(120vw / var(--app-scale)));
+  z-index: 60;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cf svg {
+  display: block;
+}

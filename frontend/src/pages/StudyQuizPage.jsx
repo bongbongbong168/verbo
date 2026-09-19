@@ -5,6 +5,7 @@ import { api } from '../api'
 import { buildMatchQuestion, buildVocabQuestions, shuffle } from '../studyQuiz'
 import { setLessonDone } from '../studyProgress'
 import MatchWires from '../components/MatchWires'
+import Confetti from '../components/Confetti'
 import artBlossom from '../assets/quiz/blossom.webp'
 import artCloud from '../assets/quiz/cloud.webp'
 import artPagoda from '../assets/quiz/pagoda.webp'
@@ -149,6 +150,8 @@ export default function StudyQuizPage() {
 
   const [marking, setMarking] = useState(false)
   const [results, setResults] = useState(null) // marked list, set at the end
+  // Counts finished runs; each one re-keys the confetti so it plays again.
+  const [bursts, setBursts] = useState(0)
   const markingRef = useRef(false)
 
   useEffect(() => {
@@ -286,6 +289,7 @@ export default function StudyQuizPage() {
         }
       }
       setResults(marked)
+      setBursts((n) => n + 1)
       // The main run finishes the lesson; fire and forget, the results
       // screen must not wait on it or fail with it.
       if (mode === 'main') setLessonDone(token, id, true).catch(() => {})
@@ -437,6 +441,9 @@ export default function StudyQuizPage() {
 
   return (
     <div className="qp-page">
+      {/* A burst when a run is finished. Outside the card: the card clips
+          its contents, and this belongs to the whole screen. */}
+      {results && bursts > 0 && <Confetti key={bursts} />}
       <button type="button" className="qp-back" onClick={() => navigate(backTo)}>
         <BackIcon />
         Back to {unit?.title || 'unit'}
