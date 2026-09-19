@@ -64,7 +64,12 @@ function statusOf(booking) {
   if (s === 'held' || s === 'pending') {
     const lapsed =
       booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() <= Date.now()
-    return lapsed ? 'expired' : 'pending'
+    /* A paid request has no hold any more (paying clears it), so it used to
+       wait for the tutor forever: a Sep 1 lesson still read "Waiting for Xu
+       Jiayin to confirm" on Sep 19. Once the lesson's start has passed it
+       can never be confirmed, so it is expired. */
+    const tooLate = booking.starts_at && new Date(booking.starts_at).getTime() <= Date.now()
+    return lapsed || tooLate ? 'expired' : 'pending'
   }
   if (s === 'confirmed') {
     const end = endsAt(booking)
@@ -377,6 +382,23 @@ export default function Bookings() {
               tutor is the someone. */}
           {pending && role === 'student' && !isCourse && (
             <p className="bo-hint">Waiting for {row.who} to confirm your lesson.</p>
+          )}
+          {/* Why it expired - two different stories. A PAID request the
+              tutor never answered before the lesson time, or a time that was
+              held for payment and never paid. */}
+          {row.status === 'expired' && !isCourse && row.raw.status === 'pending' && (
+            <p className="bo-hint">
+              {role === 'student'
+                ? `${row.who} didn't confirm before the lesson time.`
+                : 'You didn’t answer this request before the lesson time.'}
+            </p>
+          )}
+          {row.status === 'expired' && !isCourse && row.raw.status === 'held' && (
+            <p className="bo-hint">
+              {role === 'student'
+                ? 'Payment wasn’t finished, so the time was released.'
+                : 'The student didn’t finish booking, so the time was released.'}
+            </p>
           )}
           {/* "Cancelled" alone is ambiguous — the student needs to know whether
               they called it off or the tutor did. */}

@@ -33,12 +33,38 @@ class Booking extends Model
         'duration_minutes' => 'integer',
     ];
 
-    /** A hold whose window has passed no longer occupies its slot. */
+    /**
+     * A booking still waiting on something that can no longer happen: a hold
+     * whose payment window has passed, OR any unanswered request (held or
+     * paid-and-pending) whose lesson time has already started. The second
+     * case was missing, so a paid request the tutor never answered sat as
+     * "pending" forever - a Sep 1 lesson still waiting on Sep 19.
+     */
     public function getIsExpiredAttribute(): bool
     {
-        return $this->status === 'held'
+        if (! in_array($this->status, ['held', 'pending'], true)) {
+            return false;
+        }
+        $holdLapsed = $this->status === 'held'
             && $this->hold_expires_at !== null
             && $this->hold_expires_at->isPast();
+
+        return $holdLapsed || ($this->starts_at !== null && $this->starts_at->isPast());
+    }
+
+    /**
+     * Still something someone is waiting on or attending: an unexpired
+     * request, or a confirmed lesson that has not started. Everything else is
+     * history and may be cleared from a list.
+     */
+    public function isLive(): bool
+    {
+        if (in_array($this->status, ['held', 'pending'], true)) {
+            return ! $this->is_expired;
+        }
+
+        return $this->status === 'confirmed'
+            && ! ($this->starts_at !== null && $this->starts_at->isPast());
     }
 
     /**

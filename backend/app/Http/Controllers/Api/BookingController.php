@@ -324,6 +324,11 @@ class BookingController extends Controller
         // been flipped to `expired`, so it is no longer "held and past" — it
         // fell through and hit the unique index, which leaked raw SQL back to
         // the caller.
+        if (in_array($booking->status, ['pending', 'held'], true)
+            && $booking->starts_at !== null && $booking->starts_at->isPast()) {
+            return response()->json(['message' => "This lesson's time has already passed."], 422);
+        }
+
         if (! in_array($booking->status, ['pending', 'held'], true) || $booking->is_expired) {
             $reason = [
                 'expired' => 'That hold expired and the slot was released — please pick a time again.',
@@ -396,7 +401,7 @@ class BookingController extends Controller
 
         abort_unless($isTutor || $isStudent, 403);
 
-        if (in_array($booking->status, ['held', 'pending', 'confirmed'], true) && ! $booking->is_expired) {
+        if ($booking->isLive()) {
             return response()->json(
                 ['message' => 'Cancel this booking before clearing it from your list.'],
                 422
@@ -435,7 +440,10 @@ class BookingController extends Controller
                 // hold whose window has passed.
                 $q->whereIn('status', $settled)
                     ->orWhere(fn ($q) => $q->where('status', 'confirmed')->where('starts_at', '<', now()))
-                    ->orWhere(fn ($q) => $q->where('status', 'held')->where('hold_expires_at', '<=', now()));
+                    ->orWhere(fn ($q) => $q->where('status', 'held')->where('hold_expires_at', '<=', now()))
+                    // A request never answered before its lesson time
+                    // (Booking::is_expired).
+                    ->orWhere(fn ($q) => $q->whereIn('status', ['held', 'pending'])->where('starts_at', '<=', now()));
             })
             ->update([$role === 'teacher' ? 'hidden_for_tutor_at' : 'hidden_for_student_at' => now()]);
 
