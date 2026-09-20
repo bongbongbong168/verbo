@@ -46,9 +46,29 @@
   box-shadow: 0 6px 18px rgba(28, 23, 48, 0.22);
 }
 
-.pa-fab svg {
-  width: 25px;
-  height: 25px;
+/* The owl overflows the circle's top, so nothing may clip it — the button is
+   `position: fixed` with the whole page below it, so there is room. It is
+   bottom-aligned inside the circle and `pointer-events: none` keeps every
+   click on the button itself. */
+.pa-fab {
+  overflow: visible;
+}
+
+/* ABSOLUTE, not a grid item: the owl is taller than the button on purpose, and
+   a stretched or centred grid item hung 16px below the circle instead of
+   standing on it. Pinned to the bottom edge, the feet sit on the plinth and
+   only the cap breaks the top. */
+.pa-fab-owl {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: auto;
+  height: 66px;
+  pointer-events: none;
+  /* The figure is drawn with its own shading; a second shadow under it would
+     fight the circle's. */
+  filter: drop-shadow(0 2px 3px rgba(28, 23, 48, 0.25));
 }
 
 /* Instant fill, eased lift. The colour IS the hover feedback and a transition

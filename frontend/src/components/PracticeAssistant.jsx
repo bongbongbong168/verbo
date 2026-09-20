@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
+import owlBot from '../assets/assistant/owl-bot.webp'
 import './PracticeAssistant.css'
 
 /**
@@ -236,7 +237,11 @@ export default function PracticeAssistant() {
         aria-label="Open the Chinese practice assistant"
         title="Practice Chinese with AI"
       >
-        <AiIcon />
+        {/* The supplied owl, which stands ON the button rather than sitting
+            inside it: at 54px a whole figure would render ~38px tall and read
+            as a smudge, so the circle is the plinth and the cap breaks its top
+            edge. `alt=""` because the button already carries its own label. */}
+        <img className="pa-fab-owl" src={owlBot} alt="" />
       </button>
     )
   }
