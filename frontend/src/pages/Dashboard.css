@@ -1017,7 +1017,7 @@
      of the same width, so every section edge below Recommend Teachers sat 22px
      further right. */
   box-sizing: border-box;
-  padding: 10px 10px 12px;
+  padding: 10px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
   border-radius: 14px;
@@ -1037,9 +1037,10 @@
    initial has to be scaled along with the box, or the same tutor's letter
    shrinks relative to their card. 112/92 of the old 1rem. */
 .db-teacher-cover {
-  /* The podcast card's cover height, so the two rows sit on one rhythm — the
-     whole reason this card was given that card's shell. */
-  height: 112px;
+  /* 4px under the podcast card's 112, which is what pays for this card's
+     even rhythm (6 under the photo, 8 before the pill, 8 before the button)
+     while the two cards still finish on the same line. */
+  height: 108px;
   margin-bottom: 4px;
   border-radius: 10px;
   font-size: 1.22rem;
@@ -1080,7 +1081,6 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-top: 1px;
   font-size: 0.78rem;
   color: var(--db-text);
 }
@@ -1124,7 +1124,10 @@
 .db-teacher-tags {
   display: flex;
   gap: 4px;
-  margin-top: 5px;
+  margin-top: 6px;
+  /* A break before the button, so the pill belongs to the text above it
+     rather than floating between two things. */
+  margin-bottom: 6px;
   min-width: 0;
 }
 
@@ -1150,6 +1153,9 @@
   align-items: center;
   justify-content: center;
   margin-top: auto;
+  /* The slack the grid gives a short card collects HERE, above the button,
+     where it reads as a deliberate break before the action rather than as a
+     hole in the middle of the text. */
   padding: calc(6px - 0.076em) 10px calc(6px + 0.076em);
   border-radius: 999px;
   background: var(--db-accent);
