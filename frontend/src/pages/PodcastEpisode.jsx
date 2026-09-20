@@ -532,6 +532,18 @@ export default function PodcastEpisode() {
   const enSentences = englishSentences(podcast.transcript_en)
   const paired = showTranslation && hasEnglish && cnSentences.length > 0 && cnSentences.length === enSentences.length
 
+  /* IN SYNCED MODE THE ENGLISH IS MATCHED TO SEGMENTS BY LINE INDEX, so it may
+     only be used when there is exactly one line per segment. Without that
+     check the first line simply landed on the first segment whatever it was —
+     an episode whose `transcript_en` was a one-character placeholder rendered
+     that character as the translation of its opening sentence, and a real
+     translation with a different number of lines would have been worse: every
+     line quietly attached to the wrong sentence. When the counts disagree the
+     English falls back to one passage under the transcript, which is the same
+     rule `paired` follows for the unsynced view. */
+  const timedTranslations = (podcast.transcript_en || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const syncedPaired = showTranslation && synced && timedTranslations.length === timed.length
+
   function renderPlainTokens(tokens, keyPrefix = '') {
     return tokens.map((tok, idx) => tok.type === 'word' ? (
       <span
@@ -830,7 +842,7 @@ export default function PodcastEpisode() {
           {synced ? (
             <SyncedTranscript
               segments={timed}
-              translations={podcast.transcript_en?.split(/\r?\n/).filter(Boolean)}
+              translations={syncedPaired ? timedTranslations : null}
               audioRef={audioRef}
               showPinyin={showPinyin}
               showTranslation={showTranslation}
@@ -857,7 +869,10 @@ export default function PodcastEpisode() {
           {/* `transcript_en` is one free-text block, not per-line pairs, so it
               renders as its own passage under the Chinese rather than
               pretending to be aligned line by line. */}
-          {showTranslation && hasEnglish && !paired && (
+          {/* Whichever view is on decides whether the English was already
+              placed line by line — `paired` describes the plain transcript and
+              means nothing while the synced one is showing. */}
+          {showTranslation && hasEnglish && !(synced ? syncedPaired : paired) && (
             <div className="pe-translation">
               <span className="pe-translation-label">English</span>
               <p className="pe-translation-body">{podcast.transcript_en}</p>
