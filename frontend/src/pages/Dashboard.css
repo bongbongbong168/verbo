@@ -700,8 +700,12 @@
    The height is pinned to exactly two lines (2 x 1.35 line-height) so a
    one-line title leaves the second empty and the fade lands on nothing — the
    softening only ever shows where there is really more text below. */
+/* SMALLER THAN IT LOOKS IN THE REFERENCE, and the measurement is why: that
+   card is drawn ~1500px wide while this one is 327px with a 135px cover, so
+   the text column is ~150px. At 0.92rem the title ran out of room mid-phrase
+   and the block read as cramped. */
 .db-study-title {
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.35;
   height: 2.7em;
@@ -710,11 +714,13 @@
   mask-image: linear-gradient(to bottom, #000 2.3em, transparent 2.7em);
 }
 
-.db-study-rule {
-  display: block;
-  width: 118px;
-  height: 1px;
-  background: var(--db-edge);
+/* The unit's place in the level, beside the level pill and set as plain text
+   rather than a second pill — the reference gives the row one filled tag. */
+.db-study-unit {
+  align-self: center;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--db-accent);
 }
 
 /* The Chinese line is one line in the design, so it fades sideways rather than
@@ -761,7 +767,7 @@
   border-radius: 12px;
   background: var(--db-edge);
   color: #fff;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
 }
 
@@ -1121,8 +1127,8 @@
   width: 15px;
   height: 15px;
   flex: none;
-  /* The check's drawing sits slightly low inside its SVG view box. */
-  transform: translateY(-1px);
+  /* The badge's visible shape sits high against the name's cap height. */
+  transform: translateY(3px);
 }
 
 /* Star, rating, then the lesson count — one line, as the reference draws it. */
