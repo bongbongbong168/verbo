@@ -1128,10 +1128,9 @@ export default function Dashboard() {
                         to this profile, and a button inside an anchor is a
                         nested interactive control — the same call the Daily Use
                         card's "Start →" makes. */}
-                    <span className="db-teacher-cta">
-                      View Profile
-                      <ChevronRight />
-                    </span>
+                    {/* The label alone — the chevron came off at the user's
+                        request, the same call the quiz's Back and Skip made. */}
+                    <span className="db-teacher-cta">View Profile</span>
                   </Link>
                 ))}
               </div>

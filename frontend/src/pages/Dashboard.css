@@ -1149,7 +1149,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
   margin-top: auto;
   padding: calc(6px - 0.076em) 10px calc(6px + 0.076em);
   border-radius: 999px;
@@ -1157,12 +1156,6 @@
   color: #fff;
   font-size: 0.76rem;
   font-weight: 600;
-}
-
-.db-teacher-cta svg {
-  width: 13px;
-  height: 13px;
-  flex: none;
 }
 
 /* The fill IS the feedback and is not transitioned — a transition that never
