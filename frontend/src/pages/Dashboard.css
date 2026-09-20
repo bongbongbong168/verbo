@@ -1009,7 +1009,7 @@
 .db-teacher {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px; /* one pixel tighter than the podcast card's 3, which is what lands the two cards on the same height with a CTA row in this one */
   /* The podcast and read cards both have this; the teacher card did not, and
      that is the whole reason the sections did not line up. Given the same
      `flex-basis: 74%`, content-box added its 20px of padding and 2px of border
@@ -1037,25 +1037,21 @@
    initial has to be scaled along with the box, or the same tutor's letter
    shrinks relative to their card. 112/92 of the old 1rem. */
 .db-teacher-cover {
+  /* The podcast card's cover height, so the two rows sit on one rhythm — the
+     whole reason this card was given that card's shell. */
   height: 112px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   border-radius: 10px;
   font-size: 1.22rem;
 }
 
-/* `.db-pod-level`'s slot: the small muted line that says what KIND of thing
-   this is before you read its name. A rating is the tutor's answer to that,
-   and it is the only real number on the card. */
-.db-teacher-rating {
-  font-size: 0.74rem;
-  color: var(--db-text-muted);
-}
-
-/* `.db-pod-title`'s slot, at one line rather than two: an episode title is
-   authored "中文 - English" and needs the second line, a person's name does
-   not. No fade mask for the same reason — the box is sized by its own text, and
-   a downward fade on a box with no independent height eats the glyphs it is
-   meant to soften. Ellipsis is the right backstop here. */
+/* THE NAME LEADS, after the reference: the rating used to sit above it in the
+   podcast card's eyebrow slot, which spent the card's first line on a number
+   before saying whose number it was. */
+/* One line rather than two: an episode title is authored "中文 - English" and
+   needs the second line, a person's name does not. No fade mask — the box is
+   sized by its own text, and a downward fade on a box with no independent
+   height eats the glyphs it is meant to soften. Ellipsis is the backstop. */
 .db-teacher-name {
   display: flex;
   align-items: center;
@@ -1079,11 +1075,37 @@
   flex: none;
 }
 
-/* `.db-pod-author` and `.db-pod-lang`. */
+/* Star, rating, then the lesson count — one line, as the reference draws it. */
+.db-teacher-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1px;
+  font-size: 0.78rem;
+  color: var(--db-text);
+}
+
+.db-teacher-star {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--db-accent);
+  /* An icon in a text line sits on its LINE BOX, not on the cap band the
+     digits use — the same 0.076em correction every boxed label here takes,
+     cancelled so it moves the glyph and not the row. */
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
+}
+
+.db-teacher-dot {
+  color: var(--db-text-muted);
+}
+
+/* Still a PLACEHOLDER: nothing counts lessons taught. It is grouped with the
+   other invented figures in `PLACEHOLDER_TEACHER` rather than dressed up as a
+   measurement. */
 .db-teacher-lessons {
-  margin-top: 2px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  color: var(--db-text-muted);
 }
 
 .db-teacher-lang {
@@ -1093,6 +1115,60 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* REAL specialties, from `tutor_profiles.specialties`. One row, two at most,
+   and each ellipses rather than wrapping the row onto a second line — the card
+   is ~150px of content and "Conversational Chinese" is wider than that on its
+   own. */
+.db-teacher-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  min-width: 0;
+}
+
+.db-teacher-tag {
+  min-width: 0;
+  padding: calc(3px - 0.076em) 7px calc(3px + 0.076em);
+  border-radius: 7px;
+  background: var(--db-pill-bg);
+  color: var(--db-accent);
+  font-size: 0.64rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* PINNED TO THE BOTTOM, which is what levels the three cards: the grid already
+   stretches them to the tallest, and without this the CTA floated up under
+   whatever content each card happened to have. */
+.db-teacher-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: auto;
+  padding: calc(6px - 0.076em) 10px calc(6px + 0.076em);
+  border-radius: 999px;
+  background: var(--db-accent);
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.db-teacher-cta svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* The fill IS the feedback and is not transitioned — a transition that never
+   gets a frame leaves the button looking dead under the pointer. */
+.db-teacher:hover .db-teacher-cta {
+  background: var(--db-text);
 }
 
 /* ---- Top Reads ---- */

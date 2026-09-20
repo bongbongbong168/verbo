@@ -36,6 +36,12 @@ class TutorController extends Controller
                     ? round($profile->reviews_avg_rating, 1)
                     : null;
 
+                /* Resolved here rather than in the client: the cards print the
+                   labels, and a client-side copy of the option list is how it
+                   drifts from what the validator accepts. Costs no query — the
+                   keys are already on the row. */
+                $profile->setAttribute('specialty_list', $profile->specialtyList());
+
                 return $profile;
             });
     }
@@ -172,14 +178,9 @@ class TutorController extends Controller
             ->filter(fn ($l) => ! $l->is_trial && $l->price !== null && $l->price > 0)
             ->min('price');
 
-        /* Resolved for display, main one first, so the page never needs the
-           option list just to print a label. Keys no longer in the list are
-           dropped rather than shown as raw slugs. */
-        $specialtyList = collect($tutorProfile->specialties ?? [])
-            ->filter(fn ($key) => isset(TutorProfile::SPECIALTIES[$key]))
-            ->sortBy(fn ($key) => $key === $tutorProfile->main_specialty ? 0 : 1)
-            ->map(fn ($key) => ['key' => $key, 'main' => $key === $tutorProfile->main_specialty] + TutorProfile::SPECIALTIES[$key])
-            ->values();
+        /* Resolved for display, main one first — on the model, because the
+           Dashboard's cards resolve the same thing. */
+        $specialtyList = $tutorProfile->specialtyList();
 
         return array_merge($tutorProfile->toArray(), [
             'specialty_list' => $specialtyList,

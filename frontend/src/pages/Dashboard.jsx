@@ -198,11 +198,24 @@ function CalendarIcon() {
   )
 }
 
+/* The rating's star. Solid, in the accent — a rating is a number with a mark,
+   not an outline drawing, and it is the one figure on this card that is real. */
+function StarMark() {
+  return (
+    <svg className="db-teacher-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z" />
+    </svg>
+  )
+}
+
 function VerifiedIcon() {
   return (
     <svg className="db-verified" viewBox="0 0 24 24" aria-label="Verified" role="img">
+      {/* The app's accent, not a red tick: Verbo owns lavender plus one warm
+          accent, and a third hue for a badge would be a colour family minted
+          for one 13px mark. The reference draws it purple too. */}
       <path
-        fill="#d61f1f"
+        fill="#6a6191"
         d="M12.00 1.00 L9.64 3.21 L6.50 2.47 L5.57 5.57 L2.47 6.50 L3.21 9.64 L1.00 12.00 L3.21 14.36 L2.47 17.50 L5.57 18.43 L6.50 21.53 L9.64 20.79 L12.00 23.00 L14.36 20.79 L17.50 21.53 L18.43 18.43 L21.53 17.50 L20.79 14.36 L23.00 12.00 L20.79 9.64 L21.53 6.50 L18.43 5.57 L17.50 2.47 L14.36 3.21 Z"
       />
       <path
@@ -1071,22 +1084,53 @@ export default function Dashboard() {
                       photoUrl={t.photo_url}
                       name={t.user.name}
                     />
-                    {/* No reviews yet reads as "New", not 0 — a zero looks like
-                        a terrible score rather than an absent one. */}
-                    <span className="db-teacher-rating">
-                      {t.reviews_avg_rating != null
-                        ? `${t.reviews_avg_rating} Rating`
-                        : 'New tutor'}
-                    </span>
                     <span className="db-teacher-name">
                       <span className="db-teacher-name-text">{t.user.name}</span>
                       <VerifiedIcon />
                     </span>
-                    <span className="db-teacher-lessons">
-                      {PLACEHOLDER_TEACHER.lessons} Lessons
+                    {/* The rating leads the line, as the reference draws it.
+                        No reviews yet reads as "New tutor", never 0 — a zero
+                        looks like a terrible score rather than an absent one,
+                        and it takes the whole line because there is no figure
+                        to sit beside. */}
+                    <span className="db-teacher-stats">
+                      {t.reviews_avg_rating != null ? (
+                        <>
+                          <StarMark />
+                          <strong>{t.reviews_avg_rating}</strong>
+                          <span className="db-teacher-dot">·</span>
+                          <span className="db-teacher-lessons">
+                            {PLACEHOLDER_TEACHER.lessons} lessons
+                          </span>
+                        </>
+                      ) : (
+                        <span className="db-teacher-lessons">New tutor</span>
+                      )}
                     </span>
                     <span className="db-teacher-lang">
                       {t.languages_spoken || 'Chinese (Mandarin)'}
+                    </span>
+                    {/* REAL, not the reference's invented tags:
+                        `tutor_profiles.specialties`, resolved to their labels
+                        server-side so no client keeps its own copy of the list,
+                        main specialty first.
+
+                        ONE, where the reference draws two. Measured, this card
+                        is 144px wide at 1440 and a pill pair came out as
+                        "Conversa…" beside "Speaki…" — two stubs say less than
+                        one label a reader can actually finish. */}
+                    {t.specialty_list?.length > 0 && (
+                      <span className="db-teacher-tags">
+                        <span className="db-teacher-tag">{t.specialty_list[0].label}</span>
+                      </span>
+                    )}
+                    {/* A SPAN, not a button: the whole card is already the link
+                        to this profile, and a button inside an anchor is a
+                        nested interactive control — the same call the Daily Use
+                        card's "Start →" makes. */}
+                    <span className="db-teacher-cta">
+                      View Profile
+                      <ChevronRight />
                     </span>
                   </Link>
                 ))}

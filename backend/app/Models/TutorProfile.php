@@ -66,6 +66,25 @@ class TutorProfile extends Model
             ->all();
     }
 
+    /**
+     * This tutor's specialties, resolved for display and main one first, so no
+     * client needs the option list just to print a label. Keys no longer in
+     * the list are dropped rather than shown as raw slugs.
+     *
+     * It lives here because BOTH the profile page and the card listings want
+     * it — it was written out inside `showProfile` and the Dashboard's cards
+     * would have been the second copy.
+     */
+    public function specialtyList(): array
+    {
+        return collect($this->specialties ?? [])
+            ->filter(fn ($key) => isset(self::SPECIALTIES[$key]))
+            ->sortBy(fn ($key) => $key === $this->main_specialty ? 0 : 1)
+            ->map(fn ($key) => ['key' => $key, 'main' => $key === $this->main_specialty] + self::SPECIALTIES[$key])
+            ->values()
+            ->all();
+    }
+
     protected $fillable = [
         'bio',
         'subjects',
