@@ -1780,13 +1780,13 @@ a.db-course:hover {
      is handed to the AUTO track it ends on — so a long quest name quietly
      inflated the tick's column and squeezed the bar from 107px to 64. */
   grid-template-columns: auto minmax(0, 1fr) 24px;
-  /* TWO LINES OF TITLE ARE RESERVED HERE, on the row rather than on the label,
-     so the three tiles are the same height whatever their quests are called
-     AND a one-line name can centre itself in that space. Measured, "Review 10
-     words" needs 133px against the 127px the column has in the rail while
-     "Listen 5 min" fits on one; sized to content the rows came out 67px beside
-     84px and the list looked ragged. */
-  grid-template-rows: minmax(2.4em, auto) auto;
+  /* THE TITLE ROW IS SIZED BY ITS TEXT, not held open at two lines. Reserving
+     the second line kept the three tiles identical whatever their quests were
+     called, but it also parked ~13px of nothing under a one-line name and
+     pushed the bar down the tile, which is what was reported. A name that
+     genuinely needs two lines still gets them (the label is clamped at two),
+     and that row is then taller than its neighbours — the honest trade. */
+  grid-template-rows: auto auto;
   align-items: center;
   /* The bar rides HIGH in the tile: a tight gap under the title and less pad
      beneath it than above, so the row reads as a name with its bar rather than

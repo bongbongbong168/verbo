@@ -543,12 +543,6 @@
     padding-right: 30px;
   }
 
-  /* The second title line is not reserved here: the card is full width on a
-     phone, so every quest name fits on one and the rows are already uniform —
-     held open, each would carry ~13px of nothing under its title. */
-  .db-goal {
-    grid-template-rows: auto auto;
-  }
 }
 
 @media (max-width: 767px) {
