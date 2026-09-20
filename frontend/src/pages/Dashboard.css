@@ -1775,7 +1775,11 @@ a.db-course:hover {
      label — see the note on `.db-goal-label`. */
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* THE TICK'S COLUMN IS A FIXED WIDTH, NOT `auto`, and that is load-bearing:
+     the title spans columns 2 and 3, and a spanning item's min-content width
+     is handed to the AUTO track it ends on — so a long quest name quietly
+     inflated the tick's column and squeezed the bar from 107px to 64. */
+  grid-template-columns: auto minmax(0, 1fr) 24px;
   /* TWO LINES OF TITLE ARE RESERVED HERE, on the row rather than on the label,
      so the three tiles are the same height whatever their quests are called
      AND a one-line name can centre itself in that space. Measured, "Review 10
@@ -1784,10 +1788,15 @@ a.db-course:hover {
      84px and the list looked ragged. */
   grid-template-rows: minmax(2.4em, auto) auto;
   align-items: center;
-  gap: 0.3rem 0.6rem;
-  padding: 0.6rem 0.65rem;
+  /* The bar rides HIGH in the tile: a tight gap under the title and less pad
+     beneath it than above, so the row reads as a name with its bar rather than
+     as two stacked things. */
+  gap: 0.25rem 0.6rem;
+  padding: 0.7rem 0.7rem 0.55rem;
   border: 1px solid var(--db-border);
-  border-radius: 14px;
+  /* Softer corners, after the reference, where the tile's radius measures
+     ~0.11 of its own height. */
+  border-radius: 16px;
   background: var(--db-card);
 }
 
@@ -1813,8 +1822,11 @@ a.db-course:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  /* BIG, after the reference, where the mark measures ~0.7 of the row's
+     height. At 38px it read as an icon beside the text; at 46 it is the object
+     the row is about, which is what the drawings are for. */
+  width: 46px;
+  height: 46px;
   flex: none;
   color: var(--db-accent);
 }
@@ -1906,15 +1918,25 @@ a.db-course:hover {
   background: linear-gradient(90deg, var(--db-tag-unit), var(--db-progress));
 }
 
+/* THE FINISHED BAR IS DEEPER THAN THE LAVENDER ONE, and that is what makes
+   the white count legible: white on `--db-progress` measures ~1.9:1, while
+   this pair puts ~5:1 under the number where it actually sits. Both stops are
+   the app's own (`--db-hero` into `--db-accent`). */
 .db-goal.done .db-goal-fill {
-  background: linear-gradient(90deg, var(--db-tag-unit), var(--db-goal-done));
+  background: linear-gradient(90deg, var(--db-hero), var(--db-accent));
 }
 
-/* Inside the bar, over whatever part of it has filled. `--db-text` in EVERY
-   state: the fill slides under the number as the day goes on, so a colour that
-   had to follow it would need a rule per state — #1c1730 measures 7.2:1 on the
-   lavender fill and higher again on the white groove. `position: relative` so
-   it paints above the fill; tabular figures so the number does not jitter. */
+.db-goal.done .db-goal-count {
+  color: #fff;
+}
+
+/* Inside the bar, over whatever part of it has filled. `position: relative` so
+   it paints above the fill; tabular figures so the number does not jitter.
+
+   WHITE ONLY WHEN THE BAR IS FULL, which is what the reference actually does:
+   its finished row carries a white count and its untouched rows carry a dark
+   one. A white number on a part-filled bar would be half over the pale groove
+   and half gone, and on an untouched one it would be invisible. */
 .db-goal-count {
   position: relative;
   font-size: 0.66rem;
@@ -1935,8 +1957,8 @@ a.db-course:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex: none;
   box-sizing: border-box;
   border: 2px solid var(--db-progress-track);
@@ -1945,14 +1967,17 @@ a.db-course:hover {
 }
 
 .db-goal-tick svg {
-  width: 11px;
-  height: 11px;
+  width: 13px;
+  height: 13px;
 }
 
-/* Dark on lavender, never white: white on #a89ce3 is ~1.9:1. */
+/* A DEEP disc with a white tick, as the reference draws it — this is the one
+   place white is right, because the ground is the navy (15:1) rather than the
+   lavender the count sits on (~1.9:1). */
 .db-goal.done .db-goal-tick {
   border-color: transparent;
-  background: var(--db-goal-done);
+  background: var(--db-edge);
+  color: #fff;
 }
 
 .db-goal.done .db-goal-track {
