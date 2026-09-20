@@ -1010,7 +1010,9 @@
 }
 
 .rd-cm-new-hint kbd {
-  padding: 0.05rem 0.35rem;
+  /* All vertical padding below, lifting the key label onto its box's centre
+     (Hellix 600 sits 0.076em low; the top pad is too small for a pair). */
+  padding: 0 0.35rem 0.1rem;
   border: 1px solid var(--rd-border);
   border-radius: 5px;
   background: #fbfaff;

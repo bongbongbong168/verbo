@@ -109,7 +109,10 @@
 }
 
 .tl-row-tag {
-  padding: 0.05rem 0.45rem;
+  /* All the vertical padding below: lifts the label 0.8px of the 0.086em
+     (Hellix 700) it sits low. The pair cannot be calc()d here - the top pad
+     is smaller than the lift - and 0.08px off is within tolerance. */
+  padding: 0 0.45rem 0.1rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
   font-size: 0.64rem;

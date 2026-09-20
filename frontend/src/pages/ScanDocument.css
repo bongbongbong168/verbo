@@ -260,7 +260,10 @@
   place-items: center;
   min-width: 26px;
   height: 24px;
-  padding: 0 0.5rem;
+  /* Fixed height: lifted by trimming from below, twice Hellix 700's
+     0.086em cap-band offset (measured 1.4px low before). */
+  box-sizing: border-box;
+  padding: 0 0.5rem 0.172em;
   border-radius: 999px;
   background: var(--sd-pill-bg);
   color: var(--sd-accent2);

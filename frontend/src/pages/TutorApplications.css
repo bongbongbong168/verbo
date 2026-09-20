@@ -237,7 +237,8 @@
    even where the news is good. Same choice the Messages context card makes. */
 .ta-status {
   flex: none;
-  padding: 0.15rem 0.55rem;
+  /* Cap-band pair: Hellix 700 sits 0.086em low. */
+  padding: calc(0.15rem - 0.086em) 0.55rem calc(0.15rem + 0.086em);
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 700;

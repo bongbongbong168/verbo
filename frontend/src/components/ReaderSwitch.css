@@ -11,10 +11,15 @@
   /* Asymmetric by measurement, not by eye. Hellix reserves more ascent than a
      short label uses, so symmetric padding centres the LINE BOX and leaves the
      glyphs sitting ~1px low. Measured on the CAP BAND (cap top -> baseline),
-     never the ink box — a word with a descender would otherwise disagree with
+     THE TWO SURFACES DISAGREE HERE, so this is a split rather than a fix:
+     the box height comes from the 18px track, not from the text, and the
+     app renders at zoom 1.1 on desktop against 1 on a phone. Measured with
+     no lift at all: 0.21 HIGH on desktop but 1.06 LOW on a phone. 0.031em
+     lands both at 0.64, where a full 0.076em read -1.25 on desktop.
+     Measured on the cap band, never the ink box — a word with a descender would otherwise disagree with
      one without. The pair sums to the original 0.35rem, so the box height is
      unchanged and only the text moves. */
-  padding: calc(0.35rem - 0.076em) 0.75rem calc(0.35rem + 0.076em) 0.4rem;
+  padding: calc(0.35rem - 0.031em) 0.75rem calc(0.35rem + 0.031em) 0.4rem;
   border: 1px solid #e7e3f6;
   border-radius: 999px;
   background: #fff;
@@ -56,8 +61,8 @@
   width: 30px;
   height: 18px;
   flex: none;
-  margin-top: 0.076em;
-  margin-bottom: -0.076em;
+  margin-top: 0.031em;
+  margin-bottom: -0.031em;
   border-radius: 999px;
   background: #e2dff0;
 }

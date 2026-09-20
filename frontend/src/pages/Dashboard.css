@@ -190,7 +190,10 @@
    whatever the line height. */
 .db-streak-text {
   position: relative;
-  top: -0.92px;
+  /* Split between the two surfaces, as on .rs-switch: -1.61px centres the
+     label on desktop (zoom 1.1) but leaves it 0.83px HIGH on a phone
+     (zoom 1). -1.2px lands both within 0.42px. */
+  top: -1.2px;
 }
 
 .db-hero-content {

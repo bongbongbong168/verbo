@@ -127,9 +127,12 @@
   box-sizing: border-box;
   min-width: 18px;
   height: 18px;
-  /* The 0.3px bottom lifts the digit off the circle's floor — centring aligns
-     its line box and Hellix reserves more ascent than a numeral uses. */
-  padding: 0 5px 0.3px;
+  /* Half a trim, because the two surfaces disagree: the app renders at
+     zoom 1.1 on desktop and 1 on a phone, and that alone moves the glyph
+     ~0.9px inside this 18px circle (measured: 0.82 low on desktop, 0.08
+     high on a phone, same CSS). 0.06em splits it - 0.46 / -0.44 - so
+     neither is off by half a pixel. */
+  padding: 0 5px 0.06em;
   border-radius: 999px;
   background: var(--bo-pill-bg);
   color: var(--bo-accent);
@@ -189,6 +192,10 @@
   flex: none;
   width: 40px;
   height: 40px;
+  /* Fixed circle: the initial is lifted by trimming the content box from
+     below, twice Hellix 700's 0.086em cap-band offset. */
+  box-sizing: border-box;
+  padding-bottom: 0.172em;
   border-radius: 50%;
   background: var(--bo-accent-soft);
   color: #fff;
@@ -256,7 +263,8 @@
 /* ---- status ---- */
 
 .bo-chip {
-  padding: 0.22rem 0.6rem;
+  /* Cap-band pair: Hellix 700 sits 0.086em low in its line box. */
+  padding: calc(0.22rem - 0.086em) 0.6rem calc(0.22rem + 0.086em);
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 700;
@@ -291,7 +299,8 @@
 }
 
 .bo-btn {
-  padding: 0.4rem 0.85rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box. */
+  padding: calc(0.4rem - 0.076em) 0.85rem calc(0.4rem + 0.076em);
   border: 1px solid var(--bo-border);
   border-radius: 999px;
   background: #fff;
@@ -417,7 +426,8 @@
 /* ---- richer row ---- */
 
 .bo-kind {
-  padding: 0.1rem 0.5rem;
+  /* Cap-band pair: Hellix 700 sits 0.086em low in its line box. */
+  padding: calc(0.1rem - 0.086em) 0.5rem calc(0.1rem + 0.086em);
   border-radius: 999px;
   background: var(--bo-pill-bg);
   color: var(--bo-accent);
@@ -612,7 +622,8 @@
   align-items: center;
   gap: 0.4rem;
   flex: none;
-  padding: 0.55rem 1.1rem;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box. */
+  padding: calc(0.55rem - 0.076em) 1.1rem calc(0.55rem + 0.076em);
   border: 1px solid var(--bo-border);
   border-radius: 999px;
   background: #fff;

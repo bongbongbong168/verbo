@@ -97,7 +97,9 @@
   color: #1c1730;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 7px;
-  padding: 4px 8px 5px;
+  /* Cap-band pair: Hellix 600 sits 0.076em low; the old 4/5 split was only
+     half of what it needed (measured 0.56 low). Sums to the same 9px. */
+  padding: calc(4.5px - 0.076em) 8px calc(4.5px + 0.076em);
 }
 
 /* The Dashboard's pick-up tile is a good deal smaller than a Read shelf card,
