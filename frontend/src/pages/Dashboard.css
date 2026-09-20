@@ -574,6 +574,17 @@
    what you had clicked last. */
 .db-pickup > .db-read-tile {
   flex: 0 0 max(190px, calc((100% - 40px) / 3));
+  /* AND IT STRETCHES TO THE ROW, which is what keeps it level with the podcast
+     card beside it. The two shells are identical, but a podcast carries two
+     text rows under its title (author, language) against the read tile's one,
+     so measured at 1440 the podcast stood 248.6px against 226.5 and the row
+     ended on two different lines.
+
+     Only the READ TILE stretches, never the podcast: the podcast must stay the
+     same height as its twin in the Podcasts section below, and stretching it
+     to a taller study card would break that match — the reason this row is
+     `align-items: flex-start` in the first place. */
+  align-self: stretch;
 }
 
 /* ---- study card (first "pick up" tile) ---- */
@@ -977,8 +988,12 @@
   mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
 }
 
+/* Pinned to the BOTTOM of the stretched tile, so the space the podcast card
+   spends on its author and language lines shows as room above this line rather
+   than as a gap beneath it. The two cards then end on the same rule. */
 .db-read-tile-time {
-  margin-top: 2px;
+  margin-top: auto;
+  padding-top: 2px;
   font-size: 0.72rem;
   color: var(--db-text-muted);
 }
