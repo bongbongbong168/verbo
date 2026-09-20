@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Podcast;
 use App\Models\StudyUnit;
+use App\Services\DictionaryService;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -128,6 +129,12 @@ class RecentViewController extends Controller
                     'description' => $thing->description,
                     'lesson_label' => $thing->lesson_label,
                     'position' => $position,
+                    /* The reading for the Chinese half of the title, so the
+                       card can print it under the characters the way every
+                       other Chinese line in the app is printed. Derived from
+                       CC-CEDICT by the same service Read, Podcast and Study
+                       use — nothing is stored and nothing is guessed. */
+                    'title_pinyin' => $this->pinyinForTitle($thing->title),
                 ],
                 'level' => [
                     'id' => $thing->level->id,
@@ -166,5 +173,29 @@ class RecentViewController extends Controller
                 'image_url' => $thing->image_url,
             ],
         ];
+    }
+
+    /**
+     * Unit titles are authored "中文 - English", so the reading is for the left
+     * half only — running the whole string through would put pinyin under the
+     * English words too. Split on the FIRST dash with optional spaces, the
+     * same rule the Dashboard uses, and only when that half actually holds Han
+     * characters: an English title containing a hyphen is left alone and gets
+     * no reading at all.
+     */
+    private function pinyinForTitle(?string $title): ?string
+    {
+        $title = trim((string) $title);
+        if ($title === '') {
+            return null;
+        }
+
+        $chinese = preg_match('/^(.*?)\s*[-–—]\s*(.+)$/u', $title, $m) ? trim($m[1]) : $title;
+
+        if (! preg_match('/\p{Han}/u', $chinese)) {
+            return null;
+        }
+
+        return app(DictionaryService::class)->pinyinFor($chinese) ?: null;
     }
 }

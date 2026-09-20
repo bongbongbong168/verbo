@@ -80,6 +80,10 @@ function shapeStudyTile(level, unit, progress) {
     levelTag: level.title,
     title: unit.description || english || raw,
     chinese,
+    /* The reading for the Chinese line, derived server-side from CC-CEDICT by
+       the same service Read and Study use. Absent for a unit whose title
+       carries no Han characters, and the line simply does not render. */
+    pinyin: unit.title_pinyin || '',
     /* Only when the level actually has units — 0/0 is not a progress bar.
        `pct` drives the bar's width and stays exact; `percent` is the rounded
        figure on the label, floored at 1 whenever anything has been opened so a
@@ -123,6 +127,45 @@ const PLACEHOLDER_PODCAST = {
   language: 'Chinese｜Mandarin',
 }
 const PLACEHOLDER_TEACHER = { lessons: '275', rating: '4.9' }
+
+function tutorLanguages(value) {
+  const languages = String(value || 'Chinese (Mandarin)')
+    .split(',')
+    .map((language) => language.trim())
+    .filter(Boolean)
+
+  return languages.slice(1).join(', ')
+}
+
+function TutorSpecialtyRotator({ specialties }) {
+  const ordered = useMemo(
+    () => [...specialties].sort((a, b) => (b.key === 'speaking') - (a.key === 'speaking')),
+    [specialties],
+  )
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    setActiveIndex(0)
+    if (ordered.length < 2) return undefined
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % ordered.length)
+    }, 4000)
+
+    return () => window.clearInterval(timer)
+  }, [ordered])
+
+  if (!ordered.length) return null
+  const specialty = ordered[activeIndex]
+
+  return (
+    <span className="db-teacher-tags">
+      <span className="db-teacher-tag db-teacher-tag-rotating" key={specialty.key}>
+        {specialty.label}
+      </span>
+    </span>
+  )
+}
 
 /* "Today · 7:00 PM", "Tomorrow · 6:00 PM", else "Sep 8 · 7:00 PM".
    Relative for the two days a student actually has to act on, absolute after
@@ -378,7 +421,7 @@ function QuestRow({ quest, onChange }) {
           what buys the room for the tick beside it. */}
       <span className="db-goal-track">
         <span className="db-goal-fill" style={{ width: `${(quest.progress / quest.target) * 100}%` }} />
-        <span className="db-goal-count">
+        <span className={'db-goal-count' + (quest.progress / quest.target >= 0.5 ? ' db-goal-count-on-fill' : '')}>
           {quest.progress} / {quest.target}
         </span>
       </span>
@@ -986,15 +1029,21 @@ export default function Dashboard() {
                       {tile.cover && <img src={tile.cover} alt="" />}
                     </span>
                     <span className="db-study-body">
+                      {/* THE LEVEL IS THE PILL AND THE UNIT IS PLAIN TEXT, as
+                          the reference draws it: the level is what the book on
+                          the left already says, so it reads as the label of
+                          that cover, and the unit is the position inside it. */}
                       <span className="db-study-tags">
-                        <span className="db-tag db-tag-unit">{tile.unitTag}</span>
-                        <span className="db-tag db-tag-level">{tile.levelTag}</span>
+                        <span className="db-tag db-tag-unit">{tile.levelTag}</span>
+                        <span className="db-study-unit">{tile.unitTag}</span>
                       </span>
                       <span className="db-study-title">{tile.title}</span>
-                      <span className="db-study-rule" />
                       {tile.chinese && (
-                        <span className="db-study-quote">&ldquo;{tile.chinese}&rdquo;</span>
+                        <span className="db-study-quote">{tile.chinese}</span>
                       )}
+                      {/* The reading, under the characters, exactly as Read and
+                          Study print it. Only when the server derived one. */}
+                      {tile.pinyin && <span className="db-study-pinyin">{tile.pinyin}</span>}
                       {/* Units OPENED over the level's total — the same figure
                           the Study page shows, and worded the same way, because
                           nothing in the app records a unit as finished and
@@ -1028,6 +1077,15 @@ export default function Dashboard() {
                           </span>
                         </span>
                       )}
+                      {/* A SPAN, not a button — the whole tile is already the
+                          link to this unit, so the click lands on the same
+                          place whether it hits the cover, the title or this.
+                          A button inside an anchor is a nested interactive
+                          control, the call `.du-card`'s "Start →" makes. */}
+                      <span className="db-study-cta">
+                        Continue
+                        <ChevronRight />
+                      </span>
                     </span>
                   </Link>
                 ) : tile.kind === 'article' ? (
@@ -1058,7 +1116,10 @@ export default function Dashboard() {
               <p className="db-empty">No tutors yet.</p>
             ) : (
               <div className="db-grid3">
-                {tutors.map((t) => (
+                {tutors.map((t) => {
+                  const alsoSpeaks = tutorLanguages(t.languages_spoken)
+
+                  return (
                   <Link className="db-teacher" key={t.id} to={`/find-tutor/${t.id}`}>
                     {/* THE PODCAST CARD'S SHAPE, one row down, because the two
                         sit in the same column and read as one page: a full
@@ -1107,8 +1168,13 @@ export default function Dashboard() {
                         <span className="db-teacher-lessons">New tutor</span>
                       )}
                     </span>
-                    <span className="db-teacher-lang">
-                      {t.languages_spoken || 'Chinese (Mandarin)'}
+                    <span className="db-teacher-languages">
+                      {alsoSpeaks && (
+                        <span>
+                          <em>Speaks</em>
+                          <strong>{alsoSpeaks}</strong>
+                        </span>
+                      )}
                     </span>
                     {/* REAL, not the reference's invented tags:
                         `tutor_profiles.specialties`, resolved to their labels
@@ -1120,9 +1186,10 @@ export default function Dashboard() {
                         "Conversa…" beside "Speaki…" — two stubs say less than
                         one label a reader can actually finish. */}
                     {t.specialty_list?.length > 0 && (
-                      <span className="db-teacher-tags">
-                        <span className="db-teacher-tag">{t.specialty_list[0].label}</span>
-                      </span>
+                      <TutorSpecialtyRotator specialties={t.specialty_list} />
+                    )}
+                    {t.cheapest_lesson != null && (
+                      <span className="db-teacher-price">From ${t.cheapest_lesson}</span>
                     )}
                     {/* A SPAN, not a button: the whole card is already the link
                         to this profile, and a button inside an anchor is a
@@ -1132,7 +1199,8 @@ export default function Dashboard() {
                         request, the same call the quiz's Back and Skip made. */}
                     <span className="db-teacher-cta">View Profile</span>
                   </Link>
-                ))}
+                  )
+                })}
               </div>
             )}
           </section>

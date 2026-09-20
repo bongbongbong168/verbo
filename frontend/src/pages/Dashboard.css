@@ -551,6 +551,8 @@
 /* The design's own widths, by card type — not by slot. */
 .db-pickup > .db-study {
   flex: 0 0 327px;
+  /* Keep the study tile's lower edge level with the media cards beside it. */
+  align-self: stretch;
 }
 
 /* A podcast card is the SAME card here as in the Podcasts section below, so it
@@ -689,10 +691,10 @@
   box-shadow: inset 0 0 0 2px var(--db-tag-unit-edge);
 }
 
-.db-tag-level {
-  background: var(--db-tag-level);
-  box-shadow: inset 0 0 0 2px var(--db-tag-level-edge);
-}
+/* `.db-tag-level` (the warm HSK pill) came off this card with the redesign —
+   the reference gives the row ONE filled tag, and it is the level, in the
+   card's own lavender. The `--db-tag-level` token stays: the Profile page's
+   streak bar reads it. */
 
 /* Two lines, and what does not fit FADES rather than cutting to an ellipsis.
    The height is pinned to exactly two lines (2 x 1.35 line-height) so a
@@ -726,6 +728,51 @@
   overflow: hidden;
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+}
+
+/* The reading, under the characters, exactly as Read and Study print it —
+   muted and a size down, so the line reads as help rather than as content.
+   Fades sideways like the line above it for the same reason. */
+.db-study-pinyin {
+  margin-top: -4px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--db-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+}
+
+/* THE CONTINUE BUTTON, and it is a span: the whole tile is the link to this
+   unit, so a click anywhere — the cover, the title, this — lands on the same
+   page. A real button inside an anchor is a nested interactive control.
+
+   Dark, as the reference draws it, and not transitioned: the fill IS the
+   feedback, and a transition that never gets a frame leaves it looking dead
+   under the pointer. */
+.db-study-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 10px;
+  padding: calc(8px - 0.076em) 12px calc(8px + 0.076em);
+  border-radius: 12px;
+  background: var(--db-edge);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.db-study-cta svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.db-study:hover .db-study-cta {
+  background: var(--db-accent);
 }
 
 /* ---- study card progress ----
@@ -1009,7 +1056,7 @@
 .db-teacher {
   display: flex;
   flex-direction: column;
-  gap: 2px; /* one pixel tighter than the podcast card's 3, which is what lands the two cards on the same height with a CTA row in this one */
+  gap: 6px;
   /* The podcast and read cards both have this; the teacher card did not, and
      that is the whole reason the sections did not line up. Given the same
      `flex-basis: 74%`, content-box added its 20px of padding and 2px of border
@@ -1017,10 +1064,10 @@
      of the same width, so every section edge below Recommend Teachers sat 22px
      further right. */
   box-sizing: border-box;
-  padding: 10px;
+  padding: 12px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
@@ -1040,10 +1087,10 @@
   /* 4px under the podcast card's 112, which is what pays for this card's
      even rhythm (6 under the photo, 8 before the pill, 8 before the button)
      while the two cards still finish on the same line. */
-  height: 108px;
-  margin-bottom: 4px;
-  border-radius: 10px;
-  font-size: 1.22rem;
+  height: 132px;
+  margin-bottom: 2px;
+  border-radius: 12px;
+  font-size: 1.34rem;
 }
 
 /* THE NAME LEADS, after the reference: the rating used to sit above it in the
@@ -1058,7 +1105,7 @@
   align-items: center;
   gap: 0.3rem;
   min-width: 0;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -1071,9 +1118,11 @@
 }
 
 .db-verified {
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   flex: none;
+  /* The check's drawing sits slightly low inside its SVG view box. */
+  transform: translateY(-1px);
 }
 
 /* Star, rating, then the lesson count — one line, as the reference draws it. */
@@ -1081,20 +1130,17 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--db-text);
 }
 
 .db-teacher-star {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
   flex: none;
   color: var(--db-accent);
-  /* An icon in a text line sits on its LINE BOX, not on the cap band the
-     digits use — the same 0.076em correction every boxed label here takes,
-     cancelled so it moves the glyph and not the row. */
-  margin-top: 0.076em;
-  margin-bottom: -0.076em;
+  /* A larger mark centres on the rating's actual glyphs, not its line box. */
+  transform: translateY(-0.5px);
 }
 
 .db-teacher-dot {
@@ -1108,11 +1154,31 @@
   color: var(--db-text-muted);
 }
 
-.db-teacher-lang {
+.db-teacher-languages {
+  display: grid;
+  gap: 2px;
   min-width: 0;
-  font-size: 0.72rem;
   color: var(--db-text-muted);
+  font-size: 0.73rem;
+  line-height: 1.25;
+}
+
+.db-teacher-languages > span {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.db-teacher-languages em {
+  flex: none;
+  font-style: normal;
+}
+
+.db-teacher-languages strong {
+  min-width: 0;
   overflow: hidden;
+  color: var(--db-text);
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1124,20 +1190,18 @@
 .db-teacher-tags {
   display: flex;
   gap: 4px;
-  margin-top: 6px;
-  /* A break before the button, so the pill belongs to the text above it
-     rather than floating between two things. */
-  margin-bottom: 6px;
+  min-height: 25px;
+  margin: 0;
   min-width: 0;
 }
 
 .db-teacher-tag {
-  min-width: 0;
-  padding: calc(3px - 0.076em) 7px calc(3px + 0.076em);
-  border-radius: 7px;
+  max-width: 100%;
+  padding: calc(4px - 0.076em) 8px calc(4px + 0.076em);
+  border-radius: 999px;
   background: var(--db-pill-bg);
   color: var(--db-accent);
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   font-weight: 600;
   line-height: 1.25;
   overflow: hidden;
@@ -1145,22 +1209,43 @@
   white-space: nowrap;
 }
 
-/* PINNED TO THE BOTTOM, which is what levels the three cards: the grid already
-   stretches them to the tallest, and without this the CTA floated up under
-   whatever content each card happened to have. */
+.db-teacher-tag-rotating {
+  animation: db-teacher-specialty-in 220ms ease both;
+}
+
+@keyframes db-teacher-specialty-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.db-teacher-price {
+  margin: 1px 0 2px;
+  color: var(--db-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* The profile action follows the price. It belongs to the teacher's details,
+   rather than being stranded at the bottom of a taller neighbouring card. */
 .db-teacher-cta {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: auto;
-  /* The slack the grid gives a short card collects HERE, above the button,
-     where it reads as a deliberate break before the action rather than as a
-     hole in the middle of the text. */
-  padding: calc(6px - 0.076em) 10px calc(6px + 0.076em);
-  border-radius: 999px;
-  background: var(--db-accent);
+  margin-top: 2px;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: 0;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--db-text);
   color: #fff;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
@@ -2035,6 +2120,12 @@ a.db-course:hover {
   color: var(--db-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* The count is centred in the groove. It becomes white once the filled portion
+   reaches the centre, so the label stays readable on early progress. */
+.db-goal-count-on-fill {
+  color: #fff;
 }
 
 /* THE TICK IS A DRAWING, NOT A BUTTON. The reference's round check reads as
