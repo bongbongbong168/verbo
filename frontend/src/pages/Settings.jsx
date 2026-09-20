@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import ImageCropper from "../components/ImageCropper";
@@ -25,6 +25,70 @@ function CheckIcon() {
   );
 }
 
+/* The three saved lists, each with its own mark, its own way back to the
+   thing, and its own empty line. ONE EMPTY SENTENCE PER KIND, not the same
+   "Nothing saved yet." three times: the panel opens empty for everyone, so
+   those three lines are the first thing anyone reads here, and each should
+   say where the save button actually is. */
+const SAVED_GROUPS = [
+  {
+    kind: "tutor",
+    title: "Teachers",
+    empty: "Save a teacher from their profile and they wait here.",
+    to: (item) => `/find-tutor/${item.id}`,
+    name: (item) => item.user?.name || "Teacher",
+    mark: (
+      <>
+        <circle cx="12" cy="8.5" r="3.6" />
+        <path d="M5 19.5c1.4-3.2 4-4.8 7-4.8s5.6 1.6 7 4.8" />
+      </>
+    ),
+  },
+  {
+    kind: "podcast",
+    title: "Podcasts",
+    empty: "Save an episode while you listen to come back to it.",
+    to: (item) => `/podcast/${item.id}`,
+    name: (item) => item.title,
+    mark: (
+      <>
+        <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+        <path d="M4 14h2.5a1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1H5.5A1.5 1.5 0 0 1 4 18z" />
+        <path d="M20 14h-2.5a1 1 0 0 0-1 1v3.5a1 1 0 0 0 1 1h1a1.5 1.5 0 0 0 1.5-1.5z" />
+      </>
+    ),
+  },
+  {
+    kind: "read",
+    title: "Reads",
+    empty: "Save an article while you read it to keep it here.",
+    to: (item) => `/read/${item.id}`,
+    name: (item) => item.title,
+    mark: (
+      <>
+        <path d="M12 7.5v12" />
+        <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
+      </>
+    ),
+  },
+];
+
+function SavedMark({ children }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-US", {
@@ -43,6 +107,7 @@ const SECTIONS = [
   { key: "payments", label: "Payments" },
   { key: "security", label: "Security" },
   { key: "appearance", label: "Appearance" },
+  { key: "saved", label: "Saved" },
   { key: "data", label: "Your data" },
 ];
 
@@ -81,6 +146,7 @@ export default function Settings() {
     : "profile";
 
   const [stats, setStats] = useState(null);
+  const [savedLibrary, setSavedLibrary] = useState(null);
   const [error, setError] = useState(null);
   const [flash, setFlash] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -109,6 +175,13 @@ export default function Settings() {
       .then(setStats)
       .catch(() => setStats(null));
   }, [token]);
+
+  useEffect(() => {
+    if (!token || active !== "saved") return;
+    Promise.all([api.getSavedLibrary(token), api.getBookmarks(token)])
+      .then(([library, articles]) => setSavedLibrary({ ...library, articles }))
+      .catch(() => setSavedLibrary({ tutors: [], podcasts: [], articles: [] }));
+  }, [token, active]);
 
   function say(message) {
     setFlash(message);
@@ -607,6 +680,70 @@ export default function Settings() {
                   </label>
                 </div>
               </div>
+            </div>
+          )}
+
+          {active === "saved" && (
+            <div className="se-saved">
+              <div className="se-saved-intro">
+                <p className="se-row-label">Your saved list</p>
+                <p className="se-row-help">Teachers, podcasts, and reads you want to return to.</p>
+              </div>
+              {!savedLibrary ? <p className="se-row-help">Loading saved items…</p> : (
+                <div className="se-saved-groups">
+                  {SAVED_GROUPS.map((group) => {
+                    const items =
+                      group.kind === "tutor"
+                        ? savedLibrary.tutors
+                        : group.kind === "podcast"
+                          ? savedLibrary.podcasts
+                          : savedLibrary.articles;
+
+                    return (
+                      <section key={group.kind} className="se-saved-group">
+                        <header className="se-saved-head">
+                          <span className="se-saved-mark" aria-hidden="true">
+                            <SavedMark>{group.mark}</SavedMark>
+                          </span>
+                          <h2>{group.title}</h2>
+                          {/* The count is the one fact the header can add, and
+                              it is the reason an empty group still reads as a
+                              list rather than as a broken one. */}
+                          <span className="se-saved-count">{items.length}</span>
+                        </header>
+
+                        {items.length ? (
+                          <ul className="se-saved-list">
+                            {items.map((item) => (
+                              <li key={item.id}>
+                                <Link to={group.to(item)} className="se-saved-item">
+                                  <span className="se-saved-name">{group.name(item)}</span>
+                                  {/* Drawn, so it sits on the row's centre
+                                      rather than on the text's baseline. */}
+                                  <svg
+                                    className="se-saved-go"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path d="m9.5 5 7 7-7 7" />
+                                  </svg>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="se-saved-empty">{group.empty}</p>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
