@@ -1034,7 +1034,7 @@ export default function Dashboard() {
                           the left already says, so it reads as the label of
                           that cover, and the unit is the position inside it. */}
                       <span className="db-study-tags">
-                        <span className="db-tag db-tag-unit">{tile.levelTag}</span>
+                        <span className="db-study-level">{tile.levelTag}</span>
                         <span className="db-study-unit">{tile.unitTag}</span>
                       </span>
                       <span className="db-study-title">{tile.title}</span>
