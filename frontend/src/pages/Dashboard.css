@@ -1935,6 +1935,9 @@ a.db-course:hover {
    second colour family the `#8b6ff0` sweep removed. What tells the three
    apart is the glyph. */
 .db-goal {
+  /* Only so the ⋯ can sit in the corner without taking a grid column off the
+     label — see the note on `.db-goal-label`. */
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1946,9 +1949,15 @@ a.db-course:hover {
 }
 
 /* The title spans past the count's column; only the bar shares a row with it,
-   so a long label uses the full width instead of wrapping around a number. */
+   so a long label uses the full width instead of wrapping around a number.
+   The ⋯ is taken OUT of the grid rather than given the third column here:
+   measured in the rail, a column of its own left the label 77px against the
+   85px "Read 3 articles" needs, and every quest came up ellipsed. Absolute,
+   it costs only the 22px reserved below. */
 .db-goal-label {
   grid-column: 2 / -1;
+  grid-row: 1;
+  padding-right: 22px;
 }
 
 .db-goal-mark {
@@ -1975,12 +1984,16 @@ a.db-course:hover {
   line-height: 1.2;
   color: var(--db-text);
   min-width: 0;
-  /* The longest label measures 100.9px against 142px of column here, so this
-     is a backstop for a narrower rail rather than something that normally
-     bites. */
+  /* TWO LINES, not one with an ellipsis. The label is a real sentence whose
+     length is set by the quest and its target, and "Learn 10 new words" needs
+     ~160px against the 133px this column measures in the rail — so an ellipsis
+     here would not be the rare backstop it was when the labels were fixed, it
+     would cut the number off the quest. A clamp rather than a fade, because
+     the box is sized by its content (see the note on `.rh-title`). */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* A completed row still steps FORWARD, never greys out — done is the good
@@ -2003,6 +2016,8 @@ a.db-course:hover {
    untouched goal (0/5, no fill at all) still reads as a container waiting to
    be filled rather than as a bar that failed to draw. */
 .db-goal-track {
+  grid-column: 2;
+  grid-row: 2;
   position: relative;
   height: 10px;
   box-sizing: border-box;
@@ -2032,6 +2047,8 @@ a.db-course:hover {
    can be read against each other. Tabular figures keep that edge straight as
    the numbers change. */
 .db-goal-count {
+  grid-column: 3;
+  grid-row: 2;
   flex: none;
   font-size: 0.74rem;
   font-weight: 700;
@@ -2039,4 +2056,207 @@ a.db-course:hover {
   color: var(--db-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ---- the quest's own ⋯, and the panel it opens ----
+
+   Asked for as "a subtle ⋯ or small Change action to each quest rather than
+   adding lots of buttons": three actions on a row that is already a mark, a
+   label, a bar and a count, inside a card ~236px wide in the rail. So the
+   actions are not on the row at all — the ⋯ opens them INSIDE it, pushing the
+   tile open rather than floating a menu over the card. A popover here would
+   need flip-and-clamp logic (the trap `.vb-rowmenu` documents) for a list of
+   three items that fits in the tile anyway.
+
+   Drawn unconditionally, never revealed on hover — the same call the
+   Vocabulary Bank's row menu makes, since a touch screen has no hover. */
+.db-goal-more {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--db-text-muted);
+  cursor: pointer;
+}
+
+.db-goal-more svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The fill IS the feedback, so it is not transitioned — a transition that
+   never gets a frame leaves the button looking dead under the pointer. */
+.db-goal-more:hover,
+.db-goal-more[aria-expanded='true'] {
+  background: var(--db-pill-bg);
+  color: var(--db-text);
+}
+
+.db-goal.done .db-goal-more:hover,
+.db-goal.done .db-goal-more[aria-expanded='true'] {
+  background: var(--db-card);
+}
+
+.db-quest-panel {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--db-progress-track);
+}
+
+/* One row per action. Left-aligned, because these are choices being read down
+   a list rather than labels centred in their own boxes. */
+.db-quest-panel > button {
+  /* 600 weight sits 0.076em below its line box's centre in Hellix, so the pad
+     is cut above and added below by that much. */
+  padding: calc(0.32rem - 0.076em) 0.4rem calc(0.32rem + 0.076em);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--db-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.db-quest-panel > button:hover:not(:disabled) {
+  background: var(--db-pill-bg);
+}
+
+.db-quest-panel > button:disabled {
+  color: var(--db-text-muted);
+  cursor: default;
+}
+
+.db-quest-panel-title {
+  margin: 0 0 0.1rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--db-text-muted);
+}
+
+/* A choice is a mark, what it asks for, and what it counts. The blurb is the
+   part that stops "Read 3 articles" and "Read 2 stories" reading as the same
+   quest twice. */
+.db-quest-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.db-quest-option strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.db-quest-option em {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--db-text-muted);
+}
+
+.db-quest-option-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--db-accent);
+  /* The glyph is a box, not a label, so it takes the same em correction as a
+     600 label to sit on the title's cap band rather than its line box. */
+  margin-top: calc(0.076em + 1px);
+  margin-bottom: calc(-0.076em - 1px);
+}
+
+.db-quest-option-mark svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* THREE NAMED LEVELS, never a number the learner types. The server owns the
+   targets, so this row can only ever offer what it will accept. */
+.db-quest-levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.db-quest-levels button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  /* 700 weight, 0.086em low. */
+  padding: calc(0.35rem - 0.086em) 0.2rem calc(0.35rem + 0.086em);
+  border: 1px solid var(--db-border);
+  border-radius: 10px;
+  background: var(--db-card);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--db-text);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.db-quest-levels button em {
+  font-size: 0.6rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--db-text-muted);
+}
+
+/* The chosen one is filled, and it is a static class — nothing here depends on
+   a frame arriving. */
+.db-quest-levels button.on {
+  border-color: transparent;
+  background: var(--db-progress);
+}
+
+.db-quest-levels button.on em {
+  color: var(--db-text);
+}
+
+.db-quest-why,
+.db-quest-panel-note {
+  margin: 0;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: var(--db-text-muted);
+}
+
+.db-quest-panel-note {
+  margin-top: 0.1rem;
+}
+
+.db-quest-panel-error {
+  margin: 0;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: #b3261e;
 }

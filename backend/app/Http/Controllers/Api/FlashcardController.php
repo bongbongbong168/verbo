@@ -160,6 +160,11 @@ class FlashcardController extends Controller
 
         if ($data['correct']) {
             $flashcard->correct_streak++;
+            /* The first time a word is answered right is what "learn a word"
+               means for the daily quest - saving one is not learning it.
+               Stamped once and never cleared: it happened, even if the word
+               is later forgotten (that is what `lapses` records). */
+            $flashcard->first_correct_at ??= now();
         } else {
             $flashcard->correct_streak = 0;
             $flashcard->lapses++;

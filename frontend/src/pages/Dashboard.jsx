@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { useApiData } from '../useApiData'
+import { invalidate } from '../dataCache'
 import Skeleton, { SkeletonCards } from '../components/Skeleton'
 import ArticleCover from '../components/ArticleCover'
 import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
+import MenuDotsIcon from '../components/MenuDotsIcon'
 import TutorCover from '../components/TutorCover'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
@@ -26,6 +28,10 @@ const PICKUP_SLOTS = 3
    between renders. A fresh `[]` each time would change on every render and
    re-run every `useMemo` that depends on it. */
 const EMPTY = []
+
+/* Same reason as EMPTY: a stable identity for "no quest has been changed yet",
+   so the memo below does not re-run on every render. */
+const EMPTY_EDITS = {}
 
 /**
  * A study unit as a pick-up tile: the level's book cover, a unit tag and a
@@ -225,7 +231,49 @@ function VerifiedIcon() {
  * with a single home.
  */
 const GOAL_MARKS = {
+  /* The quest marks are keyed by the server's `mark`, not by quest key, so
+     two quests that mean the same thing (an article and a story are both
+     reading) can share one drawing. */
+  headphones: (
+    <>
+      <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+      <path d="M4 14h2.5a1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1H5.5A1.5 1.5 0 0 1 4 18z" />
+      <path d="M20 14h-2.5a1 1 0 0 0-1 1v3.5a1 1 0 0 0 1 1h1a1.5 1.5 0 0 0 1.5-1.5z" />
+    </>
+  ),
+  // A word meeting a spark: something new landing, not something filed.
+  sparkle: (
+    <>
+      <path d="M11 4.5 12.6 9l4.4 1.6-4.4 1.6L11 16.7 9.4 12.2 5 10.6 9.4 9z" />
+      <path d="M17.5 15.5 18.2 17.5 20 18.2 18.2 19 17.5 21 16.8 19 15 18.2l1.8-.7z" />
+    </>
+  ),
+  check: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8.5h3l1.3-2h7.4l1.3 2h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z" />
+      <circle cx="12" cy="13.5" r="3.2" />
+    </>
+  ),
   // An open book with a line of text on it — reading, not a filed document.
+  book: (
+    <>
+      <path d="M12 7.5v12" />
+      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
+      <path d="M15.5 10.5h3M15.5 13.5h3" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" />
+      <path d="M20.5 3.5v4.5H16" />
+    </>
+  ),
   read_article: (
     <>
       <path d="M12 7.5v12" />
@@ -289,6 +337,150 @@ function GoalMark({ type }) {
   )
 }
 
+/**
+ * One quest, and the three things a learner may do with it.
+ *
+ * The ⋯ opens a small panel INSIDE the row rather than three buttons on it:
+ * the card is ~236px wide in the rail, and the row already carries a mark, a
+ * label, a bar and a count. Everything it offers is a real choice the server
+ * enforces — swap within the same area, one of three targets — so nothing
+ * here can invent a quest or a number.
+ */
+function QuestRow({ quest, onChange }) {
+  const { token } = useAuth()
+  const [panel, setPanel] = useState(null) // null | 'menu' | 'change' | 'target' | 'why'
+  const [options, setOptions] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  /* Fetched when the panel is opened, never with the card: most days nobody
+     touches a quest, and the Dashboard already fans out to eight requests. */
+  async function open(next) {
+    setError(null)
+    setPanel(next)
+    if ((next === 'change' || next === 'target') && !options) {
+      try {
+        setOptions(await api.getQuestOptions(token, quest.id))
+      } catch (err) {
+        setError(err.message)
+      }
+    }
+  }
+
+  async function run(work) {
+    setBusy(true)
+    setError(null)
+    try {
+      const { quest: updated } = await work()
+      onChange(updated)
+      setOptions(null)
+      setPanel(null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <li className={quest.done ? 'db-goal done' : 'db-goal'}>
+      <span className="db-goal-mark">
+        <GoalMark type={quest.mark} />
+      </span>
+      <span className="db-goal-label">{quest.label}</span>
+      <button
+        type="button"
+        className="db-goal-more"
+        aria-label={`Options for ${quest.label}`}
+        aria-expanded={panel !== null}
+        onClick={() => (panel ? setPanel(null) : open('menu'))}
+      >
+        <MenuDotsIcon />
+      </button>
+      {/* A track, not an animation — a width transition only advances while
+          the tab composites frames, so a backgrounded tab would leave every
+          bar sitting at zero.
+
+          The count sits OUTSIDE the bar, in its own column, so the three
+          line up down a single right edge where they can be compared. */}
+      <span className="db-goal-track">
+        <span className="db-goal-fill" style={{ width: `${(quest.progress / quest.target) * 100}%` }} />
+      </span>
+      <span className="db-goal-count">
+        {quest.progress} / {quest.target}
+      </span>
+
+      {panel && (
+        <div className="db-quest-panel">
+          {panel === 'menu' && (
+            <>
+              <button type="button" onClick={() => open('change')} disabled={quest.changes_left === 0}>
+                {quest.changes_left === 0 ? 'No changes left today' : 'Change quest'}
+              </button>
+              <button type="button" onClick={() => open('target')}>
+                Adjust target
+              </button>
+              <button type="button" onClick={() => open('why')}>
+                Why am I seeing this?
+              </button>
+            </>
+          )}
+
+          {panel === 'change' && (
+            <>
+              <p className="db-quest-panel-title">Choose another quest</p>
+              {(options?.options || []).map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  className="db-quest-option"
+                  disabled={busy}
+                  onClick={() => run(() => api.changeQuest(token, quest.id, o.key))}
+                >
+                  <span className="db-quest-option-mark">
+                    <GoalMark type={o.mark} />
+                  </span>
+                  <span>
+                    <strong>{o.label}</strong>
+                    <em>{o.blurb}</em>
+                  </span>
+                </button>
+              ))}
+              <p className="db-quest-panel-note">
+                {quest.changes_left} change{quest.changes_left === 1 ? '' : 's'} left today
+              </p>
+            </>
+          )}
+
+          {panel === 'target' && (
+            <>
+              <p className="db-quest-panel-title">How much today?</p>
+              <div className="db-quest-levels">
+                {(options?.levels || []).map((l) => (
+                  <button
+                    key={l.level}
+                    type="button"
+                    className={l.level === quest.level ? 'on' : ''}
+                    disabled={busy}
+                    onClick={() => run(() => api.setQuestTarget(token, quest.id, l.level))}
+                  >
+                    {l.target}
+                    <em>{l.level}</em>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {panel === 'why' && <p className="db-quest-why">{quest.why}</p>}
+
+          {error && <p className="db-quest-panel-error">{error}</p>}
+        </div>
+      )}
+    </li>
+  )
+}
+
 /** One of the three boxes under the level: a marked chip, a number, a label. */
 function PlanStat({ mark, value, label, to }) {
   const inner = (
@@ -335,12 +527,12 @@ function PlanStat({ mark, value, label, to }) {
  * there is nothing to invalidate when a word is saved or a lesson opened — the
  * next load is simply current.
  */
-function LearningPlanCard({ plan, goals }) {
+function LearningPlanCard({ plan, quests, onQuestChange }) {
   // Nothing has arrived yet. No skeleton: this sits below the fold of the rail
   // and a flashing block there is more distracting than a moment of nothing.
-  if (!goals) return null
+  if (!quests) return null
 
-  const done = goals.filter((g) => g.done).length
+  const done = quests.filter((q) => q.done).length
 
   return (
     <section className="db-plan">
@@ -404,37 +596,14 @@ function LearningPlanCard({ plan, goals }) {
               carries. The reference puts a reward ladder here instead —
               50exp / 100exp / Claim Now — and there is no XP in Verbo, by
               decision rather than omission. */}
-          <span className={done === goals.length ? 'db-goals-count all' : 'db-goals-count'}>
-            {done} / {goals.length} done
+          <span className={done === quests.length ? 'db-goals-count all' : 'db-goals-count'}>
+            {done} / {quests.length} done
           </span>
         </div>
 
         <ul className="db-goals-list">
-          {goals.map((g) => (
-            <li className={g.done ? 'db-goal done' : 'db-goal'} key={g.type}>
-              <span className="db-goal-mark">
-                <GoalMark type={g.type} />
-              </span>
-              <span className="db-goal-label">{g.label}</span>
-              {/* A track, not an animation — a width transition only advances
-                  while the tab composites frames, so a backgrounded tab would
-                  leave every bar sitting at zero.
-
-                  The count sits OUTSIDE the bar now, in its own column. It
-                  rode inside while the groove was white-on-lavender and the
-                  number needed somewhere solid to sit; with the row inverted
-                  the bar is free to be a plain bar, and the three counts line
-                  up down a single right edge where they can be compared. */}
-              <span className="db-goal-track">
-                <span
-                  className="db-goal-fill"
-                  style={{ width: `${(g.progress / g.target) * 100}%` }}
-                />
-              </span>
-              <span className="db-goal-count">
-                {g.progress} / {g.target}
-              </span>
-            </li>
+          {quests.map((q) => (
+            <QuestRow key={q.id} quest={q} onChange={onQuestChange} />
           ))}
         </ul>
       </div>
@@ -547,6 +716,21 @@ export default function Dashboard() {
   const levels = asList(levelQuery.data)
   const recents = asList(recentQuery.data)
   const learning = asList(learningQuery.data)
+
+  /* A quest the learner just swapped or retargeted. The server answers with
+     the whole updated row, so it is folded over the fetched list rather than
+     refetching the plan — one call, and the card never blanks mid-choice.
+     The cache entry is dropped too, so the next visit loads the real thing
+     instead of the copy this page happens to be holding. */
+  const [questEdits, setQuestEdits] = useState(EMPTY_EDITS)
+  const quests = useMemo(() => {
+    const rows = planQuery.data?.quests
+    return rows ? rows.map((q) => questEdits[q.id] || q) : null
+  }, [planQuery.data, questEdits])
+  const onQuestChange = useCallback((updated) => {
+    setQuestEdits((prev) => ({ ...prev, [updated.id]: updated }))
+    invalidate('learning-plan')
+  }, [])
 
   /* Only a failure that leaves a section with NOTHING is worth a banner —
      `useApiData` swallows a background refresh that fails behind data already
@@ -1211,7 +1395,7 @@ export default function Dashboard() {
 
           {/* Directly under the chart, and the order is the point: the chart
               says how much you have done, this says what is left. */}
-          <LearningPlanCard plan={planQuery.data?.plan} goals={planQuery.data?.goals} />
+          <LearningPlanCard plan={planQuery.data?.plan} quests={quests} onQuestChange={onQuestChange} />
         </aside>
       </div>
     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Podcast;
+use App\Models\PodcastListenDay;
 use App\Models\PodcastProgress;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
@@ -98,6 +99,17 @@ class PodcastController extends Controller
         $finished = $duration !== null
             && $duration > 0
             && $position >= $duration - PodcastProgress::FINISHED_WITHIN_SECONDS;
+
+        /* Credit the FORWARD gap since the last report as time listened.
+           `position_seconds` alone cannot answer "how long did you listen?" -
+           seeking to 4:00 would read 240 without a second heard - so the
+           daily figure is measured here, server-side, and clamped per report
+           (PodcastListenDay::MAX_CREDIT_SECONDS). A seek backwards or a jump
+           forwards credits nothing. */
+        $before = PodcastProgress::where('user_id', $request->user()->id)
+            ->where('podcast_id', $podcast->id)
+            ->value('position_seconds');
+        PodcastListenDay::credit($request->user()->id, $position - (int) $before);
 
         $progress = PodcastProgress::updateOrCreate(
             ['user_id' => $request->user()->id, 'podcast_id' => $podcast->id],

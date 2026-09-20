@@ -526,6 +526,22 @@
     font-size: 0.75rem;
     padding: 5px 10px;
   }
+
+  /* ---- Dashboard: a quest's ⋯ ----
+     22px is a comfortable pointer target and a poor thumb one, and this is the
+     only way into changing a quest. The glyph stays the same size; the box
+     around it grows and tucks into the tile's corner so the row does not. */
+  .db-goal-more {
+    top: 3px;
+    right: 3px;
+    width: 32px;
+    height: 32px;
+  }
+
+  /* The reserve has to grow with it, or a long label runs under the button. */
+  .db-goal-label {
+    padding-right: 30px;
+  }
 }
 
 @media (max-width: 767px) {

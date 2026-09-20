@@ -67,6 +67,8 @@ class Flashcard extends Model
         'correct_streak' => 'integer',
         'lapses' => 'integer',
         'last_reviewed_at' => 'datetime',
+        // First right answer: what "learn a word" counts for the daily quest.
+        'first_correct_at' => 'datetime',
     ];
 
     protected $appends = ['is_mastered', 'is_difficult'];

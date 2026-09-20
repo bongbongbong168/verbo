@@ -6,22 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Flashcard;
 use App\Models\LearningPreference;
 use App\Models\StudyUnit;
+use App\Services\DailyQuests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 /**
  * The Dashboard's "where am I, and what is left today" card.
  *
  * Two bands in one payload because they are one card and the Dashboard
  * already fans out to eight requests: the PLAN (which level, how much of it
- * is left, at what pace) and TODAY (three small goals).
+ * is left, at what pace) and TODAY (the three daily quests, built by
+ * App\Services\DailyQuests).
  *
- * NOTHING HERE IS STORED. Every figure is counted from rows the app already
- * writes for its own reasons, so there is no table, no progress column and
- * nothing to keep in step — the same reason "My Courses" computes its week
- * from `starts_on` rather than keeping a week number that a missed job would
- * silently falsify.
+ * NO PROGRESS IS STORED. Every figure is counted from rows the app already
+ * writes for its own reasons, so there is no progress column and nothing to
+ * keep in step — the same reason "My Courses" computes its week from
+ * `starts_on` rather than keeping a week number that a missed job would
+ * silently falsify. The one thing `daily_quests` does store is the learner's
+ * CHOICE of quest and difficulty, which cannot be recomputed from anything.
  *
  * THERE IS DELIBERATELY NO PROJECTED FINISH DATE. The reference this was
  * built from leads with "HSK 1 in 1 month and 9 days", and that number cannot
@@ -32,34 +34,17 @@ use Illuminate\Support\Facades\DB;
  */
 class LearningPlanController extends Controller
 {
-    /**
-     * Targets are FIXED, and they live here so the card cannot drift from
-     * what the server counts — same rule as `LearningPreference`'s option
-     * lists and `PracticeChatController::TOPICS`.
-     *
-     * Randomising them ("review 23 words") buys nothing and makes the day
-     * impossible to plan around. Per-user difficulty tiers are a real idea
-     * but a later one, and nothing in this shape blocks them.
-     */
-    private const TARGETS = [
-        'read_article' => 1,
-        'review_words' => 5,
-        'save_words' => 3,
-    ];
-
-    private const LABELS = [
-        'read_article' => 'Read an article',
-        'review_words' => 'Review 5 words',
-        'save_words' => 'Save 3 new words',
-    ];
-
-    public function index(Request $request)
+    public function index(Request $request, DailyQuests $quests)
     {
         $user = $request->user();
 
         return response()->json([
             'plan' => $this->plan($user),
-            'goals' => $this->goals($user),
+            /* The day's three quests ride along rather than costing the
+               Dashboard a ninth request. They REPLACED the three fixed goals
+               that used to live here: one quest per learning area, each
+               swappable and each with an easy / normal / hard target. */
+            'quests' => $quests->forToday($user),
         ]);
     }
 
@@ -179,51 +164,4 @@ class LearningPlanController extends Controller
         ][$goal] ?? null;
     }
 
-    /** Today's three, counted rather than stored. */
-    private function goals($user): array
-    {
-        /* `Carbon::today()` in the app timezone — the same boundary
-           ActivityController uses for the streak and the chart. Two notions of
-           "today" on one Dashboard would have them roll over at different
-           moments. */
-        $since = Carbon::today();
-
-        $progress = [
-            // Distinct articles opened today: `article_views` is one row per
-            // user per article, so re-opening one does not count twice.
-            'read_article' => DB::table('article_views')
-                ->where('user_id', $user->id)
-                ->where('last_viewed_at', '>=', $since)
-                ->count(),
-
-            /* Distinct WORDS reviewed, not answers given. `last_reviewed_at`
-               is stamped on every answer, so drilling one card ten times still
-               counts once — which is the honest reading of "review 5 words"
-               and stops the goal being farmed on a single card. */
-            'review_words' => Flashcard::where('user_id', $user->id)
-                ->whereNotNull('last_reviewed_at')
-                ->where('last_reviewed_at', '>=', $since)
-                ->count(),
-
-            'save_words' => Flashcard::where('user_id', $user->id)
-                ->where('created_at', '>=', $since)
-                ->count(),
-        ];
-
-        $goals = [];
-
-        foreach (self::TARGETS as $type => $target) {
-            $goals[] = [
-                'type' => $type,
-                'label' => self::LABELS[$type],
-                'target' => $target,
-                // Clamped: 40 words saved has done the goal, and a bar
-                // reporting 40/3 reads as a broken widget.
-                'progress' => min($progress[$type], $target),
-                'done' => $progress[$type] >= $target,
-            ];
-        }
-
-        return $goals;
-    }
 }

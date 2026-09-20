@@ -332,6 +332,14 @@ Route::middleware('auth:sanctum')->group(function () {
        Nothing is stored; every figure is counted. See the controller. */
     Route::get('/learning-plan', [LearningPlanController::class, 'index']);
 
+    /* Today's quests. The Dashboard reads them inside /learning-plan (that
+       page already fans out to eight requests); these are the writes plus a
+       standalone read for anything else that wants them. */
+    Route::get('/daily-quests', [\App\Http\Controllers\Api\DailyQuestController::class, 'index']);
+    Route::get('/daily-quests/{dailyQuest}/options', [\App\Http\Controllers\Api\DailyQuestController::class, 'options']);
+    Route::post('/daily-quests/{dailyQuest}/change', [\App\Http\Controllers\Api\DailyQuestController::class, 'change']);
+    Route::put('/daily-quests/{dailyQuest}/target', [\App\Http\Controllers\Api\DailyQuestController::class, 'target']);
+
     /* In-app notifications. Raised inline by the controllers that handle the
        events — there is no queue or scheduler here, so nothing time-based. */
     Route::get('/notifications', [NotificationController::class, 'index']);

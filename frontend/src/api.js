@@ -636,6 +636,15 @@ export const api = {
   // The viewer's own "finished this lesson" mark.
   completeStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'POST', token }),
   uncompleteStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'DELETE', token }),
+  /* Today's quests. The Dashboard already gets them inside /learning-plan;
+     these are the two ways a learner steers one — swap it for another in the
+     SAME area, or move its target between easy / normal / hard. Both return
+     the updated quest, so the card never has to refetch the whole plan. */
+  getQuestOptions: (token, id) => request(`/daily-quests/${id}/options`, { token }),
+  changeQuest: (token, id, key) =>
+    request(`/daily-quests/${id}/change`, { method: 'POST', body: { key }, token }),
+  setQuestTarget: (token, id, level) =>
+    request(`/daily-quests/${id}/target`, { method: 'PUT', body: { level }, token }),
   // Natural audio for a word ('word') or a conversation line ('line'), by row
   // id - never by text, so nobody can spend the quota on arbitrary input.
   // Resolves {url}; a 503 means fall back to the browser's voice.
