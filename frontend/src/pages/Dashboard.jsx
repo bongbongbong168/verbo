@@ -1082,10 +1082,10 @@ export default function Dashboard() {
                           place whether it hits the cover, the title or this.
                           A button inside an anchor is a nested interactive
                           control, the call `.du-card`'s "Start →" makes. */}
-                      <span className="db-study-cta">
-                        Continue
-                        <ChevronRight />
-                      </span>
+                      {/* The label alone — no chevron, the same call the
+                          teacher card's View Profile and the quiz's Back and
+                          Skip made. */}
+                      <span className="db-study-cta">Continue</span>
                     </span>
                   </Link>
                 ) : tile.kind === 'article' ? (

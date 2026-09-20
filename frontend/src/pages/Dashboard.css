@@ -782,7 +782,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
   margin-top: 10px;
   padding: calc(8px - 0.076em) 12px calc(8px + 0.076em);
   border-radius: 12px;
@@ -790,12 +789,6 @@
   color: #fff;
   font-size: 0.76rem;
   font-weight: 600;
-}
-
-.db-study-cta svg {
-  width: 14px;
-  height: 14px;
-  flex: none;
 }
 
 .db-study:hover .db-study-cta {
