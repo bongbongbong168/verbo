@@ -12,6 +12,8 @@ import './PodcastEpisode.css'
 import ReaderSwitch from '../components/ReaderSwitch'
 import PageTools from '../components/PageTools'
 import SyncedTranscript from '../components/SyncedTranscript'
+import { englishSentences, sentencesOf } from '../sentences'
+
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
    the form that used them — the crop has to satisfy both the list card
@@ -526,6 +528,29 @@ export default function PodcastEpisode() {
   const hasEnglish = Boolean(podcast.transcript_en && podcast.transcript_en.trim())
   /* Synced needs audio to sync to; without it the plain transcript stands. */
   const synced = Boolean(timed && timed.length && podcast.audio_url && showSynced)
+  const cnSentences = sentencesOf(podcast.tokens || [])
+  const enSentences = englishSentences(podcast.transcript_en)
+  const paired = showTranslation && hasEnglish && cnSentences.length > 0 && cnSentences.length === enSentences.length
+
+  function renderPlainTokens(tokens, keyPrefix = '') {
+    return tokens.map((tok, idx) => tok.type === 'word' ? (
+      <span
+        key={`${keyPrefix}${idx}`}
+        className={'pe-word' + (saved[tok.text] ? ' saved' : '') + (hovered?.tok === tok ? ' active' : '')}
+        onMouseEnter={(e) => {
+          hoveredWordRef.current = tok
+          setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
+        }}
+        onMouseLeave={() => {
+          if (hoveredWordRef.current === tok) hoveredWordRef.current = null
+          setHovered((cur) => (cur?.tok === tok ? null : cur))
+        }}
+      >
+        {showPinyin && tok.pinyin && <span className="pe-word-py">{tok.pinyin}</span>}
+        <span className="pe-word-hz">{tok.text}</span>
+      </span>
+    ) : <span key={`${keyPrefix}${idx}`}>{tok.text}</span>)
+  }
 
   return (
     <div className="pe">
@@ -805,54 +830,34 @@ export default function PodcastEpisode() {
           {synced ? (
             <SyncedTranscript
               segments={timed}
+              translations={podcast.transcript_en?.split(/\r?\n/).filter(Boolean)}
               audioRef={audioRef}
               showPinyin={showPinyin}
+              showTranslation={showTranslation}
               saved={saved}
               onHoverWord={hoverTimedWord}
               onLeaveWord={leaveTimedWord}
               onSeek={seekTo}
             />
+          ) : paired ? (
+            cnSentences.map((sentence, i) => (
+              <div className="pe-pair" key={`pair-${i}`}>
+                <p className={'pe-transcript pe-transcript-pair' + (showPinyin ? ' pe-transcript-ruby' : '')}>
+                  {renderPlainTokens(sentence, `s${i}-`)}
+                </p>
+                <p className="pe-pair-en">{enSentences[i]}</p>
+              </div>
+            ))
           ) : (
-          <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
-            {podcast.tokens.map((tok, idx) =>
-              tok.type === 'word' ? (
-                <span
-                  key={idx}
-                  className={
-                    'pe-word' +
-                    // Keyed by the WORD, so every occurrence in the transcript
-                    // is marked, not only the one you pressed Alt+1 on.
-                    (saved[tok.text] ? ' saved' : '') +
-                    (hovered?.tok === tok ? ' active' : '')
-                  }
-                  onMouseEnter={(e) => {
-                    hoveredWordRef.current = tok
-                    setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
-                  }}
-                  onMouseLeave={() => {
-                    if (hoveredWordRef.current === tok) hoveredWordRef.current = null
-                    setHovered((cur) => (cur?.tok === tok ? null : cur))
-                  }}
-                >
-                  {/* Pinyin sits ABOVE the character, the way a textbook
-                      prints it. The hover handlers stay on this outer span, so
-                      Alt+1 keeps working with the ruby showing. */}
-                  {showPinyin && tok.pinyin && (
-                    <span className="pe-word-py">{tok.pinyin}</span>
-                  )}
-                  <span className="pe-word-hz">{tok.text}</span>
-                </span>
-              ) : (
-                <span key={idx}>{tok.text}</span>
-              )
-            )}
-          </p>
+            <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
+              {renderPlainTokens(podcast.tokens)}
+            </p>
           )}
 
           {/* `transcript_en` is one free-text block, not per-line pairs, so it
               renders as its own passage under the Chinese rather than
               pretending to be aligned line by line. */}
-          {showTranslation && hasEnglish && (
+          {showTranslation && hasEnglish && !paired && (
             <div className="pe-translation">
               <span className="pe-translation-label">English</span>
               <p className="pe-translation-body">{podcast.transcript_en}</p>

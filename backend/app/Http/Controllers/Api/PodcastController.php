@@ -58,7 +58,7 @@ class PodcastController extends Controller
             ->first();
 
         return array_merge($podcast->toArray(), [
-            'tokens' => $dictionary->annotate($podcast->transcript),
+            'tokens' => $podcast->transcript ? $dictionary->annotate($podcast->transcript) : [],
             'progress' => $progress ? [
                 'position_seconds' => $progress->position_seconds,
                 'duration_seconds' => $progress->duration_seconds,
@@ -193,7 +193,7 @@ class PodcastController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'transcript' => ['required', 'string'],
+            'transcript' => ['nullable', 'string'],
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
@@ -223,7 +223,7 @@ class PodcastController extends Controller
         }
         unset($data['image']);
 
-        $podcast = $request->user()->podcasts()->create($data);
+        $podcast = $request->user()->podcasts()->create(array_merge($data, ['transcript' => $data['transcript'] ?? '']));
 
         return response()->json($podcast, 201);
     }
@@ -234,7 +234,7 @@ class PodcastController extends Controller
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'transcript' => ['required', 'string'],
+            'transcript' => ['nullable', 'string'],
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
@@ -261,7 +261,7 @@ class PodcastController extends Controller
         }
         unset($data['image']);
 
-        $podcast->update($data);
+        $podcast->update(array_merge($data, ['transcript' => $data['transcript'] ?? '']));
 
         return response()->json($podcast);
     }

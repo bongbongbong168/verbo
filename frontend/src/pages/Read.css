@@ -601,6 +601,7 @@
 
 .rd-controls {
   display: flex;
+  position: relative;
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
@@ -614,6 +615,35 @@
 .rd-controls-note {
   font-size: 0.78rem;
   color: var(--rd-text-muted);
+}
+
+.rd-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--rd-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.rd-size-large { font-size: 0.95rem; }
+
+.rd-size input {
+  width: 92px;
+  accent-color: var(--rd-accent);
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .rd-size {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
 }
 
 /* ---- pinyin above the characters ---- */
@@ -675,7 +705,7 @@
 .rd-translation-body {
   margin: 0;
   white-space: pre-wrap;
-  font-size: 0.98rem;
+  font-size: calc(0.98rem * var(--rd-reader-scale, 1));
   line-height: 1.75;
   color: var(--rd-text);
 }
@@ -1739,7 +1769,7 @@
 .rd-body-cn {
   font-family:
     "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-  font-size: 1.3rem;
+  font-size: calc(1.3rem * var(--rd-reader-scale, 1));
   font-weight: 400;
   line-height: 2;
   letter-spacing: 0.25em;
@@ -1868,9 +1898,9 @@
   }
 }
 
-/* ---- Chinese and its translation, paragraph by paragraph ----
+/* ---- Chinese and its translation, sentence by sentence ----
    Only rendered when the two sides genuinely have the same number of
-   paragraphs — see the note in ReadArticle. The English is set quieter and
+   sentences — see the note in ReadArticle. The English is set quieter and
    smaller than the Chinese and carries a rule down its left edge, so it reads
    as a gloss on the line above rather than as more of the passage. */
 
@@ -1886,7 +1916,7 @@
   margin: 0.55rem 0 0;
   padding-left: 0.85rem;
   border-left: 2px solid var(--rd-border);
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--rd-reader-scale, 1));
   line-height: 1.6;
   color: var(--rd-text-muted);
 }

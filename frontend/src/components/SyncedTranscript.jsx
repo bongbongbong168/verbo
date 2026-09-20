@@ -31,7 +31,7 @@ const HOLD_SECONDS = 0.6
    voice for this long. */
 const FOLLOW_PAUSE_MS = 6000
 
-function SyncedTranscript({ segments, audioRef, showPinyin, saved, onHoverWord, onLeaveWord, onSeek }) {
+function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTranslation, saved, onHoverWord, onLeaveWord, onSeek }) {
   /* Every timed word in play order, with where it lives on the page. Built
      once per transcript, so the per-frame work is a binary search over plain
      numbers and nothing else. */
@@ -184,8 +184,9 @@ function SyncedTranscript({ segments, audioRef, showPinyin, saved, onHoverWord, 
 
   return (
     <div className={'tt' + (showPinyin ? ' tt-ruby' : '')}>
-      {segments.map((seg, si) => (
-        <div
+      {segments.map((seg, si) => {
+        const translation = seg.translation || translations?.[si]
+        return <div
           key={si}
           className="tt-seg"
           ref={(node) => {
@@ -222,9 +223,9 @@ function SyncedTranscript({ segments, audioRef, showPinyin, saved, onHoverWord, 
             })}
           </p>
 
-          {seg.translation && <p className="tt-en">{seg.translation}</p>}
+          {showTranslation && translation && <p className="tt-en">{translation}</p>}
         </div>
-      ))}
+      })}
     </div>
   )
 }

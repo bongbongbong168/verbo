@@ -47,6 +47,7 @@ timings.
 import argparse
 import gc
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -149,6 +150,13 @@ def main():
 
     import torch
     import whisperx
+    # The project environment supplies its own FFmpeg executable, so authors
+    # do not have to install a second system-wide audio program.
+    try:
+        import imageio_ffmpeg
+        os.environ["PATH"] = str(Path(imageio_ffmpeg.get_ffmpeg_exe()).parent) + os.pathsep + os.environ.get("PATH", "")
+    except Exception:
+        pass
 
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     compute_type = args.compute_type or ("int8_float16" if device == "cuda" else "int8")

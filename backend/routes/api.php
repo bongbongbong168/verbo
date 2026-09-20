@@ -136,6 +136,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/scans', [ScanController::class, 'index']);
     Route::post('/scans', [ScanController::class, 'store']);
     Route::get('/scans/{scan}', [ScanController::class, 'show']);
+    Route::post('/scans/{scan}/translation', [\App\Http\Controllers\Api\ScanTranslationController::class, 'store'])->middleware('throttle:10,1');
     Route::delete('/scans/{scan}', [ScanController::class, 'destroy']);
     Route::post('/scans/{scan}/share', [ScanController::class, 'share']);
     Route::delete('/scans/{scan}/share', [ScanController::class, 'unshare']);
@@ -254,11 +255,13 @@ Route::middleware('auth:sanctum')->group(function () {
        trap `bookings/clear-past`, `notifications/read-all`, `classes/join` and
        `articles/recommended` each hit. */
     Route::get('/podcasts/continue', [PodcastController::class, 'continueListening']);
+    Route::post('/podcasts/translate', [\App\Http\Controllers\Api\PodcastTranslationController::class, 'store'])->middleware('throttle:10,1');
     Route::get('/podcasts/{podcast}', [PodcastController::class, 'show']);
     Route::put('/podcasts/{podcast}/progress', [PodcastController::class, 'saveProgress']);
     // The synced, word-timed transcript. Reading is for every listener;
     // importing and clearing check is_admin inside the controller.
     Route::get('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'show']);
+    Route::post('/podcasts/{podcast}/timed-transcript/generate', [PodcastTranscriptController::class, 'generate'])->middleware('throttle:2,1');
     Route::post('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'store']);
     Route::patch('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'update']);
     Route::delete('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'destroy']);

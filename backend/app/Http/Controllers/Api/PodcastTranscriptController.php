@@ -5,17 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Services\TimedTranscriptBuilder;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
 /**
  * The synced (word-timed) transcript of an episode.
  *
- * READ by every listener, WRITTEN only by an admin, and never PRODUCED here.
- * WhisperX runs on the admin's own machine (tools/transcriber) because the
- * server has no GPU and the app has no queue worker to hold a minutes-long
- * job; the site's part is to import the finished file. So there is no
- * "process now" endpoint that could hang a request or expose a command line.
+ * READ by every listener, WRITTEN only by an admin. Local development can
+ * run the installed WhisperX engine directly; JSON remains a migration fallback.
  *
  * Routes follow the app's own convention - `is_admin` checked in the
  * controller, no /admin prefix - the same gate Read and Podcast use.
@@ -23,6 +22,60 @@ use InvalidArgumentException;
 class PodcastTranscriptController extends Controller
 {
     private const MAX_UPLOAD_KB = 10240;
+
+    /** Generate a timed transcript from this episode's uploaded audio. */
+    public function generate(Request $request, Podcast $podcast)
+    {
+        abort_unless($request->user()->is_admin, 403);
+        if (! $podcast->audio_path) {
+            return response()->json(['message' => 'Upload an audio file before generating a synced transcript.'], 422);
+        }
+        if (! app()->environment('local')) {
+            return response()->json(['message' => 'Automatic transcription is available from the local Verbo workspace.'], 409);
+        }
+
+        Artisan::call('podcast:transcribe', ['podcast' => $podcast->id]);
+
+        $podcast->refresh();
+        if ($podcast->timed_transcript_status === 'completed') {
+            $timed = $this->translateSegments($podcast->timed_transcript);
+            $podcast->saveTimedTranscript($timed);
+            $chinese = implode("\n", array_column($timed['segments'] ?? [], 'text'));
+            $podcast->transcript = $chinese;
+            $podcast->transcript_en = implode("\n", array_filter(array_column($timed['segments'] ?? [], 'translation')));
+            $podcast->save();
+        }
+
+        return $this->show($request, $podcast->refresh());
+    }
+
+    /** Translate each timed line together, preserving its Chinese/English pair. */
+    private function translateSegments(array $transcript): array
+    {
+        $key = config('services.deepl.key');
+        $segments = $transcript['segments'] ?? [];
+        if (! $key || ! $segments) return $transcript;
+
+        foreach (array_chunk($segments, 50) as $offset => $batch) {
+            $texts = array_column($batch, 'text');
+            try {
+                $response = Http::withHeaders(['Authorization' => 'DeepL-Auth-Key '.$key])
+                    ->connectTimeout(5)->timeout(30)->post('https://api-free.deepl.com/v2/translate', [
+                        'text' => $texts, 'source_lang' => 'ZH', 'target_lang' => 'EN-US', 'split_sentences' => 'nonewlines',
+                    ]);
+                $translations = $response->json('translations', []);
+                if (! $response->successful() || count($translations) !== count($batch)) continue;
+                foreach ($translations as $i => $translation) {
+                    $text = $translation['text'] ?? null;
+                    if (is_string($text) && trim($text) !== '') $segments[$offset * 50 + $i]['translation'] = $text;
+                }
+            } catch (\Throwable $e) {
+                // Keep timing usable if translation is temporarily unavailable.
+            }
+        }
+        $transcript['segments'] = $segments;
+        return $transcript;
+    }
 
     public function show(Request $request, Podcast $podcast)
     {

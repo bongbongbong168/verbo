@@ -14,62 +14,8 @@ import RecommendedArticles from "../components/RecommendedArticles";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import "./Read.css";
 import ReaderSwitch from '../components/ReaderSwitch'
+import { englishSentences, sentencesOf } from "../sentences";
 
-/**
- * Break the annotated token stream into paragraphs.
- *
- * `annotate()` hands back one flat list for the whole body, with the
- * original whitespace preserved in its `text` tokens — so a paragraph break
- * is a blank line sitting INSIDE one of them. Splitting therefore has to cut
- * those tokens in half rather than just grouping between them, or the
- * punctuation that ends a paragraph would be orphaned onto the next.
- *
- * Word tokens are never split: they carry the pinyin and the translation the
- * hover popover reads, and are what Alt+1 saves.
- */
-function paragraphsOf(tokens) {
-  /* WHICH NEWLINE COUNTS AS A BREAK IS PER ARTICLE, not a fixed rule. Some
-     bodies separate paragraphs with a blank line and some with a single one —
-     `white-space: pre-wrap` renders both as separated, so the two look
-     identical on screen and differ only in the source. Splitting on blank
-     lines alone therefore read a four-paragraph article as ONE paragraph and
-     quietly refused to pair it. Each text is asked what it actually uses. */
-  const whole = tokens.map((t) => String(t.text)).join("");
-  const splitter = /\n[ \t]*\n+/.test(whole) ? /\n[ \t]*\n+/ : /\n+/;
-
-  const paras = [];
-  let current = [];
-
-  for (const tok of tokens) {
-    if (tok.type === "word") {
-      current.push(tok);
-      continue;
-    }
-
-    /* A break lives INSIDE a text token, so the token has to be cut rather
-       than merely grouped between — otherwise the punctuation ending a
-       paragraph is orphaned onto the next one. Word tokens are never split:
-       they carry the pinyin and translation the popover reads. */
-    const pieces = String(tok.text).split(splitter);
-    pieces.forEach((piece, i) => {
-      if (i > 0) {
-        paras.push(current);
-        current = [];
-      }
-      if (piece !== "") current.push({ type: "text", text: piece });
-    });
-  }
-
-  paras.push(current);
-  return paras.filter((p) => p.some((t) => String(t.text).trim() !== ""));
-}
-
-/** The English side, asked the same question about its own newlines. */
-function englishParagraphs(text) {
-  const whole = String(text || "");
-  const splitter = /\n[ \t]*\n+/.test(whole) ? /\n[ \t]*\n+/ : /\n+/;
-  return whole.split(splitter).map((p) => p.trim()).filter(Boolean);
-}
 function formatDate(value) {
   if (!value) return "";
   return new Date(value).toLocaleDateString("en-US", {
@@ -95,6 +41,7 @@ export default function ReadArticle() {
      is showing. */
   const [showPinyin, setShowPinyin] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [readerScale, setReaderScale] = useState(100);
   const [interactions, setInteractions] = useState(null);
   const hoveredWordRef = useRef(null);
   /* The Alt+1 listener is subscribed once (deps `[token]`) so it does not
@@ -281,17 +228,15 @@ export default function ReadArticle() {
   /* Computed every render rather than memoised: the token list is a few
      hundred entries and this runs once per paint, which is nothing beside
      the render it feeds. */
-  const cnParas = paragraphsOf(article.tokens || []);
-  const enParas = englishParagraphs(article.body_en);
-  /* The one condition that allows pairing. Two or more paragraphs on each
-     side and the same number of them — a single block against a single
-     block is just the passage, and any mismatch means the alignment would
-     be invented. */
+  const cnSentences = sentencesOf(article.tokens || []);
+  const enSentences = englishSentences(article.body_en);
+  /* Pair only when each Chinese sentence has exactly one authored English
+     sentence. A mismatch means the alignment would be invented. */
   const paired =
     showTranslation &&
     hasEnglish &&
-    cnParas.length > 1 &&
-    cnParas.length === enParas.length;
+    cnSentences.length > 0 &&
+    cnSentences.length === enSentences.length;
 
   /* One renderer for both layouts — the interleaved one and the plain
      passage — so the hover, the saved highlight and the pinyin ruby cannot
@@ -437,6 +382,19 @@ export default function ReadArticle() {
                 onChange={() => setShowPinyin((v) => !v)}
               />
 
+              <label className="rd-size" htmlFor="rd-text-size">
+                <span>A</span>
+                <input id="rd-text-size" type="range" min="80" max="120" step="1"
+                  value={readerScale} onChange={(event) => {
+                    const next = Number(event.target.value);
+                    // The normal size is the centre and has a small magnetic
+                    // zone, so it is easy to return to while dragging.
+                    setReaderScale(Math.abs(next - 100) <= 3 ? 100 : next);
+                  }}
+                  aria-label="Reading text size" />
+                <span className="rd-size-large">A</span>
+              </label>
+
               <ReaderSwitch
                 label="Translation"
                 on={showTranslation}
@@ -462,29 +420,25 @@ export default function ReadArticle() {
               </p>
             )}
 
-            <p className="rd-hint">
-              Hover a word and press Alt+1 to save it to your flashcard bank.
-            </p>
-            {paired ? (
-              /* THE TRANSLATION SITS UNDER ITS OWN PARAGRAPH, but only when
-                 the two sides genuinely line up. `body_en` is one free-text
-                 block, not per-sentence data, so this counts the paragraphs
-                 on each side and interleaves ONLY if the counts match. When
-                 they do not — and for most of the library they do not, since
-                 the English is often a single summary — it falls back to the
-                 passage below rather than pairing line 3 with line 1 and
-                 calling it a translation. Nothing is aligned that was not
-                 written aligned. */
-              cnParas.map((para, i) => (
+            <div className="rd-reader" style={{ "--rd-reader-scale": readerScale / 100 }}>
+              <p className="rd-hint">
+                Hover a word and press Alt+1 to save it to your flashcard bank.
+              </p>
+              {paired ? (
+              /* Translation sits directly below its Chinese sentence only
+                 when the two sides genuinely line up. If they do not, the
+                 English remains one passage below rather than being paired
+                 incorrectly. */
+              cnSentences.map((sentence, i) => (
                 <div className="rd-pair" key={`pair-${i}`}>
                   <p
                     className={
                       "rd-body rd-body-cn" + (showPinyin ? " rd-body-ruby" : "")
                     }
                   >
-                    {renderTokens(para, `p${i}-`)}
+                    {renderTokens(sentence, `s${i}-`)}
                   </p>
-                  <p className="rd-pair-en">{enParas[i]}</p>
+                  <p className="rd-pair-en">{enSentences[i]}</p>
                 </div>
               ))
             ) : (
@@ -500,12 +454,13 @@ export default function ReadArticle() {
             {/* body_en is one free-text block, not per-sentence data, so the
                   translation sits UNDER the Chinese as its own passage rather
                   than pretending to be aligned line by line. */}
-            {showTranslation && hasEnglish && !paired && (
+              {showTranslation && hasEnglish && !paired && (
               <div className="rd-translation">
                 <span className="rd-translation-label">English</span>
                 <p className="rd-translation-body">{article.body_en}</p>
               </div>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>

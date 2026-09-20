@@ -101,7 +101,7 @@ function studyLevelFormData({
 function podcastFormData({ title, transcript, transcriptEn, level, category, host, bio, audio, image }) {
   const formData = new FormData()
   formData.append('title', title)
-  formData.append('transcript', transcript)
+  formData.append('transcript', transcript ?? '')
   // Always sent, even empty — omitting it would make clearing a translation
   // impossible, since the server only sees the fields that arrive.
   formData.append('transcript_en', transcriptEn ?? '')
@@ -208,6 +208,7 @@ export const api = {
     request(`/flashcards/${id}/examples?limit=${limit}`, { token }),
   getScans: (token) => request('/scans', { token }),
   getScan: (token, id) => request(`/scans/${id}`, { token }),
+  translateScan: (token, id) => request(`/scans/${id}/translation`, { method: 'POST', token }),
   deleteScan: (token, id) => request(`/scans/${id}`, { method: 'DELETE', token }),
   // Public-link sharing. shareScan is idempotent — it returns the existing
   // link rather than rotating it, so a link already sent out keeps working.
@@ -597,6 +598,7 @@ export const api = {
   deleteResumeEntry: (token, id) => request(`/tutor-resume/${id}`, { method: 'DELETE', token }),
   getPodcasts: (token) => request('/podcasts', { token }),
   getPodcast: (token, id) => request(`/podcasts/${id}`, { token }),
+  translatePodcastTranscript: (token, text) => request('/podcasts/translate', { method: 'POST', body: { text }, token }),
   createPodcast: (token, podcast) => requestMultipart('/podcasts', podcastFormData(podcast), token),
   updatePodcast: (token, id, podcast) => {
     const formData = podcastFormData(podcast)
@@ -616,6 +618,7 @@ export const api = {
   /* The word-timed transcript. Its own call rather than part of the episode
      payload: it can run to hundreds of KB and is only needed once one exists. */
   getTimedTranscript: (token, id) => request(`/podcasts/${id}/timed-transcript`, { token }),
+  generateTimedTranscript: (token, id) => request(`/podcasts/${id}/timed-transcript/generate`, { method: 'POST', token }),
   uploadTimedTranscript: (token, id, file) => {
     const formData = new FormData()
     formData.append('file', file)

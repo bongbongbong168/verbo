@@ -348,6 +348,21 @@
 
 /* ---- podcast synced transcript (PodcastEditDrawer's Sync tab) ---- */
 
+.ed-advanced-sync {
+  margin-top: 0.15rem;
+  color: var(--ed-muted);
+  font-size: 0.82rem;
+}
+
+.ed-advanced-sync summary {
+  cursor: pointer;
+  margin-bottom: 0.55rem;
+}
+
+.ed-advanced-sync .ed-btn-ghost {
+  width: 100%;
+}
+
 .ed-sync-status {
   margin: 0;
   font-size: 0.86rem;

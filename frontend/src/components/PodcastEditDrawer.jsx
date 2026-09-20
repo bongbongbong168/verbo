@@ -49,9 +49,8 @@ const STATUS_LABELS = {
  * at its own moment - the same reason the tutor drawer's tabs do - so the
  * form's Save button is not shown here.
  *
- * WhisperX is NOT run from here. It needs Python and a GPU, which the server
- * has neither of; the admin runs tools/transcriber on their own machine and
- * uploads the .json it writes. See tools/transcriber/README.md.
+ * The local WhisperX engine is the normal route. JSON import remains only for
+ * transcripts generated elsewhere.
  */
 function SyncTab({ podcast, onChange }) {
   const { token } = useAuth()
@@ -82,6 +81,20 @@ function SyncTab({ podcast, onChange }) {
     setError(null)
     try {
       const next = await api.uploadTimedTranscript(token, podcast.id, file)
+      setInfo(next)
+      onChange?.(next)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function generate() {
+    setBusy(true)
+    setError(null)
+    try {
+      const next = await api.generateTimedTranscript(token, podcast.id)
       setInfo(next)
       onChange?.(next)
     } catch (err) {
@@ -154,30 +167,20 @@ function SyncTab({ podcast, onChange }) {
         {status === 'failed' && info?.error && <p className="ed-sync-error">{info.error}</p>}
       </div>
 
-      <p className="ed-hint">
-        Words light up as the audio plays, and clicking one plays from it. Make the file on
-        your own computer with <code>php artisan podcast:transcribe {podcast.id}</code> (or{' '}
-        <code>process_podcast.py</code>), then upload the .json it writes. Pinyin and meanings
-        are added here from the app&rsquo;s dictionary.
-      </p>
+      <p className="ed-hint">Generate the Chinese transcript from the audio. Verbo adds Pinyin, English, and word timing automatically.</p>
 
       {!podcast.audio_url && (
         <p className="ed-hint">This episode has no audio yet, so there is nothing to sync to.</p>
       )}
 
-      <label className={'ed-btn-ghost' + (busy ? ' is-busy' : '')}>
-        {busy ? 'Working…' : done ? 'Replace with a new file' : status === 'failed' ? 'Retry with a file' : 'Upload transcript (.json)'}
-        <input
-          type="file"
-          accept=".json,application/json"
-          disabled={busy}
-          onChange={(e) => {
-            const picked = e.target.files[0]
-            e.target.value = ''
-            if (picked) upload(picked)
-          }}
-        />
-      </label>
+      {podcast.audio_url && <button type="button" className="ed-btn-primary" onClick={generate} disabled={busy}>{busy ? 'Generating…' : done ? 'Generate again' : 'Generate synced transcript'}</button>}
+      <details className="ed-advanced-sync">
+        <summary>Advanced: import transcript file</summary>
+        <label className={'ed-btn-ghost' + (busy ? ' is-busy' : '')}>
+          Upload transcript (.json)
+          <input type="file" accept=".json,application/json" disabled={busy} onChange={(e) => { const picked = e.target.files[0]; e.target.value = ''; if (picked) upload(picked) }} />
+        </label>
+      </details>
 
       {(done || status === 'failed') && (
         <button type="button" className="ed-btn-ghost" onClick={remove} disabled={busy}>
@@ -237,6 +240,7 @@ function SyncTab({ podcast, onChange }) {
 }
 
 export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedChange }) {
+  const { token } = useAuth()
   const editing = Boolean(podcast)
 
   const [tab, setTab] = useState('Episode')
@@ -247,6 +251,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
   const [bio, setBio] = useState(podcast?.bio || '')
   const [transcript, setTranscript] = useState(podcast?.transcript || '')
   const [transcriptEn, setTranscriptEn] = useState(podcast?.transcript_en || '')
+  const [translating, setTranslating] = useState(false)
   const [audio, setAudio] = useState(null)
   const [image, setImage] = useState(null)
 
@@ -297,6 +302,20 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
       setError(err.message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function translateTranscript() {
+    if (!transcript.trim() || translating) return
+    setTranslating(true)
+    setError(null)
+    try {
+      const result = await api.translatePodcastTranscript(token, transcript)
+      setTranscriptEn(result.translation)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setTranslating(false)
     }
   }
 
@@ -379,17 +398,15 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
           {tab === 'Transcript' && (
             <>
               <label className="ed-field">
-                <span>Chinese transcript</span>
+                <span>Chinese transcript (optional)</span>
                 <textarea
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
                   rows={12}
-                  required
                 />
               </label>
               <p className="ed-hint">
-                Every word here becomes hoverable on the episode page, and Alt+1 saves it
-                to the flashcard bank.
+                Paste text if you already have it. Otherwise, upload audio and generate the transcript after publishing.
               </p>
 
               <label className="ed-field">
@@ -400,6 +417,9 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                   rows={10}
                 />
               </label>
+              <button type="button" className="ed-btn-ghost" onClick={translateTranscript} disabled={!transcript.trim() || translating}>
+                {translating ? 'Translating…' : 'Translate to English'}
+              </button>
               <p className="ed-hint">
                 Optional. A Chinese-only episode is valid — the Translation switch renders
                 disabled rather than opening a blank pane.

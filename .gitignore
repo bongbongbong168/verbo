@@ -2,3 +2,7 @@
 Thumbs.db
 .vscode/
 .idea/
+
+# The transcriber pulls its own ffmpeg build (205 MB of exes); it is a local
+# tool dependency, not source.
+tools/transcriber/bin/

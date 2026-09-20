@@ -243,6 +243,8 @@
 
 .sd-panel-head {
   display: flex;
+  position: relative;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.7rem;
   margin-bottom: 1.1rem;
@@ -275,7 +277,7 @@
    the Latin and digits; Chinese falls through to the CJK stack. */
 .sd-text {
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--sd-reader-scale, 1));
   line-height: 2;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -322,71 +324,6 @@
     inset 0 -2px 0 0 #c9bdf3;
 }
 
-/* ---- pinyin switch ---- */
-
-.sd-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-  /* Cap-band centred. Hellix sits a fixed fraction of its size low in its line
-     box (0.063em at 400, 0.071 at 500, 0.076 at 600, 0.086 at 700 - measured
-     at 400px against a flat-capped H), so the pair is in em and holds at every
-     size and screen; this label is 600. The pair sums to the old padding. */
-  padding: calc(0.35rem - 0.076em) 0.75rem calc(0.35rem + 0.076em) 0.4rem;
-  border: 1px solid var(--sd-border, #e7e3f6);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--sd-text-muted);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* Instant, not transitioned — the fill IS the on/off answer, and a transition
-   that never gets a frame would leave the switch looking dead. */
-.sd-switch.on {
-  border-color: #a89ce3;
-  background: #f1edfc;
-  color: #6a6191;
-}
-
-.sd-switch-track {
-  display: block;
-  position: relative;
-  width: 30px;
-  height: 18px;
-  flex: none;
-  border-radius: 999px;
-  background: #e2dff0;
-  /* Hands back the label's cap-band lift (same em, same font-size), so the
-     track stays centred. */
-  margin-top: 0.076em;
-  margin-bottom: -0.076em;
-}
-
-.sd-switch.on .sd-switch-track {
-  background: #a89ce3;
-}
-
-/* Static `left`, not a transform transition: it has to be right on the first
-   paint. */
-.sd-switch-knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.25);
-}
-
-.sd-switch.on .sd-switch-knob {
-  left: 15px;
-}
-
 /* ---- ruby: pinyin stacked over the character ---- */
 
 .sd-text-ruby {
@@ -416,11 +353,75 @@
   color: #fff;
 }
 
-.sd-hint {
-  margin-left: auto;
-  font-size: 0.78rem;
+.sd-reading-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.sd-reading-controls .rs-switch:disabled { cursor: wait; }
+
+.sd-size {
+  position: absolute;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 32px;
+  transform: translateX(-50%);
+  color: var(--sd-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.sd-size-large { font-size: 0.95rem; }
+
+.sd-size input {
+  width: 92px;
+  accent-color: #7d76a0;
+  cursor: pointer;
+}
+
+.sd-reader-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 58px;
+  margin-bottom: 1rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--sd-border);
+  border-radius: 14px;
+  background: #fbfaff;
+}
+
+.sd-reader-controls .sd-size { top: 50%; transform: translate(-50%, -50%); }
+
+.sd-translation {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5dff5;
+}
+
+.sd-translation-text {
+  margin: 0.5rem 0 0;
+  padding-left: 0.9rem;
+  border-left: 2px solid #dfd8f3;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: calc(1rem * var(--sd-reader-scale, 1));
+  line-height: 1.7;
   color: var(--sd-text-muted);
 }
+
+.sd-translation-pair { margin: 0 0 1.55rem; }
+.sd-translation-pair:last-child { margin-bottom: 0; }
+.sd-translation-source { margin: 0; font-size: calc(1.15rem * var(--sd-reader-scale, 1)); line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sd-translation.sd-text-ruby .sd-token { margin: 0 0.1em 0.15em; }
+
 
 .sd-saved-note {
   background: #f1edfc;
@@ -559,6 +560,21 @@
 
   .sd-btn {
     flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 760px) {
+  .sd-reader-controls {
+    flex-wrap: wrap;
+    min-height: 0;
+  }
+
+  .sd-reader-controls .sd-size {
+    position: static;
+    transform: none;
+    order: 3;
+    width: 100%;
     justify-content: center;
   }
 }

@@ -553,6 +553,21 @@
 
 /* ---- translation ---- */
 
+.pe-pair + .pe-pair {
+  margin-top: 0.55rem;
+}
+
+.pe-transcript-pair {
+  margin: 0;
+}
+
+.pe-pair-en {
+  margin: 0.15rem 0 0.7rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #726c88;
+}
+
 .pe-translation {
   margin-top: 1.6rem;
   padding: 1rem 1.1rem;
