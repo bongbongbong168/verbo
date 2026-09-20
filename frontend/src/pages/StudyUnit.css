@@ -1366,9 +1366,27 @@
   border-radius: 16px;
 }
 
-/* Holds the first column at lesson 1, where there is no Previous. */
-.un-lessonnav-spacer {
+/* First lesson has no Previous link. Its reserved column instead explains the
+   centred Done control, so the footer never becomes a wide empty strip. */
+.un-lessonnav-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
   min-width: 0;
+  color: var(--un-text-muted);
+}
+
+.un-lessonnav-state-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.un-lessonnav-state strong {
+  color: var(--un-text);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 /* max-width keeps each link inside its own column: sized to fit its
@@ -1407,19 +1425,28 @@
   }
 }
 
-/* No box, no fill — text on the bar's own ground, exactly as drawn. */
+/* THE SAME BUTTON AS NEXT, outlined instead of filled. It used to be bare
+   text on the bar's ground beside a filled pill, which left the footer
+   lopsided — one side a control, the other a caption. Both are pills now and
+   the fill alone says which one carries you forward. */
 .un-lessonnav-prev {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   min-width: 0;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--un-panel-border);
+  border-radius: 12px;
+  background: #fff;
   color: var(--un-text);
   text-decoration: none;
-  transition: color 0.15s ease;
 }
 
+/* The fill IS the feedback, so it is not transitioned — a transition that
+   never gets a frame leaves the button looking dead under the pointer. */
 .un-lessonnav-prev:hover {
-  color: var(--un-accent);
+  border-color: var(--un-outline);
+  background: var(--un-panel);
 }
 
 /* The lesson's done toggle, between Previous and Next. SAME SHAPE AND TYPE
@@ -1441,8 +1468,8 @@
      stretched to the bar, so it is lifted by trimming the content box from
      below by twice that. */
   padding: 0 1.1rem 0.152em;
-  border: 1px solid var(--un-outline);
-  border-radius: 10px;
+  border: 1px solid var(--un-panel-border);
+  border-radius: 12px;
   background: #fff;
   white-space: nowrap;
   color: var(--un-text);
@@ -1479,11 +1506,11 @@
 .un-lessonnav-next {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   min-width: 0;
   flex: none;
-  padding: 0.6rem 1.1rem;
-  border-radius: 10px;
+  padding: 0.5rem 0.95rem;
+  border-radius: 12px;
   /* Filled AND stroked: the reference outlines the pill in the same navy as
      the bar, which is what keeps it from floating on the white. */
   background: var(--un-accent-light);
@@ -1503,21 +1530,50 @@
    pill two rows tall and pull the bar out of shape. The margins lift it
    0.076em (Hellix 600's cap-band offset) onto the pill's centre without
    moving the chevron beside it. */
+/* Direction over destination. The eyebrow is the small word, the lesson's
+   own name is the line that matters, and the stack keeps a long Chinese name
+   from pushing the button into the Done control beside it. */
+.un-lessonnav-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+
+.un-lessonnav-next .un-lessonnav-stack {
+  text-align: right;
+}
+
+.un-lessonnav-way {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
 .un-lessonnav-name {
-  margin: -0.076em 0 0.076em;
   font-family: 'Hellix', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.un-lessonnav-name-solo {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Drawn now, so it is sized in pixels and sits on the button's centre rather
+   than on the text's baseline. */
 .un-lessonnav-chev {
+  width: 16px;
+  height: 16px;
   flex: none;
-  font-size: 1.35rem;
-  line-height: 1;
 }
 
 .un-lessonnav-prev .un-lessonnav-chev {

@@ -74,6 +74,27 @@ function TickIcon() {
   )
 }
 
+/* The lesson footer's arrows. DRAWN, not the `&lsaquo;` / `&rsaquo;` glyphs
+   they replaced: those sit on their own baseline and ride high beside a
+   two-line label, they carry the font's weight rather than the icon set's,
+   and they cannot be sized without changing the line box around them. */
+function NavChevron({ dir }) {
+  return (
+    <svg
+      className="un-lessonnav-chev"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={dir === 'back' ? 'm14.5 5-7 7 7 7' : 'm9.5 5 7 7-7 7'} />
+    </svg>
+  )
+}
+
 /* Play / Stop for the whole conversation. Solid fills rather than the stroked
    set above, because at 16px a stroked triangle reads as an outline arrow
    rather than a play control. */
@@ -1049,13 +1070,22 @@ export default function StudyUnit() {
         <nav className="un-lessonnav" aria-label="Lessons in this topic">
           {unit.previous_unit ? (
             <Link className="un-lessonnav-prev" to={`/study/units/${unit.previous_unit.id}`}>
-              <span className="un-lessonnav-chev" aria-hidden="true">
-                &lsaquo;
+              <NavChevron dir="back" />
+              {/* TWO LINES, not "Previous: 第二课" on one. The label and the
+                  lesson's name are different kinds of thing — one says which
+                  way you are going, the other says where — and running them
+                  together behind a colon read as a sentence that had been cut
+                  in half. */}
+              <span className="un-lessonnav-stack">
+                <span className="un-lessonnav-way">Previous</span>
+                <span className="un-lessonnav-name">{shortName(unit.previous_unit)}</span>
               </span>
-              <span className="un-lessonnav-name">Previous: {shortName(unit.previous_unit)}</span>
             </Link>
           ) : (
-            <span className="un-lessonnav-spacer" />
+            <span className="un-lessonnav-state">
+              <span className="un-lessonnav-state-label">Lesson status</span>
+              <strong>{unit.completed ? 'Complete' : 'In progress'}</strong>
+            </span>
           )}
 
           {/* Set automatically when the whole conversation has been played or
@@ -1074,19 +1104,21 @@ export default function StudyUnit() {
 
           {unit.next_unit ? (
             <Link className="un-lessonnav-next" to={`/study/units/${unit.next_unit.id}`}>
-              <span className="un-lessonnav-name">Next: {shortName(unit.next_unit)}</span>
-              <span className="un-lessonnav-chev" aria-hidden="true">
-                &rsaquo;
+              <span className="un-lessonnav-stack">
+                <span className="un-lessonnav-way">Next</span>
+                <span className="un-lessonnav-name">{shortName(unit.next_unit)}</span>
               </span>
+              <NavChevron dir="forward" />
             </Link>
           ) : (
             <Link className="un-lessonnav-next" to={backTo}>
-              <span className="un-lessonnav-name">
+              {/* The last lesson has nowhere further to go, so this one line
+                  is the whole label — no "Next" eyebrow over it, because it
+                  is not a next lesson. */}
+              <span className="un-lessonnav-name un-lessonnav-name-solo">
                 {isDaily ? 'Back to Daily Use' : 'Back to lessons'}
               </span>
-              <span className="un-lessonnav-chev" aria-hidden="true">
-                &rsaquo;
-              </span>
+              <NavChevron dir="forward" />
             </Link>
           )}
         </nav>
