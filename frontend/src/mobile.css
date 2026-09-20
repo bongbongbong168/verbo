@@ -538,9 +538,13 @@
     height: 32px;
   }
 
-  /* The reserve has to grow with it, or a long label runs under the button. */
+  /* The reserve has to grow with it, or a long label runs under the button.
+     The second LINE is not reserved here: the card is full width on a phone,
+     so every quest name fits on one and the rows are already uniform — held
+     open, each would carry ~13px of nothing under its title. */
   .db-goal-label {
     padding-right: 30px;
+    min-height: 0;
   }
 }
 

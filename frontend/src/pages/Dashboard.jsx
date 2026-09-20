@@ -10,6 +10,9 @@ import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
 import MenuDotsIcon from '../components/MenuDotsIcon'
 import TutorCover from '../components/TutorCover'
+import questBook from '../assets/quests/book.webp'
+import questBookmark from '../assets/quests/bookmark.webp'
+import questRefresh from '../assets/quests/refresh.webp'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import FlameMark from '../components/FlameMark'
@@ -274,49 +277,14 @@ const GOAL_MARKS = {
       <path d="M20.5 3.5v4.5H16" />
     </>
   ),
-  read_article: (
+  /* The card's own mark, beside "Daily Quest" — a day with a tick in it. It
+     names the card rather than a quest, which is why it is drawn and not a
+     fourth 3D file. */
+  calendar: (
     <>
-      <path d="M12 7.5v12" />
-      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
-      <path d="M15.5 10.5h3M15.5 13.5h3" />
-    </>
-  ),
-  review_words: (
-    <>
-      <path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" />
-      <path d="M20.5 3.5v4.5H16" />
-    </>
-  ),
-  // A bookmark with a star — saving something worth keeping.
-  save_words: (
-    <>
-      <path d="M6.5 3h11a1 1 0 0 1 1 1v17l-6.5-3.8L5.5 21V4a1 1 0 0 1 1-1z" />
-      <path d="m12 7 1.15 2.33 2.57.38-1.86 1.81.44 2.56L12 12.87l-2.3 1.21.44-2.56-1.86-1.81 2.57-.38z" />
-    </>
-  ),
-  opened: (
-    <>
-      <path d="M12 7.5v12" />
-      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
-    </>
-  ),
-  words: (
-    <>
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5" />
-      <path d="M9 13h6M9 17h4" />
-    </>
-  ),
-  /* Sliders, NOT the mockup's circular arrow. That glyph is already
-     "Review 5 words" three rows below, and the same drawing meaning two
-     different things inside one card is worse than a small deviation — this
-     one also points where the link actually goes, which is the Learning panel
-     in Settings. */
-  change: (
-    <>
-      <path d="M4 8h10M18 8h2M4 16h3M11 16h9" />
-      <circle cx="16" cy="8" r="2.2" />
-      <circle cx="9" cy="16" r="2.2" />
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" />
+      <path d="m9 14.5 2 2 4-4.2" />
     </>
   ),
 }
@@ -334,6 +302,26 @@ function GoalMark({ type }) {
     >
       {GOAL_MARKS[type]}
     </svg>
+  )
+}
+
+/* The supplied 3D marks, keyed by the server's own `mark`. Only three were
+   drawn — book, bookmark and refresh — so the other four quests keep the app's
+   flat glyph inside the same chip, and the row's shape does not change with
+   it. `bookmark` goes to `sparkle`, the words quest the reference drew it for. */
+const QUEST_ART = {
+  book: questBook,
+  refresh: questRefresh,
+  sparkle: questBookmark,
+}
+
+function QuestMark({ quest }) {
+  const art = QUEST_ART[quest.mark]
+
+  return (
+    <span className="db-goal-mark">
+      {art ? <img src={art} alt="" /> : <GoalMark type={quest.mark} />}
+    </span>
   )
 }
 
@@ -384,9 +372,7 @@ function QuestRow({ quest, onChange }) {
 
   return (
     <li className={quest.done ? 'db-goal done' : 'db-goal'}>
-      <span className="db-goal-mark">
-        <GoalMark type={quest.mark} />
-      </span>
+      <QuestMark quest={quest} />
       <span className="db-goal-label">{quest.label}</span>
       <button
         type="button"
@@ -401,13 +387,24 @@ function QuestRow({ quest, onChange }) {
           the tab composites frames, so a backgrounded tab would leave every
           bar sitting at zero.
 
-          The count sits OUTSIDE the bar, in its own column, so the three
-          line up down a single right edge where they can be compared. */}
+          The count rides INSIDE the bar, as the reference draws it, which is
+          what buys the room for the tick beside it. */}
       <span className="db-goal-track">
         <span className="db-goal-fill" style={{ width: `${(quest.progress / quest.target) * 100}%` }} />
+        <span className="db-goal-count">
+          {quest.progress} / {quest.target}
+        </span>
       </span>
-      <span className="db-goal-count">
-        {quest.progress} / {quest.target}
+      {/* Done is a real state read off the count, so the tick is a drawing and
+          not a button — there is nothing to claim here (no XP in Verbo) and
+          progress cannot be ticked by hand. An empty ring before that reads as
+          the thing the bar is filling towards. */}
+      <span className="db-goal-tick" aria-hidden="true">
+        {quest.done && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12.5 10 17.5 19 7" />
+          </svg>
+        )}
       </span>
 
       {panel && (
@@ -481,53 +478,23 @@ function QuestRow({ quest, onChange }) {
   )
 }
 
-/** One of the three boxes under the level: a marked chip, a number, a label. */
-function PlanStat({ mark, value, label, to }) {
-  const inner = (
-    <>
-      <span className="db-plan-stat-mark" aria-hidden="true">
-        <GoalMark type={mark} />
-      </span>
-      {/* Both of these carry a CLASS, and that is not decoration. The rule
-          that styles the label used to be the bare type selector
-          `.db-plan-stat span` — which also matches `.db-plan-stat-mark`,
-          because the chip is a span too, and at (0,1,1) it outranked the
-          chip's own (0,1,0) rule and killed its `display: flex`. The glyph
-          then sat hard against the top of its circle with 13px of nothing
-          beneath it. Same family as the `.up` collision the Vocabulary Bank
-          documents: never let a selector reach further than the one element
-          it is describing. */}
-      <span className="db-plan-stat-body">
-        {value !== undefined && <strong className="db-plan-stat-value">{value}</strong>}
-        <span className="db-plan-stat-label">{label}</span>
-      </span>
-    </>
-  )
-
-  return to ? (
-    <Link className="db-plan-stat db-plan-stat-link" to={to}>
-      {inner}
-    </Link>
-  ) : (
-    <div className="db-plan-stat">{inner}</div>
-  )
-}
-
 /* Section heading, with the design's optional "View all" link on the right. */
 /**
- * Where the learner is in their level, and today's three goals.
+ * Today's three quests.
  *
- * THERE IS NO PROJECTED FINISH DATE. The reference this was built from leads
- * with "HSK 1 in 1 month and 9 days", and nothing in Verbo measures how long a
- * lesson takes — that date would be an assumption dressed as a measurement.
- * The card reports lessons left at the pace the learner chose and lets them do
- * the arithmetic, which they can see.
+ * THE LEVEL BAND CAME OFF THIS CARD. It carried the current level, the lessons
+ * left and the OPENED / WORDS / CHANGE tiles above the quests; the user struck
+ * it out and asked for the reference's card instead, which is quests alone.
+ * `GET /learning-plan` still returns that `plan` block — nothing renders it,
+ * and it is left on the wire rather than deleted because the level and pace
+ * are real and cheap, and the next card that wants them should not have to
+ * rebuild the query.
  *
  * Every figure is counted server-side from rows the app already writes, so
  * there is nothing to invalidate when a word is saved or a lesson opened — the
  * next load is simply current.
  */
-function LearningPlanCard({ plan, quests, onQuestChange }) {
+function LearningPlanCard({ quests, onQuestChange }) {
   // Nothing has arrived yet. No skeleton: this sits below the fold of the rail
   // and a flashing block there is more distracting than a moment of nothing.
   if (!quests) return null
@@ -536,77 +503,29 @@ function LearningPlanCard({ plan, quests, onQuestChange }) {
 
   return (
     <section className="db-plan">
-      {plan ? (
-        <>
-          {/* The heading takes the FULL width. CHANGE sits on the stats row
-              below instead of beside the title — which is what the reference
-              does, and it is load-bearing: in the rail the card is ~171px of
-              content at 1240, so a button beside the title left ~110px and
-              broke "7 lessons left" across two lines mid-phrase. */}
-          <div className="db-plan-top">
-            <h2 className="db-plan-level">{plan.level}</h2>
-            {/* Real, admin-authored: `study_levels.level_label`, the same
-                column Daily Use reads. Nothing is inferred from the HSK
-                number — see the note in LearningPlanController. */}
-            {plan.level_label && (
-              <span className="db-plan-tag">
-                <span className="db-plan-tag-mark" aria-hidden="true">
-                  <GoalMark type="opened" />
-                </span>
-                {plan.level_label}
-              </span>
-            )}
-          </div>
-          <p className="db-plan-sub">
-            {plan.units_left > 0
-              ? `${plan.units_left} ${plan.units_left === 1 ? 'lesson' : 'lessons'} left`
-              : 'Every lesson opened'}
-            {/* The pace is only stated when one was actually chosen.
-                "Whenever I have time" is a real answer for someone who will
-                not commit to a number, and turning it into a silent
-                assumption would be the one untrue thing here. */}
-            {plan.pace_label ? ` · ${plan.pace_label}` : ''}
-          </p>
-
-          <div className="db-plan-stats">
-            {/* "Opened", never "completed" — nothing records a unit as
-                finished, so the label cannot claim more than is known. The
-                Profile page words it the same way. */}
-            <PlanStat mark="opened" value={plan.units_opened} label="OPENED" />
-            <PlanStat mark="words" value={plan.words_saved} label="WORDS" />
-            <PlanStat mark="change" label="CHANGE" to="/settings?s=learning" />
-          </div>
-        </>
-      ) : (
-        <div className="db-plan-top">
-          <div>
-            <h2 className="db-plan-level">Pick a level</h2>
-            <p className="db-plan-sub">Open a lesson and your progress shows up here.</p>
-          </div>
-          <Link className="db-plan-change" to="/study">
-            BROWSE
-          </Link>
+      <div className="db-goals-head">
+        {/* The reference's marked chip beside the title. Drawn rather than a
+            fourth 3D file: it names the card, it is not one of the quests. */}
+        <span className="db-quest-badge" aria-hidden="true">
+          <GoalMark type="calendar" />
+        </span>
+        <div className="db-goals-heading">
+          <h2 className="db-goals-title">Daily Quest</h2>
+          <p className="db-goals-sub">Small steps. Big progress.</p>
         </div>
-      )}
-
-      <div className="db-goals">
-        <div className="db-goals-head">
-          <h3 className="db-goals-title">Today</h3>
-          {/* Warm once the day is cleared, the same signal a finished row
-              carries. The reference puts a reward ladder here instead —
-              50exp / 100exp / Claim Now — and there is no XP in Verbo, by
-              decision rather than omission. */}
-          <span className={done === quests.length ? 'db-goals-count all' : 'db-goals-count'}>
-            {done} / {quests.length} done
-          </span>
-        </div>
-
-        <ul className="db-goals-list">
-          {quests.map((q) => (
-            <QuestRow key={q.id} quest={q} onChange={onQuestChange} />
-          ))}
-        </ul>
+        {/* The reference puts "Claim all" here. There is nothing to claim —
+            no XP in Verbo, by decision — so the slot carries the count, which
+            the user asked for by name. It warms once the day is cleared. */}
+        <span className={done === quests.length ? 'db-goals-count all' : 'db-goals-count'}>
+          {done} / {quests.length}
+        </span>
       </div>
+
+      <ul className="db-goals-list">
+        {quests.map((q) => (
+          <QuestRow key={q.id} quest={q} onChange={onQuestChange} />
+        ))}
+      </ul>
     </section>
   )
 }
@@ -1395,7 +1314,7 @@ export default function Dashboard() {
 
           {/* Directly under the chart, and the order is the point: the chart
               says how much you have done, this says what is left. */}
-          <LearningPlanCard plan={planQuery.data?.plan} quests={quests} onQuestChange={onQuestChange} />
+          <LearningPlanCard quests={quests} onQuestChange={onQuestChange} />
         </aside>
       </div>
     </div>

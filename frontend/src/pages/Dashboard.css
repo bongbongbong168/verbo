@@ -1634,13 +1634,11 @@ a.db-course:hover {
   color: var(--db-text-muted);
 }
 
-/* ---- the plan card ----
-   Sits under the activity chart in the rail. The chart says how much has been
-   done; this says what is left. Its own tokens are the page's — no new colours.
-
-   There is deliberately NO projected finish date: nothing measures how long a
-   lesson takes, so a date would be an assumption wearing a measurement's
-   clothes. Lessons left at a stated pace is the honest version. */
+/* ---- the daily quest card ----
+   Sits under the activity chart in the rail, and holds ONLY the quests. It
+   used to open with the current level, the lessons left and three stat tiles
+   (OPENED / WORDS / CHANGE); that band was struck out and the card rebuilt to
+   a supplied reference, which is a marked title, a count and three rows. */
 .db-plan {
   margin-top: 1.4rem;
   padding: 1.1rem 1.15rem 1rem;
@@ -1650,231 +1648,66 @@ a.db-course:hover {
   box-sizing: border-box;
 }
 
-.db-plan-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-bottom: 0.2rem;
-}
-
-/* `min-width: 0` is what makes this claim the row. A flex item defaults to
-   its min-content width, so without it the heading column was squeezed by
-   CHANGE and "7 lessons left" broke across two lines mid-phrase. The same
-   trap `.db-pickup > *` documents. */
-.db-plan-top > div {
-  flex: 1;
-  min-width: 0;
-}
-
-.db-plan-level {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--db-text);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The level's own difficulty, from `study_levels.level_label`. Sits against
-   the title because it qualifies it — "HSK 1, which is Beginner". */
-.db-plan-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex: none;
-  /* Cap-band correction, measured 0.935px low. The pair sums to the original
-     0.44rem, so the tag height is unchanged. */
-  padding: calc(0.22rem - 0.935px) 0.5rem calc(0.22rem + 0.935px) 0.28rem;
-  border-radius: 999px;
-  background: var(--db-pill-bg);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--db-accent);
-  white-space: nowrap;
-}
-
-.db-plan-tag-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--db-card);
-}
-
-.db-plan-tag-mark svg {
-  width: 11px;
-  height: 11px;
-}
-
-.db-plan-sub {
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: var(--db-text-muted);
-}
-
-/* Quiet, not a CTA — it is the escape hatch, not the thing to do. Goes to the
-   Learning panel in Settings, which is where the daily goal actually lives. */
-.db-plan-change {
-  flex: none;
-  padding: 0.3rem 0.55rem;
-  border-radius: 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--db-text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.db-plan-change:hover {
-  background: var(--db-pill-bg);
-  color: var(--db-accent);
-}
-
-/* Three boxes of equal weight, each with its own marked chip. They were bare
-   numbers with CHANGE floated off to the right, which read as two facts and a
-   loose link rather than as one row. `minmax(0, 1fr)` floors the columns —
-   a grid item defaults to min-content, the trap `.db-pickup > *` documents. */
-.db-plan-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-}
-
-/* STACKED, not the mockup's side-by-side chip and number — measured. This
-   card is 236px wide at 1440 and 253px here, so a third of it is ~64px: a
-   28px chip plus the tile's padding leaves 13px for the word, and "OPENED"
-   needs 40. The mockup is drawn on a canvas several times this wide. Stacking
-   keeps the marked tile it is really asking for and fits the rail. */
-.db-plan-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  min-width: 0;
-  padding: 0.6rem 0.35rem;
-  border-radius: 12px;
-  background: var(--db-pill-bg);
-  text-decoration: none;
-  color: inherit;
-  text-align: center;
-}
-
-/* Not transitioned — the fill IS the feedback, and a transition that never
-   gets a frame leaves the tile looking dead under the pointer. */
-.db-plan-stat-link:hover {
-  background: #e7e0f8;
-}
-
-.db-plan-stat-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--db-card);
-  color: var(--db-accent);
-}
-
-.db-plan-stat-mark svg {
-  width: 15px;
-  height: 15px;
-}
-
-.db-plan-stat-body {
-  min-width: 0;
-  max-width: 100%;
-}
-
-/* CLASSES, NOT TYPE SELECTORS, and this cost a real bug.
-
-   These were `.db-plan-stat strong` and `.db-plan-stat span`. The second one
-   also matches `.db-plan-stat-mark` — the chip is a span as well — and at
-   (0,1,1) it outranked the chip's own (0,1,0) rule, overriding its
-   `display: flex` with `display: block`. The centring silently stopped
-   working and every glyph sat hard against the top of its circle with 13px
-   of nothing under it, which is exactly what it looked like: the icons
-   drifting upward out of their chips.
-
-   Same family as the `.up` collision the Vocabulary Bank documents. A
-   selector must not reach further than the one element it describes. */
-.db-plan-stat-value {
-  display: block;
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--db-text);
-  font-variant-numeric: tabular-nums;
-}
-
-.db-plan-stat-label {
-  display: block;
-  font-size: 0.6rem;
-  font-weight: 700;
-  /* Stated rather than left at `normal`, so the reserved height below can be
-     computed from the type instead of measured off whatever Hellix happens to
-     give. 0.6 x 1.25 = 0.75rem, which is the 12px the label really occupies. */
-  line-height: 1.25;
-  letter-spacing: 0.06em;
-  color: var(--db-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* CHANGE has no number, and the row has to survive that.
-
-   The body RESERVES BOTH LINE BOXES — the number's and the label's — so the
-   tile is filled to the same depth as the two beside it, and `flex-end` drops
-   the word onto the label row. The three chips then line up across the top and
-   the three labels across the bottom, with one empty cell where a number would
-   be: a table with a gap in it, rather than a tile that stopped early.
-
-   It previously reserved only the NUMBER's line (`1.15rem`), which left the
-   word sitting on the number row with 26.6px of dead space beneath it against
-   the others' 9.6px — visibly an unfinished third tile.
-
-   The calc is the two line boxes written out, not a measured constant:
-   1.15rem x 1.1 (the number) + 0.6rem x 1.25 (the label) = 32.24px, against
-   the 32.23px the real stacked pair measures. */
-.db-plan-stat-link .db-plan-stat-body {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  min-height: calc(1.15rem * 1.1 + 0.6rem * 1.25);
-}
-
 /* ---- today's three ---- */
 
-.db-goals {
-  margin-top: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--db-border);
+/* Title block, after the reference: a marked chip, the name of the card, one
+   line of copy under it, and the count pinned right. `align-items: center`
+   rather than baseline — the chip is a box, not a label, so a baseline would
+   hang it off the title's. */
+.db-goals-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 0.55rem;
+  margin-bottom: 0.85rem;
 }
 
-.db-goals-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 0.7rem;
+/* THE SUBTITLE TAKES ITS OWN ROW, spanning under the count. Beside it, the
+   heading column measures ~109px in the rail against the ~135px "Small steps.
+   Big progress." needs, so the line broke in two and the title block came out
+   taller than the chip next to it. Underneath it has the full 197px. */
+.db-goals-heading {
+  display: contents;
 }
 
 .db-goals-title {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 1.02rem;
   font-weight: 700;
+  line-height: 1.15;
   color: var(--db-text);
+}
+
+.db-goals-sub {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  margin: 0.1rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  color: var(--db-text-muted);
+}
+
+/* The card's own mark. Pale pill, accent glyph — the same chip the stat tiles
+   wore before this card lost them. */
+.db-quest-badge {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 11px;
+  background: var(--db-pill-bg);
+  color: var(--db-accent);
+}
+
+.db-quest-badge svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ASYMMETRIC ON PURPOSE, AND THE NUMBER IS MEASURED. Hellix reserves more
@@ -1890,6 +1723,9 @@ a.db-course:hover {
    it would have tuned this pill and the sidebar's by different amounts for no
    real reason. */
 .db-goals-count {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
   padding: 0.1416rem 0.45rem 0.2584rem;
   border-radius: 999px;
   background: var(--db-pill-bg);
@@ -1960,22 +1796,33 @@ a.db-course:hover {
   padding-right: 22px;
 }
 
+/* THE MARK IS THE SUPPLIED 3D ART where one exists, and the app's flat glyph
+   where it does not — only three were drawn (book, bookmark, refresh) against
+   seven quests, so the box is the constant and the drawing inside it is not.
+   `object-fit: contain` because the three files are cropped to their own ink
+   and so have three different aspect ratios. */
 .db-goal-mark {
   grid-row: 1 / 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   flex: none;
-  /* No circle behind the glyph - the icon alone, as asked. The 34px box stays
-     so the label and bar beside it do not move. */
   color: var(--db-accent);
 }
 
+.db-goal-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Bigger than the old 17px: it sits in a row beside 3D art filling the whole
+   38px box, and a small outline glyph next to that reads as a missing icon. */
 .db-goal-mark svg {
-  width: 17px;
-  height: 17px;
+  width: 23px;
+  height: 23px;
 }
 
 .db-goal-label {
@@ -1994,6 +1841,11 @@ a.db-course:hover {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  /* BOTH LINES ARE RESERVED, so the three rows are the same height whatever
+     they are named. Measured, "Review 10 words" needs 133px against the 127px
+     this column has in the rail while "Listen 5 min" fits on one — sized to
+     content, the rows came out 67px and 84px and the list looked ragged. */
+  min-height: 2.4em;
 }
 
 /* A completed row still steps FORWARD, never greys out — done is the good
@@ -2007,19 +1859,22 @@ a.db-course:hover {
   background: var(--db-goal-done-well);
 }
 
-/* A plain bar. It used to carry the count inside, which is why it was 18px
-   with padding and a flex row; with the count moved out to its own column the
-   groove can just be a groove.
+/* A FAT bar carrying its own count, as the reference draws it. The count rode
+   in its own column for a while, which lined the three numbers up but left no
+   room for the tick beside them; inside the bar it costs nothing, because the
+   groove has height to spare at 18px.
 
-   The row is white and the groove is the lavender track — the inverse of the
-   version before it, and it survives the same test that one was built for: an
-   untouched goal (0/5, no fill at all) still reads as a container waiting to
-   be filled rather than as a bar that failed to draw. */
+   The row is white and the groove is the lavender track — an untouched goal
+   (0/5, no fill at all) still reads as a container waiting to be filled rather
+   than as a bar that failed to draw. */
 .db-goal-track {
   grid-column: 2;
   grid-row: 2;
   position: relative;
-  height: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
   box-sizing: border-box;
   border-radius: 999px;
   background: var(--db-progress-track);
@@ -2043,19 +1898,53 @@ a.db-course:hover {
   background: var(--db-goal-done);
 }
 
-/* Its own column at the right, so the three counts line up down one edge and
-   can be read against each other. Tabular figures keep that edge straight as
-   the numbers change. */
+/* Inside the bar, over whatever part of it has filled. `--db-text` in EVERY
+   state: the fill slides under the number as the day goes on, so a colour that
+   had to follow it would need a rule per state — #1c1730 measures 7.2:1 on the
+   lavender fill and higher again on the white groove. `position: relative` so
+   it paints above the fill; tabular figures so the number does not jitter. */
 .db-goal-count {
-  grid-column: 3;
-  grid-row: 2;
-  flex: none;
-  font-size: 0.74rem;
+  position: relative;
+  font-size: 0.66rem;
   font-weight: 700;
   line-height: 1;
   color: var(--db-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* THE TICK IS A DRAWING, NOT A BUTTON. The reference's round check reads as
+   "claim"; there is nothing to claim here, and progress is derived from rows
+   the app already writes, so it cannot be ticked by hand. Before the quest is
+   done it is an empty ring — the thing the bar is filling towards. */
+.db-goal-tick {
+  grid-column: 3;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  box-sizing: border-box;
+  border: 2px solid var(--db-progress-track);
+  border-radius: 999px;
+  color: var(--db-text);
+}
+
+.db-goal-tick svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* Dark on lavender, never white: white on #a89ce3 is ~1.9:1. */
+.db-goal.done .db-goal-tick {
+  border-color: transparent;
+  background: var(--db-goal-done);
+}
+
+.db-goal.done .db-goal-track {
+  background: var(--db-card);
 }
 
 /* ---- the quest's own ⋯, and the panel it opens ----
