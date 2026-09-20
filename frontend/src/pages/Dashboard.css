@@ -1776,6 +1776,13 @@ a.db-course:hover {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  /* TWO LINES OF TITLE ARE RESERVED HERE, on the row rather than on the label,
+     so the three tiles are the same height whatever their quests are called
+     AND a one-line name can centre itself in that space. Measured, "Review 10
+     words" needs 133px against the 127px the column has in the rail while
+     "Listen 5 min" fits on one; sized to content the rows came out 67px beside
+     84px and the list looked ragged. */
+  grid-template-rows: minmax(2.4em, auto) auto;
   align-items: center;
   gap: 0.3rem 0.6rem;
   padding: 0.6rem 0.65rem;
@@ -1841,11 +1848,12 @@ a.db-course:hover {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  /* BOTH LINES ARE RESERVED, so the three rows are the same height whatever
-     they are named. Measured, "Review 10 words" needs 133px against the 127px
-     this column has in the rail while "Listen 5 min" fits on one — sized to
-     content, the rows came out 67px and 84px and the list looked ragged. */
-  min-height: 2.4em;
+  /* CENTRED IN THE RESERVED HEIGHT, not parked at its top. The two lines are
+     reserved on the grid ROW rather than on this box (see `.db-goal`), so a
+     one-line name sits on the middle of that space instead of leaving a hole
+     between itself and the bar — which is what read as misaligned against the
+     mark beside it. */
+  align-self: center;
 }
 
 /* A completed row still steps FORWARD, never greys out — done is the good
@@ -1891,11 +1899,15 @@ a.db-course:hover {
   top: 0;
   height: 100%;
   border-radius: 999px;
-  background: var(--db-progress);
+  /* A GRADIENT, as the reference draws it — and both stops are colours the app
+     already owns (`--db-tag-unit` into `--db-progress`), so this adds depth
+     without adding a colour family. It spans the FILL, so a bar early in the
+     day is the light end and it deepens as the day is cleared. */
+  background: linear-gradient(90deg, var(--db-tag-unit), var(--db-progress));
 }
 
 .db-goal.done .db-goal-fill {
-  background: var(--db-goal-done);
+  background: linear-gradient(90deg, var(--db-tag-unit), var(--db-goal-done));
 }
 
 /* Inside the bar, over whatever part of it has filled. `--db-text` in EVERY
