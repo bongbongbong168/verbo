@@ -58,7 +58,10 @@ class DailyQuests
             'area' => 'input',
             'label' => 'Read {n} story|Read {n} stories',
             'unit' => 'stories',
-            'mark' => 'book',
+            // Its own mark, not the article's: both are reading, and the two
+            // sit in the same picker where one drawing twice reads as a
+            // duplicate row.
+            'mark' => 'book_closed',
             'levels' => ['easy' => 1, 'normal' => 2, 'hard' => 3],
             'blurb' => 'Read something written as a story',
         ],

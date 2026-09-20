@@ -11,7 +11,11 @@ import PageTools from '../components/PageTools'
 import MenuDotsIcon from '../components/MenuDotsIcon'
 import TutorCover from '../components/TutorCover'
 import questBook from '../assets/quests/book.webp'
+import questBookClosed from '../assets/quests/book-closed.webp'
 import questBookmark from '../assets/quests/bookmark.webp'
+import questCamera from '../assets/quests/camera.webp'
+import questCheck from '../assets/quests/check.webp'
+import questHeadphones from '../assets/quests/headphones.webp'
 import questRefresh from '../assets/quests/refresh.webp'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
@@ -234,52 +238,11 @@ function VerifiedIcon() {
  * with a single home.
  */
 const GOAL_MARKS = {
-  /* The quest marks are keyed by the server's `mark`, not by quest key, so
-     two quests that mean the same thing (an article and a story are both
-     reading) can share one drawing. */
-  headphones: (
-    <>
-      <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
-      <path d="M4 14h2.5a1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1H5.5A1.5 1.5 0 0 1 4 18z" />
-      <path d="M20 14h-2.5a1 1 0 0 0-1 1v3.5a1 1 0 0 0 1 1h1a1.5 1.5 0 0 0 1.5-1.5z" />
-    </>
-  ),
-  // A word meeting a spark: something new landing, not something filed.
-  sparkle: (
-    <>
-      <path d="M11 4.5 12.6 9l4.4 1.6-4.4 1.6L11 16.7 9.4 12.2 5 10.6 9.4 9z" />
-      <path d="M17.5 15.5 18.2 17.5 20 18.2 18.2 19 17.5 21 16.8 19 15 18.2l1.8-.7z" />
-    </>
-  ),
-  check: (
-    <>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="m8.5 12.2 2.4 2.4 4.6-4.9" />
-    </>
-  ),
-  camera: (
-    <>
-      <path d="M4 8.5h3l1.3-2h7.4l1.3 2h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1z" />
-      <circle cx="12" cy="13.5" r="3.2" />
-    </>
-  ),
-  // An open book with a line of text on it — reading, not a filed document.
-  book: (
-    <>
-      <path d="M12 7.5v12" />
-      <path d="M12 7.5C10.6 6.2 8.8 5.5 6.8 5.5H3.5v12h3.3c2 0 3.8.7 5.2 2 1.4-1.3 3.2-2 5.2-2h3.3v-12h-3.3c-2 0-3.8.7-5.2 2z" />
-      <path d="M15.5 10.5h3M15.5 13.5h3" />
-    </>
-  ),
-  refresh: (
-    <>
-      <path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" />
-      <path d="M20.5 3.5v4.5H16" />
-    </>
-  ),
-  /* The card's own mark, beside "Daily Quest" — a day with a tick in it. It
-     names the card rather than a quest, which is why it is drawn and not a
-     fourth 3D file. */
+  /* THE ONLY MARK LEFT HERE IS THE CARD'S OWN — a day with a tick in it,
+     beside "Daily Quest". Every quest now carries a supplied 3D drawing
+     (`QUEST_ART`), so the flat glyphs they used to fall back on were deleted
+     rather than left behind; this one stays drawn because it names the card
+     rather than a quest, and it is the wrong thing for an illustration. */
   calendar: (
     <>
       <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
@@ -305,12 +268,21 @@ function GoalMark({ type }) {
   )
 }
 
-/* The supplied 3D marks, keyed by the server's own `mark`. Only three were
-   drawn — book, bookmark and refresh — so the other four quests keep the app's
-   flat glyph inside the same chip, and the row's shape does not change with
-   it. `bookmark` goes to `sparkle`, the words quest the reference drew it for. */
+/* THE SUPPLIED 3D MARKS, one per quest, keyed by the server's own `mark` so
+   the two reading quests can carry different drawings without the client
+   knowing what a quest key means.
+
+   EVERY FILE IS A 160px SQUARE AND THEY ARE MATCHED BY INK AREA, not by
+   bounding box — see `scratchpad/icons/quests.js`. At a fixed box the
+   headphones (wide, thin) would otherwise read far larger than the bookmark
+   (tall, narrow) though both boxes measure 38. That is why the CSS needs no
+   per-mark size and `object-fit` has nothing left to do. */
 const QUEST_ART = {
   book: questBook,
+  book_closed: questBookClosed,
+  camera: questCamera,
+  check: questCheck,
+  headphones: questHeadphones,
   refresh: questRefresh,
   sparkle: questBookmark,
 }
@@ -318,9 +290,11 @@ const QUEST_ART = {
 function QuestMark({ quest }) {
   const art = QUEST_ART[quest.mark]
 
+  /* The flat fallback only matters if a quest is added server-side before its
+     drawing exists — every mark in the catalogue has art today. */
   return (
     <span className="db-goal-mark">
-      {art ? <img src={art} alt="" /> : <GoalMark type={quest.mark} />}
+      {art ? <img src={art} alt="" /> : GOAL_MARKS[quest.mark] ? <GoalMark type={quest.mark} /> : null}
     </span>
   )
 }
