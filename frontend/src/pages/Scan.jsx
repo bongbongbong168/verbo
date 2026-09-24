@@ -17,7 +17,7 @@ import fileIcon from "../assets/scan/file-icon.png";
 import sortIcon from "../assets/scan/sort-icon.png";
 import notebookPencil from "../assets/scan/notebook-pencil.png";
 import PageTools from "../components/PageTools";
-import { AllowanceIndicator, UsageLimitState, formatUsageReset } from "../components/UsageAllowance";
+import { UsageLimitState, formatUsageReset } from "../components/UsageAllowance";
 import "./Scan.css";
 import MenuDotsIcon from "../components/MenuDotsIcon";
 
@@ -531,6 +531,7 @@ export default function Scan() {
             <button type="button" className="sc-btn" onClick={openUploader} disabled={scanUsage ? !scanUsage.available : false}>
               Add photo
             </button>
+            {scanUsage && <ScanMeter usage={scanUsage} />}
           </div>
         </div>
       </div>
@@ -700,23 +701,6 @@ export default function Scan() {
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {scanUsage && (
-        <div className="sc-documents-usage">
-          <AllowanceIndicator usage={scanUsage} className="sc-usage-card">
-            <strong>Scan usage:</strong>{" "}
-            {scanUsage.limit == null
-              ? "Unlimited"
-              : `${scanUsage.remaining} of ${scanUsage.limit} left`}
-            {scanUsage.resets_at || scanUsage.reset_date ? (
-              <>
-                <span className="sc-usage-dot" aria-hidden="true">·</span>
-                {formatUsageReset(scanUsage, { monthStyle: "short" })}
-              </>
-            ) : null}
-          </AllowanceIndicator>
         </div>
       )}
 
@@ -926,6 +910,58 @@ export default function Scan() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * This month's scans, beside the button that spends them — the usage meter
+ * pattern (ChatGPT, Canva, Notion): count, a bar, when it resets, and the way
+ * to get more. Colour carries state: lavender normally, warm when three or
+ * fewer are left, red when none are.
+ */
+function ScanMeter({ usage }) {
+  const reset = formatUsageReset(usage, { monthStyle: "short" });
+  const unlimited = usage.limit == null;
+  const used = Math.max(0, Number(usage.used ?? (usage.limit - usage.remaining)) || 0);
+  const pct = unlimited ? 0 : Math.min(100, Math.round((used / usage.limit) * 100));
+  const state = usage.available === false ? " out" : usage.remaining != null && usage.remaining <= 3 ? " low" : "";
+
+  if (unlimited) {
+    return (
+      <div className="sc-meter sc-meter-unlimited">
+        <span className="sc-meter-label">Unlimited scans</span>
+        <span className="sc-meter-sub">No monthly limit</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`sc-meter${state}`}>
+      <div className="sc-meter-top">
+        <span className="sc-meter-label">Scans this month</span>
+        <span className="sc-meter-count">
+          <strong>{used}</strong> / {usage.limit}
+        </span>
+      </div>
+      <div
+        className="sc-meter-track"
+        role="progressbar"
+        aria-label="Scans used this month"
+        aria-valuemin={0}
+        aria-valuemax={usage.limit}
+        aria-valuenow={used}
+      >
+        <span className="sc-meter-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="sc-meter-foot">
+        <span>{reset}</span>
+        {!usage.is_pro && (
+          <Link to="/upgrade" className="sc-meter-upgrade">
+            Get more with Pro
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
