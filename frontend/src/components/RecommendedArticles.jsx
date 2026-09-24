@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
+import PremiumBadge from "./PremiumBadge";
 
 /**
  * "Recommended for You" — the rule-based list from RecommendationService.
@@ -51,7 +52,7 @@ export default function RecommendedArticles({ exclude, limit = 3 }) {
 
             <span className="rd-rec-body">
               <span className="rd-rec-tags">
-                {a.is_premium && <span className="rd-chip rd-chip-pro">Pro</span>}
+                {a.is_premium && <PremiumBadge inline />}
                 {a.hsk_level && (
                   <span className="rd-chip rd-chip-level">{a.hsk_level}</span>
                 )}

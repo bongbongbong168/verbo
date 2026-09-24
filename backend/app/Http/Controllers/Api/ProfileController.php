@@ -8,10 +8,10 @@ use App\Models\CourseEnrollment;
 use App\Models\Podcast;
 use App\Models\StudyUnit;
 use App\Models\User;
+use App\Services\ProfilePhotoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
@@ -262,42 +262,19 @@ class ProfileController extends Controller
      * Stored on the PUBLIC disk: an avatar is shown to anyone who can see the
      * user in a thread or a tutor card, so there is nothing to gate.
      */
-    public function updateAvatar(Request $request)
+    public function updateAvatar(Request $request, ProfilePhotoService $photos)
     {
         $request->validate([
             'avatar' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
 
-        $user = $request->user();
-        $old = $user->avatar_path;
-
-        // Not mass-assigned: avatar_path is deliberately out of $fillable so
-        // only this endpoint — which owns cleaning up the replaced file — can
-        // ever move it.
-        $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
-        $user->save();
-
-        // Delete only after the new one is safely saved, so a failed write
-        // never leaves the account with no picture at all.
-        if ($old) {
-            Storage::disk('public')->delete($old);
-        }
-
-        return response()->json($user->fresh());
+        return response()->json($photos->replace($request->user(), $request->file('avatar')));
     }
 
     /** Remove it and fall back to the initial. */
-    public function deleteAvatar(Request $request)
+    public function deleteAvatar(Request $request, ProfilePhotoService $photos)
     {
-        $user = $request->user();
-
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-            $user->avatar_path = null;
-            $user->save();
-        }
-
-        return response()->json($user->fresh());
+        return response()->json($photos->clear($request->user()));
     }
 
     public function stats(Request $request)

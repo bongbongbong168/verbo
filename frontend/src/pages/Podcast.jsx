@@ -9,6 +9,7 @@ import PodcastEditDrawer from "../components/PodcastEditDrawer";
 import { SkeletonCards } from "../components/Skeleton";
 import ShelfRail from "../components/ShelfRail";
 import SaveHeartButton from "../components/SaveHeartButton";
+import PremiumBadge from "../components/PremiumBadge";
 import "./Podcast.css";
 
 /* Stable identity for an absent list — a fresh [] each render would re-run
@@ -141,7 +142,7 @@ function EpisodeCard({ episode }) {
         ) : (
           <div className="pc-card-cover-placeholder" />
         )}
-        {episode.is_premium && <span className="pc-pro-badge">Verbo Pro</span>}
+        {episode.is_premium && <PremiumBadge />}
       </Link>
       <div className="pc-card-body">
         {episode.level && <p className="pc-card-level">{episode.level}</p>}
@@ -203,7 +204,7 @@ function ResumeCard({ row }) {
         ) : (
           <div className="pc-card-cover-placeholder" />
         )}
-        {podcast.is_premium && <span className="pc-pro-badge">Verbo Pro</span>}
+        {podcast.is_premium && <PremiumBadge />}
       </Link>
       <div className="pc-card-body">
         {podcast.level && <p className="pc-card-level">{podcast.level}</p>}

@@ -12,16 +12,10 @@ import iconBell from '../assets/dashboard/icon-bell-plain.png'
 import { NotificationFace, relativeTime } from './notifications'
 import './NotificationMenu.css'
 
-/* How often the badge re-checks. Long on purpose: this app has no websockets,
-   and a tight poll would burn the shared 300/min bucket for a number that is
-   only ever a few minutes stale. */
-/* Was 60s. A minute is a long time to sit looking at a bell with no dot on it
-   after someone has replied to you — reported exactly that way — and the dot is
-   the only thing in the app that says a message arrived while you were on
-   another page. 20s is still nowhere near a tight poll against a 300/min bucket
-   shared by the whole client, and the count goes through the cache, so the
-   sidebar remounting on every navigation costs nothing. */
-const POLL_MS = 20000
+/* A short request once a minute, rather than a long-poll that keeps a PHP
+   worker occupied for 20 seconds. Pusher handles time-sensitive messages; the
+   bell can update on this lighter cadence without slowing the whole app. */
+const POLL_MS = 60_000
 
 /* Shared with nothing else, but held in the app-wide cache so the count
    survives the remount that every page navigation causes. */
@@ -64,16 +58,9 @@ export default function NotificationMenu() {
   useEffect(() => {
     if (!token) return
     loadCount()
-    const onRealtime = (event) => {
-      const unread = event.detail?.unread_notifications
-      if (typeof unread === 'number') setUnread(unread)
-      if (open && event.detail?.notifications?.length) {
-        api.getNotifications(token, { limit: PREVIEW }).then((d) => setItems(d.data || [])).catch(() => {})
-      }
-    }
-    window.addEventListener('verbo:realtime', onRealtime)
-    return () => window.removeEventListener('verbo:realtime', onRealtime)
-  }, [token, loadCount, open])
+    const id = window.setInterval(() => loadCount(), POLL_MS)
+    return () => window.clearInterval(id)
+  }, [token, loadCount])
 
   /* Disarm on a timer rather than on blur: blur never fires if focus never
      landed on the button, which is exactly what happens when the pointer moves

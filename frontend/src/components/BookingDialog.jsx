@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import './BookingDialog.css'
+import useScrollLock from '../useScrollLock'
 
 /* Times come back as ISO instants. They are rendered in the *student's* own
    timezone — that is the clock they will actually show up by — with the
@@ -275,15 +276,7 @@ export default function BookingDialog({ tutor, token, onClose, onBooked, initial
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  /* The page keeps its scrollbar (html carries `overflow-y: scroll`), so
-     locking body scroll here cannot shift the layout sideways. */
-  useEffect(() => {
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useScrollLock()
 
   /* Derived from `week` + `activeDay` rather than from an intermediate array:
      `week.find(...).times` is a fresh reference every render, so memoizing on

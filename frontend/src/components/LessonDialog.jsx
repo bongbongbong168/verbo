@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { CalendarIcon, ClockIcon, CloseIcon, TickIcon } from './CourseDialog'
 import './CourseDialog.css'
+import useScrollLock from '../useScrollLock'
 
 /**
  * A private lesson, in the same popup card a group course opens in.
@@ -27,14 +28,7 @@ export default function LessonDialog({ tutor, lesson, isSelf, onBook, onClose })
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Same scroll lock as CourseDialog.
-  useEffect(() => {
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useScrollLock()
 
   const teacher = tutor.user?.name || 'Your tutor'
   // The trial is once per tutor — BookingDialog greys it out for the same reason.

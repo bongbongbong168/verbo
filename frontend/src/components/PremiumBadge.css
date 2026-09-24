@@ -1,0 +1,31 @@
+.pb-premium {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 48px;
+  height: 20px;
+  border: 1px solid #544d77;
+  border-radius: 6px;
+  background: #7d76a0;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.pb-premium-text {
+  position: relative;
+  top: -1px;
+}
+
+/* Article metadata is part of a flowing tag row rather than a cover overlay. */
+.pb-premium-inline {
+  position: static;
+  flex: none;
+}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import './CourseDialog.css'
+import useScrollLock from '../useScrollLock'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -154,15 +155,7 @@ export default function CourseDialog({ course: initial, courseId, onClose }) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  /* The page keeps its scrollbar (html carries `overflow-y: scroll`), so
-     locking body scroll here cannot shift the layout sideways. */
-  useEffect(() => {
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previous
-    }
-  }, [])
+  useScrollLock()
 
   async function openGroupChat() {
     setError(null)

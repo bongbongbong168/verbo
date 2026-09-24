@@ -7,10 +7,11 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 
 /**
- * Notification-only long-poll connection.
+ * Notification compatibility endpoint.
  *
- * Conversation updates travel through Pusher now. Notifications stay on this
- * small compatibility path until their own delivery is moved to broadcast.
+ * Conversation updates travel through Pusher. This endpoint deliberately
+ * returns immediately: keeping a PHP worker waiting for each open tab made
+ * ordinary page loads queue behind old notification requests.
  */
 class RealtimeController extends Controller
 {
@@ -25,20 +26,6 @@ class RealtimeController extends Controller
 
         if (!empty($data['bootstrap'])) {
             return $this->noStore($this->payload($user->id, $notificationAfter, true));
-        }
-
-        // Long-polling is one client connection, not an interval of requests.
-        // The loop ends promptly on an event, otherwise after 20 seconds.
-        for ($i = 0; $i < 20; $i++) {
-            $payload = $this->payload($user->id, $notificationAfter);
-            // `notifications` is a Collection, and an object is always truthy
-            // in PHP — testing it bare made every request return at once, and
-            // the client's immediate re-poll turned into ~850 requests a
-            // minute, 429-ing the whole app. Ask whether it is empty.
-            if ($payload['notifications']->isNotEmpty() || connection_aborted()) {
-                return $this->noStore($payload);
-            }
-            usleep(1000000);
         }
 
         return $this->noStore($this->payload($user->id, $notificationAfter));

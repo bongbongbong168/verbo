@@ -13,6 +13,7 @@ import ArticleComments from "../components/ArticleComments";
 import RecommendedArticles from "../components/RecommendedArticles";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import SentenceSavePopover from "../components/SentenceSavePopover";
+import PremiumBadge from "../components/PremiumBadge";
 import "./Read.css";
 import ReaderSwitch from '../components/ReaderSwitch'
 import { englishSentences, sentencesOf } from "../sentences";
@@ -455,7 +456,7 @@ export default function ReadArticle() {
                 </span>
               ))}
               {article.is_premium && (
-                <span className="rd-chip rd-chip-pro">Verbo Pro</span>
+                <PremiumBadge inline />
               )}
               <span className="rd-chip rd-chip-time">
                 {article.reading_minutes} min read

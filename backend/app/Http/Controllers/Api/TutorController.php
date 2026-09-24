@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\TutorProfile;
 use App\Models\SavedItem;
+use App\Services\ProfilePhotoService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use App\Rules\NoUnsafeLinks;
 use App\Support\YouTubeVideo;
@@ -323,15 +323,15 @@ class TutorController extends Controller
             ], 409);
         }
 
-        if ($request->hasFile('photo')) {
-            if ($existing?->photo_path) {
-                Storage::disk('public')->delete($existing->photo_path);
-            }
-            $data['photo_path'] = $request->file('photo')->store('tutors', 'public');
-        }
+        $photo = $request->file('photo');
         unset($data['photo']);
 
         $profile = $request->user()->tutorProfile()->updateOrCreate([], $data);
+
+        if ($photo) {
+            app(ProfilePhotoService::class)->replace($request->user(), $photo);
+            $profile->refresh();
+        }
 
         /* forceFill, NOT part of $data — and the distinction is the security
            boundary, not a style choice. `status` and the review columns are
@@ -359,7 +359,7 @@ class TutorController extends Controller
      * leaves seeded profiles, whose accounts have no usable password, with no
      * way to get a photo at all. Admin-gated, same as the Read/Study writes.
      */
-    public function updatePhoto(Request $request, TutorProfile $tutorProfile)
+    public function updatePhoto(Request $request, TutorProfile $tutorProfile, ProfilePhotoService $photos)
     {
         abort_unless($request->user()->is_admin, 403);
 
@@ -367,15 +367,9 @@ class TutorController extends Controller
             'photo' => ['required', 'image', 'max:10240'],
         ]);
 
-        if ($tutorProfile->photo_path) {
-            Storage::disk('public')->delete($tutorProfile->photo_path);
-        }
+        $photos->replace($tutorProfile->user, $request->file('photo'));
 
-        $tutorProfile->update([
-            'photo_path' => $request->file('photo')->store('tutors', 'public'),
-        ]);
-
-        return response()->json($tutorProfile->load('user:id,name,email'));
+        return response()->json($tutorProfile->fresh()->load('user:id,name,email'));
     }
 
     /**
@@ -392,7 +386,7 @@ class TutorController extends Controller
      * request never sent, so a drawer tab that submits only some fields leaves
      * the rest untouched; an explicitly empty field still clears its column.
      */
-    public function updateProfile(Request $request, TutorProfile $tutorProfile)
+    public function updateProfile(Request $request, TutorProfile $tutorProfile, ProfilePhotoService $photos)
     {
         self::authorizeProfile($request, $tutorProfile);
 
@@ -421,15 +415,14 @@ class TutorController extends Controller
         $data = self::settleTutorFit($data);
         $data = self::settleIntroVideo($data);
 
-        if ($request->hasFile('photo')) {
-            if ($tutorProfile->photo_path) {
-                Storage::disk('public')->delete($tutorProfile->photo_path);
-            }
-            $data['photo_path'] = $request->file('photo')->store('tutors', 'public');
-        }
+        $photo = $request->file('photo');
         unset($data['photo']);
 
         $tutorProfile->update($data);
+
+        if ($photo) {
+            $photos->replace($tutorProfile->user, $photo);
+        }
 
         return $this->showProfile($request, $tutorProfile->fresh());
     }

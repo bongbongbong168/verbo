@@ -1130,6 +1130,30 @@
   margin-right: 0.35rem;
 }
 
+/* In a sub-link the label is inline text, so the badge follows it: a true
+   circle with a small gap, the digit centred on its cap band (0.086em, 700). */
+.sb-sub-link .sb-count {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  min-width: 0;
+  /* Negative block margins keep the 18px circle out of the line box, so an
+     unread count never makes the Messages row taller than its siblings. */
+  margin: -4px 0 -4px 6px;
+  padding: 0;
+  line-height: 1;
+  vertical-align: 0.115em; /* measured: lands the circle on the label's cap band */
+}
+
+/* The grid centres the glyph's advance box. A narrow `1` has uneven side
+   bearings in Hellix, so this tiny visual correction centres its actual ink. */
+.sb-count-text {
+  position: relative;
+  left: 0.5px;
+  top: -0.5px;
+}
+
 /* In the collapsed rail the labels are gone and the row is a centred icon, so
    the badge rides the icon's top-right corner instead of sitting in a row it
    would otherwise widen. */

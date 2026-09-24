@@ -3,6 +3,11 @@ import { api } from '../api'
 
 const key = 'verbo:notification-cursor'
 const emptyCursors = { afterNotificationId: 0 }
+// Railway may end a long-poll request before its 20-second server timeout.
+// Never reconnect in a tight loop in that case: notifications can wait for
+// the next check, while conversation messages are delivered by Pusher.
+const NEXT_POLL_DELAY_MS = 20_000
+const RETRY_DELAY_MS = 3_000
 
 function restoreCursors() {
   try {
@@ -37,7 +42,6 @@ export default function useRealtimeUpdates(token) {
     let controller
 
     async function listen(bootstrap = false) {
-      const startedAt = Date.now()
       try {
         controller = new AbortController()
         const update = await api.pollRealtime(token, { ...cursors, bootstrap, signal: controller.signal })
@@ -47,14 +51,9 @@ export default function useRealtimeUpdates(token) {
         if (!bootstrap && update.notifications.length) {
           window.dispatchEvent(new CustomEvent('verbo:realtime', { detail: update }))
         }
-        /* A long poll that answered instantly with nothing to say means the
-           server is not holding the connection (a bug, or a host that cuts
-           it). Re-asking at once would spin in a tight loop and burn the
-           shared rate limit, so back off unless there was real news. */
-        const quiet = !update.notifications.length && Date.now() - startedAt < 1000
-        setTimeout(() => listen(false), bootstrap || !quiet ? 0 : 5000)
+        setTimeout(() => listen(false), NEXT_POLL_DELAY_MS)
       } catch (error) {
-        if (live && error?.name !== 'AbortError') setTimeout(() => listen(false), 3000)
+        if (live && error?.name !== 'AbortError') setTimeout(() => listen(false), RETRY_DELAY_MS)
       }
     }
 

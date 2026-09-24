@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
 import useUnreadMessages from "../hooks/useUnreadMessages";
-import useRealtimeUpdates from "../hooks/useRealtimeUpdates";
 import usePusherConversationUpdates from "../hooks/usePusherConversationUpdates";
 import PracticeAssistant from "./PracticeAssistant";
 import VerifyEmailBanner from "./VerifyEmailBanner";
@@ -312,7 +311,6 @@ export default function Layout() {
      bookings and courses; a number in the rail answers "is someone waiting on
      me?", and those are different questions. */
   const { unread: unreadMessages } = useUnreadMessages(token);
-  useRealtimeUpdates(token);
   usePusherConversationUpdates(token, user?.id);
 
   const itemUnread = (item) => (item.to === "/messages" ? unreadMessages : 0);
@@ -456,7 +454,7 @@ export default function Layout() {
                       two lines further down. */}
                   {sectionUnread(entry) > 0 && !open && (
                     <span className="sb-count" aria-hidden="true">
-                      {sectionUnread(entry) > 9 ? '9+' : sectionUnread(entry)}
+                      <span className="sb-count-text">{sectionUnread(entry) > 9 ? '9+' : sectionUnread(entry)}</span>
                     </span>
                   )}
                   <CaretIcon />
@@ -489,7 +487,7 @@ export default function Layout() {
                             {item.label}
                             {itemUnread(item) > 0 && (
                               <span className="sb-count" aria-hidden="true">
-                                {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
+                                <span className="sb-count-text">{itemUnread(item) > 9 ? '9+' : itemUnread(item)}</span>
                               </span>
                             )}
                           </NavLink>
@@ -520,7 +518,7 @@ export default function Layout() {
                               {item.label}
                               {itemUnread(item) > 0 && (
                                 <span className="sb-count" aria-hidden="true">
-                                  {itemUnread(item) > 9 ? '9+' : itemUnread(item)}
+                                  <span className="sb-count-text">{itemUnread(item) > 9 ? '9+' : itemUnread(item)}</span>
                                 </span>
                               )}
                             </NavLink>

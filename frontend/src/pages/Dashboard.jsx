@@ -23,6 +23,7 @@ import FlameMark from '../components/FlameMark'
 import './Dashboard.css'
 import ShelfRail from '../components/ShelfRail'
 import SaveHeartButton from '../components/SaveHeartButton'
+import PremiumBadge from '../components/PremiumBadge'
 
 /* The design's Top Reads filter is four content categories that do not exist in
    the data. `articles.type` is the real dimension, so the pills are built from
@@ -657,9 +658,13 @@ function PodcastCard({ podcast }) {
     <Link className="db-pod" to={`/podcast/${podcast.id}`}>
       <span className="db-pod-cover">
         {podcast.image_url && <img src={podcast.image_url} alt="" />}
-        <span className="db-pod-duration">
-          {podcast.is_premium ? 'Pro' : <PodcastDuration audioUrl={podcast.audio_url} />}
-        </span>
+        {podcast.is_premium ? (
+          <PremiumBadge />
+        ) : (
+          <span className="db-pod-duration">
+            <PodcastDuration audioUrl={podcast.audio_url} />
+          </span>
+        )}
         <span className="db-pod-play">
           {podcast.premium_locked ? <LockIcon /> : <PlayIcon />}
         </span>
