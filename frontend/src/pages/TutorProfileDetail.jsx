@@ -7,6 +7,7 @@ import { fetchIfStale, hasCache, readCache, writeCache } from '../dataCache'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import BookingDialog from '../components/BookingDialog'
 import CourseDialog from '../components/CourseDialog'
+import LessonDialog from '../components/LessonDialog'
 import TutorLessonsCard from '../components/TutorLessonsCard'
 import TutorEditDrawer from '../components/TutorEditDrawer'
 import TutorCover from '../components/TutorCover'
@@ -272,6 +273,9 @@ export default function TutorProfileDetail() {
   const [justSent, setJustSent] = useState(false)
   const [showBooking, setShowBooking] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  const [openLesson, setOpenLesson] = useState(null)
+  // The lesson the booking calendar opens on; null means "let them choose".
+  const [bookingLesson, setBookingLesson] = useState(null)
   /* Which review's ⋮ menu is open, and which one is armed for deletion. Two
      values rather than one: closing the menu must not leave a review still
      armed, waiting to be deleted by the next click that reopens it. */
@@ -867,7 +871,10 @@ export default function TutorProfileDetail() {
             <button
               type="button"
               className="td-btn-primary"
-              onClick={() => setShowBooking(true)}
+              onClick={() => {
+                setBookingLesson(null)
+                setShowBooking(true)
+              }}
               disabled={isSelf}
             >
               {/* No glyph. It carried an ENVELOPE, which is the mark this page
@@ -903,7 +910,7 @@ export default function TutorProfileDetail() {
             tutor={tutor}
             token={token}
             canEdit={canEdit}
-            onBookLesson={() => setShowBooking(true)}
+            onBookLesson={(l) => setOpenLesson(l)}
             onOpenCourse={(c) => setOpenCourse(c)}
           />
         </aside>
@@ -924,8 +931,23 @@ export default function TutorProfileDetail() {
         <BookingDialog
           token={token}
           tutor={tutor}
+          initialLesson={bookingLesson}
           onBooked={handleBooked}
           onClose={() => setShowBooking(false)}
+        />
+      )}
+
+      {openLesson && (
+        <LessonDialog
+          tutor={tutor}
+          lesson={openLesson}
+          isSelf={isSelf}
+          onBook={(l) => {
+            setOpenLesson(null)
+            setBookingLesson(l)
+            setShowBooking(true)
+          }}
+          onClose={() => setOpenLesson(null)}
         />
       )}
 

@@ -30,7 +30,7 @@ function timeRange(start, end) {
   return `${fmt(start)} – ${fmt(end)}`
 }
 
-function CloseIcon() {
+export function CloseIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -45,7 +45,7 @@ function CloseIcon() {
   )
 }
 
-function TickIcon() {
+export function TickIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -61,7 +61,7 @@ function TickIcon() {
   )
 }
 
-function CalendarIcon() {
+export function CalendarIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -78,7 +78,7 @@ function CalendarIcon() {
   )
 }
 
-function ClockIcon() {
+export function ClockIcon() {
   return (
     <svg
       viewBox="0 0 24 24"

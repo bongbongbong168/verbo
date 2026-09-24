@@ -447,3 +447,26 @@
   color: #b02a2a;
   font-size: 0.84rem;
 }
+
+/* ---- private lessons (LessonDialog reuses this card) ---- */
+
+/* Same pill as BookingDialog's `bk-tag`, so "Trial" reads identically in the
+   lesson card and the booking calendar it hands over to. */
+.cx-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1edfc;
+  color: var(--cx-accent);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: 0.2em;
+}
+
+.cx-outcomes + .cx-note {
+  margin-top: 14px;
+}

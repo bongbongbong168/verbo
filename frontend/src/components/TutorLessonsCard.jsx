@@ -84,7 +84,7 @@ export default function TutorLessonsCard({
       meta: `${describeDays(c.days_of_week)} · ${c.seats_taken ?? c.live_enrollments_count ?? 0}/${c.capacity} students`,
       price: c.price,
       /* Opens the course popup right here, the same way a private lesson row
-         opens the booking dialog. Navigating away to a page of its own made
+         opens its lesson popup (LessonDialog, the same card). Navigating away to a page of its own made
          the two products behave like two different apps. */
       onOpen: () => onOpenCourse?.(c),
     }))

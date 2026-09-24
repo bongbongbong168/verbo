@@ -144,7 +144,7 @@ function useCountdown(deadline) {
 
 const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 
-export default function BookingDialog({ tutor, token, onClose, onBooked }) {
+export default function BookingDialog({ tutor, token, onClose, onBooked, initialLesson = null }) {
   const navigate = useNavigate()
   const lessons = tutor.lessons || []
 
@@ -162,7 +162,11 @@ export default function BookingDialog({ tutor, token, onClose, onBooked }) {
      booking runs, so the calendar cannot be built until it is chosen. A tutor
      with exactly one lesson skips the step rather than being asked to "choose"
      from a list of one. */
-  const [lesson, setLesson] = useState(() => (lessons.length === 1 ? lessons[0] : null))
+  const [lesson, setLesson] = useState(() =>
+    /* Opened from LessonDialog, the lesson is already chosen — start on its
+       calendar instead of asking again. */
+    initialLesson ?? (lessons.length === 1 ? lessons[0] : null),
+  )
 
   const [weekOffset, setWeekOffset] = useState(0)
   const [activeDay, setActiveDay] = useState(null)
