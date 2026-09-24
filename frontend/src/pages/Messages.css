@@ -651,8 +651,8 @@
   color: var(--ms-muted);
 }
 
-/* The delivery footer is one right-aligned line: time first, then its status,
-   then the quiet menu button. This keeps "Read" from drifting beside the time
+/* The delivery footer is one right-aligned line: time first, then its status.
+   The menu button lives beside the bubble now. This keeps "Read" from drifting beside the time
    as messages become wider or narrower. */
 .ms-row.mine .ms-time {
   display: flex;
@@ -694,7 +694,11 @@
 .ms-message-actions {
   position: relative;
   display: inline-flex;
+  flex: none;
   align-items: center;
+  /* Level with the middle of a one-line bubble (0.62rem pad + half its
+     1.38rem line) rather than centred on bubble + timestamp together. */
+  margin-top: calc(1.31rem - 11px);
 }
 
 .ms-message-more {

@@ -790,37 +790,41 @@ export default function Messages() {
                                 Retry
                               </button>
                             )}
-                            {m.mine && !String(m.id).startsWith('local:') && (
-                              <span className="ms-message-actions">
-                                <button
-                                  type="button"
-                                  className="ms-message-more"
-                                  aria-label="Message options"
-                                  aria-expanded={openMessageMenu === m.id}
-                                  onClick={() => setOpenMessageMenu((current) => current === m.id ? null : m.id)}
-                                >
-                                  <MoreIcon />
-                                </button>
-                                {openMessageMenu === m.id && (
-                                  <span className="ms-message-menu">
-                                    <button
-                                      type="button"
-                                      className={armedId === m.id ? 'armed' : ''}
-                                      onClick={() => unsend(m.id)}
-                                      disabled={deletingId === m.id}
-                                    >
-                                      {deletingId === m.id
-                                        ? 'Deleting…'
-                                        : armedId === m.id
-                                          ? 'Tap again to delete'
-                                          : 'Delete'}
-                                    </button>
-                                  </span>
-                                )}
-                              </span>
-                            )}
                           </time>
                         </div>
+                        {/* Beside the bubble, not in the footer: the row is
+                            row-reverse for your own messages, so coming after
+                            the bubble in the DOM puts it on the bubble's left,
+                            and the time and "Read" line up under its edge. */}
+                        {m.mine && !String(m.id).startsWith('local:') && (
+                          <span className="ms-message-actions">
+                            <button
+                              type="button"
+                              className="ms-message-more"
+                              aria-label="Message options"
+                              aria-expanded={openMessageMenu === m.id}
+                              onClick={() => setOpenMessageMenu((current) => current === m.id ? null : m.id)}
+                            >
+                              <MoreIcon />
+                            </button>
+                            {openMessageMenu === m.id && (
+                              <span className="ms-message-menu">
+                                <button
+                                  type="button"
+                                  className={armedId === m.id ? 'armed' : ''}
+                                  onClick={() => unsend(m.id)}
+                                  disabled={deletingId === m.id}
+                                >
+                                  {deletingId === m.id
+                                    ? 'Deleting…'
+                                    : armedId === m.id
+                                      ? 'Tap again to delete'
+                                      : 'Delete'}
+                                </button>
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
                       )
                     })}
