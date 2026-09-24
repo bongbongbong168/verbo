@@ -1,0 +1,357 @@
+/* Verbo Pro checkout. Prefix `uc-`.
+   The Upgrade page's tokens, so the two read as one flow: lavender ground,
+   white cards on the thin navy stroke, dark #332f4b for the Pro accent. */
+
+.uc {
+  --uc-bg: #f9f8fe;
+  --uc-card: #ffffff;
+  --uc-line: #e7e3f6;
+  --uc-edge: #2b2643;
+  --uc-fill: #a89ce3;
+  --uc-accent: #6a6191;
+  --uc-pale: #f1edfc;
+  --uc-text: #1c1730;
+  --uc-muted: #726c88;
+  --uc-pro: #332f4b;
+
+  min-height: var(--app-vh);
+  box-sizing: border-box;
+  padding: 2.2rem 90px 4rem;
+  background: var(--uc-bg);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: var(--uc-text);
+}
+
+/* ---- header ---- */
+
+.uc-head {
+  max-width: 1040px;
+  margin: 0 auto 1.6rem;
+}
+
+.uc-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--uc-accent);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.uc-back svg {
+  width: 17px;
+  height: 17px;
+}
+
+.uc-back:hover {
+  color: var(--uc-text);
+}
+
+.uc-title {
+  margin: 0.7rem 0 0;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+/* ---- layout: summary left, payment right ---- */
+
+.uc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 420fr) minmax(0, 600fr);
+  gap: 24px;
+  align-items: start;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.uc-card {
+  box-sizing: border-box;
+  padding: 28px;
+  border: 1px solid var(--uc-edge);
+  border-radius: 20px;
+  background: var(--uc-card);
+  box-shadow: 0 10px 28px rgba(43, 38, 67, 0.07);
+}
+
+/* ---- summary ---- */
+
+.uc-summary {
+  background: linear-gradient(180deg, #f6f3ff 0%, #ffffff 42%);
+}
+
+.uc-plan {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.uc-plan-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--uc-pro);
+  color: #fbd36b;
+}
+
+.uc-plan-mark svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.uc-plan-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.uc-plan-sub {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--uc-muted);
+}
+
+.uc-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 24px 0 0;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--uc-line);
+  list-style: none;
+}
+
+.uc-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--uc-muted);
+}
+
+.uc-benefits strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--uc-text);
+}
+
+.uc-benefit-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--uc-pale);
+  color: var(--uc-accent);
+}
+
+.uc-benefit-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.uc-order {
+  margin: 24px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--uc-line);
+}
+
+.uc-order > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.92rem;
+}
+
+.uc-order dt {
+  color: var(--uc-muted);
+}
+
+.uc-order dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.uc-order > .uc-order-total {
+  align-items: baseline;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--uc-line);
+}
+
+.uc-order-total dt {
+  color: var(--uc-text);
+  font-weight: 700;
+}
+
+.uc-order-total dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.uc-order-note {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--uc-muted);
+}
+
+/* ---- payment ---- */
+
+.uc-pay-title {
+  margin: 0 0 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.uc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.uc-email {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--uc-pale);
+  font-size: 0.86rem;
+  color: var(--uc-muted);
+}
+
+.uc-email strong {
+  color: var(--uc-text);
+  font-weight: 600;
+}
+
+.uc-alert {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid #f1c7c7;
+  border-radius: 12px;
+  background: #fdf1f1;
+  color: #8f2323;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.uc-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box. */
+  padding: calc(0.8rem - 0.076em) 1.2rem calc(0.8rem + 0.076em);
+  border: 0;
+  border-radius: 14px;
+  background: var(--uc-pro);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(51, 47, 75, 0.22);
+  cursor: pointer;
+}
+
+/* Static hover, never transitioned — the colour is the feedback. */
+.uc-cta:hover:not(:disabled) {
+  background: #2b2643;
+}
+
+.uc-cta:focus-visible {
+  outline: 2px solid var(--uc-fill);
+  outline-offset: 3px;
+}
+
+.uc-cta:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.uc-fine {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--uc-muted);
+}
+
+.uc-fine svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+}
+
+/* Static placeholder — no shimmer. */
+.uc-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.uc-skeleton > span,
+.uc-skeleton-row > span {
+  display: block;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--uc-pale);
+}
+
+.uc-skeleton > .uc-skeleton-row {
+  height: auto;
+  background: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.uc-skeleton > .uc-skeleton-cta {
+  height: 52px;
+  margin-top: 6px;
+  background: #e4dff5;
+}
+
+.uc-state h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.uc-state p {
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--uc-muted);
+}
+
+/* ---- narrow screens: payment first is wrong — show what you're buying,
+   then pay ---- */
+
+@media (max-width: 900px) {
+  .uc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Side gutter comes from the shared list in mobile.css. */
+  .uc-card {
+    padding: 20px;
+    border-radius: 18px;
+  }
+}

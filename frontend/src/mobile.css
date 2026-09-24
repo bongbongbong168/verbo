@@ -193,6 +193,8 @@
   .un,
   .qp-page,
   .up,
+  /* Pro checkout, root `.uc` in UpgradeCheckout.jsx. */
+  .uc,
   /* Tutor verification: the application and the admin review queue. Both
      carry the 90px desktop gutter, so both belong here — checked against the
      JSX root class, not guessed from the prefix. */

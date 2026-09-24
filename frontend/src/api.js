@@ -591,7 +591,10 @@ export const api = {
   paymentIntent: (token, kind, id) =>
     request('/payments/intent', { method: 'POST', token, body: { kind, id } }),
   getSubscriptionStatus: (token) => request('/subscription/status', { token }),
-  createSubscriptionCheckout: (token) => request('/subscription/checkout', { method: 'POST', token }),
+  /* `ui` picks only how checkout is shown — 'hosted' (redirect) or 'elements'
+     (Verbo's own page). The server decides the price; nothing else is sent. */
+  createSubscriptionCheckout: (token, ui = 'hosted') =>
+    request('/subscription/checkout', { method: 'POST', token, body: { ui } }),
   createSubscriptionPortal: (token) => request('/subscription/portal', { method: 'POST', token }),
 
   /* The DEMO settle path, kept for when Stripe is switched off. It now 422s

@@ -46,18 +46,37 @@ class SubscriptionService
             'price' => $this->price()];
     }
 
-    public function checkout(User $user): array
+    /** How the checkout is shown. The browser may choose this and nothing else. */
+    public const CHECKOUT_UIS = ['hosted', 'elements'];
+
+    /**
+     * Start a Pro subscription checkout — the ONE entry point for every place
+     * that sells Pro (the upgrade page, the in-app checkout, any future
+     * promotion). The price is always the configured, validated recurring Pro
+     * price; nothing about price or amount is read from the request.
+     *
+     * `hosted` returns a redirect URL; `elements` returns a client secret for
+     * Verbo's own checkout page (payment fields rendered inside our UI).
+     * Neither grants Pro: access is only ever written by the verified webhook.
+     */
+    public function checkout(User $user, string $ui = 'hosted'): array
     {
+        abort_unless(in_array($ui, self::CHECKOUT_UIS, true), 422, 'Unknown checkout type.');
         $price = $this->price(); abort_unless($price, 422, 'The Pro monthly price is not configured.');
         abort_if($user->subscription?->grantsAccess(), 409, 'This account already has Pro.');
         $customer = $this->customer($user);
         $meta = ['purpose' => 'verbo_pro', 'user_id' => (string) $user->id, 'stripe_customer_id' => $customer];
-        $session = PaymentService::client()->checkout->sessions->create(['mode' => 'subscription', 'customer' => $customer,
+        $front = rtrim(config('services.stripe.frontend_url'), '/');
+        $params = ['mode' => 'subscription', 'customer' => $customer,
             'client_reference_id' => (string) $user->id, 'metadata' => $meta, 'subscription_data' => ['metadata' => $meta],
-            'line_items' => [['price' => $price['id'], 'quantity' => 1]],
-            'success_url' => rtrim(config('services.stripe.frontend_url'), '/').'/upgrade/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => rtrim(config('services.stripe.frontend_url'), '/').'/upgrade']);
-        return ['url' => $session->url, 'id' => $session->id];
+            'line_items' => [['price' => $price['id'], 'quantity' => 1]]];
+        $params += $ui === 'elements'
+            ? ['ui_mode' => 'elements', 'return_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}']
+            : ['success_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}', 'cancel_url' => $front.'/upgrade'];
+        $session = PaymentService::client()->checkout->sessions->create($params);
+        return $ui === 'elements'
+            ? ['client_secret' => $session->client_secret, 'id' => $session->id, 'price' => $price]
+            : ['url' => $session->url, 'id' => $session->id];
     }
 
     public function portal(User $user): array
