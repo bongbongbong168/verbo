@@ -130,10 +130,17 @@ class ConversationController extends Controller
         abort_unless($conversation->allows($user), 403);
 
         // Opening the thread marks what you were sent as read.
-        $conversation->messages()
+        $marked = $conversation->messages()
             ->where('sender_id', '!=', $user->id)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
+
+        // Tell the sender, so their "Read" appears without a reload. Only
+        // when something actually changed: every open would otherwise ping
+        // the other side for nothing.
+        if ($marked > 0) {
+            $this->broadcastConversationChanged($conversation, $user, 'messages.read');
+        }
 
         $booking = $conversation->contextBooking();
 

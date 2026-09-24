@@ -31,7 +31,11 @@ class RealtimeController extends Controller
         // The loop ends promptly on an event, otherwise after 20 seconds.
         for ($i = 0; $i < 20; $i++) {
             $payload = $this->payload($user->id, $notificationAfter);
-            if ($payload['notifications'] || connection_aborted()) {
+            // `notifications` is a Collection, and an object is always truthy
+            // in PHP — testing it bare made every request return at once, and
+            // the client's immediate re-poll turned into ~850 requests a
+            // minute, 429-ing the whole app. Ask whether it is empty.
+            if ($payload['notifications']->isNotEmpty() || connection_aborted()) {
                 return $this->noStore($payload);
             }
             usleep(1000000);

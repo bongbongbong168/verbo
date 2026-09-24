@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { fetchThrough, isFresh, readCache } from '../dataCache'
+import { isRealtimeConnected } from '../hooks/usePusherConversationUpdates'
+import { MESSAGES_POLL_MS } from '../hooks/useUnreadMessages'
 import './MessagesButton.css'
 
 const POLL_MS = 60000
@@ -52,9 +54,17 @@ export default function MessagesButton() {
     load()
     const onConversationUpdated = () => load(true)
     window.addEventListener('verbo:conversation-updated', onConversationUpdated)
+    // Reading a thread clears unread messages; update the badge immediately.
+    window.addEventListener('verbo:unread-stale', onConversationUpdated)
+    // Fallback only: while Pusher is connected, updates arrive as events.
+    const timer = setInterval(() => {
+      if (!isRealtimeConnected() && document.visibilityState === 'visible') load(true)
+    }, MESSAGES_POLL_MS)
     return () => {
       live = false
+      clearInterval(timer)
       window.removeEventListener('verbo:conversation-updated', onConversationUpdated)
+      window.removeEventListener('verbo:unread-stale', onConversationUpdated)
     }
   }, [token])
 

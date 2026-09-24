@@ -5,6 +5,7 @@ import { api } from '../api'
 import MessageAttachment from '../components/MessageAttachment'
 import PageTools from '../components/PageTools'
 import { invalidateUnreadMessages } from '../hooks/useUnreadMessages'
+import { isRealtimeConnected } from '../hooks/usePusherConversationUpdates'
 import './Messages.css'
 
 /* Laid out from design/message.png: a "Chat" title with an accent rule, then a
@@ -204,6 +205,10 @@ function Avatar({ name, src, className = '' }) {
  * There is deliberately no "new message" button and no user directory. The
  * search box filters the threads you already have — it does not find people.
  */
+/* How often the page re-checks when the live channel is unavailable. Two
+   requests a tick, so 5s is ~24/min against the shared 300/min bucket. */
+const FALLBACK_POLL_MS = 5000
+
 export default function Messages() {
   const { token } = useAuth()
   const [params, setParams] = useSearchParams()
@@ -276,20 +281,75 @@ export default function Messages() {
     return () => document.removeEventListener('pointerdown', closeMessageMenu)
   }, [])
 
-  /* Pusher announces a private, content-free conversation change. Refresh the
-     affected thread through Verbo's API so the chat body never sits in a
-     broadcast payload. */
+  /* Re-read the open thread and merge it in. Messages still in flight
+     (sending / failed) exist only here, so they are kept on the end rather
+     than wiped by a refetch that landed mid-send. */
+  const refreshActive = useCallback(
+    (id) =>
+      api
+        .getConversation(token, id)
+        .then((c) => {
+          setActive((current) => {
+            if (current && String(current.id) !== String(c.id)) return current
+            const onServer = new Set(c.messages.map((m) => m.client_id).filter(Boolean))
+            const inFlight = (current?.messages || []).filter(
+              (m) => m.delivery_state && m.delivery_state !== 'sent' && !onServer.has(m.client_id),
+            )
+            return { ...c, messages: [...c.messages, ...inFlight] }
+          })
+          // Viewing it just marked the new messages read.
+          invalidateUnreadMessages()
+        })
+        // A background refresh that fails leaves the thread as it was.
+        .catch(() => {}),
+    [token],
+  )
+
+  /* Pusher announces a private, content-free conversation change; the page
+     then reads the change through Verbo's API, so the chat body never sits in
+     a broadcast payload.
+
+     EVERY change refreshes the thread list, not only the open thread's —
+     a message in another chat has to move that chat up and show its preview,
+     which used to wait until you left the page and came back. The open thread
+     is refetched only while the tab is visible: refetching marks messages
+     read, and a hidden tab has not read anything. Coming back to the tab
+     catches up instead. */
   useEffect(() => {
-    if (!openId) return undefined
-    const onConversationUpdated = (event) => {
-      const changed = String(event.detail?.conversation_id) === String(openId)
-      if (changed && document.visibilityState === 'visible') openThread(openId)
+    const refresh = (event) => {
+      const changedId = event?.detail?.conversation_id
+      if (
+        openId &&
+        document.visibilityState === 'visible' &&
+        (changedId == null || String(changedId) === String(openId))
+      ) {
+        /* The list waits for the thread: opening it is what marks the new
+           message read, and a list fetched alongside it raced ahead and kept
+           the unread badge on the chat you were looking at. */
+        refreshActive(openId).then(loadThreads)
+      } else {
+        loadThreads()
+      }
     }
-    window.addEventListener('verbo:conversation-updated', onConversationUpdated)
+    const onShow = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    /* Safety net for when the live channel is down (no Pusher key, a refused
+       subscription, a dropped socket): chat still arrives within a few
+       seconds. It costs nothing while Pusher is connected, because the
+       check skips the request entirely. */
+    const timer = setInterval(() => {
+      if (!isRealtimeConnected() && document.visibilityState === 'visible') refresh()
+    }, FALLBACK_POLL_MS)
+
+    window.addEventListener('verbo:conversation-updated', refresh)
+    document.addEventListener('visibilitychange', onShow)
     return () => {
-      window.removeEventListener('verbo:conversation-updated', onConversationUpdated)
+      clearInterval(timer)
+      window.removeEventListener('verbo:conversation-updated', refresh)
+      document.removeEventListener('visibilitychange', onShow)
     }
-  }, [openId, openThread])
+  }, [openId, loadThreads, refreshActive])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' })

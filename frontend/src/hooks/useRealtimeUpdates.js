@@ -37,6 +37,7 @@ export default function useRealtimeUpdates(token) {
     let controller
 
     async function listen(bootstrap = false) {
+      const startedAt = Date.now()
       try {
         controller = new AbortController()
         const update = await api.pollRealtime(token, { ...cursors, bootstrap, signal: controller.signal })
@@ -46,7 +47,12 @@ export default function useRealtimeUpdates(token) {
         if (!bootstrap && update.notifications.length) {
           window.dispatchEvent(new CustomEvent('verbo:realtime', { detail: update }))
         }
-        setTimeout(() => listen(false), 0)
+        /* A long poll that answered instantly with nothing to say means the
+           server is not holding the connection (a bug, or a host that cuts
+           it). Re-asking at once would spin in a tight loop and burn the
+           shared rate limit, so back off unless there was real news. */
+        const quiet = !update.notifications.length && Date.now() - startedAt < 1000
+        setTimeout(() => listen(false), bootstrap || !quiet ? 0 : 5000)
       } catch (error) {
         if (live && error?.name !== 'AbortError') setTimeout(() => listen(false), 3000)
       }

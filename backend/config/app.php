@@ -199,7 +199,10 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
+        // Loads routes/channels.php, which is what authorises a browser to
+        // listen on private-users.{id}. Left commented out, every Pusher
+        // subscription was refused and no message ever arrived live.
+        App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 

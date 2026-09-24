@@ -4,6 +4,7 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Foundation\Events\Dispatchable;
 
 /**
  * A private, content-free signal that a conversation changed.
@@ -13,6 +14,11 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
  */
 class ConversationChanged implements ShouldBroadcastNow
 {
+    /* Without this trait `ConversationChanged::dispatch()` is an undefined
+       method. The controller's try/catch swallowed that error, so for as long
+       as this was missing no chat update was ever broadcast. */
+    use Dispatchable;
+
     public function __construct(
         public int $conversationId,
         private array $recipientIds,
