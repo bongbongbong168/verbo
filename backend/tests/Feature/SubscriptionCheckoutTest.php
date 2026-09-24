@@ -63,8 +63,7 @@ class SubscriptionCheckoutTest extends TestCase
         $this->assertStringStartsWith('https://verbo.test/upgrade/success', $session['return_url']);
         $this->assertArrayNotHasKey('success_url', $session);
         $this->assertSame(['card'], $session['payment_method_types']);
-        $this->assertSame(['american_express', 'discover_global_network'],
-            $session['payment_method_options']['card']['restrictions']['brands_blocked']);
+        $this->assertArrayNotHasKey('payment_method_options', $session);
 
         // Starting a checkout grants nothing; only the webhook does.
         $this->assertFalse((bool) $user->fresh()->is_pro);
@@ -83,6 +82,17 @@ class SubscriptionCheckoutTest extends TestCase
         $this->assertSame('https://verbo.test/upgrade', $session['cancel_url']);
     }
 
+    public function test_a_provider_error_is_not_shown_to_the_user(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $this->http->failSessions = true;
+
+        $this->postJson('/api/subscription/checkout', ['ui' => 'elements'])
+            ->assertStatus(503)
+            ->assertJsonPath('message', 'Checkout could not be started. Please try again in a moment.')
+            ->assertDontSee('ui_mode');
+    }
+
     public function test_an_unknown_checkout_type_is_refused(): void
     {
         Sanctum::actingAs(User::factory()->create());
@@ -96,11 +106,16 @@ class SubscriptionCheckoutTest extends TestCase
 class FakeStripeHttp implements ClientInterface
 {
     public array $calls = [];
+    public bool $failSessions = false;
 
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
     {
         $path = parse_url($absUrl, PHP_URL_PATH);
         $this->calls[] = [$path, $params];
+
+        if ($this->failSessions && $path === '/v1/checkout/sessions') {
+            return [json_encode(['error' => ['message' => 'The following parameters are not supported with `ui_mode: elements`', 'type' => 'invalid_request_error']]), 400, []];
+        }
 
         $body = match (true) {
             str_starts_with($path, '/v1/prices/') => ['id' => 'price_pro', 'object' => 'price', 'active' => true,

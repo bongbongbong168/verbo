@@ -70,16 +70,20 @@ class SubscriptionService
         $params = ['mode' => 'subscription', 'customer' => $customer,
             'client_reference_id' => (string) $user->id, 'metadata' => $meta, 'subscription_data' => ['metadata' => $meta],
             'line_items' => [['price' => $price['id'], 'quantity' => 1]],
-            // Cards only, and only Visa and Mastercard — enforced here, not
-            // just hidden in the page, so no other method can be used.
-            'payment_method_types' => ['card'],
-            'payment_method_options' => ['card' => ['restrictions' => [
-                'brands_blocked' => ['american_express', 'discover_global_network'],
-            ]]]];
+            // Cards only. (Brand blocking is not accepted for embedded
+            // sessions; limit brands with a Radar rule in the dashboard.)
+            'payment_method_types' => ['card']];
         $params += $ui === 'elements'
             ? ['ui_mode' => 'elements', 'return_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}']
             : ['success_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}', 'cancel_url' => $front.'/upgrade'];
-        $session = PaymentService::client()->checkout->sessions->create($params);
+        try {
+            $session = PaymentService::client()->checkout->sessions->create($params);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            // The provider's message names parameters and internals; log it
+            // for the operator and give the page a plain sentence.
+            Log::error('Pro checkout could not start', ['error' => $e->getMessage(), 'user' => $user->id]);
+            abort(503, 'Checkout could not be started. Please try again in a moment.');
+        }
         return $ui === 'elements'
             ? ['client_secret' => $session->client_secret, 'id' => $session->id, 'price' => $price]
             : ['url' => $session->url, 'id' => $session->id];

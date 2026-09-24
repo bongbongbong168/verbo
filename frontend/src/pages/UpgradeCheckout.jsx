@@ -105,7 +105,7 @@ function PayForm({ fallbackPrice }) {
 
   return (
     <form className="uc-form" onSubmit={subscribe} noValidate>
-      {/* Visa and Mastercard only — the session blocks every other brand. */}
+      {/* Card only (set on the server). Visa and Mastercard are the brands shown. */}
       <div className="uc-cards">
         <span>Card</span>
         <span className="uc-brands" aria-label="Visa and Mastercard accepted">
