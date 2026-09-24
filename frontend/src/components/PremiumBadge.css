@@ -13,7 +13,9 @@
   left: 8px;
   z-index: 2;
   display: inline-block;
-  padding: calc(4px + 0.04em) 9px calc(4px - 0.04em);
+  /* Nudged up and right by eye at the user's request, on top of the
+     measured centre: symmetric vertical pad, 1px more on the left. */
+  padding: 4px 8.5px 4px 9.5px;
   border-radius: 6px;
   background: #332f4b;
   color: #fff;
