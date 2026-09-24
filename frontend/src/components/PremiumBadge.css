@@ -22,15 +22,13 @@
 }
 
 .pb-premium-text {
-  /* Optical centring, measured on the rendered ink at 8x (not guessed):
-     - letter-spacing adds its gap AFTER the last letter too, which pushed
-       "PRO" left of centre; the negative margin hands it back.
-     - as a block in this 20px grid cell the caps sat 0.035em high, so the
-       transform drops them by that. In em so it holds at every size.
-     Result: 120/119 px left/right and 54/53 px top/bottom at 8x. */
+  /* Centred as measured on the rendered ink at the app's real 1.1 scale
+     (4x device pixels): 67/68 left-right, 32/32 top-bottom. An earlier
+     0.035em nudge, fitted at an 8x test zoom, left it 0.5px low for real.
+     The negative margin hands back letter-spacing's trailing gap, which
+     otherwise pushes "PRO" left of centre. */
   display: block;
   margin-right: -0.04em;
-  transform: translateY(0.035em);
 }
 
 /* Article metadata is part of a flowing tag row rather than a cover overlay. */
