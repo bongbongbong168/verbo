@@ -78,9 +78,6 @@
 
 /* ---- summary ---- */
 
-.uc-summary {
-  background: linear-gradient(180deg, #f6f3ff 0%, #ffffff 42%);
-}
 
 .uc-plan {
   display: flex;
@@ -133,7 +130,7 @@
 
 .uc-benefits li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   font-size: 0.86rem;
   line-height: 1.4;
@@ -147,20 +144,18 @@
   color: var(--uc-text);
 }
 
+/* A bare glyph, no tile — sized to sit against the two-line text beside it. */
 .uc-benefit-mark {
   display: grid;
   place-items: center;
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--uc-pale);
+  width: 28px;
   color: var(--uc-accent);
 }
 
 .uc-benefit-mark svg {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
 }
 
 .uc-order {
