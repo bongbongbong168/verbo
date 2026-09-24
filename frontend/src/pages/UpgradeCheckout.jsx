@@ -5,6 +5,7 @@ import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from '@
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import PremiumBadge from '../components/PremiumBadge'
+import ProCrown from '../components/ProCrown'
 import { CARD_APPEARANCE, MastercardMark, VisaMark } from '../components/CardBrands'
 import './UpgradeCheckout.css'
 
@@ -174,9 +175,7 @@ export default function UpgradeCheckout() {
         {/* ---- order summary ---- */}
         <aside className="uc-card uc-summary">
           <div className="uc-plan">
-            <span className="uc-plan-mark">
-              <CrownIcon />
-            </span>
+            <ProCrown className="uc-plan-crown" />
             <div>
               <h2 className="uc-plan-name">
                 Verbo Pro <PremiumBadge inline />
@@ -278,9 +277,6 @@ function ArrowLeftIcon() {
 }
 function LockIcon() {
   return <Svg><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></Svg>
-}
-function CrownIcon() {
-  return <Svg><path d="M4 8l4 3.5L12 5l4 6.5L20 8l-1.6 10H5.6z" /></Svg>
 }
 function BookIcon() {
   return <Svg><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z" /></Svg>

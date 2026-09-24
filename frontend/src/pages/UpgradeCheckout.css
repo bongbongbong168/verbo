@@ -103,6 +103,18 @@
   stroke: none;
 }
 
+/* The animated gold crest. It carries its own colour, so no tile behind it;
+   the fixed box stops the header jumping while the player loads. */
+.uc-plan-crown {
+  display: block;
+  flex: none;
+  /* The file pads its crest to ~60% of the frame, so the box is larger than
+     the visible badge and pulled in by negative margins. */
+  width: 78px;
+  height: 78px;
+  margin: -14px -8px -14px -14px;
+}
+
 .uc-plan-name {
   display: flex;
   align-items: center;
