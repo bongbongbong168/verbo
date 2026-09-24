@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
-import SpecialtyPicker from './SpecialtyPicker'
+import TutorFitFields from './TutorFitFields'
+import { youtubeVideoId } from '../tutorVideo'
 
-const TABS = ['Profile', 'Specialties', 'Hours', 'Resume', 'Lessons', 'Courses']
+const TABS = ['Profile', 'Hours', 'Resume', 'Lessons', 'Courses']
 
 /* 0 = Sunday, matching Carbon::dayOfWeek and the day_of_week column. Listed
    Monday-first because that is how a teaching week reads. */
@@ -108,6 +109,30 @@ const ZONES = (() => {
 })()
 const SECTIONS = ['Education', 'Certifications']
 
+function profileDraftSignature({
+  shortBio,
+  bio,
+  subjects,
+  teachesLevels,
+  specialties,
+  teachingLanguages,
+  availability,
+  rate,
+  videoUrl,
+}) {
+  return JSON.stringify({
+    shortBio,
+    bio,
+    subjects,
+    teachesLevels,
+    specialties,
+    teachingLanguages,
+    availability,
+    rate: String(rate ?? ''),
+    videoUrl,
+  })
+}
+
 /**
  * One "Edit profile" button opens this: the whole of a tutor's editable data,
  * split into tabs.
@@ -125,9 +150,12 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [saved, setSaved] = useState(null)
 
   // --- profile tab ---
+  const [shortBio, setShortBio] = useState(tutor.short_bio || '')
   const [bio, setBio] = useState(tutor.bio || '')
   const [subjects, setSubjects] = useState(tutor.subjects || '')
-  const [languages, setLanguages] = useState(tutor.languages_spoken || '')
+  const [teachesLevels, setTeachesLevels] = useState(tutor.teaches_levels || [])
+  const [specialties, setSpecialties] = useState(tutor.specialties || [])
+  const [teachingLanguages, setTeachingLanguages] = useState(tutor.teaching_languages || [])
   const [availability, setAvailability] = useState(tutor.availability || '')
   const [rate, setRate] = useState(tutor.hourly_rate ?? '')
   const [videoUrl, setVideoUrl] = useState(tutor.video_url || '')
@@ -135,11 +163,17 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [photoPreview, setPhotoPreview] = useState(null)
   const [cropSource, setCropSource] = useState(null)
   const [savingProfile, setSavingProfile] = useState(false)
-
-  // --- specialties tab ---
-  const [specs, setSpecs] = useState(tutor.specialties || [])
-  const [mainSpec, setMainSpec] = useState(tutor.main_specialty || null)
-  const [savingSpecs, setSavingSpecs] = useState(false)
+  const [profileBaseline, setProfileBaseline] = useState(() => profileDraftSignature({
+    shortBio: tutor.short_bio || '',
+    bio: tutor.bio || '',
+    subjects: tutor.subjects || '',
+    teachesLevels: tutor.teaches_levels || [],
+    specialties: tutor.specialties || [],
+    teachingLanguages: tutor.teaching_languages || [],
+    availability: tutor.availability || '',
+    rate: tutor.hourly_rate ?? '',
+    videoUrl: tutor.video_url || '',
+  }))
 
   // --- hours tab ---
   /* The whole week as `day -> [{start, end}]`, posted in one go: the endpoint
@@ -204,51 +238,97 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     return () => URL.revokeObjectURL(url)
   }, [photo])
 
+  const currentProfileSignature = profileDraftSignature({
+    shortBio,
+    bio,
+    subjects,
+    teachesLevels,
+    specialties,
+    teachingLanguages,
+    availability,
+    rate,
+    videoUrl,
+  })
+  const profileDirty = Boolean(photo) || currentProfileSignature !== profileBaseline
+
+  useEffect(() => {
+    if (!profileDirty) return undefined
+    const warn = (event) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [profileDirty])
+
+  function requestClose() {
+    if (savingProfile) return
+    if (profileDirty && !window.confirm('You have unsaved profile changes. Close without saving?')) return
+    onClose()
+  }
+
   function flash(what) {
     setSaved(what)
     setTimeout(() => setSaved(null), 2200)
   }
 
+  async function openPhotoCropper() {
+    if (photo) {
+      setCropSource(photo)
+      return
+    }
+
+    if (!tutor.photo_url) return
+
+    setError(null)
+    try {
+      /* Reopen the already-saved image as a File so the same drag-and-zoom
+         cropper works for a current photo as well as a newly selected one. */
+      const response = await fetch(tutor.photo_url)
+      if (!response.ok) throw new Error('Photo could not be loaded')
+      const blob = await response.blob()
+      setCropSource(new File([blob], 'profile-photo.jpg', {
+        type: blob.type || 'image/jpeg',
+      }))
+    } catch {
+      setError('We could not open the current photo. Choose it again to adjust it.')
+    }
+  }
+
   async function handleSaveProfile(e) {
     e.preventDefault()
     setError(null)
+    if (videoUrl.trim() && !youtubeVideoId(videoUrl)) {
+      setError('Enter a valid public or unlisted YouTube video link.')
+      return
+    }
     setSavingProfile(true)
     try {
-      const updated = await api.updateTutorProfile(token, tutor.id, {
+      await api.updateTutorProfile(token, tutor.id, {
+        short_bio: shortBio,
         bio,
         subjects,
-        languages_spoken: languages,
         availability,
         hourly_rate: rate === '' ? '' : Number(rate),
         video_url: videoUrl.trim(),
         photo,
       })
+      const updated = await api.updateTutorSpecialties(token, tutor.id, {
+        teaches_levels: teachesLevels,
+        specialties,
+        main_specialty: specialties.includes(tutor.main_specialty)
+          ? tutor.main_specialty
+          : (specialties[0] || null),
+        teaching_languages: teachingLanguages,
+      })
       onChange(updated)
       setPhoto(null)
+      setProfileBaseline(currentProfileSignature)
       flash('Profile saved')
     } catch (err) {
       setError(err.message)
     } finally {
       setSavingProfile(false)
-    }
-  }
-
-  /* Its own endpoint (JSON), not part of the profile save: that one is
-     multipart for the photo, which cannot send an empty list. */
-  async function handleSaveSpecialties(e) {
-    e.preventDefault()
-    setError(null)
-    setSavingSpecs(true)
-    try {
-      const updated = await api.updateTutorSpecialties(token, tutor.id, specs, mainSpec)
-      setSpecs(updated.specialties || [])
-      setMainSpec(updated.main_specialty || null)
-      onChange(updated)
-      flash('Specialties saved')
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSavingSpecs(false)
     }
   }
 
@@ -569,7 +649,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       tabs={TABS}
       tab={tab}
       onTabChange={setTab}
-      onClose={onClose}
+      onClose={requestClose}
       error={error}
       flash={saved}
     >
@@ -592,20 +672,43 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                   onChange={(e) => e.target.files[0] && setCropSource(e.target.files[0])}
                 />
               </label>
-              {photo && (
-                <button type="button" className="ed-btn-ghost" onClick={() => setCropSource(photo)}>
-                  Adjust crop
+              {(photo || tutor.photo_url) && (
+                <button type="button" className="ed-btn-ghost" onClick={openPhotoCropper}>
+                  {photo ? 'Adjust crop' : 'Adjust current photo'}
                 </button>
               )}
               <p className="ed-hint">
-                {photo ? 'Ready — save to upload.' : 'Square-ish images work best.'}
+                {photo
+                  ? 'Ready — save to upload.'
+                  : 'Adjust the crop and zoom to frame your photo better.'}
               </p>
             </div>
           </div>
 
           <label className="ed-field">
-            <span>Bio</span>
-            <textarea rows={5} value={bio} onChange={(e) => setBio(e.target.value)} />
+            <span>Short introduction</span>
+            <textarea
+              rows={2}
+              maxLength={180}
+              value={shortBio}
+              onChange={(e) => setShortBio(e.target.value)}
+            />
+            <small className="ed-hint">
+              {shortBio.length}/180 characters. This appears at the top of your tutor card.
+            </small>
+          </label>
+
+          <label className="ed-field">
+            <span>About you</span>
+            <textarea
+              rows={5}
+              maxLength={800}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+            />
+            <small className="ed-hint">
+              {bio.length}/800 characters. Students see a short preview and can read the full introduction.
+            </small>
           </label>
 
           <label className="ed-field">
@@ -618,15 +721,23 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             />
           </label>
 
-          <label className="ed-field">
-            <span>Languages spoken</span>
-            <input
-              type="text"
-              placeholder="Comma separated, e.g. Chinese, English"
-              value={languages}
-              onChange={(e) => setLanguages(e.target.value)}
-            />
-          </label>
+          <TutorFitFields
+            value={{
+              teaches_levels: teachesLevels,
+              specialties,
+              teaching_languages: teachingLanguages,
+            }}
+            options={{
+              teaches_levels: tutor.teaches_level_options || [],
+              specialties: tutor.specialty_options || [],
+              teaching_languages: tutor.teaching_language_options || [],
+            }}
+            onChange={(patch) => {
+              if (patch.teaches_levels) setTeachesLevels(patch.teaches_levels)
+              if (patch.specialties) setSpecialties(patch.specialties)
+              if (patch.teaching_languages) setTeachingLanguages(patch.teaching_languages)
+            }}
+          />
 
           <div className="ed-row">
             <label className="ed-field">
@@ -645,38 +756,19 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
           </div>
 
           <label className="ed-field">
-            <span>Intro video link</span>
+            <span>Introduction video (YouTube)</span>
             <input
-              type="url"
-              placeholder="YouTube, Vimeo or a direct .mp4 link"
+              type="text"
+              inputMode="url"
+              placeholder="https://youtu.be/…"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
             />
+            <small className="ed-hint">Paste a public or unlisted YouTube video link to introduce yourself to students.</small>
           </label>
 
           <button type="submit" className="ed-btn-primary" disabled={savingProfile}>
             {savingProfile ? 'Saving…' : 'Save profile'}
-          </button>
-        </form>
-      )}
-
-      {tab === 'Specialties' && (
-        <form className="ed-form" onSubmit={handleSaveSpecialties}>
-          <p className="ed-note">
-            Choose everything you actually teach. Star the one you are best at - it shows
-            under your name.
-          </p>
-          <SpecialtyPicker
-            options={tutor.specialty_options || []}
-            value={specs}
-            main={mainSpec}
-            onChange={(next, nextMain) => {
-              setSpecs(next)
-              setMainSpec(nextMain)
-            }}
-          />
-          <button type="submit" className="ed-btn-primary" disabled={savingSpecs}>
-            {savingSpecs ? 'Saving…' : 'Save specialties'}
           </button>
         </form>
       )}

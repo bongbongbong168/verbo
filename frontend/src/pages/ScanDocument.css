@@ -365,13 +365,11 @@
 .sd-reading-controls .rs-switch:disabled { cursor: wait; }
 
 .sd-size {
-  position: absolute;
-  left: 50%;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   min-height: 32px;
-  transform: translateX(-50%);
+  margin-left: auto;
   color: var(--sd-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
@@ -398,7 +396,17 @@
   background: #fbfaff;
 }
 
-.sd-reader-controls .sd-size { top: 50%; transform: translate(-50%, -50%); }
+.sd-translation-limit {
+  margin: -0.35rem 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #ddd3f7;
+  border-radius: 10px;
+  background: #f6f2ff;
+  color: #625b7f;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.sd-translation-limit a { color: #4b3b86; font-weight: 700; }
 
 .sd-translation {
   margin-top: 1.5rem;
@@ -571,10 +579,8 @@
   }
 
   .sd-reader-controls .sd-size {
-    position: static;
-    transform: none;
     order: 3;
-    width: 100%;
-    justify-content: center;
+    margin-left: auto;
   }
+
 }

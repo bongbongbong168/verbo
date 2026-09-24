@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { buildMatchQuestion, buildVocabQuestions, shuffle } from '../studyQuiz'
-import { setLessonDone } from '../studyProgress'
+import { completeLesson } from '../studyProgress'
 import MatchWires from '../components/MatchWires'
 import Confetti from '../components/Confetti'
 import artBlossom from '../assets/quiz/blossom.webp'
@@ -292,7 +292,7 @@ export default function StudyQuizPage() {
       setBursts((n) => n + 1)
       // The main run finishes the lesson; fire and forget, the results
       // screen must not wait on it or fail with it.
-      if (mode === 'main') setLessonDone(token, id, true).catch(() => {})
+      if (mode === 'main') completeLesson(token, id).catch(() => {})
     } catch (err) {
       setError(err.message)
     } finally {

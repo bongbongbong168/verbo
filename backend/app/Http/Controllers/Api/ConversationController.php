@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ConversationChanged;
 use App\Models\CourseEnrollment;
 use App\Models\Notification;
 use App\Http\Controllers\Controller;
@@ -106,6 +107,15 @@ class ConversationController extends Controller
     /** Open (or start) a course's group thread. */
     public function forCourse(Request $request, Course $course)
     {
+        /* Check membership before `firstOrCreate`. Previously an outsider was
+           rejected by show() after an empty conversation had already been
+           persisted, which could make a course look active to its real
+           members. `courseIdsFor` is also what index() uses, so both entry
+           points now agree on who may see or start a course thread. */
+        $mayAccess = $this->courseIdsFor($request->user())
+            ->contains(fn ($id) => (int) $id === (int) $course->id);
+        abort_unless($mayAccess, 403);
+
         $conversation = Conversation::firstOrCreate(
             ['type' => Conversation::TYPE_COURSE, 'course_id' => $course->id],
             ['last_message_at' => now()]
@@ -201,6 +211,7 @@ class ConversationController extends Controller
             // exposed surface in the app for it: a message is written by one
             // person and read by another, with nothing in between.
             'body' => ['nullable', 'string', 'max:4000', new NoUnsafeLinks],
+            'client_id' => ['nullable', 'string', 'max:64'],
             'file' => [
                 'nullable',
                 'file',
@@ -211,6 +222,20 @@ class ConversationController extends Controller
 
         if (blank($data['body'] ?? null) && ! $request->hasFile('file')) {
             return response()->json(['message' => 'Type a message or attach a file.'], 422);
+        }
+
+        /* The client may retry after a timeout even though the first request
+           reached us. Return the original row before touching an attachment or
+           raising another notification, so one press remains one message. */
+        if (filled($data['client_id'] ?? null)) {
+            $existing = $conversation->messages()
+                ->where('sender_id', $user->id)
+                ->where('client_id', $data['client_id'])
+                ->first();
+
+            if ($existing) {
+                return response()->json($this->messagePayload($existing, $user));
+            }
         }
 
         $attachment = null;
@@ -238,6 +263,7 @@ class ConversationController extends Controller
             $m = $conversation->messages()->create(array_merge([
                 'sender_id' => $user->id,
                 'body' => $data['body'] ?? '',
+                'client_id' => $data['client_id'] ?? null,
             ], $attachment ?? []));
 
             // Denormalised so the thread list can sort by recency without
@@ -248,8 +274,9 @@ class ConversationController extends Controller
         });
 
         $this->notifyRecipients($conversation, $user, $data['body'] ?? '', $attachment !== null);
+        $this->broadcastConversationChanged($conversation, $user);
 
-        return response()->json($message->load('sender:id,name'), 201);
+        return response()->json($this->messagePayload($message, $user), 201);
     }
 
     /**
@@ -267,32 +294,49 @@ class ConversationController extends Controller
             : ($hasFile ? 'Sent an attachment.' : '');
 
         if ($conversation->type === Conversation::TYPE_COURSE) {
-            $recipients = CourseEnrollment::where('course_id', $conversation->course_id)
-                ->whereIn('status', ['held', 'confirmed'])
-                ->pluck('user_id')
-                ->push($conversation->tutor_id)
-                ->unique();
-
-            foreach ($recipients as $id) {
+            foreach ($this->recipientIds($conversation, $sender) as $id) {
                 Notification::raise($id, $sender->id, 'message', [
                     'title' => 'New message in '.(optional($conversation->course)->title ?? 'your course'),
                     'body' => trim($sender->name.': '.$preview),
-                    'link' => '/messages',
+                    'link' => '/messages?c='.$conversation->id,
                 ]);
             }
 
             return;
         }
 
-        $recipient = (int) $conversation->tutor_id === (int) $sender->id
-            ? $conversation->student_id
-            : $conversation->tutor_id;
+        foreach ($this->recipientIds($conversation, $sender) as $recipient) {
+            Notification::raise($recipient, $sender->id, 'message', [
+                'title' => 'New message',
+                'body' => trim($sender->name.': '.$preview),
+                'link' => '/messages?c='.$conversation->id,
+            ]);
+        }
+    }
 
-        Notification::raise($recipient, $sender->id, 'message', [
-            'title' => 'New message',
-            'body' => trim($sender->name.': '.$preview),
-            'link' => '/messages',
-        ]);
+    /** One message shape for a fresh send and a loaded conversation. */
+    private function messagePayload(Message $message, User $viewer): array
+    {
+        $message->loadMissing(['sender:id,name,avatar_path', 'sender.tutorProfile:id,user_id,photo_path']);
+
+        return [
+            'id' => $message->id,
+            'client_id' => $message->client_id,
+            'body' => $message->body,
+            'kind' => $message->kind,
+            'sender_id' => $message->sender_id,
+            'sender_name' => $message->sender?->name,
+            'sender_photo_url' => $message->sender?->avatar_url ?? $message->sender?->tutorProfile?->photo_url,
+            'mine' => (int) $message->sender_id === $viewer->id,
+            'created_at' => $message->created_at,
+            'read_at' => $message->read_at,
+            'attachment' => $message->attachment_path ? [
+                'name' => $message->attachment_name,
+                'mime' => $message->attachment_mime,
+                'size' => $message->attachment_size,
+                'is_image' => $message->is_image,
+            ] : null,
+        ];
     }
 
     /**
@@ -367,7 +411,48 @@ class ConversationController extends Controller
             ]);
         });
 
+        $this->broadcastConversationChanged($conversation, $user, 'message.deleted');
+
         return response()->json(['message' => 'Deleted']);
+    }
+
+    /** Every member except the actor, for private push and inbox notices. */
+    private function recipientIds(Conversation $conversation, User $actor)
+    {
+        if ($conversation->type === Conversation::TYPE_COURSE) {
+            $ids = CourseEnrollment::where('course_id', $conversation->course_id)
+                ->whereIn('status', ['held', 'confirmed'])
+                ->pluck('user_id')
+                // Course conversations do not carry tutor_id. The tutor lives
+                // on the course, so add that actual account explicitly.
+                ->push($conversation->course?->tutorProfile?->user_id);
+        } else {
+            $ids = collect([$conversation->tutor_id, $conversation->student_id]);
+        }
+
+        return $ids
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn ($id) => $id === (int) $actor->id)
+            ->values();
+    }
+
+    /**
+     * Realtime is an acceleration, not the source of truth. A Pusher outage
+     * must never turn a successfully stored message into a failed send.
+     */
+    private function broadcastConversationChanged(Conversation $conversation, User $actor, string $change = 'message.created'): void
+    {
+        try {
+            ConversationChanged::dispatch(
+                $conversation->id,
+                $this->recipientIds($conversation, $actor)->all(),
+                $change
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     // ---- helpers -------------------------------------------------------

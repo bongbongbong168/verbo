@@ -104,6 +104,7 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
   const [hskLevel, setHskLevel] = useState(article?.hsk_level || '')
   const [body, setBody] = useState(article?.body || '')
   const [bodyEn, setBodyEn] = useState(article?.body_en || '')
+  const [isPremium, setIsPremium] = useState(Boolean(article?.is_premium))
   const [image, setImage] = useState(null)
 
   /* The cropper runs BEFORE the file becomes the upload, so the framing chosen
@@ -143,6 +144,7 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
         hsk_level: hskLevel || null,
         body,
         body_en: bodyEn,
+        is_premium: isPremium,
         image,
       })
       // The caller closes on create; on edit it stays open, so say so.
@@ -231,6 +233,18 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
               Format is what the piece <em>is</em>; topic is what it is <em>about</em>. The
               Read page shelves by topic, so an unfiled article only turns up in search.
             </p>
+
+            <label className="ed-check ed-premium-check">
+              <input
+                type="checkbox"
+                checked={isPremium}
+                onChange={(e) => setIsPremium(e.target.checked)}
+              />
+              <span>
+                Verbo Pro article
+                <em>Free learners receive a 30% preview and an upgrade prompt. Pro members and admins receive the complete article.</em>
+              </span>
+            </label>
 
             <label className="ed-field">
               <span>Chinese text</span>

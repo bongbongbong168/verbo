@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './PriceRange.css'
 
 /**
@@ -21,7 +21,9 @@ import './PriceRange.css'
  */
 export default function PriceRange({ min, max, value, onChange }) {
   const [open, setOpen] = useState(false)
+  const [panelLeft, setPanelLeft] = useState(null)
   const root = useRef(null)
+  const panel = useRef(null)
 
   // `value` is null while no price filter is set.
   const lo = value?.min ?? min
@@ -35,6 +37,33 @@ export default function PriceRange({ min, max, value, onChange }) {
     }
     document.addEventListener('pointerdown', away)
     return () => document.removeEventListener('pointerdown', away)
+  }, [open])
+
+  /* Right-aligning is normally enough, but the collapsed sidebar owns the
+     first 76px of a phone. A 260px panel hanging from a Price pill near the
+     middle can still begin underneath that rail. Measure the actual main
+     content edge and clamp the panel between it and the viewport's right edge. */
+  useLayoutEffect(() => {
+    if (!open || !root.current || !panel.current) return undefined
+
+    function positionPanel() {
+      const anchorRect = root.current.getBoundingClientRect()
+      const mainRect = root.current.closest('.sb-main')?.getBoundingClientRect()
+      const panelWidth = panel.current.offsetWidth
+      const leftEdge = Math.max(8, (mainRect?.left ?? 0) + 8)
+      const rightEdge = Math.min(window.innerWidth - 8, (mainRect?.right ?? window.innerWidth) - 8)
+      const preferred = anchorRect.right - panelWidth
+      const viewportLeft = Math.min(
+        Math.max(preferred, leftEdge),
+        Math.max(leftEdge, rightEdge - panelWidth),
+      )
+
+      setPanelLeft(viewportLeft - anchorRect.left)
+    }
+
+    positionPanel()
+    window.addEventListener('resize', positionPanel)
+    return () => window.removeEventListener('resize', positionPanel)
   }, [open])
 
   /* The two thumbs must not cross. Clamping rather than swapping: a thumb that
@@ -59,7 +88,11 @@ export default function PriceRange({ min, max, value, onChange }) {
       </button>
 
       {open && (
-        <div className="pr-pop">
+        <div
+          className="pr-pop"
+          ref={panel}
+          style={panelLeft == null ? undefined : { left: panelLeft, right: 'auto' }}
+        >
           <div className="pr-head">
             <span className="pr-read">
               ${lo} <span className="pr-dash">–</span> ${hi}

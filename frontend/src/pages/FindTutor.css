@@ -53,7 +53,7 @@
   gap: 0.6rem;
   background: var(--ft-card);
   border: 1px solid var(--ft-border);
-  border-radius: 999px;
+  border-radius: 10px;
   padding: 0.65rem 1.1rem;
   min-width: 300px;
   color: var(--ft-text-muted);
@@ -541,6 +541,7 @@
    outlined cards, not raised ones. */
 
 .ft-card {
+  position: relative;
   display: flex;
   gap: 1.4rem;
   background: var(--ft-bg);
@@ -553,6 +554,13 @@
   transition:
     box-shadow 0.14s ease,
     transform 0.14s ease;
+}
+
+.ft-card > .shb {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
 }
 
 /* Hover presses the card fully onto its shadow — the same movement a click
@@ -677,13 +685,14 @@
   background: #2b2643;
 }
 
-/* Desaturated because it stands in for a video still, not a portrait */
+/* Keep the tutor photo natural; the Intro control already makes its purpose
+   clear without dimming or tinting the person behind it. */
 .ft-preview-video > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.45;
-  filter: grayscale(0.5);
+  opacity: 1;
+  filter: none;
 }
 
 .ft-preview-play {
@@ -710,7 +719,10 @@
 /* Overlaps the video's lower edge, as in the design */
 .ft-preview-avatar {
   position: absolute;
-  left: 14px;
+  /* Share the content edge with the name below. The old 14px inset made the
+     portrait float between the image and the text, which broke the card's
+     vertical alignment. */
+  left: 0;
   bottom: -42px;
   width: 92px;
   height: 92px;
@@ -821,7 +833,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
   font-size: 1.02rem;
@@ -829,16 +840,11 @@
   text-decoration: none;
   background: #fff;
   border: 1.5px solid #6a6191;
-  border-radius: 999px;
+  border-radius: 10px;
   padding: calc(0.9rem - 1.239px) 0.9rem calc(0.9rem + 1.239px);
   transition:
     border-color 0.15s ease,
     background 0.15s ease;
-}
-
-.ft-preview-profile svg {
-  width: 19px;
-  height: 19px;
 }
 
 .ft-preview-profile:hover {
@@ -926,6 +932,30 @@
 @media (max-width: 900px) {
   .ft-side {
     position: static;
+  }
+}
+
+/* The phone card keeps the desktop design and every piece of information.
+   Its old 24px padding + 22px gutter + 130px portrait left roughly 135px for
+   the details on a 375px screen, so the biography and availability wrapped
+   into many short lines and made the card look much larger than it was. Give
+   that space back to the text; the same border, shadow, colours and content
+   remain. */
+@media (max-width: 600px) {
+  .ft-card {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .ft-card-photo,
+  .ft-card-photo-placeholder {
+    width: 88px;
+    min-height: 108px;
+  }
+
+  .ft-card > .shb {
+    top: 10px;
+    right: 10px;
   }
 }
 

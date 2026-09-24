@@ -6,7 +6,8 @@ import { invalidate } from '../dataCache'
 import ImageCropper from '../components/ImageCropper'
 import PageTools from '../components/PageTools'
 import './BecomeTutor.css'
-import SpecialtyPicker from '../components/SpecialtyPicker'
+import TutorFitFields from '../components/TutorFitFields'
+import { youtubeVideoId } from '../tutorVideo'
 
 /**
  * Apply to teach on Verbo — and, after submitting, the status of that
@@ -67,7 +68,7 @@ export default function BecomeTutor() {
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState(null)
-  const [options, setOptions] = useState({ chinese_levels: [], teaches_levels: [], specialties: [] })
+  const [options, setOptions] = useState({ chinese_levels: [], teaches_levels: [], specialties: [], teaching_languages: [] })
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [credentials, setCredentials] = useState([])
@@ -77,8 +78,8 @@ export default function BecomeTutor() {
   // rather than retypes.
   const [form, setForm] = useState({
     country: '', chinese_level: '', teaches_levels: [], years_experience: '',
-    specialties: [], main_specialty: null,
-    subjects: '', languages_spoken: '', bio: '', teaching_style: '',
+    specialties: [], main_specialty: null, teaching_languages: [],
+    subjects: '', languages_spoken: '', short_bio: '', bio: '', teaching_style: '',
     availability: '', hourly_rate: '', video_url: '',
   })
   /* The cropped photo waiting on submit, and the file currently open in the
@@ -113,8 +114,9 @@ export default function BecomeTutor() {
             country: p.country || '', chinese_level: p.chinese_level || '',
             teaches_levels: p.teaches_levels || [],
             specialties: p.specialties || [], main_specialty: p.main_specialty || null,
+            teaching_languages: p.teaching_languages || [],
             years_experience: p.years_experience ?? '',
-            subjects: p.subjects || '', languages_spoken: p.languages_spoken || '',
+            subjects: p.subjects || '', languages_spoken: p.languages_spoken || '', short_bio: p.short_bio || '',
             bio: p.bio || '', teaching_style: p.teaching_style || '',
             availability: p.availability || '', hourly_rate: p.hourly_rate ?? '',
             video_url: p.video_url || '',
@@ -126,15 +128,6 @@ export default function BecomeTutor() {
   }
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
-
-  function toggleLevel(level) {
-    setForm((f) => ({
-      ...f,
-      teaches_levels: f.teaches_levels.includes(level)
-        ? f.teaches_levels.filter((l) => l !== level)
-        : [...f.teaches_levels, level],
-    }))
-  }
 
   async function addCredential(file) {
     if (!file) return
@@ -162,6 +155,10 @@ export default function BecomeTutor() {
   async function submit(e) {
     e.preventDefault()
     setError(null)
+    if (form.video_url.trim() && !youtubeVideoId(form.video_url)) {
+      setError('Enter a valid public or unlisted YouTube video link.')
+      return
+    }
     setSaving(true)
     try {
       await api.applyAsTutor(token, { ...form, photo })
@@ -235,9 +232,6 @@ export default function BecomeTutor() {
                 </select>
               </Field>
             </div>
-            <Field label="Languages you speak" required hint="Students filter on this — list every language you can teach in.">
-              <input value={form.languages_spoken} onChange={set('languages_spoken')} placeholder="Chinese, English" />
-            </Field>
             {/* Not a `Field`: that wrapper is a <label>, and the picker below
                 is one too — nesting them is invalid and breaks the click. */}
             <div className="bt-photo-field">
@@ -283,40 +277,12 @@ export default function BecomeTutor() {
 
           <fieldset className="bt-group">
             <legend>Teaching</legend>
-            <Field label="Who you teach" required>
-              <div className="bt-chips">
-                {options.teaches_levels.map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    className={'bt-chip' + (form.teaches_levels.includes(l) ? ' on' : '')}
-                    aria-pressed={form.teaches_levels.includes(l)}
-                    onClick={() => toggleLevel(l)}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            {/* A div, not <Field>: Field is a <label>, and a label full of
-                buttons forwards a click on its text to the first one. */}
-            <div className="bt-field">
-              <span className="bt-label">
-                Teaching specialties
-                <i className="bt-req" aria-hidden="true">*</i>
-              </span>
-              <SpecialtyPicker
-                options={options.specialties || []}
-                value={form.specialties}
-                main={form.main_specialty}
-                onChange={(next, nextMain) =>
-                  setForm((f) => ({ ...f, specialties: next, main_specialty: nextMain }))
-                }
-              />
-              <small className="bt-hint">
-                Choose what you actually teach, and star the one you are best at.
-              </small>
-            </div>
+            <TutorFitFields
+              value={form}
+              options={options}
+              required
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            />
             <div className="bt-row">
               <Field label="Subjects and skills" required>
                 <input value={form.subjects} onChange={set('subjects')} placeholder="Speaking, Grammar, Business Chinese" />
@@ -325,8 +291,18 @@ export default function BecomeTutor() {
                 <input type="number" min="0" max="70" value={form.years_experience} onChange={set('years_experience')} />
               </Field>
             </div>
-            <Field label="About you" required hint="At least a couple of sentences — this is what students read first.">
-              <textarea rows={4} value={form.bio} onChange={set('bio')} />
+            <Field
+              label="Short introduction"
+              hint={`${form.short_bio.length}/180 characters. This appears at the top of your tutor card.`}
+            >
+              <textarea rows={2} maxLength={180} value={form.short_bio} onChange={set('short_bio')} />
+            </Field>
+            <Field
+              label="About you"
+              required
+              hint={`${form.bio.length}/800 characters. Students can read the full introduction below your specialties.`}
+            >
+              <textarea rows={4} maxLength={800} value={form.bio} onChange={set('bio')} />
             </Field>
             <Field label="Your teaching style" hint="Optional.">
               <textarea rows={3} value={form.teaching_style} onChange={set('teaching_style')} />
@@ -343,8 +319,8 @@ export default function BecomeTutor() {
                 <input type="number" min="0" value={form.hourly_rate} onChange={set('hourly_rate')} />
               </Field>
             </div>
-            <Field label="Intro video" hint="Optional, but applications with one are much easier to judge.">
-              <input value={form.video_url} onChange={set('video_url')} placeholder="https://…" />
+            <Field label="Introduction video (YouTube)" hint="Paste a public or unlisted YouTube video link to introduce yourself to students.">
+              <input value={form.video_url} onChange={set('video_url')} placeholder="https://youtu.be/…" />
             </Field>
           </fieldset>
 

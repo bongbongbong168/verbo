@@ -4,13 +4,14 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { isFresh, readCache, writeCache } from '../dataCache'
 import { noteRecentView } from '../recentViews'
-import { setLessonDone } from '../studyProgress'
+import { completeLesson } from '../studyProgress'
 import Skeleton, { SkeletonText } from '../components/Skeleton'
 import StudyQuizLauncher from '../components/StudyQuizLauncher'
 import StudyUnitEditDrawer from '../components/StudyUnitEditDrawer'
 import ReaderSwitch from '../components/ReaderSwitch'
 import WordPopover from '../components/WordPopover'
 import WordExplainer from '../components/WordExplainer'
+import SentenceSavePopover from '../components/SentenceSavePopover'
 import sectionIcon from '../assets/study/section-icon.png'
 import './StudyUnit.css'
 
@@ -158,6 +159,7 @@ export default function StudyUnit() {
      the state there sent `source_id: null` on every save, recording the word
      with no way back to the lesson it came from. */
   const unitRef = useRef(null)
+  const sentenceScopeRef = useRef(null)
   /* Whether the whole conversation is playing. Mirrored into a ref because the
      chain of `onend` callbacks is created once and cannot see later state —
      without it, pressing stop would be ignored and the dialogue would run to
@@ -372,21 +374,18 @@ export default function StudyUnit() {
    * while playing stops — a play button with no way to stop is a trap on a
    * long dialogue.
    */
-  /* Finished, or taken back. The page flips at once and the write follows;
-     a failure puts the flag back rather than leaving the button lying. */
-  function markDone(done) {
+  /* Completing the full listening run updates the current lesson immediately;
+     the persistence helper keeps the unit and level caches in step. */
+  function completeCurrentLesson() {
     const current = unitRef.current
-    if (!current || Boolean(current.completed) === done) return
-    const apply = (value) => {
-      setUnit((prev) => {
-        if (!prev) return prev
-        const next = { ...prev, completed: value }
-        unitRef.current = next
-        return next
-      })
-    }
-    apply(done)
-    setLessonDone(token, current.id, done).catch(() => apply(!done))
+    if (!current || current.completed) return
+    setUnit((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, completed: true }
+      unitRef.current = next
+      return next
+    })
+    completeLesson(token, current.id).catch(() => {})
   }
 
   function stopConversation() {
@@ -413,7 +412,7 @@ export default function StudyUnit() {
       /* Played through to the last line: that is finishing the lesson's
          listening, so the lesson counts as done. Stopping part-way does not. */
       if (i >= lines.length) {
-        markDone(true)
+        completeCurrentLesson()
         playingAllRef.current = false
         setPlayingAll(false)
         setSpeakingId(null)
@@ -758,7 +757,7 @@ export default function StudyUnit() {
             </span>
           </div>
 
-          <div className="un-reading-body">
+          <div ref={sentenceScopeRef} className="un-reading-body">
             <div className="un-dialogue">
               {!currentText ? (
                 <p className="un-empty">No texts yet.</p>
@@ -1062,8 +1061,6 @@ export default function StudyUnit() {
            cannot ever do anything is worse than its absence. `justify-content:
            space-between` on one child would pull it left, so the empty side
            holds a spacer and Next stays on the right at lesson 1. */}
-      {/* Always shown now: the Done toggle belongs to every lesson, including
-          one with no neighbours. */}
       {/* The wrapper is only a size container: the bar stacks by its OWN
           width, which the sidebar makes very different from the window's. */}
       <div className="un-lessonnav-wrap">
@@ -1087,20 +1084,6 @@ export default function StudyUnit() {
               <strong>{unit.completed ? 'Complete' : 'In progress'}</strong>
             </span>
           )}
-
-          {/* Set automatically when the whole conversation has been played or
-              the practice run finished; this is the manual way either way. */}
-          <button
-            type="button"
-            className={'un-done-btn' + (unit.completed ? ' un-done-btn-on' : '')}
-            onClick={() => markDone(!unit.completed)}
-            aria-pressed={Boolean(unit.completed)}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 12.5l4.2 4.2L19 7" />
-            </svg>
-            {unit.completed ? 'Done' : 'Mark as done'}
-          </button>
 
           {unit.next_unit ? (
             <Link className="un-lessonnav-next" to={`/study/units/${unit.next_unit.id}`}>
@@ -1163,6 +1146,15 @@ export default function StudyUnit() {
         word={hovered?.tok}
         rect={hovered?.rect}
         saved={!!savedWords[hovered?.tok?.text]}
+      />
+      <SentenceSavePopover
+        scopeRef={sentenceScopeRef}
+        token={token}
+        sourceModule="study"
+        sourceType="study_unit"
+        sourceId={unit.id}
+        tokens={(currentText?.lines || []).flatMap((line) => line.tokens || [])}
+        onSaved={setLastSaved}
       />
     </div>
   )

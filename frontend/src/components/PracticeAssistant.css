@@ -33,17 +33,15 @@
   z-index: 80;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   padding: 0;
-  border: 1px solid var(--pa-stroke);
-  border-radius: 50%;
-  background: var(--pa-fill);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #fff;
   cursor: pointer;
-  /* Navy-tinted like every other shadow in the app — neutral black would grey
-     the lavender underneath it. */
-  box-shadow: 0 6px 18px rgba(28, 23, 48, 0.22);
+  box-shadow: none;
 }
 
 /* The owl overflows the circle's top, so nothing may clip it — the button is
@@ -58,25 +56,37 @@
    a stretched or centred grid item hung 16px below the circle instead of
    standing on it. Pinned to the bottom edge, the feet sit on the plinth and
    only the cap breaks the top. */
-.pa-fab-owl {
+.pa-fab-bot {
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: -4px;
   transform: translateX(-50%);
-  width: auto;
-  height: 66px;
+  width: 58px;
+  height: auto;
   pointer-events: none;
-  /* The figure is drawn with its own shading; a second shadow under it would
-     fight the circle's. */
   filter: drop-shadow(0 2px 3px rgba(28, 23, 48, 0.25));
+  transform-origin: 50% 88%;
 }
 
 /* Instant fill, eased lift. The colour IS the hover feedback and a transition
    that never gets a frame would leave the button looking dead under the
    pointer — the same rule the Dashboard's "View all" pill follows. */
 .pa-fab:hover {
-  background: var(--pa-accent);
-  box-shadow: 0 10px 24px rgba(28, 23, 48, 0.3);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* The character gives a brief, friendly nod on hover while the button stays
+   put, so it feels alive without making the click target move under a cursor. */
+.pa-fab:hover .pa-fab-bot {
+  animation: pa-bot-greet 0.62s cubic-bezier(.22, .8, .3, 1) both;
+}
+
+@keyframes pa-bot-greet {
+  0% { transform: translateX(-50%) translateY(0) rotate(0); }
+  42% { transform: translateX(-50%) translateY(-6px) rotate(-4deg); }
+  72% { transform: translateX(-50%) translateY(-2px) rotate(3deg); }
+  100% { transform: translateX(-50%) translateY(0) rotate(0); }
 }
 
 .pa-fab:focus-visible {
@@ -133,6 +143,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pa {
+    animation: none;
+  }
+
+  .pa-fab:hover .pa-fab-bot {
     animation: none;
   }
 }

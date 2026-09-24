@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Schema;
  * rules that uploaded files need.
  *
  * NEXT TO `transcript`, NOT INSTEAD OF IT. `transcript` is the admin's own
- * text and stays exactly as it was; this is what WhisperX heard, with times.
+ * text and stays exactly as it was; this is what the transcription provider
+ * heard, with times.
  */
 return new class extends Migration
 {

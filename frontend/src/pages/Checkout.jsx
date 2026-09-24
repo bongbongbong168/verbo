@@ -176,7 +176,15 @@ export default function Checkout() {
   /* loadStripe fires a network request, so it is memoised on the key rather
      than called on every render. Null until the server says payments are live,
      which is what keeps a keyless install from loading Stripe at all. */
-  const stripePromise = useMemo(() => (stripeKey ? loadStripe(stripeKey) : null), [stripeKey])
+  const stripePromise = useMemo(
+    () =>
+      stripeKey
+        ? loadStripe(stripeKey, {
+            developerTools: { assistant: { enabled: false } },
+          })
+        : null,
+    [stripeKey],
+  )
 
   /* Ask whether payments are live, and if so mint the intent for THIS purchase.
      Both are swallowed on failure: the page falls back to the demo button

@@ -110,13 +110,12 @@ return [
      * watching a typing indicator and waiting for an answer, where that one
      * sits in the middle of someone sending a message.
      */
-    /* The WhisperX podcast transcriber (tools/transcriber). Local only - it
-       needs Python and ideally a GPU, neither of which production has. The
-       defaults point at the venv the README creates beside this repo. */
-    'transcriber' => [
-        'python' => env('TRANSCRIBER_PYTHON', base_path('../tools/transcriber/.venv/'.(PHP_OS_FAMILY === 'Windows' ? 'Scripts/python.exe' : 'bin/python'))),
-        'script' => env('TRANSCRIBER_SCRIPT', base_path('../tools/transcriber/process_podcast.py')),
-        'model' => env('TRANSCRIBER_MODEL', 'large-v3'),
+    // Deepgram returns Mandarin text and word timings. Never expose this key
+    // to the browser.
+    'deepgram' => [
+        'key' => env('DEEPGRAM_API_KEY'),
+        'model' => env('DEEPGRAM_MODEL', 'nova-3'),
+        'timeout' => env('DEEPGRAM_TIMEOUT', 120),
     ],
 
     'gemini' => [

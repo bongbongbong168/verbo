@@ -50,6 +50,7 @@ class FlashcardController extends Controller
     {
         $request->validate([
             'source' => ['nullable', Rule::in(array_keys(Flashcard::MODULES))],
+            'type' => ['nullable', Rule::in(['word', 'sentence'])],
             'bucket' => ['nullable', Rule::in(self::BUCKETS)],
             'q' => ['nullable', 'string', 'max:120'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:200'],
@@ -83,18 +84,22 @@ class FlashcardController extends Controller
         $base = $request->user()->flashcards();
 
         $total = (clone $base)->count();
-        $mastered = (clone $base)->where('correct_streak', '>=', Flashcard::MASTERED_STREAK)->count();
+        $words = (clone $base)->where('card_type', 'word');
+        $wordCount = (clone $words)->count();
+        $mastered = (clone $words)->where('correct_streak', '>=', Flashcard::MASTERED_STREAK)->count();
 
         return response()->json([
-            'words' => $total,
+            'total' => $total,
+            'words' => $wordCount,
+            'sentences' => (clone $base)->where('card_type', 'sentence')->count(),
             // Everything not yet mastered is still being learned, which keeps
             // the two numbers summing to the total — two counters that do not
             // add up read as a bug even when both are right.
-            'learning' => $total - $mastered,
+            'learning' => $wordCount - $mastered,
             'mastered' => $mastered,
             'sources' => (clone $base)->distinct()->count('source_module'),
-            'today' => (clone $base)->whereDate('created_at', now()->toDateString())->count(),
-            'difficult' => (clone $base)
+            'today' => (clone $words)->whereDate('created_at', now()->toDateString())->count(),
+            'difficult' => (clone $words)
                 ->where('lapses', '>', 0)
                 ->where('correct_streak', '<', Flashcard::MASTERED_STREAK)
                 ->count(),
@@ -127,6 +132,7 @@ class FlashcardController extends Controller
         $limit = (int) $request->query('limit', 20);
 
         $cards = $this->filtered($request)
+            ->where('card_type', 'word')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit($limit)
@@ -179,6 +185,7 @@ class FlashcardController extends Controller
     {
         $data = $request->validate([
             'word' => ['required', 'string', 'max:255'],
+            'card_type' => ['nullable', Rule::in(['word', 'sentence'])],
             'pinyin' => ['nullable', 'string', 'max:255'],
             'translation' => ['nullable', 'string', 'max:255'],
             'source_module' => ['nullable', 'string', 'max:255'],
@@ -188,6 +195,7 @@ class FlashcardController extends Controller
         ]);
 
         $data['source_module'] = $data['source_module'] ?? 'manual';
+        $data['card_type'] = $data['card_type'] ?? 'word';
 
         // The short key becomes the class, exactly as `recent_views` stores it.
         // Both halves must be present or neither is — half a reference points
@@ -202,7 +210,10 @@ class FlashcardController extends Controller
         // path (Alt+1 on Read/Podcast/Scan, "Save all", the manual form) hits
         // this endpoint, so without the check a word saved twice silently
         // becomes two rows in the bank.
-        $existing = $request->user()->flashcards()->where('word', $data['word'])->first();
+        $existing = $request->user()->flashcards()
+            ->where('card_type', $data['card_type'])
+            ->where('word', $data['word'])
+            ->first();
 
         if ($existing) {
             // Backfill anything the earlier save was missing — a hover-save
@@ -271,6 +282,19 @@ class FlashcardController extends Controller
     }
 
     /**
+     * Empty the caller's whole bank. Scoped by the session, never by anything
+     * in the request, so it cannot reach another account's cards. The client
+     * asks twice before calling this; the server trusts that and just reports
+     * how many went, so the page can say what actually happened.
+     */
+    public function destroyAll(Request $request)
+    {
+        $deleted = $request->user()->flashcards()->delete();
+
+        return response()->json(['deleted' => $deleted]);
+    }
+
+    /**
      * The user's cards narrowed by the search box, the pills and the bucket.
      *
      * Returns the HasMany rather than a Builder — `$user->flashcards()` is the
@@ -283,6 +307,10 @@ class FlashcardController extends Controller
 
         if ($source = $request->query('source')) {
             $query->where('source_module', $source);
+        }
+
+        if ($type = $request->query('type')) {
+            $query->where('card_type', $type);
         }
 
         switch ($request->query('bucket')) {

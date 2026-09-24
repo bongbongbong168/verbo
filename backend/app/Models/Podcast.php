@@ -41,23 +41,26 @@ class Podcast extends Model
         'transcript_en',
         'level',
         'category',
+        'is_premium',
         'bio',
         'host',
     ];
 
     /* The timed transcript and its state are NOT fillable: only the import
-       path (TimedTranscriptController / podcast:transcribe) may write them,
+       path (PodcastTranscriptController) may write them,
        so the ordinary episode form can never blank one by omission. */
 
     /* Never in the episode payload. It can run to hundreds of KB, and the
        episode is loaded far more often than the synced view is - it has its
        own endpoint. The error is admin-facing and also has its own route. */
     protected $hidden = [
+        'audio_path',
         'timed_transcript',
         'timed_transcript_error',
     ];
 
     protected $casts = [
+        'is_premium' => 'boolean',
         'timed_transcript' => 'array',
         'timed_transcript_at' => 'datetime',
     ];
@@ -125,7 +128,16 @@ class Podcast extends Model
      */
     public function getAudioUrlAttribute(): ?string
     {
-        return $this->audio_path ? url('/api/podcasts/'.$this->id.'/audio') : null;
+        // Premium recordings live on the private disk and only receive a
+        // short-lived signed URL from PodcastController::show.
+        return $this->audio_path && ! $this->is_premium
+            ? url('/api/podcasts/'.$this->id.'/audio')
+            : null;
+    }
+
+    public function audioDisk(): string
+    {
+        return $this->is_premium ? 'local' : 'public';
     }
 
     public function getImageUrlAttribute(): ?string

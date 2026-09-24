@@ -49,8 +49,8 @@ const STATUS_LABELS = {
  * at its own moment - the same reason the tutor drawer's tabs do - so the
  * form's Save button is not shown here.
  *
- * The local WhisperX engine is the normal route. JSON import remains only for
- * transcripts generated elsewhere.
+ * Deepgram is the normal route. JSON import remains available for transcripts
+ * prepared elsewhere.
  */
 function SyncTab({ podcast, onChange }) {
   const { token } = useAuth()
@@ -75,6 +75,29 @@ function SyncTab({ podcast, onChange }) {
       clearTimeout(disarm.current)
     }
   }, [token, podcast.id])
+
+  /* A provider may take a moment for a longer recording. Poll only while it
+     is working, then stop as soon as it reports completed or failed. */
+  useEffect(() => {
+    if (info?.status !== 'processing') return undefined
+
+    let live = true
+    const timer = setInterval(() => {
+      api
+        .getTimedTranscript(token, podcast.id)
+        .then((data) => {
+          if (!live) return
+          setInfo(data)
+          if (data.status !== 'processing') onChange?.(data)
+        })
+        .catch((err) => live && setError(err.message))
+    }, 2000)
+
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [info?.status, token, podcast.id, onChange])
 
   async function upload(file) {
     setBusy(true)
@@ -194,7 +217,7 @@ function SyncTab({ podcast, onChange }) {
         <div className="ed-field">
           <span>Lines</span>
           <p className="ed-hint">
-            Fix anything WhisperX misheard, or clear a line to remove it. Words you keep stay
+            Fix anything Deepgram misheard, or clear a line to remove it. Words you keep stay
             on their original timing; new words are fitted into the gap around them.
           </p>
           <ol className="ed-sync-lines">
@@ -242,6 +265,11 @@ function SyncTab({ podcast, onChange }) {
 export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedChange }) {
   const { token } = useAuth()
   const editing = Boolean(podcast)
+  /* Sync endpoints need a real episode id. During creation, Generate saves
+     the episode record without closing the drawer, then runs transcription
+     immediately so uploading audio and syncing it remains one job. */
+  const [createdPodcast, setCreatedPodcast] = useState(null)
+  const workingPodcast = podcast || createdPodcast
 
   const [tab, setTab] = useState('Episode')
   const [title, setTitle] = useState(podcast?.title || '')
@@ -249,6 +277,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
   const [category, setCategory] = useState(podcast?.category || '')
   const [host, setHost] = useState(podcast?.host || '')
   const [bio, setBio] = useState(podcast?.bio || '')
+  const [isPremium, setIsPremium] = useState(Boolean(podcast?.is_premium))
   const [transcript, setTranscript] = useState(podcast?.transcript || '')
   const [transcriptEn, setTranscriptEn] = useState(podcast?.transcript_en || '')
   const [translating, setTranslating] = useState(false)
@@ -263,6 +292,25 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [flash, setFlash] = useState(null)
+
+  function values() {
+    return {
+      title,
+      level,
+      // Sent even when empty, or a topic could never be cleared back to
+      // Unfiled — the rule transcript_en already follows.
+      category,
+      host,
+      bio,
+      isPremium,
+      transcript,
+      // Always sent, even empty, or clearing a translation would be
+      // impossible — the rule podcastFormData already follows.
+      transcriptEn,
+      audio,
+      image,
+    }
+  }
 
   // Built in an effect, not in render — createObjectURL during render mints a
   // new URL every pass and never frees them.
@@ -282,23 +330,77 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
     setFlash(null)
     setBusy(true)
     try {
-      await onSave({
-        title,
-        level,
-        // Sent even when empty, or a topic could never be cleared back to
-        // Unfiled — the rule transcript_en already follows.
-        category,
-        host,
-        bio,
-        transcript,
-        // Always sent, even empty, or clearing a translation would be
-        // impossible — the rule podcastFormData already follows.
-        transcriptEn,
-        audio,
-        image,
-      })
-      if (editing) setFlash('Saved')
+      const saved = await onSave(values(), createdPodcast)
+      if (editing) {
+        if (saved) setCreatedPodcast(saved)
+        setAudio(null)
+        setImage(null)
+        setFlash('Saved')
+      } else {
+        onClose()
+      }
     } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function generateFromAudio() {
+    if (!title.trim()) {
+      setTab('Episode')
+      setError('Add a title before publishing the episode.')
+      return
+    }
+    if (!audio) {
+      setTab('Media')
+      setError('Choose an audio file before generating the transcript.')
+      return
+    }
+
+    setError(null)
+    setFlash(null)
+    setBusy(true)
+    let saved = null
+    try {
+      saved = await onSave(values(), createdPodcast)
+      if (!saved?.id) throw new Error('The episode was saved, but Sync could not load it. Close this drawer and open the episode again.')
+
+      const synced = await api.generateTimedTranscript(token, saved.id)
+      if (synced.status !== 'completed') {
+        /* SyncTab owns failed-state messaging. Mount it with the saved episode
+           and avoid repeating the same error in EditDrawer's top banner. */
+        setCreatedPodcast({ ...saved, timed_transcript_status: synced.status })
+        setAudio(null)
+        setImage(null)
+        return
+      }
+
+      /* Generation writes these same lines onto the episode. Mirror the
+         response into the still-open form so Transcript immediately shows
+         the result without a second fetch or a stale blank draft. */
+      const generatedChinese = (synced.segments || []).map((line) => line.text).filter(Boolean).join('\n')
+      const generatedEnglish = (synced.segments || []).map((line) => line.translation).filter(Boolean).join('\n')
+      setCreatedPodcast({
+        ...saved,
+        transcript: generatedChinese,
+        transcript_en: generatedEnglish,
+        timed_transcript_status: 'completed',
+      })
+      setTranscript(generatedChinese)
+      setTranscriptEn(generatedEnglish)
+      setAudio(null)
+      setImage(null)
+      setFlash('Transcript generated, translated, and synced')
+    } catch (err) {
+      /* Saving and generation are two server operations. If generation
+         fails, keep the successfully-created episode in this drawer so retry
+         updates it instead of creating a duplicate. */
+      if (saved?.id) {
+        setCreatedPodcast(saved)
+        setAudio(null)
+        setImage(null)
+      }
       setError(err.message)
     } finally {
       setBusy(false)
@@ -324,7 +426,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
       <EditDrawer
         title={editing ? 'Edit episode' : 'New episode'}
         subtitle={editing ? podcast.title : 'Publish to the Podcast section'}
-        tabs={editing ? ['Episode', 'Transcript', 'Media', 'Sync'] : ['Episode', 'Transcript', 'Media']}
+        tabs={editing ? ['Episode', 'Media', 'Transcript', 'Sync'] : ['Episode', 'Media', 'Transcript']}
         tab={tab}
         onTabChange={setTab}
         onClose={onClose}
@@ -392,13 +494,30 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                   placeholder="e.g. Native Mandarin speaker from Chengdu, Sichuan, with 6 years of teaching experience."
                 />
               </label>
+
+              <label className="ed-check ed-premium-check">
+                <input
+                  type="checkbox"
+                  checked={isPremium}
+                  onChange={(e) => setIsPremium(e.target.checked)}
+                />
+                <span>
+                  Verbo Pro episode
+                  <em>Free learners can see the episode details, but playback and transcripts require Pro.</em>
+                </span>
+              </label>
             </>
           )}
 
           {tab === 'Transcript' && (
             <>
+              <p className="ed-hint">
+                Add the transcript yourself here. To create it from a recording,
+                use Generate and sync under Media.
+              </p>
+
               <label className="ed-field">
-                <span>Chinese transcript (optional)</span>
+                <span>Chinese transcript</span>
                 <textarea
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
@@ -406,7 +525,8 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                 />
               </label>
               <p className="ed-hint">
-                Paste text if you already have it. Otherwise, upload audio and generate the transcript after publishing.
+                Paste or write the transcript here. You can provide your own English
+                version below or let Verbo translate it.
               </p>
 
               <label className="ed-field">
@@ -421,8 +541,8 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                 {translating ? 'Translating…' : 'Translate to English'}
               </button>
               <p className="ed-hint">
-                Optional. A Chinese-only episode is valid — the Translation switch renders
-                disabled rather than opening a blank pane.
+                A Chinese-only episode is valid. Without English, the listener's
+                Translation switch stays disabled rather than opening a blank pane.
               </p>
             </>
           )}
@@ -430,7 +550,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
           {tab === 'Media' && (
             <>
               <label className="ed-field">
-                <span>Audio {editing ? '(leave empty to keep the current file)' : ''}</span>
+                <span>Audio {workingPodcast ? '(leave empty to keep the current file)' : ''}</span>
                 <input
                   type="file"
                   accept="audio/*"
@@ -443,13 +563,13 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                 is missing rather than showing an empty player.
               </p>
 
-              {podcast?.image_url && !imagePreview && (
-                <img className="ed-preview" src={podcast.image_url} alt="" />
+              {workingPodcast?.image_url && !imagePreview && (
+                <img className="ed-preview" src={workingPodcast.image_url} alt="" />
               )}
               {imagePreview && <img className="ed-preview" src={imagePreview} alt="" />}
 
               <label className="ed-btn-ghost">
-                {image ? 'Choose a different cover' : podcast?.image_url ? 'Replace cover' : 'Choose cover'}
+                {image ? 'Choose a different cover' : workingPodcast?.image_url ? 'Replace cover' : 'Choose cover'}
                 <input
                   type="file"
                   accept="image/*"
@@ -470,10 +590,43 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                   Adjust framing
                 </button>
               )}
+
+              {!editing && !workingPodcast && (
+                <div className="ed-media-sync">
+                  <strong>Generate and sync from audio</strong>
+                  <p>
+                    Verbo transcribes the Chinese, translates it to English, and
+                    synchronizes every word in one job.
+                  </p>
+                  {audio ? (
+                    <>
+                      <p className="ed-sync-file">Audio · {audio.name}</p>
+                      <button
+                        type="button"
+                        className="ed-btn-primary"
+                        onClick={generateFromAudio}
+                        disabled={busy}
+                      >
+                        {busy ? 'Generating…' : 'Generate transcript'}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="ed-hint">Choose an audio file above to generate its transcript.</p>
+                  )}
+                </div>
+              )}
+
+              {!editing && workingPodcast && (
+                <div className="ed-media-sync ed-media-sync-existing">
+                  <SyncTab podcast={workingPodcast} onChange={onTimedChange} />
+                </div>
+              )}
             </>
           )}
 
-          {tab === 'Sync' && editing && <SyncTab podcast={podcast} onChange={onTimedChange} />}
+          {tab === 'Sync' && workingPodcast && (
+            <SyncTab podcast={workingPodcast} onChange={onTimedChange} />
+          )}
 
           {tab !== 'Sync' && (
           <div className="ed-actions">

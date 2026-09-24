@@ -1345,15 +1345,9 @@
    button in the row; going back is a correction and should not compete with
    it. Two matching buttons would make them read as equal choices. */
 
-.un-lessonnav-wrap {
-  container-type: inline-size;
-}
-
-/* Three columns - Previous, Done, Next - with the outer two equal, so the
-   Done toggle sits dead centre however long either lesson name is. */
 .un-lessonnav {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: 1rem;
   margin-top: 1.4rem;
@@ -1366,8 +1360,8 @@
   border-radius: 16px;
 }
 
-/* First lesson has no Previous link. Its reserved column instead explains the
-   centred Done control, so the footer never becomes a wide empty strip. */
+/* First lesson has no Previous link. Its reserved column instead reports the
+   automatic completion state, keeping Next aligned with every other lesson. */
 .un-lessonnav-state {
   display: flex;
   flex-direction: column;
@@ -1402,29 +1396,6 @@
   max-width: 100%;
 }
 
-/* Too narrow for three across - by the bar's own width, since the sidebar
-   leaves it ~350px in a 900px window: Done takes the top row alone and
-   Previous / Next share the row beneath. */
-@container (max-width: 620px) {
-  .un-lessonnav {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.6rem;
-  }
-
-  /* Two classes: the base .un-done-btn rule comes later in the file and
-     would otherwise put its zero vertical padding back. */
-  .un-lessonnav .un-done-btn {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    justify-self: center;
-    /* Alone on its row, so it takes Next's padding for its height. */
-    align-self: center;
-    /* +0.55px a side: Next's height is set by its 1.35rem chevron, a
-       touch taller than this label's line, and this makes them equal. */
-    padding: calc(0.6rem + 0.55px) 1.1rem;
-  }
-}
-
 /* THE SAME BUTTON AS NEXT, outlined instead of filled. It used to be bare
    text on the bar's ground beside a filled pill, which left the footer
    lopsided — one side a control, the other a caption. Both are pills now and
@@ -1447,60 +1418,6 @@
 .un-lessonnav-prev:hover {
   border-color: var(--un-outline);
   background: var(--un-panel);
-}
-
-/* The lesson's done toggle, between Previous and Next. SAME SHAPE AND TYPE
-   AS NEXT beside it - 10px corners, the navy stroke, Next's 0.95rem/600
-   label and its padding - with the height taken from that row via
-   align-self: stretch, so the pair read as one set of controls. It was a
-   pill in its own type and read as a badge from somewhere else.
-
-   Off: white. On: the pale lavender the app uses for a selected pill, not
-   Next's solid fill, so the thing that moves you on stays the loudest
-   control in the bar. The fill IS the state and is never transitioned. */
-.un-done-btn {
-  display: inline-flex;
-  align-items: center;
-  align-self: stretch;
-  gap: 0.5rem;
-  flex: none;
-  /* Cap-band: Hellix 600 sits 0.076em low in its line box. The box is
-     stretched to the bar, so it is lifted by trimming the content box from
-     below by twice that. */
-  padding: 0 1.1rem 0.152em;
-  border: 1px solid var(--un-panel-border);
-  border-radius: 12px;
-  background: #fff;
-  white-space: nowrap;
-  color: var(--un-text);
-  font-family: 'Hellix', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.35;
-  cursor: pointer;
-}
-
-.un-done-btn svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  /* Hands back the label's cap-band lift (same em, same font-size), so the
-     icon stays centred. */
-  margin-top: 0.076em;
-  margin-bottom: -0.076em;
-}
-
-.un-done-btn:hover {
-  background: #f1edfc;
-}
-
-.un-done-btn-on {
-  background: #f1edfc;
-  color: #6a6191;
-}
-
-.un-done-btn-on:hover {
-  background: #e7e1fb;
 }
 
 .un-lessonnav-next {

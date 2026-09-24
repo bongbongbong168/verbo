@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
 import useUnreadMessages from "../hooks/useUnreadMessages";
+import useRealtimeUpdates from "../hooks/useRealtimeUpdates";
+import usePusherConversationUpdates from "../hooks/usePusherConversationUpdates";
 import PracticeAssistant from "./PracticeAssistant";
 import VerifyEmailBanner from "./VerifyEmailBanner";
 import logo from "../assets/sidebar/logo.svg";
@@ -310,6 +312,8 @@ export default function Layout() {
      bookings and courses; a number in the rail answers "is someone waiting on
      me?", and those are different questions. */
   const { unread: unreadMessages } = useUnreadMessages(token);
+  useRealtimeUpdates(token);
+  usePusherConversationUpdates(token, user?.id);
 
   const itemUnread = (item) => (item.to === "/messages" ? unreadMessages : 0);
   const sectionUnread = (entry) =>

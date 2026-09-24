@@ -1,0 +1,6 @@
+.shb { display:grid; place-items:center; width:30px; height:30px; padding:0; border:1px solid #e7e3f6; border-radius:50%; background:#fff; color:#6a6191; cursor:pointer; box-shadow:0 2px 7px rgba(28,23,48,.12); transition:transform .15s ease, background .15s ease, color .15s ease; }
+.shb:hover { background:#f1edfc; }
+.shb:disabled { cursor:wait; opacity:.65; }
+.shb svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linejoin:round; }
+.shb.saved { background:#6a6191; border-color:#6a6191; color:#fff; }
+@media (prefers-reduced-motion: reduce) { .shb { transition:none; } }

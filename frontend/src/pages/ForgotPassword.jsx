@@ -45,6 +45,12 @@ export default function ForgotPassword() {
   async function requestCode(e) {
     e?.preventDefault()
     setError(null)
+
+    if (!email.trim()) {
+      setError('Enter the email address you signed up with.')
+      return
+    }
+
     setBusy(true)
     try {
       const res = await api.forgotPassword(email)
@@ -65,6 +71,22 @@ export default function ForgotPassword() {
   async function submitCode(e) {
     e.preventDefault()
     setError(null)
+
+    if (code.trim().length !== 6) {
+      return setError('Enter the six-digit code from your email.')
+    }
+
+    if (!password) {
+      return setError('Create a new password.')
+    }
+
+    if (password.length < 8) {
+      return setError('Your new password needs at least 8 characters.')
+    }
+
+    if (!confirm) {
+      return setError('Type your new password again to confirm it.')
+    }
 
     /* Checked here as well as on the server so the mismatch is caught before
        a round trip spends the code — the pair is the one error a person
@@ -114,7 +136,7 @@ export default function ForgotPassword() {
           </h1>
 
           {step === 'ask' ? (
-            <form onSubmit={requestCode}>
+            <form noValidate onSubmit={requestCode}>
               <label className="lg-label" htmlFor="fp-email">
                 The email you signed up with
               </label>
@@ -129,7 +151,7 @@ export default function ForgotPassword() {
                 placeholder="you@example.com"
               />
 
-              {error && <p className="lg-error">{error}</p>}
+              {error && <p className="lg-error" role="alert">{error}</p>}
 
               <button type="submit" className="lg-login-btn" disabled={busy}>
                 {busy ? 'Sending...' : 'Send code'}
@@ -140,7 +162,7 @@ export default function ForgotPassword() {
               </p>
             </form>
           ) : (
-            <form onSubmit={submitCode}>
+            <form noValidate onSubmit={submitCode}>
               {sent && <p className="lg-sent">{sent}</p>}
 
               <label className="lg-label" htmlFor="fp-code">
@@ -202,7 +224,7 @@ export default function ForgotPassword() {
                 onChange={(e) => setConfirm(e.target.value)}
               />
 
-              {error && <p className="lg-error">{error}</p>}
+              {error && <p className="lg-error" role="alert">{error}</p>}
 
               <button type="submit" className="lg-login-btn" disabled={busy}>
                 {busy ? 'Saving...' : 'Change password'}

@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Scan;
 use App\Services\DictionaryService;
 use App\Services\OcrService;
+use App\Services\UsageAllowanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Str;
@@ -24,7 +26,7 @@ class ScanController extends Controller
         ]);
     }
 
-    public function show(Request $request, Scan $scan, DictionaryService $dictionary)
+    public function show(Request $request, Scan $scan, DictionaryService $dictionary, UsageAllowanceService $allowances)
     {
         if ((int) $scan->user_id !== $request->user()->id) {
             abort(403);
@@ -34,9 +36,15 @@ class ScanController extends Controller
         // scanned text gets the identical hover + Alt+1 treatment. Results are
         // cached forever by md5, so reopening a scan costs nothing.
         // array_merge, not spread — PHP 8.0 cannot unpack string-keyed arrays.
+        $translationKey = 'scan-translation:v3:'.$scan->user_id.':'.$scan->id.':'.hash('sha256', trim((string) $scan->raw_text));
+
         return array_merge(
             $scan->toArray(),
-            ['tokens' => $scan->raw_text ? $dictionary->annotate($scan->raw_text) : []]
+            [
+                'tokens' => $scan->raw_text ? $dictionary->annotate($scan->raw_text) : [],
+                'translation_cached' => Cache::has($translationKey),
+                'translation_usage' => $allowances->summary($request->user(), UsageAllowanceService::TRANSLATIONS),
+            ]
         );
     }
 
@@ -113,12 +121,14 @@ class ScanController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    public function store(Request $request, OcrService $ocr, DictionaryService $dictionary)
+    public function store(Request $request, OcrService $ocr, DictionaryService $dictionary, UsageAllowanceService $allowances)
     {
         $request->validate([
             'image' => ['required', 'image', 'max:10240'],
         ]);
 
+        $reservation = $allowances->reserve($request->user(), UsageAllowanceService::SCANS);
+        $consumed = false;
         $originalFilename = $request->file('image')->getClientOriginalName();
         // Read before OCR — the upload is deleted in the finally below, so this
         // is the only chance to record how big it was.
@@ -147,28 +157,41 @@ class ScanController extends Controller
             // as a 500. Log it for us, tell the user something useful.
             Log::error('OCR failed', ['message' => $e->getMessage()]);
 
+            $allowances->release($request->user(), UsageAllowanceService::SCANS, $reservation);
             return response()->json([
                 'message' => 'Could not read that image. Try a clearer photo, or one with more contrast.',
             ], 422);
+        } catch (\Throwable $e) {
+            $allowances->release($request->user(), UsageAllowanceService::SCANS, $reservation);
+            throw $e;
         } finally {
             Storage::disk('local')->delete($path);
         }
 
-        $words = collect($dictionary->segment($text))
-            ->map(fn (string $word) => [
-                'word' => $word,
-                'pinyin' => $dictionary->pinyinFor($word),
-                'translation' => $dictionary->lookup($word),
-            ])
-            ->values();
+        try {
+            $words = collect($dictionary->segment($text))
+                ->map(fn (string $word) => [
+                    'word' => $word,
+                    'pinyin' => $dictionary->pinyinFor($word),
+                    'translation' => $dictionary->lookup($word),
+                ])
+                ->values();
 
-        $scan = $request->user()->scans()->create([
-            'original_filename' => $originalFilename,
-            'raw_text' => $text,
-            'words' => $words,
-            'size_bytes' => $sizeBytes,
-        ]);
+            $scan = $request->user()->scans()->create([
+                'original_filename' => $originalFilename,
+                'raw_text' => $text,
+                'words' => $words,
+                'size_bytes' => $sizeBytes,
+            ]);
 
-        return response()->json($scan, 201);
+            $usage = $allowances->commit($request->user(), UsageAllowanceService::SCANS, $reservation);
+            $consumed = true;
+
+            return response()->json(array_merge($scan->toArray(), ['usage' => $usage]), 201);
+        } finally {
+            if (! $consumed) {
+                $allowances->release($request->user(), UsageAllowanceService::SCANS, $reservation);
+            }
+        }
     }
 }

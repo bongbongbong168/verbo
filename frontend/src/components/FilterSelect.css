@@ -9,6 +9,13 @@
   z-index: 20;
 }
 
+/* The OPEN one rises above its siblings. Every filter sits at 20, so a later
+   one (Availability, Price) painted over an earlier one's menu - on a phone,
+   where the row wraps, the pills landed right on top of the subject list. */
+.dd:has(.dd-menu) {
+  z-index: 40;
+}
+
 .dd-btn {
   display: inline-flex;
   align-items: center;

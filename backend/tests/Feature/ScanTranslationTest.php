@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -45,7 +46,8 @@ class ScanTranslationTest extends TestCase
     public function test_missing_key_does_not_call_provider()
     {
         $scan = $this->scan();
-        config(['services.deepl.key' => null]);
+        config(['services.deepl.key' => null, 'services.gemini.key' => null]);
+        Cache::forget('translation-provider:deepl-unavailable');
         Http::fake();
         $this->postJson('/api/scans/'.$scan->id.'/translation')->assertStatus(503);
         Http::assertNothingSent();
@@ -57,6 +59,7 @@ class ScanTranslationTest extends TestCase
         config(['services.deepl.key' => 'secret-test-key']);
         Http::fake(['api-free.deepl.com/*' => Http::sequence()->push(['message' => 'secret-test-key'], 456)->push(['translations' => [['text' => 'Hello.'], ['text' => 'How are you?']]])]);
         $this->postJson('/api/scans/'.$scan->id.'/translation')->assertStatus(503)->assertDontSee('secret-test-key');
+        Cache::forget('translation-provider:deepl-unavailable');
         $this->postJson('/api/scans/'.$scan->id.'/translation')->assertOk();
     }
 }

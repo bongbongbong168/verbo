@@ -350,6 +350,7 @@
    px of headroom. Nothing inside may shrink, so if any of those grow this
    number has to grow with them or the footer gets clipped. */
 .pc-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -364,6 +365,13 @@
   transition:
     transform 0.14s ease,
     box-shadow 0.14s ease;
+}
+
+.pc-card > .shb {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
 }
 
 /* A 2px lift and a slightly deeper shadow — the app's existing card hover,
@@ -406,6 +414,7 @@
 }
 
 .pc-card-cover {
+  position: relative;
   display: block;
   margin: 12px 12px 0;
   border-radius: 12px;
@@ -416,6 +425,21 @@
      want to listen. */
   height: 150px;
   background: linear-gradient(135deg, #cfc6ef, #a89ce3);
+}
+
+.pc-pro-badge {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(43, 38, 67, 0.9);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  backdrop-filter: blur(5px);
 }
 
 .pc-card-cover img {

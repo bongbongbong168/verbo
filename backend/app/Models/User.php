@@ -74,6 +74,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_admin' => 'boolean',
+        'is_pro' => 'boolean',
     ];
 
     public function flashcards()
@@ -90,6 +91,11 @@ class User extends Authenticatable
     public function scans()
     {
         return $this->hasMany(Scan::class);
+    }
+
+    public function monthlyFeatureUsages()
+    {
+        return $this->hasMany(MonthlyFeatureUsage::class);
     }
 
     public function articles()

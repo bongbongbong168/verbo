@@ -132,3 +132,11 @@
     transition: none;
   }
 }
+
+/* No arrows on a phone: the row swipes, and the peek of the next card is the
+   affordance. The arrows sat on top of the cards' edges there. */
+@media (max-width: 767px) {
+  .sr-arrow {
+    display: none;
+  }
+}

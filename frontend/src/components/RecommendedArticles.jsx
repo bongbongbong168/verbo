@@ -51,6 +51,7 @@ export default function RecommendedArticles({ exclude, limit = 3 }) {
 
             <span className="rd-rec-body">
               <span className="rd-rec-tags">
+                {a.is_premium && <span className="rd-chip rd-chip-pro">Pro</span>}
                 {a.hsk_level && (
                   <span className="rd-chip rd-chip-level">{a.hsk_level}</span>
                 )}

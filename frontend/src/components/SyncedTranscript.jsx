@@ -31,7 +31,7 @@ const HOLD_SECONDS = 0.6
    voice for this long. */
 const FOLLOW_PAUSE_MS = 6000
 
-function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTranslation, saved, onHoverWord, onLeaveWord, onSeek }) {
+function SyncedTranscript({ segments, translations, audioRef, syncWithAudio = true, showPinyin, showTranslation, readerScale = 100, saved, onHoverWord, onLeaveWord, onSeek }) {
   /* Every timed word in play order, with where it lives on the page. Built
      once per transcript, so the per-frame work is a binary search over plain
      numbers and nothing else. */
@@ -55,6 +55,7 @@ function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTr
   const lastManualScroll = useRef(0)
 
   useEffect(() => {
+    if (!syncWithAudio) return undefined
     const el = audioRef.current
     if (!el || timeline.length === 0) return undefined
 
@@ -148,7 +149,7 @@ function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTr
       el.removeEventListener('seeked', update)
       el.removeEventListener('timeupdate', update)
     }
-  }, [audioRef, timeline, segments])
+  }, [audioRef, timeline, segments, syncWithAudio])
 
   /* A re-render (pinyin switched on, a word saved) rebuilds className from
      scratch and would drop the highlight until the next word; put it back. */
@@ -183,7 +184,7 @@ function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTr
   }
 
   return (
-    <div className={'tt' + (showPinyin ? ' tt-ruby' : '')}>
+    <div className={'tt' + (showPinyin ? ' tt-ruby' : '') + (showTranslation ? ' tt-has-en' : '')} style={{ '--tt-reader-scale': readerScale / 100 }}>
       {segments.map((seg, si) => {
         const translation = seg.translation || translations?.[si]
         return <div
@@ -213,7 +214,7 @@ function SyncedTranscript({ segments, translations, audioRef, showPinyin, showTr
                     // A tap on a phone is the only "hover" it has, so the
                     // word's card opens on click as well as playing it.
                     onHoverWord(tok, e.currentTarget.getBoundingClientRect(), seg)
-                    if (timed) play(tok.start)
+                    if (syncWithAudio && timed) play(tok.start)
                   }}
                 >
                   {showPinyin && tok.pinyin && <span className="tt-py">{tok.pinyin}</span>}

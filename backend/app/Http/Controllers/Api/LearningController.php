@@ -69,6 +69,10 @@ class LearningController extends Controller
             ->orderBy('starts_at')
             ->limit(20)
             ->get()
+            // From here on the rows are shaped into plain arrays. Convert
+            // before mapping so merge() uses the base collection behavior;
+            // Eloquent's merge expects models and calls getKey() on each item.
+            ->toBase()
             ->filter(function (Booking $b) {
                 $ends = Carbon::parse($b->starts_at)
                     ->addMinutes($b->duration_minutes ?: 30);
@@ -109,6 +113,7 @@ class LearningController extends Controller
             ->whereIn('status', ['held', 'confirmed'])
             ->whereNull('hidden_at')
             ->get()
+            ->toBase()
             ->map(function (CourseEnrollment $e) {
                 $course = $e->course;
                 if (! $course) {

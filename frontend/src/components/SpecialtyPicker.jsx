@@ -34,7 +34,6 @@ export default function SpecialtyPicker({ options, value, main, onChange }) {
               aria-pressed={on}
               onClick={() => toggle(opt.key)}
             >
-              <span className="spk-mark" aria-hidden="true">{opt.emoji}</span>
               <span className="spk-text">
                 <span className="spk-label">{opt.label}</span>
                 <span className="spk-blurb">{opt.blurb}</span>

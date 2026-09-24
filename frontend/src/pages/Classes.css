@@ -384,6 +384,12 @@ form.cl-entry-action {
   text-align: center;
 }
 
+.cl-log-empty-illustration {
+  width: 150px;
+  height: auto;
+  margin-bottom: 0.1rem;
+}
+
 .cl-log-empty-title {
   margin: 0;
   font-size: 1rem;
@@ -978,6 +984,12 @@ form.cl-entry-action {
   vertical-align: top;
 }
 
+/* The status column contains a single compact badge, so it belongs on the
+   same visual centre line as the student's row rather than at the cell top. */
+.gr-table td:nth-child(2) {
+  vertical-align: middle;
+}
+
 .cl-row-end {
   text-align: right;
 }
@@ -1041,9 +1053,11 @@ form.cl-entry-action {
   gap: 1rem;
   margin-top: 1.6rem;
   padding: 1rem 1.1rem;
-  border: 1px solid #f0b3ad;
+  /* The app's own card, not a pink one: the red button is the warning, so
+     the box around it stays in the palette every other card here uses. */
+  border: 1px solid #e7e3f6;
   border-radius: 12px;
-  background: #fdf6f5;
+  background: #f9f8fe;
 }
 
 .cl-danger p {
@@ -1054,21 +1068,49 @@ form.cl-entry-action {
 
 .cl-danger-btn {
   flex: none;
-  padding: 0.5rem 1rem;
-  border: 1px solid #f0b3ad;
+  padding: calc(0.55rem - 0.076em) 1.15rem calc(0.55rem + 0.076em);
+  border: 1px solid #d93636;
   border-radius: 9px;
-  background: #fff;
-  color: #b02a2a;
+  background: #d93636;
+  color: #fff;
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(217, 54, 54, 0.28);
   cursor: pointer;
 }
 
 .cl-danger-btn:hover:not(:disabled) {
   background: #b02a2a;
   border-color: #b02a2a;
-  color: #fff;
+}
+
+.cl-danger-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* The delete confirmation pop-up: the create dialog's shell, narrower. */
+.cl-confirm {
+  width: min(400px, 100%);
+}
+
+.cl-confirm-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cl-confirm-text {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--cl-muted, #726c88);
+}
+
+.cl-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
 }
 
 /* ============ join code ============ */
@@ -1279,18 +1321,21 @@ form.cl-entry-action {
 }
 
 .cu-status-missing {
-  background: #fdecea;
-  color: #b02a2a;
+  background: transparent;
+  border: 1px solid #e8cfd3;
+  color: #95606a;
 }
 
 .cu-status-submitted {
-  background: #e6f0fb;
-  color: #2f6199;
+  background: transparent;
+  border: 1px solid #cbd9e9;
+  color: #5d7694;
 }
 
 .cu-status-graded {
-  background: #ecf8f0;
-  color: #1f7a45;
+  background: transparent;
+  border: 1px solid #cfe3d7;
+  color: #5f806c;
 }
 
 .cu-del,
@@ -1393,34 +1438,47 @@ form.cl-entry-action {
 }
 
 .gr-badge {
-  display: inline-block;
-  padding: 0.14rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  min-height: 22px;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 700;
 }
 
 .gr-missing {
-  background: #fdecea;
-  color: #b02a2a;
+  border-color: #e8cfd3;
+  color: #95606a;
 }
 
 .gr-submitted {
-  background: #e6f0fb;
-  color: #2f6199;
+  border-color: #cbd9e9;
+  color: #5d7694;
 }
 
 .gr-graded {
-  background: #ecf8f0;
-  color: #1f7a45;
+  border-color: #cfe3d7;
+  color: #5f806c;
 }
 
 .gr-late {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  box-sizing: border-box;
+  min-height: 22px;
   margin-left: 0.35rem;
-  padding: 0.14rem 0.45rem;
+  padding: 0 0.45rem;
   border-radius: 6px;
-  background: #fdeee6;
-  color: #b45b30;
+  border: 1px solid #ead9c9;
+  background: transparent;
+  color: #9b7651;
   font-size: 0.68rem;
   font-weight: 700;
 }
@@ -1431,29 +1489,40 @@ form.cl-entry-action {
 }
 
 .gr-grade {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.45rem;
-  margin-top: 0.6rem;
-  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.45fr) minmax(240px, 1.55fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
   border: 1px solid var(--cl-line);
-  border-radius: 11px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #fff;
   text-align: left;
 }
 
 .gr-grade label {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
   font-size: 0.78rem;
   font-weight: 700;
+}
+
+.gr-grade label > span {
+  min-height: 1rem;
+  line-height: 1rem;
+}
+
+.gr-editor-row td {
+  padding: 0 0.6rem 0.85rem;
+  border-bottom: 1px solid #f3f1fa;
 }
 
 .gr-grade input,
 .gr-grade textarea {
   box-sizing: border-box;
+  height: 40px;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--cl-line);
   border-radius: 8px;
@@ -1465,18 +1534,53 @@ form.cl-entry-action {
 }
 
 .gr-grade input {
-  width: 88px;
+  width: 100%;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.gr-grade input::-webkit-inner-spin-button,
+.gr-grade input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 .gr-grade textarea {
   width: 100%;
+  line-height: 1.35;
 }
 
 .gr-note {
-  margin: 0;
+  grid-column: 1 / 3;
+  margin: -0.15rem 0 0;
   font-size: 0.78rem;
   font-style: italic;
   color: var(--cl-muted);
+}
+
+.gr-note span {
+  margin-right: 0.4rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--cl-text);
+}
+
+.gr-save {
+  min-width: 116px;
+  height: 40px;
+  align-self: end;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .gr-grade {
+    grid-template-columns: 1fr;
+  }
+
+  .gr-note,
+  .gr-save {
+    grid-column: 1;
+  }
 }
 
 /* ============ student submit ============ */
@@ -1770,7 +1874,7 @@ form.cl-entry-action {
 
 .ci-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -1794,7 +1898,18 @@ form.cl-entry-action {
   color: #726c88;
 }
 
+/* A FIXED HEIGHT, and no native look. iOS Safari draws an empty
+   `datetime-local` as its own shorter control with no text to size it, so Due
+   sat lower and thinner than Points and the two boxes overlapped. One height
+   and `appearance: none` put both fields on the same line at the same size. */
 .ci-inline input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: normal;
   padding: 0.55rem 0.7rem;
   border: 1px solid #e7e3f6;
   border-radius: 10px;
@@ -1807,7 +1922,12 @@ form.cl-entry-action {
 
 .ci-late {
   flex: none;
-  padding: 0.55rem 0.85rem;
+  box-sizing: border-box;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 0.85rem;
   border: 1px solid #e7e3f6;
   border-radius: 10px;
   background: #fff;

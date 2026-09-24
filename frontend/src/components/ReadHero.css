@@ -564,10 +564,30 @@
     display: none;
   }
 
-  .rh-controls {
-    position: static;
-    justify-content: space-between;
-    margin-top: 0.4rem;
+  /* NO ARROWS ON A PHONE, and no pill: the dots alone, bare, on the CTA's
+     line at the right edge. The banner swipes (ReadHero.jsx), and a row of
+     dots already says "there is more, slide it". `--rh-dots-y` is the lift
+     that centres them on the button, measured rather than guessed. */
+  .rh-controls,
+  .rh:hover .rh-controls,
+  .rh-controls:focus-within {
+    position: absolute;
+    right: 1.35rem;
+    bottom: var(--rh-dots-y, 2.35rem);
+    margin: 0;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+
+  .rh-arrows,
+  .rh:hover .rh-arrows,
+  .rh-controls:focus-within .rh-arrows {
+    display: none;
+  }
+
+  .rh-dot {
+    background: rgba(255, 255, 255, 0.38);
   }
 }
 

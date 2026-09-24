@@ -86,20 +86,36 @@
 /* The FORMAT — article / story / fun fact — sits on the cover rather than in
    the text block, because the line beneath is the topic and level, and running
    all three together read as one long undifferentiated string. */
-.ac-format {
+.ac-badges {
   position: absolute;
   left: 10px;
   top: 10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ac-format,
+.ac-pro {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  border-radius: 7px;
+  padding: calc(4.5px - 0.076em) 8px calc(4.5px + 0.076em);
+}
+
+.ac-format {
   color: #1c1730;
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 7px;
   /* Cap-band pair: Hellix 600 sits 0.076em low; the old 4/5 split was only
      half of what it needed (measured 0.56 low). Sums to the same 9px. */
-  padding: calc(4.5px - 0.076em) 8px calc(4.5px + 0.076em);
+}
+
+.ac-pro {
+  color: #fff;
+  background: rgba(43, 38, 67, 0.94);
 }
 
 /* The Dashboard's pick-up tile is a good deal smaller than a Read shelf card,
@@ -115,9 +131,14 @@
   font-size: 3.6rem;
 }
 
-.ac-sm .ac-format {
+.ac-sm .ac-badges {
   left: 8px;
   top: 8px;
+  gap: 4px;
+}
+
+.ac-sm .ac-format,
+.ac-sm .ac-pro {
   font-size: 0.62rem;
   padding: 3px 6px 4px;
 }

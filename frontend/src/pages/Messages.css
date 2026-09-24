@@ -651,25 +651,32 @@
   color: var(--ms-muted);
 }
 
-/* ---- unsend ----
-   Hidden until the row is hovered or the button itself is focused, so a thread
-   at rest is messages and times rather than a column of Delete links. But
-   `visibility`, never `display: none`: a keyboard user has to be able to Tab
-   to it, and a display-none control is not focusable at all — so
-   :focus-within on the row is what reveals it for them.
+/* The delivery footer is one right-aligned line: time first, then its status,
+   then the quiet menu button. This keeps "Read" from drifting beside the time
+   as messages become wider or narrower. */
+.ms-row.mine .ms-time {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: flex-end;
+  gap: 0.42rem;
+}
 
-   No transition on the reveal. It is a state, not an animation, and a fade
-   that never gets a frame would leave the button invisible but clickable. */
-.ms-unsend {
-  visibility: hidden;
-  /* The label widens when armed ("Delete" 32px -> "Tap again to delete"
-     96.8px) and the button is the LAST thing on a right-aligned line, so it
-     grows leftward and its right edge does not move — verified below. That is
-     what keeps a pointer resting on "Delete" inside the armed button, so no
-     width has to be reserved here. Reserving one was tried and reverted: at
-     97px it padded every own-message timestamp with 65px of dead space to
-     push a button nobody can see out of the way. */
-  margin-left: 0.5rem;
+.ms-message-state,
+.ms-message-read {
+  white-space: nowrap;
+}
+
+.ms-message-read {
+  color: var(--ms-accent);
+}
+
+.ms-message-state-failed {
+  color: #b02a2a;
+}
+
+.ms-retry {
+  margin-left: 0.15rem;
   padding: 0;
   border: none;
   background: none;
@@ -680,28 +687,79 @@
   cursor: pointer;
 }
 
-.ms-row:hover .ms-unsend,
-.ms-row:focus-within .ms-unsend {
-  visibility: visible;
+.ms-retry:hover {
+  color: var(--ms-accent);
 }
 
-.ms-unsend:hover {
-  color: #b02a2a;
+.ms-message-actions {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 
-/* Armed. Stays visible whatever the pointer does — the row it belongs to may
-   scroll out from under the cursor between the two clicks, and a control that
-   vanished mid-decision would leave the message armed with nothing on screen
-   saying so. */
-.ms-unsend.armed {
-  visibility: visible;
+.ms-message-more {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ms-muted);
+  cursor: pointer;
+}
+
+.ms-message-more:hover,
+.ms-message-more:focus-visible {
+  background: var(--ms-soft);
+  color: var(--ms-accent);
+  outline: none;
+}
+
+.ms-message-more svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ms-message-menu {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: max-content;
+  padding: 4px;
+  border: 1px solid #e7e3f6;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(28, 23, 48, 0.14);
+}
+
+.ms-message-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.38rem 0.55rem;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
   color: #b02a2a;
+  font: inherit;
+  font-size: 0.74rem;
   font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.ms-unsend:disabled {
+.ms-message-menu button:hover,
+.ms-message-menu button:focus-visible,
+.ms-message-menu button.armed {
+  background: #fbe8e8;
+  outline: none;
+}
+
+.ms-message-menu button:disabled {
   cursor: default;
-  text-decoration: none;
 }
 
 /* ---- composer ---- */

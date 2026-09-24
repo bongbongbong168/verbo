@@ -64,9 +64,16 @@ export default function NotificationMenu() {
   useEffect(() => {
     if (!token) return
     loadCount()
-    const id = setInterval(() => loadCount(true), POLL_MS)
-    return () => clearInterval(id)
-  }, [token, loadCount])
+    const onRealtime = (event) => {
+      const unread = event.detail?.unread_notifications
+      if (typeof unread === 'number') setUnread(unread)
+      if (open && event.detail?.notifications?.length) {
+        api.getNotifications(token, { limit: PREVIEW }).then((d) => setItems(d.data || [])).catch(() => {})
+      }
+    }
+    window.addEventListener('verbo:realtime', onRealtime)
+    return () => window.removeEventListener('verbo:realtime', onRealtime)
+  }, [token, loadCount, open])
 
   /* Disarm on a timer rather than on blur: blur never fires if focus never
      landed on the button, which is exactly what happens when the pointer moves

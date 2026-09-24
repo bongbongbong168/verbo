@@ -1,6 +1,0 @@
-# The podcast transcriber. Install torch FIRST from PyTorch's own index so it
-# is the CUDA build (see README.md); a plain `pip install whisperx` pulls the
-# CPU build, which works but is many times slower.
-whisperx==3.8.6
-# Traditional -> Simplified per character, before alignment. Pure Python.
-opencc-python-reimplemented==0.1.7

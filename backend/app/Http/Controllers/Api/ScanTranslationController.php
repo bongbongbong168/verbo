@@ -4,13 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Scan;
+use App\Services\ChineseTranslationService;
+use App\Services\UsageAllowanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class ScanTranslationController extends Controller
 {
-    public function store(Request $request, Scan $scan)
+    public function store(Request $request, Scan $scan, ChineseTranslationService $translator, UsageAllowanceService $allowances)
     {
         abort_unless((int) $scan->user_id === (int) $request->user()->id, 403);
         $text = trim($scan->raw_text ?? '');
@@ -19,37 +21,29 @@ class ScanTranslationController extends Controller
         $sentences = $this->sentences($text);
         $cacheKey = 'scan-translation:v3:'.$scan->user_id.':'.$scan->id.':'.hash('sha256', $text);
         if ($pairs = Cache::get($cacheKey)) {
-            return ['pairs' => $pairs];
+            return ['pairs' => $pairs, 'usage' => $allowances->summary($request->user(), UsageAllowanceService::TRANSLATIONS)];
         }
-        $key = config('services.deepl.key');
-        abort_unless($key, 503, 'Translation is not configured yet.');
 
-        // Free endpoint only. Never retry automatically and spend quota twice.
+        $reservation = $allowances->reserve($request->user(), UsageAllowanceService::TRANSLATIONS);
+        $consumed = false;
         try {
-            $response = Http::withHeaders(['Authorization' => 'DeepL-Auth-Key '.$key])
-                ->connectTimeout(5)->timeout(30)
-                ->post('https://api-free.deepl.com/v2/translate', [
-                    // Each entry comes back in this same order, letting the
-                    // reader put the English directly below its Chinese line.
-                    'text' => $sentences,
-                    'source_lang' => 'ZH',
-                    'target_lang' => 'EN-US',
-                    'split_sentences' => 'nonewlines',
-                ]);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            abort(503, 'Translation could not connect. Please try again later.');
+            $translations = $translator->translate($sentences);
+            $pairs = collect($sentences)->values()->map(fn ($source, $index) => [
+                'source' => $source,
+                'translation' => $translations[$index],
+            ])->all();
+            Cache::put($cacheKey, $pairs, now()->addDays(30));
+            $usage = $allowances->commit($request->user(), UsageAllowanceService::TRANSLATIONS, $reservation);
+            $consumed = true;
+
+            return ['pairs' => $pairs, 'usage' => $usage];
+        } catch (\RuntimeException $e) {
+            abort(503, $e->getMessage());
+        } finally {
+            if (! $consumed) {
+                $allowances->release($request->user(), UsageAllowanceService::TRANSLATIONS, $reservation);
+            }
         }
-        abort_if($response->status() === 456, 503, 'The translation allowance has been used up. Please try again next month.');
-        abort_if($response->status() === 429, 503, 'Translation is busy. Please try again shortly.');
-        abort_unless($response->successful(), 503, 'Translation is unavailable. Please try again later.');
-        $translations = collect($response->json('translations', []))->pluck('text')->values();
-        abort_unless($translations->count() === count($sentences) && $translations->every(fn ($value) => is_string($value) && trim($value) !== ''), 503, 'No translation was returned. Please try again.');
-        $pairs = collect($sentences)->values()->map(fn ($source, $index) => [
-            'source' => $source,
-            'translation' => $translations[$index],
-        ])->all();
-        Cache::put($cacheKey, $pairs, now()->addDays(30));
-        return ['pairs' => $pairs];
     }
 
     /** Keep punctuation on its sentence, including a closing quote after it. */

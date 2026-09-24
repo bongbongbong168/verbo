@@ -171,6 +171,7 @@ class RecentViewController extends Controller
                 'title' => $thing->title,
                 'level' => $thing->level,
                 'image_url' => $thing->image_url,
+                'is_premium' => (bool) $thing->is_premium,
             ],
         ];
     }

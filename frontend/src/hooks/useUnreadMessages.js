@@ -52,13 +52,14 @@ export default function useUnreadMessages(token) {
       return undefined
     }
     load()
-    const id = setInterval(() => load(true), MESSAGES_POLL_MS)
+    const onConversationUpdated = () => load(true)
+    window.addEventListener('verbo:conversation-updated', onConversationUpdated)
     /* A backgrounded tab is throttled and its polls are wasted; coming back is
        also exactly when the count is most likely to be wrong, so re-ask then. */
     const onShow = () => document.visibilityState === 'visible' && load(true)
     document.addEventListener('visibilitychange', onShow)
     return () => {
-      clearInterval(id)
+      window.removeEventListener('verbo:conversation-updated', onConversationUpdated)
       document.removeEventListener('visibilitychange', onShow)
     }
   }, [token, load])

@@ -8,7 +8,7 @@ async function parseResponse(res) {
       ? Object.values(data.errors).flat().join(' ')
       : data?.message || 'Request failed'
 
-    if (res.status === 429) {
+    if (res.status === 429 && data?.code !== 'usage_limit_reached') {
       message = 'Too many requests. Please wait a moment and try again.'
     }
 
@@ -36,7 +36,7 @@ async function parseResponse(res) {
   return data
 }
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, cache, signal } = {}) {
   const headers = { Accept: 'application/json' }
   if (body) headers['Content-Type'] = 'application/json'
   if (token) headers['Authorization'] = `Bearer ${token}`
@@ -45,6 +45,8 @@ async function request(path, { method = 'GET', body, token } = {}) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    cache,
+    signal,
   })
 
   return parseResponse(res)
@@ -60,7 +62,7 @@ async function requestMultipart(path, formData, token) {
   return parseResponse(res)
 }
 
-function articleFormData({ title, type, category, hsk_level, body, body_en, image }) {
+function articleFormData({ title, type, category, hsk_level, body, body_en, image, is_premium }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('type', type)
@@ -74,6 +76,7 @@ function articleFormData({ title, type, category, hsk_level, body, body_en, imag
      sends transcript_en. */
   if (category !== undefined) formData.append('category', category ?? '')
   if (hsk_level !== undefined) formData.append('hsk_level', hsk_level ?? '')
+  if (is_premium !== undefined) formData.append('is_premium', is_premium ? '1' : '0')
   if (image) formData.append('image', image)
   return formData
 }
@@ -98,7 +101,7 @@ function studyLevelFormData({
   return formData
 }
 
-function podcastFormData({ title, transcript, transcriptEn, level, category, host, bio, audio, image }) {
+function podcastFormData({ title, transcript, transcriptEn, level, category, host, bio, isPremium, audio, image }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('transcript', transcript ?? '')
@@ -111,6 +114,7 @@ function podcastFormData({ title, transcript, transcriptEn, level, category, hos
   if (category !== undefined) formData.append('category', category ?? '')
   if (host !== undefined) formData.append('host', host ?? '')
   if (bio) formData.append('bio', bio)
+  if (isPremium !== undefined) formData.append('is_premium', isPremium ? '1' : '0')
   if (audio) formData.append('audio', audio)
   if (image) formData.append('image', image)
   return formData
@@ -199,7 +203,10 @@ export const api = {
     request(`/flashcards/${id}/grade`, { method: 'POST', body: { correct }, token }),
   addFlashcard: (token, flashcard) =>
     request('/flashcards', { method: 'POST', body: flashcard, token }),
+  translateSentence: (token, text) =>
+    request('/sentences/translate', { method: 'POST', body: { text }, token }),
   deleteFlashcard: (token, id) => request(`/flashcards/${id}`, { method: 'DELETE', token }),
+  deleteAllFlashcards: (token) => request('/flashcards', { method: 'DELETE', token }),
   /* Sentences using this word, found across the learner's own articles,
      podcasts, lessons and scans. Fetched only when a word is opened — it runs
      four LIKE scans, so doing it for a whole page of the bank would be most of
@@ -207,6 +214,7 @@ export const api = {
   getFlashcardExamples: (token, id, limit = 3) =>
     request(`/flashcards/${id}/examples?limit=${limit}`, { token }),
   getScans: (token) => request('/scans', { token }),
+  getUsageAllowances: (token) => request('/usage/allowances', { token }),
   getScan: (token, id) => request(`/scans/${id}`, { token }),
   translateScan: (token, id) => request(`/scans/${id}/translation`, { method: 'POST', token }),
   deleteScan: (token, id) => request(`/scans/${id}`, { method: 'DELETE', token }),
@@ -250,11 +258,12 @@ export const api = {
         // Mirror parseResponse: keep the status on the error so a 429 or a
         // 5xx cannot be mistaken for an auth failure and end the session.
         const message =
-          xhr.status === 429
+          xhr.status === 429 && body?.code !== 'usage_limit_reached'
             ? 'Too many requests. Please wait a moment and try again.'
             : body?.message || `Request failed with status ${xhr.status}`
         const error = new Error(message)
         error.status = xhr.status
+        error.data = body
         reject(error)
       }
 
@@ -263,6 +272,7 @@ export const api = {
     }),
   getArticles: (token) => request('/articles', { token }),
   getArticle: (token, id) => request(`/articles/${id}`, { token }),
+  translateArticle: (token, id) => request(`/articles/${id}/translation`, { method: 'POST', token }),
   createArticle: (token, article) => requestMultipart('/articles', articleFormData(article), token),
   updateArticle: (token, id, article) => {
     const formData = articleFormData(article)
@@ -379,6 +389,9 @@ export const api = {
   saveLearningPreferences: (token, prefs) =>
     request('/learning-preferences', { method: 'POST', body: prefs, token }),
   getTutors: (token) => request('/tutors', { token }),
+  toggleTutorSave: (token, id) => request(`/tutors/${id}/save`, { method: 'POST', token }),
+  togglePodcastSave: (token, id) => request(`/podcasts/${id}/save`, { method: 'POST', token }),
+  getSavedLibrary: (token) => request('/saved-library', { token }),
   getTutor: (token, id) => request(`/tutors/${id}`, { token }),
   /* Returns {profile, options} — NOT the profile itself. `profile` is null for
      someone who has never applied, which is a different fact from a rejected
@@ -431,15 +444,16 @@ export const api = {
   updateTutorProfile: (token, profileId, fields) => {
     const formData = new FormData()
     Object.entries(fields).forEach(([key, value]) => {
-      if (value != null) formData.append(key, value)
+      if (Array.isArray(value)) value.forEach((item) => formData.append(`${key}[]`, item))
+      else if (value != null) formData.append(key, value)
     })
     return requestMultipart(`/tutors/${profileId}/profile`, formData, token)
   },
   // JSON, so an empty list can clear them - see TutorController::updateSpecialties.
-  updateTutorSpecialties: (token, profileId, specialties, main) =>
+  updateTutorSpecialties: (token, profileId, fields) =>
     request(`/tutors/${profileId}/specialties`, {
       method: 'PUT',
-      body: { specialties, main_specialty: main },
+      body: fields,
       token,
     }),
   saveTutorProfile: (
@@ -485,16 +499,26 @@ export const api = {
   getConversations: (token) => request('/conversations', { token }),
   // Drives the dot on the top-right Messages button. Returns { unread: n }.
   getUnreadMessages: (token) => request('/conversations/unread', { token }),
+  pollRealtime: (token, { afterNotificationId = 0, bootstrap = false, signal } = {}) =>
+    request(`/realtime/poll?after_notification_id=${afterNotificationId}&bootstrap=${bootstrap ? 1 : 0}`, {
+      token,
+      /* A long-poll response is state at a particular moment. Letting a
+         browser, proxy or service worker reuse it would make a new message
+         look like a quiet connection, so this request must never be cached. */
+      cache: 'no-store',
+      signal,
+    }),
   getConversation: (token, id) => request(`/conversations/${id}`, { token }),
   // No `getUnreadCount()`: the unread badge is driven by the notification
   // bell's own poll, so nothing ever asked conversations for a count.
   // `GET /conversations/unread` is still routed if that changes.
   // Multipart, because a message can carry a file. Body or file — a picture on
   // its own is a perfectly good message.
-  sendMessage: (token, id, body, file) => {
+  sendMessage: (token, id, body, file, clientId) => {
     const formData = new FormData()
     if (body) formData.append('body', body)
     if (file) formData.append('file', file)
+    if (clientId) formData.append('client_id', clientId)
     return requestMultipart(`/conversations/${id}/messages`, formData, token)
   },
   /* Attachments live on the private disk and stream through an authorised
@@ -638,7 +662,6 @@ export const api = {
   getStudyLevel: (token, id) => request(`/study-levels/${id}`, { token }),
   // The viewer's own "finished this lesson" mark.
   completeStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'POST', token }),
-  uncompleteStudyUnit: (token, id) => request(`/study-units/${id}/complete`, { method: 'DELETE', token }),
   /* Today's quests. The Dashboard already gets them inside /learning-plan;
      these are the two ways a learner steers one — swap it for another in the
      SAME area, or move its target between easy / normal / hard. Both return

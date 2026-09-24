@@ -25,6 +25,31 @@ export default function Register() {
     e.preventDefault()
     setError(null)
 
+    if (!email.trim()) {
+      setError('Enter your email address.')
+      return
+    }
+
+    if (!name.trim()) {
+      setError('Choose a username.')
+      return
+    }
+
+    if (!password) {
+      setError('Create a password.')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('Your password needs at least 8 characters.')
+      return
+    }
+
+    if (!confirmPassword) {
+      setError('Type your password again to confirm it.')
+      return
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
@@ -64,7 +89,7 @@ export default function Register() {
         <div className="su-form-wrap">
           <h2 className="su-heading">Sign up</h2>
 
-          <form onSubmit={handleSubmit}>
+          <form noValidate onSubmit={handleSubmit}>
             <label className="su-label" htmlFor="su-email">
               Email
             </label>
@@ -139,7 +164,7 @@ export default function Register() {
               </button>
             </div>
 
-            {error && <p className="su-error">{error}</p>}
+            {error && <p className="su-error" role="alert">{error}</p>}
 
             <button type="submit" className="su-submit-btn" disabled={submitting}>
               {submitting ? 'Creating account...' : 'Sign up'}

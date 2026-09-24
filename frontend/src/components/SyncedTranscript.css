@@ -6,13 +6,19 @@
 .tt {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  /* Chinese-only transcript lines should read as a compact passage. English
+     translations get their own slightly larger unit gap below. */
+  gap: 0.45rem;
+}
+
+.tt.tt-has-en {
+  gap: 0.75rem;
 }
 
 /* One sentence per row. No timestamp gutter: the line itself is what you
    click to jump, so a column of times was only taking width. */
 .tt-seg {
-  padding: 0.35rem 0.8rem;
+  padding: 0.15rem 0.8rem;
   /* Cancelled by an equal negative margin, so the Chinese starts on the same
      edge as the switches and hint above it and only the current line's tint
      reaches out past it. */
@@ -32,9 +38,9 @@
   white-space: pre-wrap;
   overflow-wrap: break-word;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  font-size: 1.3rem;
+  font-size: calc(1.3rem * var(--tt-reader-scale, 1));
   font-weight: 400;
-  line-height: 2;
+  line-height: 1.6;
   letter-spacing: 0.25em;
   color: #1c1730;
 }
@@ -131,8 +137,8 @@
 }
 
 .tt-en {
-  margin: 0.1rem 0 0.2rem;
-  font-size: 0.88rem;
+  margin: 0.32rem 0 0;
+  font-size: calc(0.88rem * var(--tt-reader-scale, 1));
   line-height: 1.5;
   color: #726c88;
 }
@@ -144,7 +150,7 @@
   }
 
   .tt-line {
-    font-size: 1.08rem;
+    font-size: calc(1.08rem * var(--tt-reader-scale, 1));
     letter-spacing: 0.1em;
   }
 

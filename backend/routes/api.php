@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\ArticleTranslationController;
 use App\Http\Controllers\Api\LearningPlanController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -25,9 +26,11 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ScanController;
+use App\Http\Controllers\Api\SentenceTranslationController;
 use App\Http\Controllers\Api\StudyGrammarPointController;
 use App\Http\Controllers\Api\StudyLevelController;
 use App\Http\Controllers\Api\RecentViewController;
+use App\Http\Controllers\Api\RealtimeController;
 use App\Http\Controllers\Api\StudyQuizQuestionController;
 use App\Http\Controllers\Api\StudyTextController;
 use App\Http\Controllers\Api\StudyUnitCompletionController;
@@ -39,6 +42,8 @@ use App\Http\Controllers\Api\TutorController;
 use App\Http\Controllers\Api\TutorLessonController;
 use App\Http\Controllers\Api\TutorResumeEntryController;
 use App\Http\Controllers\Api\TutorReviewController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -73,8 +78,11 @@ Route::middleware('throttle:auth')->group(function () {
 // the response deliberately carries no owner information.
 Route::get('/shared/scans/{token}', [ScanController::class, 'shared']);
 
-// Public so <audio src> can reach it — see PodcastController::audio.
-Route::get('/podcasts/{podcast}/audio', [PodcastController::class, 'audio']);
+// Free audio remains public. Premium audio requires the short-lived signed URL
+// issued by PodcastController::show, because an <audio src> cannot attach the
+// listener's Sanctum bearer token.
+Route::get('/podcasts/{podcast}/audio', [PodcastController::class, 'audio'])
+    ->name('podcasts.audio');
 
 /* Stripe's webhook. Necessarily outside auth:sanctum — Stripe holds no token —
    so the SIGNATURE is the authentication, verified in the controller against
@@ -100,6 +108,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
 
+    // The browser asks Laravel to sign each private Pusher subscription with
+    // its existing Sanctum bearer token. Keeping it in the API group gives the
+    // request the same CORS policy as every other frontend API call.
+    Route::post('/broadcasting/auth', function (Request $request) {
+        return Broadcast::auth($request);
+    });
+
     // Settings page.
     Route::put('/user/profile', [ProfileController::class, 'update']);
     // Stamps users.onboarded_at. Called once at the end of the onboarding
@@ -123,14 +138,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/overview', [ProfileController::class, 'overview']);
 
     Route::get('/flashcards', [FlashcardController::class, 'index']);
+    Route::get('/usage/allowances', [\App\Http\Controllers\Api\UsageAllowanceController::class, 'index']);
     // Both must be declared BEFORE any `/flashcards/{flashcard}` route, or
     // "stats" and "review" bind as ids — the same trap `bookings/clear-past`,
     // `notifications/read-all` and `articles/recommended` hit.
     Route::get('/flashcards/stats', [FlashcardController::class, 'stats']);
     Route::get('/flashcards/review', [FlashcardController::class, 'review']);
     Route::post('/flashcards', [FlashcardController::class, 'store']);
+    Route::post('/sentences/translate', [SentenceTranslationController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/flashcards/{flashcard}/grade', [FlashcardController::class, 'grade']);
     Route::get('/flashcards/{flashcard}/examples', [FlashcardController::class, 'examples']);
+    Route::delete('/flashcards', [FlashcardController::class, 'destroyAll']);
     Route::delete('/flashcards/{flashcard}', [FlashcardController::class, 'destroy']);
 
     Route::get('/scans', [ScanController::class, 'index']);
@@ -148,6 +166,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Same rule: before /articles/{article}, or it binds as an id.
     Route::get('/articles/highlights', [ArticleController::class, 'highlights']);
     Route::get('/articles/{article}', [ArticleController::class, 'show']);
+    Route::post('/articles/{article}/translation', [ArticleTranslationController::class, 'store'])->middleware('throttle:10,1');
 
     /* Reader interactions. Each toggle returns the article's fresh counts plus
        this viewer's own state, so the buttons never have to guess. */
@@ -171,6 +190,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 
     Route::get('/tutors', [TutorController::class, 'index']);
+    Route::post('/tutors/{tutorProfile}/save', [\App\Http\Controllers\Api\SavedLibraryController::class, 'toggleTutor']);
     Route::get('/tutor-profile', [TutorController::class, 'show']);
     Route::post('/tutor-profile', [TutorController::class, 'store']);
 
@@ -226,6 +246,7 @@ Route::middleware('auth:sanctum')->group(function () {
        endpoint and no user directory to search. */
     Route::get('/conversations', [ConversationController::class, 'index']);
     Route::get('/conversations/unread', [ConversationController::class, 'unreadCount']);
+    Route::get('/realtime/poll', [RealtimeController::class, 'poll']);
     Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
     Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send']);
     Route::get('/messages/{message}/attachment', [ConversationController::class, 'attachment']);
@@ -251,6 +272,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutors/{tutorProfile}/slots', [TutorAvailabilityController::class, 'slots']);
 
     Route::get('/podcasts', [PodcastController::class, 'index']);
+    Route::post('/podcasts/{podcast}/save', [\App\Http\Controllers\Api\SavedLibraryController::class, 'togglePodcast']);
+    Route::get('/saved-library', [\App\Http\Controllers\Api\SavedLibraryController::class, 'index']);
     /* BEFORE `/podcasts/{podcast}`, or "continue" binds as an id — the same
        trap `bookings/clear-past`, `notifications/read-all`, `classes/join` and
        `articles/recommended` each hit. */
@@ -283,7 +306,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/study-units/{studyUnit}', [StudyUnitController::class, 'show']);
     // The viewer's own "finished this lesson" mark.
     Route::post('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'store']);
-    Route::delete('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'destroy']);
     Route::put('/study-units/{studyUnit}', [StudyUnitController::class, 'update']);
     Route::delete('/study-units/{studyUnit}', [StudyUnitController::class, 'destroy']);
     Route::post('/study-units/{studyUnit}/culture-images', [StudyUnitController::class, 'storeCultureImage']);

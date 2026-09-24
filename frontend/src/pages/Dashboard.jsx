@@ -5,11 +5,11 @@ import { api } from '../api'
 import { useApiData } from '../useApiData'
 import { invalidate } from '../dataCache'
 import Skeleton, { SkeletonCards } from '../components/Skeleton'
-import ArticleCover from '../components/ArticleCover'
+import ArticleCover, { TYPE_LABELS } from '../components/ArticleCover'
 import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
 import MenuDotsIcon from '../components/MenuDotsIcon'
-import TutorCover from '../components/TutorCover'
+import TutorMedia from '../components/TutorMedia'
 import questBook from '../assets/quests/book.webp'
 import questBookClosed from '../assets/quests/book-closed.webp'
 import questBookmark from '../assets/quests/bookmark.webp'
@@ -22,6 +22,7 @@ import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import FlameMark from '../components/FlameMark'
 import './Dashboard.css'
 import ShelfRail from '../components/ShelfRail'
+import SaveHeartButton from '../components/SaveHeartButton'
 
 /* The design's Top Reads filter is four content categories that do not exist in
    the data. `articles.type` is the real dimension, so the pills are built from
@@ -115,26 +116,81 @@ const READ_FILTERS = [
    Everything below is in the design but has no backend behind it. Grouped and
    named so it is obvious at a glance which parts of this page are real data
    and which are holding the layout:
-     - podcasts have no duration or author column
+     - podcasts have no author column
      - tutors have no lesson count or rating
    (Two former residents have moved out: the activity chart is real data now —
    see ActivityController and useActivityHeartbeat — and so is My Learning,
    which reads real bookings and course enrolments through LearningController.)
    --------------------------------------------------------------------------- */
 const PLACEHOLDER_PODCAST = {
-  duration: '8mins',
   author: 'Chen Mingyue',
   language: 'Chinese｜Mandarin',
 }
 const PLACEHOLDER_TEACHER = { lessons: '275', rating: '4.9' }
 
-function tutorLanguages(value) {
-  const languages = String(value || 'Chinese (Mandarin)')
+const PODCAST_DURATION_FALLBACK = 8
+const podcastDurationCache = new Map()
+
+/* The list endpoint already includes the streaming URL. Reading that file's
+   metadata gives the real duration without downloading the full recording.
+   Cache the promise as well as the result because the same episode can appear
+   in both Pick up and Podcasts at once. */
+function podcastMinutes(audioUrl) {
+  if (!audioUrl) return Promise.resolve(PODCAST_DURATION_FALLBACK)
+  if (podcastDurationCache.has(audioUrl)) {
+    return Promise.resolve(podcastDurationCache.get(audioUrl))
+  }
+
+  const request = new Promise((resolve) => {
+    const audio = new Audio()
+
+    const finish = (minutes) => {
+      audio.removeEventListener('loadedmetadata', loaded)
+      audio.removeEventListener('error', failed)
+      resolve(minutes)
+    }
+    const loaded = () => {
+      const seconds = Number(audio.duration)
+      finish(Number.isFinite(seconds) && seconds > 0
+        ? Math.max(1, Math.floor(seconds / 60))
+        : PODCAST_DURATION_FALLBACK)
+    }
+    const failed = () => finish(PODCAST_DURATION_FALLBACK)
+
+    audio.preload = 'metadata'
+    audio.addEventListener('loadedmetadata', loaded)
+    audio.addEventListener('error', failed)
+    audio.src = audioUrl
+  })
+
+  podcastDurationCache.set(audioUrl, request)
+  request.then((minutes) => podcastDurationCache.set(audioUrl, minutes))
+  return request
+}
+
+function PodcastDuration({ audioUrl }) {
+  const [minutes, setMinutes] = useState(PODCAST_DURATION_FALLBACK)
+
+  useEffect(() => {
+    let active = true
+    setMinutes(PODCAST_DURATION_FALLBACK)
+    podcastMinutes(audioUrl).then((value) => {
+      if (active) setMinutes(value)
+    })
+    return () => { active = false }
+  }, [audioUrl])
+
+  return `${minutes}min${minutes === 1 ? '' : 's'}`
+}
+
+function tutorLanguages(tutor) {
+  if (tutor.teaching_languages?.length) return tutor.teaching_languages.join(' · ')
+  const languages = String(tutor.languages_spoken || 'Mandarin')
     .split(',')
-    .map((language) => language.trim())
+    .map((language) => language.trim().replace(/\s*\([^)]*\)\s*/g, ''))
     .filter(Boolean)
 
-  return languages.slice(1).join(', ')
+  return languages.join(' · ')
 }
 
 function TutorSpecialtyRotator({ specialties }) {
@@ -224,6 +280,15 @@ function PlayIcon() {
   )
 }
 
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" rx="2" />
+      <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
+    </svg>
+  )
+}
+
 function CalendarIcon() {
   return (
     <svg
@@ -254,11 +319,9 @@ function StarMark() {
 function VerifiedIcon() {
   return (
     <svg className="db-verified" viewBox="0 0 24 24" aria-label="Verified" role="img">
-      {/* The app's accent, not a red tick: Verbo owns lavender plus one warm
-          accent, and a third hue for a badge would be a colour family minted
-          for one 13px mark. The reference draws it purple too. */}
+      {/* Red, at the user's request (it was the lavender accent). */}
       <path
-        fill="#6a6191"
+        fill="#e5484d"
         d="M12.00 1.00 L9.64 3.21 L6.50 2.47 L5.57 5.57 L2.47 6.50 L3.21 9.64 L1.00 12.00 L3.21 14.36 L2.47 17.50 L5.57 18.43 L6.50 21.53 L9.64 20.79 L12.00 23.00 L14.36 20.79 L17.50 21.53 L18.43 18.43 L21.53 17.50 L20.79 14.36 L23.00 12.00 L20.79 9.64 L21.53 6.50 L18.43 5.57 L17.50 2.47 L14.36 3.21 Z"
       />
       <path
@@ -350,7 +413,7 @@ function QuestMark({ quest }) {
      drawing exists — every mark in the catalogue has art today. */
   return (
     <span className="db-goal-mark">
-      {art ? <img src={art} alt="" /> : GOAL_MARKS[quest.mark] ? <GoalMark type={quest.mark} /> : null}
+      {art ? <img src={art} alt="" className={`db-goal-art-${quest.mark}`} /> : GOAL_MARKS[quest.mark] ? <GoalMark type={quest.mark} /> : null}
     </span>
   )
 }
@@ -589,19 +652,23 @@ function SectionHead({ title, to }) {
 /* The podcast tile used in both "Pick up where you left off" and "Podcasts":
    cover with a duration badge and a centred play button, then the meta stack. */
 function PodcastCard({ podcast }) {
+  const { token } = useAuth()
   return (
     <Link className="db-pod" to={`/podcast/${podcast.id}`}>
       <span className="db-pod-cover">
         {podcast.image_url && <img src={podcast.image_url} alt="" />}
-        <span className="db-pod-duration">{PLACEHOLDER_PODCAST.duration}</span>
+        <span className="db-pod-duration">
+          {podcast.is_premium ? 'Pro' : <PodcastDuration audioUrl={podcast.audio_url} />}
+        </span>
         <span className="db-pod-play">
-          <PlayIcon />
+          {podcast.premium_locked ? <LockIcon /> : <PlayIcon />}
         </span>
       </span>
       <span className="db-pod-level">{podcast.level || 'Beginner'}</span>
       <span className="db-pod-title">{podcast.title}</span>
       <span className="db-pod-author">{PLACEHOLDER_PODCAST.author}</span>
       <span className="db-pod-lang">{PLACEHOLDER_PODCAST.language}</span>
+      <SaveHeartButton saved={!!podcast.saved} label={podcast.title} onToggle={() => api.togglePodcastSave(token, podcast.id)} />
     </Link>
   )
 }
@@ -620,6 +687,7 @@ function PodcastCard({ podcast }) {
  * that figure is a placeholder on the podcast card, and copying a placeholder
  * onto a new card is how a stand-in turns into a fact. */
 function ReadCard({ article }) {
+  const { token } = useAuth()
   return (
     <Link className="db-read-tile" to={`/read/${article.id}`}>
       <ArticleCover article={article} small />
@@ -628,6 +696,7 @@ function ReadCard({ article }) {
       </span>
       <span className="db-read-tile-title">{article.title}</span>
       <span className="db-read-tile-time">{article.reading_minutes || 1} min read</span>
+      <SaveHeartButton saved={!!article.bookmarked} label={article.title} onToggle={() => api.toggleArticleBookmark(token, article.id).then((state) => ({ saved: state.bookmarked }))} />
     </Link>
   )
 }
@@ -812,7 +881,12 @@ export default function Dashboard() {
         }
       } else if (row.kind === 'podcast' && row.podcast) {
         const key = `p${row.podcast.id}`
-        tiles.push({ kind: 'podcast', key, podcast: row.podcast })
+        const listed = podcasts.find((podcast) => Number(podcast.id) === Number(row.podcast.id))
+        tiles.push({
+          kind: 'podcast',
+          key,
+          podcast: listed ? { ...row.podcast, ...listed } : row.podcast,
+        })
         seen.add(key)
         fromHistory++
       } else if (row.kind === 'article' && row.article) {
@@ -1117,7 +1191,7 @@ export default function Dashboard() {
             ) : (
               <div className="db-grid3">
                 {tutors.map((t) => {
-                  const alsoSpeaks = tutorLanguages(t.languages_spoken)
+                  const alsoSpeaks = tutorLanguages(t)
 
                   return (
                   <Link className="db-teacher" key={t.id} to={`/find-tutor/${t.id}`}>
@@ -1134,16 +1208,14 @@ export default function Dashboard() {
                         which is the exact thing the profile page's "Teacher you
                         may like" strip deleted for the same reason.
 
-                        Shared with that strip — see `TutorCover` for why it was
+                        Shared with the tutor profile through `TutorMedia`, so
                         pulled out. A tutor with no photo gets a generated cover
                         rather than a plain grey block: a tone and the initial,
                         oversized as texture rather than as something to
                         read. */}
-                    <TutorCover
+                    <TutorMedia
                       className="db-teacher-cover"
-                      id={t.id}
-                      photoUrl={t.photo_url}
-                      name={t.user.name}
+                      tutor={t}
                     />
                     <span className="db-teacher-name">
                       <span className="db-teacher-name-text">{t.user.name}</span>
@@ -1171,7 +1243,7 @@ export default function Dashboard() {
                     <span className="db-teacher-languages">
                       {alsoSpeaks && (
                         <span>
-                          <em>Speaks</em>
+                          <em>Teaches in</em>
                           <strong>{alsoSpeaks}</strong>
                         </span>
                       )}
@@ -1188,9 +1260,11 @@ export default function Dashboard() {
                     {t.specialty_list?.length > 0 && (
                       <TutorSpecialtyRotator specialties={t.specialty_list} />
                     )}
+                    {/* Price hidden on trial, at the user's request, to see
+                        the card without it. Restore by uncommenting.
                     {t.cheapest_lesson != null && (
                       <span className="db-teacher-price">From ${t.cheapest_lesson}</span>
-                    )}
+                    )} */}
                     {/* A SPAN, not a button: the whole card is already the link
                         to this profile, and a button inside an anchor is a
                         nested interactive control — the same call the Daily Use
@@ -1198,6 +1272,7 @@ export default function Dashboard() {
                     {/* The label alone — the chevron came off at the user's
                         request, the same call the quiz's Back and Skip made. */}
                     <span className="db-teacher-cta">View Profile</span>
+                    <SaveHeartButton saved={!!t.saved} label={t.user.name} onToggle={() => api.toggleTutorSave(token, t.id)} />
                   </Link>
                   )
                 })}
@@ -1260,16 +1335,42 @@ export default function Dashboard() {
                     : 'No reads match that filter.'}
                 </p>
               ) : (
+                /* Cover left, topic, title, then level and reading time, with
+                   the save button pinned right — built to the user's supplied
+                   reference. The excerpt came off: the reading is on the
+                   article's page. The button sits OUTSIDE the link, a sibling
+                   in `.db-read-wrap`, since a button inside an anchor is a
+                   nested interactive control. */
                 visibleReads.map((a) => (
-                  <Link className="db-read" key={a.id} to={`/read/${a.id}`}>
-                    <span className="db-read-body">
-                      <span className="db-read-title">{a.title}</span>
-                      <span className="db-read-excerpt">{a.excerpt}</span>
-                    </span>
-                    <span className="db-read-thumb">
-                      {a.image_url && <img src={a.image_url} alt="" />}
-                    </span>
-                  </Link>
+                  <div className="db-read-wrap" key={a.id}>
+                    <Link className="db-read" to={`/read/${a.id}`}>
+                      <span className="db-read-thumb">
+                        <ArticleCover article={a} small />
+                      </span>
+                      <span className="db-read-body">
+                        {(a.category || a.type) && (
+                          <span className="db-read-eyebrow">
+                            {a.category || TYPE_LABELS[a.type] || a.type}
+                          </span>
+                        )}
+                        <span className="db-read-title">{a.title}</span>
+                        <span className="db-read-meta">
+                          {[a.hsk_level, `${a.reading_minutes || 1} min read`]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </span>
+                    </Link>
+                    <SaveHeartButton
+                      saved={!!a.bookmarked}
+                      label={a.title}
+                      onToggle={async () => {
+                        const r = await api.toggleArticleBookmark(token, a.id)
+                        invalidate('articles')
+                        return { saved: !!r.bookmarked }
+                      }}
+                    />
+                  </div>
                 ))
               )}
             </div>

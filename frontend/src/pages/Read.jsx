@@ -11,6 +11,7 @@ import { BookmarkIcon } from "../components/ArticleIcons";
 import ArticleCover from "../components/ArticleCover";
 import ReadHero from "../components/ReadHero";
 import Skeleton, { SkeletonCards } from "../components/Skeleton";
+import SaveHeartButton from "../components/SaveHeartButton";
 import "./Read.css";
 
 /* Stable identity for an absent list, so dependent `useMemo`s do not re-run on
@@ -73,7 +74,10 @@ function ChevronIcon() {
    lines of body text per card is what made the old grid a wall. The reading is
    on the article's own page. */
 function ArticleCard({ a }) {
+  const { token } = useAuth();
+  const [saved, setSaved] = useState(!!a.bookmarked);
   return (
+    <div className="rd-tile-wrap">
     <Link className="rd-tile" to={`/read/${a.id}`}>
       <ArticleCover article={a} />
       <div className="rd-tile-body">
@@ -84,6 +88,12 @@ function ArticleCard({ a }) {
         <p className="rd-tile-time">{a.reading_minutes || 1} min read</p>
       </div>
     </Link>
+    <SaveHeartButton
+      saved={saved}
+      label={a.title}
+      onToggle={async () => setSaved((await api.toggleArticleBookmark(token, a.id)).bookmarked)}
+    />
+    </div>
   );
 }
 

@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\TutorProfile;
+use App\Models\SavedItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use App\Rules\NoUnsafeLinks;
+use App\Support\YouTubeVideo;
+use Illuminate\Validation\ValidationException;
 
 class TutorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // The aggregates ride along in the same query. Cards on the Dashboard
         // and Find Tutor both show a rating, and fetching it per card would be
@@ -20,6 +23,8 @@ class TutorController extends Controller
         /* APPROVED ONLY, and via a scope so no listing can forget it — an
            unreviewed applicant appearing here is the exact failure this
            feature exists to prevent. */
+        $saved = SavedItem::where('user_id', $request->user()->id)->where('kind', 'tutor')->pluck('item_id')->all();
+
         return TutorProfile::approved()
             ->with('user:id,name,email')
             ->withCount('reviews')
@@ -27,7 +32,7 @@ class TutorController extends Controller
             ->withMin(['lessons as cheapest_lesson' => fn ($q) => $q->bookablePriced()], 'price')
             ->latest()
             ->get()
-            ->map(function ($profile) {
+            ->map(function ($profile) use ($saved) {
                 // withAvg returns a raw float (or null); round it here so the
                 // same tutor cannot read 4.67 on a card and 4.7 on their
                 // profile. Null means unrated, which the UI shows as "New" —
@@ -41,6 +46,7 @@ class TutorController extends Controller
                    drifts from what the validator accepts. Costs no query — the
                    keys are already on the row. */
                 $profile->setAttribute('specialty_list', $profile->specialtyList());
+                $profile->setAttribute('saved', in_array($profile->id, $saved));
 
                 return $profile;
             });
@@ -80,6 +86,7 @@ class TutorController extends Controller
                 'chinese_levels' => TutorProfile::CHINESE_LEVELS,
                 'teaches_levels' => TutorProfile::TEACHES_LEVELS,
                 'specialties' => TutorProfile::specialtyOptions(),
+                'teaching_languages' => TutorProfile::TEACHING_LANGUAGES,
             ],
         ];
     }
@@ -96,6 +103,67 @@ class TutorController extends Controller
             'specialties.*' => ['distinct', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
             'main_specialty' => ['nullable', 'string', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
         ];
+    }
+
+    /** The student-facing fit fields are lists, so a learner can filter an
+     * HSK tutor separately from someone who merely happens to speak English. */
+    private static function tutorFitRules(bool $required): array
+    {
+        return [
+            'teaches_levels' => [$required ? 'required' : 'nullable', 'array', $required ? 'min:1' : 'min:0', 'max:4'],
+            'teaches_levels.*' => ['distinct', Rule::in(array_merge(TutorProfile::TEACHES_LEVELS, ['HSK preparation']))],
+            'teaching_languages' => [$required ? 'required' : 'nullable', 'array', $required ? 'min:1' : 'min:0', 'max:'.count(TutorProfile::TEACHING_LANGUAGES)],
+            'teaching_languages.*' => ['distinct', Rule::in(TutorProfile::TEACHING_LANGUAGES)],
+        ];
+    }
+
+    private static function settleTutorFit(array $data): array
+    {
+        if (array_key_exists('teaches_levels', $data)) {
+            $data['teaches_levels'] = array_values(array_unique(array_map(
+                fn ($level) => $level === 'HSK preparation' ? 'Intermediate' : $level,
+                $data['teaches_levels'] ?? [],
+            )));
+        }
+
+        if (array_key_exists('teaching_languages', $data)) {
+            $data['teaching_languages'] = array_values(array_unique($data['teaching_languages'] ?? []));
+            // Preserve the former column as a readable fallback for older
+            // clients and imported records. It no longer drives public cards.
+            $data['languages_spoken'] = implode(', ', $data['teaching_languages']);
+        }
+
+        return $data;
+    }
+
+    /** Normalize the one supported intro-video provider into a stable ID. */
+    private static function settleIntroVideo(array $data): array
+    {
+        if (! array_key_exists('video_url', $data)) {
+            return $data;
+        }
+
+        $url = trim((string) $data['video_url']);
+
+        if ($url === '') {
+            $data['video_url'] = null;
+            $data['video_id'] = null;
+
+            return $data;
+        }
+
+        $videoId = YouTubeVideo::idFromUrl($url);
+
+        if (! $videoId) {
+            throw ValidationException::withMessages([
+                'video_url' => 'Enter a valid public or unlisted YouTube video link.',
+            ]);
+        }
+
+        $data['video_id'] = $videoId;
+        $data['video_url'] = YouTubeVideo::watchUrl($videoId);
+
+        return $data;
     }
 
     /**
@@ -187,6 +255,8 @@ class TutorController extends Controller
             // For the edit drawer, which may be opened by an admin editing
             // someone else and so cannot rely on GET /tutor-profile.
             'specialty_options' => TutorProfile::specialtyOptions(),
+            'teaches_level_options' => TutorProfile::TEACHES_LEVELS,
+            'teaching_language_options' => TutorProfile::TEACHING_LANGUAGES,
             'review_count' => $count,
             'review_average' => $count ? round($tutorProfile->reviews->avg('rating'), 1) : null,
             'trial_used' => $trialUsed,
@@ -214,25 +284,26 @@ class TutorController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'bio' => ['required', 'string', 'min:40', new NoUnsafeLinks],
+            'bio' => ['required', 'string', 'min:40', 'max:800', new NoUnsafeLinks],
+            'short_bio' => ['nullable', 'string', 'max:180', new NoUnsafeLinks],
             'subjects' => ['required', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
-            'languages_spoken' => ['required', 'string', 'max:255'],
+            'languages_spoken' => ['nullable', 'string', 'max:255'],
             'availability' => ['nullable', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'max:10240'],
             'country' => ['required', 'string', 'max:80'],
             'chinese_level' => ['required', 'string', Rule::in(TutorProfile::CHINESE_LEVELS)],
-            'teaches_levels' => ['required', 'array', 'min:1'],
-            'teaches_levels.*' => [Rule::in(TutorProfile::TEACHES_LEVELS)],
             'years_experience' => ['required', 'integer', 'min:0', 'max:70'],
             'teaching_style' => ['nullable', 'string', 'max:2000', new NoUnsafeLinks],
             // The bio and the intro video are the two fields on a public
             // profile a visitor might follow. One rule covers both: it pulls
             // URLs out of free text, so a plain URL field needs nothing extra.
-            'video_url' => ['nullable', 'url', 'max:500', new NoUnsafeLinks],
-        ] + self::specialtyRules(true));
+            'video_url' => ['nullable', 'string', 'max:500', new NoUnsafeLinks],
+        ] + self::specialtyRules(true) + self::tutorFitRules(true));
 
         $data = self::settleMainSpecialty($data);
+        $data = self::settleTutorFit($data);
+        $data = self::settleIntroVideo($data);
 
         /* Queried, not read off `$request->user()->tutorProfile`. That is a
            cached relation: once something has touched it earlier in the same
@@ -326,17 +397,29 @@ class TutorController extends Controller
         self::authorizeProfile($request, $tutorProfile);
 
         $data = $request->validate([
-            'bio' => ['nullable', 'string', new NoUnsafeLinks],
+            'bio' => ['nullable', 'string', 'max:800', new NoUnsafeLinks],
+            'short_bio' => ['nullable', 'string', 'max:180', new NoUnsafeLinks],
             'subjects' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
             'languages_spoken' => ['nullable', 'string', 'max:255'],
+            'teaches_levels' => ['nullable', 'array', 'max:4'],
+            'teaches_levels.*' => [Rule::in(array_merge(TutorProfile::TEACHES_LEVELS, ['HSK preparation']))],
+            'teaching_languages' => ['nullable', 'array', 'max:'.count(TutorProfile::TEACHING_LANGUAGES)],
+            'teaching_languages.*' => [Rule::in(TutorProfile::TEACHING_LANGUAGES)],
+            'specialties' => ['nullable', 'array', 'max:'.count(TutorProfile::SPECIALTIES)],
+            'specialties.*' => ['distinct', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
+            'main_specialty' => ['nullable', 'string', Rule::in(array_keys(TutorProfile::SPECIALTIES))],
             'availability' => ['nullable', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'max:10240'],
             // The bio and the intro video are the two fields on a public
             // profile a visitor might follow. One rule covers both: it pulls
             // URLs out of free text, so a plain URL field needs nothing extra.
-            'video_url' => ['nullable', 'url', 'max:500', new NoUnsafeLinks],
+            'video_url' => ['nullable', 'string', 'max:500', new NoUnsafeLinks],
         ]);
+
+        $data = self::settleMainSpecialty($data);
+        $data = self::settleTutorFit($data);
+        $data = self::settleIntroVideo($data);
 
         if ($request->hasFile('photo')) {
             if ($tutorProfile->photo_path) {
@@ -348,9 +431,7 @@ class TutorController extends Controller
 
         $tutorProfile->update($data);
 
-        return response()->json(
-            $tutorProfile->fresh()->load('user:id,name,email', 'lessons', 'resumeEntries')
-        );
+        return $this->showProfile($request, $tutorProfile->fresh());
     }
 
     /**
@@ -364,7 +445,12 @@ class TutorController extends Controller
     {
         self::authorizeProfile($request, $tutorProfile);
 
-        $data = self::settleMainSpecialty($request->validate(self::specialtyRules(false)) + ['specialties' => []]);
+        $data = $request->validate(array_merge(
+            self::specialtyRules(false),
+            self::tutorFitRules(false),
+        ));
+        $data = self::settleMainSpecialty($data + ['specialties' => []]);
+        $data = self::settleTutorFit($data);
 
         $tutorProfile->update($data);
 

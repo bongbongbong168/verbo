@@ -37,7 +37,9 @@ class TutorProfile extends Model
         'Intermediate (HSK 4)',
     ];
 
-    public const TEACHES_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'HSK preparation'];
+    public const TEACHES_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All levels'];
+
+    public const TEACHING_LANGUAGES = ['Mandarin', 'English', 'Khmer', 'French', 'Japanese', 'Korean', 'Spanish', 'Other'];
 
     /**
      * Teaching specialties a tutor can claim, keyed by a stable slug.
@@ -49,18 +51,23 @@ class TutorProfile extends Model
      * API as options so no client keeps its own copy.
      */
     public const SPECIALTIES = [
-        'conversational' => ['label' => 'Conversational Chinese', 'emoji' => '🗣️', 'blurb' => 'Practice natural conversations and build everyday speaking confidence.'],
-        'speaking' => ['label' => 'Speaking Practice', 'emoji' => '💬', 'blurb' => 'Build fluency through guided conversation and live correction.'],
-        'hsk' => ['label' => 'HSK Preparation', 'emoji' => '📚', 'blurb' => 'Prepare for HSK exams with structured lessons, vocabulary and practice tests.'],
-        'everyday' => ['label' => 'Everyday Chinese', 'emoji' => '🏙️', 'blurb' => 'Useful Chinese for daily situations and real conversations.'],
-        'travel' => ['label' => 'Travel Chinese', 'emoji' => '✈️', 'blurb' => 'Phrases and conversations for getting around Chinese-speaking places.'],
-        'pronunciation' => ['label' => 'Pronunciation', 'emoji' => '🔊', 'blurb' => 'Improve tones, pronunciation and speaking accuracy.'],
+        'conversational' => ['label' => 'Conversation'],
+        'speaking' => ['label' => 'Conversation'],
+        'hsk' => ['label' => 'HSK Prep'],
+        'everyday' => ['label' => 'Daily Chinese'],
+        'travel' => ['label' => 'Travel Chinese'],
+        'pronunciation' => ['label' => 'Pronunciation'],
+        'grammar' => ['label' => 'Grammar'],
+        'business' => ['label' => 'Business Chinese'],
+        'exam' => ['label' => 'Exam Prep'],
+        'kids' => ['label' => 'Kids'],
     ];
 
     /** The option list as the client wants it: an ordered array, key included. */
     public static function specialtyOptions(): array
     {
-        return collect(self::SPECIALTIES)
+        return collect(['hsk', 'conversational', 'pronunciation', 'grammar', 'business', 'travel', 'everyday', 'exam', 'kids'])
+            ->mapWithKeys(fn ($key) => [$key => self::SPECIALTIES[$key]])
             ->map(fn ($s, $key) => ['key' => $key] + $s)
             ->values()
             ->all();
@@ -87,12 +94,14 @@ class TutorProfile extends Model
 
     protected $fillable = [
         'bio',
+        'short_bio',
         'subjects',
         'hourly_rate',
         'photo_path',
         'languages_spoken',
         'availability',
         'video_url',
+        'video_id',
         'timezone',
         'allows_pre_booking_questions',
         // Application fields. `status`, `reviewed_by` and the timestamps are
@@ -103,12 +112,14 @@ class TutorProfile extends Model
         'teaches_levels',
         'years_experience',
         'teaching_style',
+        'teaching_languages',
         'specialties',
         'main_specialty',
     ];
 
     protected $casts = [
         'teaches_levels' => 'array',
+        'teaching_languages' => 'array',
         'specialties' => 'array',
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',

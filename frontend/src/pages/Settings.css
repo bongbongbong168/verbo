@@ -546,6 +546,8 @@
    at all, and the empty line says where that kind is saved from. */
 .se-saved-intro {
   margin-bottom: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--se-border);
 }
 
 /* AUTO-FIT, not a hard three: the panel is ~470px at a 1000px window, where
@@ -554,23 +556,27 @@
    saved name actually needs. */
 .se-saved-groups {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
   gap: 1rem;
 }
 
 .se-saved-group {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  min-height: 0;
   padding: 1rem;
   border: 1px solid var(--se-border);
-  border-radius: 14px;
-  background: var(--se-card);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 7px 18px rgba(42, 35, 70, 0.06);
+  color: var(--se-text);
 }
 
 .se-saved-head {
   display: flex;
   align-items: center;
+  min-height: 36px;
   gap: 0.55rem;
 }
 
@@ -578,11 +584,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex: none;
-  border-radius: 10px;
-  background: var(--se-field);
+  border-radius: 11px;
+  background: var(--se-pill);
   color: var(--se-accent);
 }
 
@@ -595,8 +601,9 @@
   margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: 0.88rem;
+  font-size: 0.94rem;
   font-weight: 700;
+  color: var(--se-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -605,10 +612,10 @@
 /* 600 sits 0.076em below its line box's centre in Hellix, so the pad is cut
    above and given back below. */
 .se-saved-count {
-  min-width: 22px;
-  padding: calc(2px - 0.076em) 7px calc(2px + 0.076em);
+  min-width: 24px;
+  padding: calc(3px - 0.076em) 8px calc(3px + 0.076em);
   border-radius: 999px;
-  background: var(--se-field);
+  background: var(--se-pill);
   color: var(--se-accent);
   font-size: 0.72rem;
   font-weight: 600;
@@ -619,8 +626,15 @@
 
 .se-saved-list {
   list-style: none;
-  margin: 0;
+  margin: 0.8rem 0 0;
   padding: 0;
+}
+
+.se-saved-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--se-border);
 }
 
 /* A row you can point at, rather than a line of text with "Open" floated off
@@ -630,22 +644,48 @@
 .se-saved-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.5rem 0.6rem;
-  margin: 0 -0.6rem;
-  border-radius: 10px;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0;
   color: var(--se-text);
-  font-size: 0.82rem;
-  font-weight: 600;
   text-decoration: none;
 }
 
 /* The tint IS the feedback and is not transitioned — a transition that never
    gets a frame leaves the row looking dead under the pointer. */
 .se-saved-item:hover {
-  background: var(--se-field);
   color: var(--se-accent);
+}
+
+.se-saved-thumb {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--se-pill);
+  color: var(--se-accent);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.se-saved-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.se-saved-thumb-read { background: #eeebfb; }
+
+.se-saved-item-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.18rem;
 }
 
 .se-saved-name {
@@ -653,24 +693,169 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-.se-saved-go {
-  width: 14px;
-  height: 14px;
+.se-saved-meta {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--se-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.se-saved-actions {
+  position: relative;
   flex: none;
-  color: var(--se-accent-soft);
 }
 
-.se-saved-item:hover .se-saved-go {
+.se-saved-more-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--se-text-muted);
+  cursor: pointer;
+}
+
+.se-saved-more-button:hover,
+.se-saved-more-button[aria-expanded="true"] {
+  background: var(--se-pill);
   color: var(--se-accent);
 }
 
+.se-saved-more-button svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.se-saved-menu {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 154px;
+  padding: 0.3rem;
+  border: 1px solid var(--se-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(28, 23, 48, 0.14);
+}
+
+.se-saved-menu button {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #a33b45;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.se-saved-menu button:hover { background: #fff1f2; }
+.se-saved-menu button:disabled { cursor: wait; opacity: 0.65; }
+
+.se-saved-actions:has(.se-saved-menu) { z-index: 5; }
+
 .se-saved-empty {
-  margin: 0;
+  margin: 1.25rem 0 0.25rem;
   font-size: 0.78rem;
   line-height: 1.45;
   color: var(--se-text-muted);
+}
+
+.se-saved-empty-teachers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.4rem;
+  margin-bottom: 0.55rem;
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.se-saved-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 0.7rem;
+  border-radius: 50%;
+  background: var(--se-pill);
+  color: var(--se-accent);
+}
+
+.se-saved-empty-mark svg { width: 27px; height: 27px; }
+
+.se-saved-empty-teachers p { min-height: 2.9em; }
+
+.se-saved-empty-teachers strong {
+  color: var(--se-text);
+  font-size: 0.88rem;
+}
+
+.se-saved-empty-teachers p {
+  max-width: 210px;
+  margin: 0.35rem 0 0;
+}
+
+.se-saved-browse {
+  margin-top: 0.8rem;
+  padding: 0.52rem 0.8rem;
+  border-radius: 9px;
+  background: var(--se-accent-soft);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.se-saved-browse:hover { background: var(--se-accent); }
+
+.se-saved-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  /* A footnote under a hairline, mirroring the rule under the title. The
+     bottom pad plus the panel's own 0.6rem lands on 1.5rem, the same air
+     the panel leaves above "Saved". */
+  margin: 1.25rem 0 0;
+  padding: 1rem 0 0.9rem;
+  border-top: 1px solid var(--se-border);
+  color: #8a8799;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.se-saved-tip svg {
+  fill: none;
+  stroke: var(--se-accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.se-saved-tip-bulb { width: 16px; height: 16px; flex: none; }
+.se-saved-tip .se-saved-tip-bulb { stroke: #7e68c8; stroke-width: 2; }
+
+.se-saved-tip-heart {
+  width: 13px;
+  height: 13px;
+  margin: 0 0.3em;
+  vertical-align: -0.15em;
 }
 
 @media (max-width: 760px) {

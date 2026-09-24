@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { exampleFor } from '../sentence'
@@ -12,7 +12,9 @@ import './PodcastEpisode.css'
 import ReaderSwitch from '../components/ReaderSwitch'
 import PageTools from '../components/PageTools'
 import SyncedTranscript from '../components/SyncedTranscript'
+import SentenceSavePopover from '../components/SentenceSavePopover'
 import { englishSentences, sentencesOf } from '../sentences'
+import proOwl from '../assets/assistant/graduate-bot.png'
 
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
@@ -98,6 +100,7 @@ export default function PodcastEpisode() {
      off a ref is what keeps the saved word's source from silently going
      missing — same trick as `hoveredWordRef`. */
   const podcastRef = useRef(null)
+  const sentenceScopeRef = useRef(null)
 
   const audioRef = useRef(null)
   const [playing, setPlaying] = useState(false)
@@ -153,13 +156,14 @@ export default function PodcastEpisode() {
      the page — turning an aid on ADDS to it rather than replacing it. */
   const [showPinyin, setShowPinyin] = useState(false)
   const [showTranslation, setShowTranslation] = useState(false)
+  const [readerScale, setReaderScale] = useState(100)
 
   /* The word-timed transcript, when one has been imported. Fetched only then
      (the episode payload says so in `timed_transcript_status`), and cached
      under its own key so reopening the episode does not refetch it. */
   const [timed, setTimed] = useState(null)
   const [showSynced, setShowSynced] = useState(true)
-  const timedReady = podcast?.timed_transcript_status === 'completed'
+  const timedReady = !podcast?.premium_locked && podcast?.timed_transcript_status === 'completed'
 
   useEffect(() => {
     if (!timedReady) {
@@ -190,15 +194,19 @@ export default function PodcastEpisode() {
   }, [token, id, timedReady, podcast?.timed_transcript_at])
 
   useEffect(() => {
+    setPodcast(null)
+    podcastRef.current = null
+    setTimed(null)
     loadPodcast()
-  }, [token, id])
+  }, [token, id, user?.id, user?.is_admin, user?.is_pro])
 
   /* Seeded from the shared cache rather than converted to `useApiData`: the
      episode lives in BOTH state and a ref (the Alt+1 listener reads the ref to
      dodge a stale closure), so priming the initial value is the surgical
      change. Reopening an episode then paints immediately. */
   function loadPodcast() {
-    const key = `podcast:${id}`
+    const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free'
+    const key = `podcast:${id}:viewer:${user?.id || 'anonymous'}:${access}`
     const cached = readCache(key)
     if (cached) {
       setPodcast(cached)
@@ -523,11 +531,13 @@ export default function PodcastEpisode() {
      was still showing `user.name`, which is why it read "admin" and
      "BannerVerify" — the same thing the cards were fixed for. */
   const author = podcast.host || podcast.user?.name || ''
+  const premiumLocked = podcast.premium_locked === true
   /* Chinese-only episodes stay valid: the Translation switch renders disabled
      with a reason rather than opening onto a blank pane. */
   const hasEnglish = Boolean(podcast.transcript_en && podcast.transcript_en.trim())
   /* Synced needs audio to sync to; without it the plain transcript stands. */
-  const synced = Boolean(timed && timed.length && podcast.audio_url && showSynced)
+  const hasTimedTranscript = Boolean(timed && timed.length)
+  const synced = Boolean(hasTimedTranscript && podcast.audio_url && showSynced)
   const cnSentences = sentencesOf(podcast.tokens || [])
   const enSentences = englishSentences(podcast.transcript_en)
   const paired = showTranslation && hasEnglish && cnSentences.length > 0 && cnSentences.length === enSentences.length
@@ -569,6 +579,13 @@ export default function PodcastEpisode() {
       {/* Messages, notifications and the account menu, top right as on the
           Podcast page this one is opened from. */}
       <div className="pe-topbar">
+        <nav className="pe-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/podcast">Podcasts</Link>
+          <span className="pe-breadcrumb-sep" aria-hidden="true">/</span>
+          <span className="pe-breadcrumb-current" aria-current="page" title={podcast.title}>
+            {podcast.title}
+          </span>
+        </nav>
         <div className="pe-topbar-icons">
           <PageTools />
         </div>
@@ -583,7 +600,9 @@ export default function PodcastEpisode() {
           </div>
 
           <div className="pe-card-info">
-            <h1 className="pe-title">{podcast.title}</h1>
+            <div className="pe-title-row">
+              <h1 className="pe-title">{podcast.title}</h1>
+            </div>
 
             <div className="pe-author-row">
               <span className="pe-avatar">{author ? author.charAt(0).toUpperCase() : '?'}</span>
@@ -593,7 +612,20 @@ export default function PodcastEpisode() {
               </div>
             </div>
 
-            {podcast.audio_url ? (
+            {premiumLocked ? (
+              <div className="pe-premium-player">
+                <span className="pe-premium-lock" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="10" width="14" height="10" rx="2" />
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
+                  </svg>
+                </span>
+                <div>
+                  <strong>Full episode for Verbo Pro</strong>
+                  <p>Upgrade to play the complete audio and follow the transcript.</p>
+                </div>
+              </div>
+            ) : podcast.audio_url ? (
               <div className="pe-player">
                 <audio
                   ref={audioRef}
@@ -794,8 +826,18 @@ export default function PodcastEpisode() {
 
       {lastSaved && <p className="pe-saved-note">Saved &ldquo;{lastSaved}&rdquo; to flashcards.</p>}
 
-      {(
-        <div className="pe-transcript-panel">
+      {premiumLocked ? (
+        <section className="pe-premium-transcript" aria-labelledby="pe-premium-title">
+          <img src={proOwl} alt="" aria-hidden="true" />
+          <div>
+            <span>Verbo Pro</span>
+            <h3 id="pe-premium-title">Listen and learn with the full transcript</h3>
+            <p>Upgrade to unlock playback, synced Chinese, Pinyin, and the English translation.</p>
+          </div>
+          <Link to="/upgrade">Unlock with Verbo Pro</Link>
+        </section>
+      ) : (
+        <div ref={sentenceScopeRef} className="pe-transcript-panel" style={{ '--pe-reader-scale': readerScale / 100 }}>
           {/* The same two switches the reader has. Neither replaces the
               Chinese — pinyin stacks above each word and the English sits
               underneath as its own passage. */}
@@ -814,6 +856,24 @@ export default function PodcastEpisode() {
               on={showPinyin}
               onChange={() => setShowPinyin((v) => !v)}
             />
+
+            <label className="pe-size" htmlFor="pe-text-size">
+              <span>A</span>
+              <input
+                id="pe-text-size"
+                type="range"
+                min="80"
+                max="120"
+                step="1"
+                value={readerScale}
+                onChange={(event) => {
+                  const next = Number(event.target.value)
+                  setReaderScale(Math.abs(next - 100) <= 3 ? 100 : next)
+                }}
+                aria-label="Transcript text size"
+              />
+              <span className="pe-size-large">A</span>
+            </label>
 
             <ReaderSwitch
               label="Translation"
@@ -836,16 +896,18 @@ export default function PodcastEpisode() {
 
           <p className="pe-hint">
             {synced
-              ? 'Click a word to play from it. Hover a word and press Alt+1 to save it to your flashcard bank.'
-              : 'Hover a word and press Alt+1 to save it to your flashcard bank.'}
+              ? 'Click a word to play from it. Hover and press Alt+1 to save a word, or select text to save a sentence.'
+              : 'Hover and press Alt+1 to save a word, or select Chinese text to save a sentence.'}
           </p>
-          {synced ? (
+          {hasTimedTranscript ? (
             <SyncedTranscript
               segments={timed}
               translations={syncedPaired ? timedTranslations : null}
               audioRef={audioRef}
+              syncWithAudio={synced}
               showPinyin={showPinyin}
               showTranslation={showTranslation}
+              readerScale={readerScale}
               saved={saved}
               onHoverWord={hoverTimedWord}
               onLeaveWord={leaveTimedWord}
@@ -872,7 +934,7 @@ export default function PodcastEpisode() {
           {/* Whichever view is on decides whether the English was already
               placed line by line — `paired` describes the plain transcript and
               means nothing while the synced one is showing. */}
-          {showTranslation && hasEnglish && !(synced ? syncedPaired : paired) && (
+          {showTranslation && hasEnglish && !(hasTimedTranscript ? syncedPaired : paired) && (
             <div className="pe-translation">
               <span className="pe-translation-label">English</span>
               <p className="pe-translation-body">{podcast.transcript_en}</p>
@@ -882,6 +944,17 @@ export default function PodcastEpisode() {
       )}
 
       <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
+      {!premiumLocked && (
+        <SentenceSavePopover
+          scopeRef={sentenceScopeRef}
+          token={token}
+          sourceModule="podcast"
+          sourceType="podcast"
+          sourceId={podcast.id}
+          tokens={podcast.tokens}
+          onSaved={setLastSaved}
+        />
+      )}
 
       {/* Editing sits OVER the episode rather than replacing it, so the
           transcript being changed stays on screen while it is changed. */}
@@ -902,7 +975,8 @@ export default function PodcastEpisode() {
             }
             podcastRef.current = next
             setPodcast(next)
-            writeCache(`podcast:${id}`, next)
+            const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free'
+            writeCache(`podcast:${id}:viewer:${user?.id || 'anonymous'}:${access}`, next)
           }}
           onClose={() => setEditing(false)}
         />

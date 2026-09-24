@@ -8,6 +8,7 @@ import PageTools from "../components/PageTools";
 import PodcastEditDrawer from "../components/PodcastEditDrawer";
 import { SkeletonCards } from "../components/Skeleton";
 import ShelfRail from "../components/ShelfRail";
+import SaveHeartButton from "../components/SaveHeartButton";
 import "./Podcast.css";
 
 /* Stable identity for an absent list — a fresh [] each render would re-run
@@ -36,6 +37,15 @@ function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M6.375 6.2v11.6c0 .8.9 1.3 1.6.9l9.2-5.8c.6-.4.6-1.4 0-1.8L7.975 5.3c-.7-.4-1.6.1-1.6.9z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" rx="2" />
+      <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
     </svg>
   );
 }
@@ -116,14 +126,22 @@ function ChevronIcon() {
 const SHELF_SIZE = 8;
 
 function EpisodeCard({ episode }) {
+  const { token } = useAuth();
+  const [saved, setSaved] = useState(!!episode.saved);
   return (
     <div className="pc-card">
+      <SaveHeartButton
+        saved={saved}
+        label={episode.title}
+        onToggle={async () => setSaved((await api.togglePodcastSave(token, episode.id)).saved)}
+      />
       <Link to={`/podcast/${episode.id}`} className="pc-card-cover">
         {episode.image_url ? (
           <img src={episode.image_url} alt="" />
         ) : (
           <div className="pc-card-cover-placeholder" />
         )}
+        {episode.is_premium && <span className="pc-pro-badge">Verbo Pro</span>}
       </Link>
       <div className="pc-card-body">
         {episode.level && <p className="pc-card-level">{episode.level}</p>}
@@ -145,9 +163,9 @@ function EpisodeCard({ episode }) {
           <Link
             to={`/podcast/${episode.id}`}
             className="pc-play-btn"
-            aria-label={`Open ${episode.title}`}
+            aria-label={episode.premium_locked ? `View premium episode ${episode.title}` : `Open ${episode.title}`}
           >
-            <PlayIcon />
+            {episode.premium_locked ? <LockIcon /> : <PlayIcon />}
           </Link>
         </div>
       </div>
@@ -185,6 +203,7 @@ function ResumeCard({ row }) {
         ) : (
           <div className="pc-card-cover-placeholder" />
         )}
+        {podcast.is_premium && <span className="pc-pro-badge">Verbo Pro</span>}
       </Link>
       <div className="pc-card-body">
         {podcast.level && <p className="pc-card-level">{podcast.level}</p>}
@@ -213,7 +232,7 @@ function ResumeCard({ row }) {
             className="pc-play-btn"
             aria-label={`Continue ${podcast.title} from ${clock(at)}`}
           >
-            <PlayIcon />
+            {podcast.premium_locked ? <LockIcon /> : <PlayIcon />}
           </Link>
         </div>
       </div>
@@ -247,13 +266,16 @@ export default function Podcast() {
 
   /* Throws on failure so the drawer keeps the message next to the fields that
      caused it, rather than putting it on the page behind an open panel. */
-  async function handleCreate(values) {
-    await api.createPodcast(token, values);
-    setShowForm(false);
+  async function handleCreate(values, existingPodcast) {
+    const saved = existingPodcast
+      ? await api.updatePodcast(token, existingPodcast.id, values)
+      : await api.createPodcast(token, values);
     // Drop the list and every cached episode, so nothing still holds a
-    // pre-publish copy of the library.
+    // pre-publish copy of the library. The drawer decides whether to close or
+    // stay open for Sync after the episode has been created.
     invalidate("podcasts", "podcast:");
     podcastQuery.refresh();
+    return saved;
   }
 
   // Only offer level filters that actually have episodes.

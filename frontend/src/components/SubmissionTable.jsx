@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import FilePreview from "./FilePreview";
@@ -84,7 +84,8 @@ export default function SubmissionTable({ itemId, points }) {
             const isOpen = grading === submission?.id;
 
             return (
-              <tr key={user.id}>
+              <Fragment key={user.id}>
+              <tr>
                 <td>
                   <span className="cl-student">
                     {user.avatar_url ? (
@@ -165,7 +166,11 @@ export default function SubmissionTable({ itemId, points }) {
                     </button>
                   )}
 
-                  {isOpen && (
+                </td>
+              </tr>
+              {isOpen && (
+                <tr className="gr-editor-row">
+                  <td colSpan={6}>
                     <form
                       className="gr-grade"
                       onSubmit={(e) => {
@@ -173,37 +178,41 @@ export default function SubmissionTable({ itemId, points }) {
                         save(submission.id);
                       }}
                     >
-                      <label>
+                      <label className="gr-score-field">
                         <span>Score{points ? ` / ${points}` : ""}</span>
                         <input
                           type="number"
                           min="0"
-                          max={points || 1000}
+                          max={100}
                           value={score}
                           onChange={(e) => setScore(e.target.value)}
                           autoFocus
                         />
                       </label>
-                      <textarea
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        placeholder="Feedback for the student…"
-                        rows={2}
-                      />
-                      {submission.note && (
-                        <p className="gr-note">Their note: {submission.note}</p>
-                      )}
+                      <label className="gr-feedback-field">
+                        <span>Feedback</span>
+                        <textarea
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          placeholder="Feedback for the student…"
+                          rows={2}
+                        />
+                      </label>
                       <button
                         type="submit"
-                        className="cl-btn cl-btn-sm"
+                        className="cl-btn cl-btn-sm gr-save"
                         disabled={busy}
                       >
                         {busy ? "Saving…" : "Save grade"}
                       </button>
+                      {submission.note && (
+                        <p className="gr-note"><span>Student note</span>{submission.note}</p>
+                      )}
                     </form>
-                  )}
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             );
           })}
         </tbody>

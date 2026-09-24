@@ -82,6 +82,40 @@
   gap: 0.6rem;
 }
 
+.rd-breadcrumb {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+.rd-breadcrumb a {
+  flex: none;
+  color: var(--rd-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.rd-breadcrumb a:hover {
+  color: var(--rd-accent);
+}
+
+.rd-breadcrumb-sep {
+  flex: none;
+  color: #c9c3de;
+}
+
+.rd-breadcrumb-current {
+  overflow: hidden;
+  min-width: 0;
+  max-width: min(42vw, 34rem);
+  color: var(--rd-text);
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
 .rd-divider {
   border: none;
   border-top: 1px solid var(--rd-border);
@@ -597,6 +631,11 @@
   box-shadow: inset 0 0 0 1px var(--rd-border);
 }
 
+.rd-chip-pro {
+  background: #2b2643;
+  color: #fff;
+}
+
 /* ---- reading aids ---- */
 
 .rd-controls {
@@ -622,9 +661,8 @@
   align-items: center;
   gap: 0.35rem;
   min-height: 32px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  order: 10;
+  margin-left: auto;
   color: var(--rd-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
@@ -632,16 +670,60 @@
 
 .rd-size-large { font-size: 0.95rem; }
 
+/* A drawn slider, not the browser's: a 4px lavender groove and a white knob
+   with the accent ring, the ReaderSwitch's own vocabulary beside it. The
+   native control rendered a grey bar with a dark filled half that matched
+   nothing on the page. Static - nothing here is transitioned. */
 .rd-size input {
   width: 92px;
-  accent-color: var(--rd-accent);
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
+}
+
+.rd-size input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #e7e3f6;
+}
+
+.rd-size input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid #a89ce3;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(43, 38, 67, 0.2);
+}
+
+.rd-size input::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #e7e3f6;
+}
+
+.rd-size input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #a89ce3;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.rd-size input:focus-visible {
+  outline: 2px solid #a89ce3;
+  outline-offset: 3px;
+  border-radius: 999px;
 }
 
 @media (max-width: 720px) {
   .rd-size {
-    position: static;
-    transform: none;
     margin-left: auto;
   }
 }
@@ -994,24 +1076,33 @@
     0 14px 30px -10px rgba(106, 97, 145, 0.3);
 }
 
-.rd-cm-new-who {
+/* Collapsed: one slim row, the face beside a one-line field. `.open` grows
+   the field to three lines and lifts the face to its first line. */
+.rd-cm-new {
+  padding: 0.7rem 1rem;
+}
+
+.rd-cm-new.open {
+  padding: 1rem 1.15rem 0.85rem;
+}
+
+.rd-cm-new-row {
   display: flex;
-  flex-direction: column;
-  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.rd-cm-new-sub {
-  font-size: 0.78rem;
-  color: #8a86a0;
+.rd-cm-new.open .rd-cm-new-row {
+  align-items: flex-start;
 }
 
-/* Frameless: the card is its frame. Starts under the name, not the face,
-   so it reads as the words of the person named above it. */
+/* Frameless: the card is its frame. */
 .rd-cm-new textarea {
   display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
-  margin-top: 0.7rem;
+  margin: 0;
   padding: 0;
   border: none;
   background: none;
@@ -1020,36 +1111,69 @@
   line-height: 1.6;
   color: var(--rd-text);
   resize: none;
-  min-height: 4.8em;
   outline: none;
+  cursor: text;
+}
+
+.rd-cm-new.open textarea {
+  min-height: 4.8em;
+  padding-top: 0.45rem;
+}
+
+/* SMOOTHING, AND SAFE TO STALL. The card's padding and the field's height
+   ease open; a tab that never composites leaves them at the closed size, but
+   the buttons are already there and the field still takes typing (it scrolls),
+   so nothing is stranded. The foot plays a landing that starts AND ends at
+   rest - a dip, never an entrance from opacity 0. */
+.rd-cm-new,
+.rd-cm-new textarea {
+  transition:
+    padding 0.24s cubic-bezier(0.22, 0.61, 0.36, 1),
+    min-height 0.24s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.rd-cm-new textarea {
+  min-height: 1.6em;
 }
 
 .rd-cm-new-foot {
+  animation: rd-cm-foot-land 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes rd-cm-foot-land {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  18% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-cm-new,
+  .rd-cm-new textarea {
+    transition: none;
+  }
+  .rd-cm-new-foot {
+    animation: none;
+  }
+}
+
+/* Cancel and Comment together on the right, the send last. */
+.rd-cm-new-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin-top: 0.5rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--rd-border);
-}
-
-.rd-cm-new-hint {
-  font-size: 0.76rem;
-  color: #8a86a0;
-}
-
-.rd-cm-new-hint kbd {
-  /* All vertical padding below, lifting the key label onto its box's centre
-     (Hellix 600 sits 0.076em low; the top pad is too small for a pair). */
-  padding: 0 0.35rem 0.1rem;
-  border: 1px solid var(--rd-border);
-  border-radius: 5px;
-  background: #fbfaff;
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--rd-text-muted);
 }
 
 .rd-cm-edit textarea {
@@ -1762,6 +1886,128 @@
   margin: 0;
 }
 
+/* The server has already removed the paid portion. These soft, abstract rows
+   suggest that the story continues without putting protected text in the DOM. */
+.rd-reader-preview {
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff 0%, #fff 48%, #f7f4ff 74%, #efebfb 100%);
+}
+
+.rd-reader-preview .rd-reader-copy {
+  position: relative;
+  padding: 0 0.2rem;
+}
+
+.rd-reader-preview .rd-reader-copy::after {
+  content: "";
+  position: absolute;
+  right: -0.25rem;
+  bottom: -2px;
+  left: -0.25rem;
+  height: 5.5rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(247, 244, 255, 0.94));
+}
+
+.rd-pro-tease {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 0.2rem 2.6rem;
+  filter: blur(4px);
+  opacity: 0.28;
+}
+
+.rd-pro-tease span {
+  display: block;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: #867da8;
+}
+
+.rd-pro-tease span:nth-child(2) { width: 84%; }
+.rd-pro-tease span:nth-child(3) { width: 94%; }
+.rd-pro-tease span:nth-child(4) { width: 72%; }
+.rd-pro-tease span:nth-child(5) { width: 88%; }
+
+.rd-paywall {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin: -1rem 1rem 1rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(106, 97, 145, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(43, 38, 67, 0.13);
+  backdrop-filter: blur(12px);
+}
+
+.rd-paywall-owl {
+  display: block;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 7px 8px rgba(43, 38, 67, 0.2));
+}
+
+.rd-paywall-eyebrow {
+  color: #6a6191;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rd-paywall-copy h3 {
+  margin: 0.16rem 0 0.2rem;
+  color: #2b2643;
+  font-size: 1.04rem;
+  line-height: 1.25;
+}
+
+.rd-paywall-copy p {
+  margin: 0;
+  color: var(--rd-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.rd-paywall-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.78rem 1rem;
+  border-radius: 11px;
+  color: #fff;
+  background: #2b2643;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rd-paywall-cta:hover { background: #3d3860; }
+
+.rd-paywall-cta:focus-visible {
+  outline: 3px solid rgba(168, 156, 227, 0.55);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .rd-paywall {
+    grid-template-columns: auto minmax(0, 1fr);
+    margin-inline: 0.55rem;
+  }
+
+  .rd-paywall-cta {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
 /* Chinese reading text: larger for legibility, with wide character spacing.
    Hellix leads the stack so Latin, digits and punctuation use it. Chinese
    glyphs fall through to a regular-weight system CJK face — deliberately NOT
@@ -1908,6 +2154,16 @@
   margin-top: 1.5rem;
 }
 
+.rd-translation-limit {
+  flex-basis: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #ddd3f7;
+  border-radius: 10px;
+  background: #f6f2ff;
+  line-height: 1.4;
+}
+.rd-translation-limit a { color: #4b3b86; font-weight: 700; }
+
 .rd-pair .rd-body-cn {
   margin: 0;
 }
@@ -1967,4 +2223,21 @@
   .rd-rec {
     animation: none;
   }
+}
+.rd-tile-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 100%;
+}
+
+.rd-tile-wrap > .rd-tile {
+  width: 100%;
+}
+
+.rd-tile-wrap > .shb {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
 }

@@ -24,10 +24,10 @@ class TutorApplicationTest extends TestCase
         return array_merge([
             'bio' => 'I have taught Mandarin to beginners and HSK candidates for several years.',
             'subjects' => 'Speaking, HSK preparation',
-            'languages_spoken' => 'Chinese, English',
+            'teaching_languages' => ['Mandarin', 'English'],
             'country' => 'China',
             'chinese_level' => 'Native speaker',
-            'teaches_levels' => ['Beginner', 'HSK preparation'],
+            'teaches_levels' => ['Beginner', 'Intermediate'],
             'specialties' => ['hsk', 'conversational'],
             'years_experience' => 3,
         ], $overrides);
@@ -79,7 +79,7 @@ class TutorApplicationTest extends TestCase
 
         $this->postJson('/api/tutor-profile', ['bio' => 'too short'])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['bio', 'subjects', 'languages_spoken', 'country', 'chinese_level', 'teaches_levels', 'years_experience']);
+            ->assertJsonValidationErrors(['bio', 'subjects', 'country', 'chinese_level', 'teaches_levels', 'teaching_languages', 'years_experience']);
     }
 
     public function test_teaches_levels_is_checked_against_the_whitelist(): void

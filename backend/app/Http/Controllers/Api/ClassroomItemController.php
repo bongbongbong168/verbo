@@ -230,7 +230,7 @@ class ClassroomItemController extends Controller
         abort_unless(ClassroomController::isTeacher($class, $request->user()->id), 403);
 
         $data = $request->validate([
-            'score' => ['nullable', 'integer', 'min:0', 'max:'.($item->points ?: 1000)],
+            'score' => ['nullable', 'integer', 'min:0', 'max:100'],
             'feedback' => ['nullable', 'string', 'max:5000'],
         ]);
 

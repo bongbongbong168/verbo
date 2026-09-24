@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Services\DictionaryService;
 use App\Services\RecommendationService;
+use App\Services\UsageAllowanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
@@ -108,6 +110,7 @@ class ArticleController extends Controller
             'difficulty' => $a->difficulty,
             'image_url' => $a->image_url,
             'reading_minutes' => $a->reading_minutes,
+            'is_premium' => $a->is_premium,
         ];
     }
 
@@ -130,10 +133,11 @@ class ArticleController extends Controller
                 'hsk_level',
                 'difficulty',
                 'category',
+                'is_premium',
                 'image_path',
                 'user_id',
                 'created_at',
-                DB::raw('SUBSTR(body, 1, 120) AS excerpt'),
+                DB::raw("CASE WHEN is_premium THEN SUBSTR(body, 1, CASE WHEN LENGTH(body) * 0.30 < 120 THEN CAST(LENGTH(body) * 0.30 AS INTEGER) ELSE 120 END) ELSE SUBSTR(body, 1, 120) END AS excerpt"),
                 DB::raw('LENGTH(body) AS body_length'),
             ])
             ->with('tags')
@@ -161,12 +165,27 @@ class ArticleController extends Controller
         });
     }
 
-    public function show(Request $request, Article $article, DictionaryService $dictionary)
+    public function show(Request $request, Article $article, DictionaryService $dictionary, UsageAllowanceService $allowances)
     {
         $article->load('tags');
 
-        return array_merge($article->toArray(), [
-            'tokens' => $dictionary->annotate($article->body),
+        $locked = $article->is_premium
+            && ! $request->user()->is_pro
+            && ! $request->user()->is_admin;
+        $body = $locked ? $this->premiumPreview($article->body) : $article->body;
+        $payload = $article->toArray();
+        $payload['body'] = $body;
+        // A complete authored translation is content too. Do not ship it in a
+        // response whose Chinese body has deliberately been truncated.
+        $payload['body_en'] = $locked ? null : $article->body_en;
+        $translationKey = 'article-translation:v1:'.$article->id.':'.hash('sha256', trim((string) $article->body));
+
+        return array_merge($payload, [
+            'tokens' => $dictionary->annotate($body),
+            'premium_locked' => $locked,
+            'preview_percentage' => $locked ? 30 : 100,
+            'translation_cached' => Cache::has($translationKey),
+            'translation_usage' => $allowances->summary($request->user(), UsageAllowanceService::TRANSLATIONS),
             // The counts and this viewer's own like/save state, so the buttons
             // render correctly on first paint rather than after a second call.
             'interactions' => ArticleInteractionController::stateFor($article, $request->user()?->id),
@@ -197,8 +216,13 @@ class ArticleController extends Controller
                 'category' => $a->category,
                 'image_url' => $a->image_url,
                 'reading_minutes' => $a->reading_minutes,
+                'is_premium' => $a->is_premium,
                 'tags' => $a->tags->map(fn ($t) => ['kind' => $t->kind, 'value' => $t->value]),
-                'excerpt' => mb_substr((string) $a->body, 0, 120),
+                'excerpt' => mb_substr(
+                    $a->is_premium ? $this->premiumPreview((string) $a->body) : (string) $a->body,
+                    0,
+                    120
+                ),
                 'score' => $row['score'],
                 'why' => RecommendationService::explain($row['reasons']),
                 'already_read' => $row['already_read'],
@@ -220,6 +244,7 @@ class ArticleController extends Controller
             'hsk_level' => ['nullable', 'string', 'max:20'],
             'difficulty' => ['nullable', 'string', 'max:20'],
             'category' => ['nullable', 'string', 'max:60'],
+            'is_premium' => ['sometimes', 'boolean'],
             'tags' => ['nullable', 'array'],
             'tags.*.kind' => ['required_with:tags', 'string', 'in:goal,focus,interest,style,topic'],
             'tags.*.value' => ['required_with:tags', 'string', 'max:60'],
@@ -253,6 +278,7 @@ class ArticleController extends Controller
             'hsk_level' => ['nullable', 'string', 'max:20'],
             'difficulty' => ['nullable', 'string', 'max:20'],
             'category' => ['nullable', 'string', 'max:60'],
+            'is_premium' => ['sometimes', 'boolean'],
             'tags' => ['nullable', 'array'],
             'tags.*.kind' => ['required_with:tags', 'string', 'in:goal,focus,interest,style,topic'],
             'tags.*.value' => ['required_with:tags', 'string', 'max:60'],
@@ -295,6 +321,34 @@ class ArticleController extends Controller
                 'value' => trim($tag['value']),
             ]);
         }
+    }
+
+    /**
+     * Return a useful opening without sending the paid part to the browser.
+     * The cut prefers the last sentence boundary near 30%; when a first
+     * sentence is unusually long it falls back to a character-safe cut.
+     */
+    private function premiumPreview(string $body): string
+    {
+        $body = trim($body);
+        $length = mb_strlen($body);
+        if ($length < 2) {
+            return $body;
+        }
+
+        $target = max(1, min($length - 1, (int) floor($length * 0.30)));
+        $candidate = mb_substr($body, 0, $target);
+        $minimumBoundary = (int) floor($target * 0.55);
+        $best = null;
+
+        foreach (['。', '！', '？', '!', '?', "\n"] as $mark) {
+            $position = mb_strrpos($candidate, $mark);
+            if ($position !== false && $position >= $minimumBoundary) {
+                $best = max($best ?? 0, $position + 1);
+            }
+        }
+
+        return rtrim(mb_substr($candidate, 0, $best ?? $target));
     }
 
     public function destroy(Request $request, Article $article)

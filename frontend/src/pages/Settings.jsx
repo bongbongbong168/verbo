@@ -147,6 +147,7 @@ export default function Settings() {
 
   const [stats, setStats] = useState(null);
   const [savedLibrary, setSavedLibrary] = useState(null);
+  const [openSavedMenu, setOpenSavedMenu] = useState(null);
   const [error, setError] = useState(null);
   const [flash, setFlash] = useState(null);
   const [busy, setBusy] = useState(null);
@@ -183,6 +184,14 @@ export default function Settings() {
       .catch(() => setSavedLibrary({ tutors: [], podcasts: [], articles: [] }));
   }, [token, active]);
 
+  useEffect(() => {
+    const closeSavedMenu = (event) => {
+      if (!event.target.closest(".se-saved-actions")) setOpenSavedMenu(null);
+    };
+    document.addEventListener("pointerdown", closeSavedMenu);
+    return () => document.removeEventListener("pointerdown", closeSavedMenu);
+  }, []);
+
   function say(message) {
     setFlash(message);
     setTimeout(() => setFlash(null), 2600);
@@ -201,6 +210,24 @@ export default function Settings() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function removeSavedItem(kind, id) {
+    const listKey = kind === "tutor" ? "tutors" : kind === "podcast" ? "podcasts" : "articles";
+    const request = kind === "tutor"
+      ? () => api.toggleTutorSave(token, id)
+      : kind === "podcast"
+        ? () => api.togglePodcastSave(token, id)
+        : () => api.toggleArticleBookmark(token, id);
+
+    run(`unsave-${kind}-${id}`, request, () => {
+      setSavedLibrary((current) => ({
+        ...current,
+        [listKey]: current[listKey].filter((item) => item.id !== id),
+      }));
+      setOpenSavedMenu(null);
+      say("Removed from saved");
+    });
   }
 
   const saveName = (e) => {
@@ -256,6 +283,32 @@ export default function Settings() {
 
   const savePassword = (e) => {
     e.preventDefault();
+
+    if (!currentPassword) {
+      setError("Enter your current password.");
+      return;
+    }
+
+    if (!password) {
+      setError("Create a new password.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Your new password needs at least 8 characters.");
+      return;
+    }
+
+    if (!passwordConfirm) {
+      setError("Type your new password again to confirm it.");
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      setError("Your new passwords do not match.");
+      return;
+    }
+
     run(
       "password",
       () =>
@@ -343,7 +396,7 @@ export default function Settings() {
 
       {/* Above the panel, not inside it: the message belongs to whatever you
           just did, and a section switch must not carry it away mid-read. */}
-      {error && <p className="se-error">{error}</p>}
+      {error && <p className="se-error" role="alert">{error}</p>}
       {flash && <p className="se-flash">{flash}</p>}
 
       <div className="se-shell">
@@ -513,7 +566,7 @@ export default function Settings() {
           {/* ---- security ---- */}
           {active === "security" && (
             <div className="se-rows">
-              <form className="se-row se-row-stack" onSubmit={savePassword}>
+              <form className="se-row se-row-stack" noValidate onSubmit={savePassword}>
                 <div className="se-row-text">
                   <p className="se-row-label">Password</p>
                   <p className="se-row-help">
@@ -686,8 +739,7 @@ export default function Settings() {
           {active === "saved" && (
             <div className="se-saved">
               <div className="se-saved-intro">
-                <p className="se-row-label">Your saved list</p>
-                <p className="se-row-help">Teachers, podcasts, and reads you want to return to.</p>
+                <p className="se-row-help">Keep teachers, podcasts, and reads you want to return to in one place.</p>
               </div>
               {!savedLibrary ? <p className="se-row-help">Loading saved items…</p> : (
                 <div className="se-saved-groups">
@@ -702,9 +754,6 @@ export default function Settings() {
                     return (
                       <section key={group.kind} className="se-saved-group">
                         <header className="se-saved-head">
-                          <span className="se-saved-mark" aria-hidden="true">
-                            <SavedMark>{group.mark}</SavedMark>
-                          </span>
                           <h2>{group.title}</h2>
                           {/* The count is the one fact the header can add, and
                               it is the reason an empty group still reads as a
@@ -715,35 +764,80 @@ export default function Settings() {
                         {items.length ? (
                           <ul className="se-saved-list">
                             {items.map((item) => (
-                              <li key={item.id}>
+                              <li key={item.id} className="se-saved-row">
                                 <Link to={group.to(item)} className="se-saved-item">
-                                  <span className="se-saved-name">{group.name(item)}</span>
-                                  {/* Drawn, so it sits on the row's centre
-                                      rather than on the text's baseline. */}
-                                  <svg
-                                    className="se-saved-go"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
-                                  >
-                                    <path d="m9.5 5 7 7-7 7" />
-                                  </svg>
+                                  {group.kind !== "tutor" && (
+                                    <span className={`se-saved-thumb se-saved-thumb-${group.kind}`} aria-hidden="true">
+                                      {item.image_url ? <img src={item.image_url} alt="" /> : <span>{group.kind === "podcast" ? "听" : "读"}</span>}
+                                    </span>
+                                  )}
+                                  <span className="se-saved-item-copy">
+                                    <span className="se-saved-name">{group.name(item)}</span>
+                                    {group.kind !== "tutor" && (
+                                      <span className="se-saved-meta">
+                                        {group.kind === "podcast"
+                                          ? item.category || "Podcast"
+                                          : `${item.category || "Read"} · ${item.reading_minutes || 1} min read`}
+                                      </span>
+                                    )}
+                                  </span>
                                 </Link>
+                                <div className="se-saved-actions">
+                                  <button
+                                    type="button"
+                                    className="se-saved-more-button"
+                                    aria-label={`More options for ${group.name(item)}`}
+                                    aria-expanded={openSavedMenu === `${group.kind}-${item.id}`}
+                                    onClick={() => setOpenSavedMenu((current) => current === `${group.kind}-${item.id}` ? null : `${group.kind}-${item.id}`)}
+                                  >
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                      <circle cx="5" cy="12" r="1.7" />
+                                      <circle cx="12" cy="12" r="1.7" />
+                                      <circle cx="19" cy="12" r="1.7" />
+                                    </svg>
+                                  </button>
+                                  {openSavedMenu === `${group.kind}-${item.id}` && <div className="se-saved-menu">
+                                    <button
+                                      type="button"
+                                      disabled={busy === `unsave-${group.kind}-${item.id}`}
+                                      onClick={() => removeSavedItem(group.kind, item.id)}
+                                    >
+                                      {busy === `unsave-${group.kind}-${item.id}` ? "Removing…" : "Remove from saved"}
+                                    </button>
+                                  </div>}
+                                </div>
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <p className="se-saved-empty">{group.empty}</p>
+                          <div className="se-saved-empty se-saved-empty-teachers">
+                            <strong>No saved {group.title.toLowerCase()} yet</strong>
+                            <p>{group.empty}</p>
+                            <Link
+                              to={{ tutor: "/find-tutor", podcast: "/podcast" }[group.kind] || "/read"}
+                              className="se-saved-browse"
+                            >
+                              Browse {group.title.toLowerCase()}
+                            </Link>
+                          </div>
                         )}
                       </section>
                     );
                   })}
                 </div>
               )}
+              <p className="se-saved-tip">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="se-saved-tip-bulb">
+                  <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" />
+                </svg>
+                <span>
+                  Tip: Look for the save icon
+                  <svg viewBox="0 0 24 24" aria-label="save" className="se-saved-tip-heart">
+                    <path d="M6.5 4h11v16l-5.5-4-5.5 4z" />
+                  </svg>
+                  on any teacher, episode, or article to add it here.
+                </span>
+              </p>
             </div>
           )}
 

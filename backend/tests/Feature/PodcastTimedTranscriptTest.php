@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Services\TimedTranscriptBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -130,6 +132,7 @@ class PodcastTimedTranscriptTest extends TestCase
             ->assertJsonMissingPath('stats');
     }
 
+
     public function test_the_episode_payload_does_not_carry_the_transcript(): void
     {
         $podcast = $this->podcast();
@@ -140,6 +143,47 @@ class PodcastTimedTranscriptTest extends TestCase
             ->assertOk()
             ->assertJsonPath('timed_transcript_status', 'completed')
             ->assertJsonMissingPath('timed_transcript');
+    }
+
+    public function test_an_admin_generates_a_chinese_timed_transcript_with_deepgram(): void
+    {
+        Storage::fake('public');
+        $podcast = $this->podcast();
+        $podcast->update(['audio_path' => 'podcasts/example.mp3']);
+        Storage::disk('public')->put('podcasts/example.mp3', 'audio-bytes');
+        config([
+            'services.deepgram.key' => 'test-key',
+            'services.deepgram.model' => 'nova-3',
+            // This test exercises Deepgram's timing conversion, not either
+            // translation provider. Never make it spend a real API credit.
+            'services.deepl.key' => null,
+            'services.gemini.key' => null,
+        ]);
+        Http::fake([
+            'https://api.deepgram.com/*' => Http::response([
+                'metadata' => ['duration' => 1.2],
+                'results' => ['channels' => [[
+                    'alternatives' => [[
+                        'words' => [
+                            ['word' => '你好', 'punctuated_word' => '你好，', 'start' => 0, 'end' => .5, 'confidence' => .99],
+                            ['word' => '中文', 'punctuated_word' => '中文。', 'start' => .5, 'end' => 1.2, 'confidence' => .98],
+                        ],
+                    ]],
+                ]]],
+            ]),
+        ]);
+        Sanctum::actingAs(User::where('is_admin', true)->first());
+
+        $this->postJson("/api/podcasts/{$podcast->id}/timed-transcript/generate")
+            ->assertOk()
+            ->assertJsonPath('status', 'completed')
+            ->assertJsonPath('model', 'deepgram/nova-3')
+            ->assertJsonPath('segments.0.text', '你好，中文。')
+            ->assertJsonPath('segments.0.words.0.pinyin', 'nǐ hǎo');
+
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Token test-key')
+            && str_contains($request->url(), 'language=zh'));
+        $this->assertSame("你好，中文。", $podcast->fresh()->transcript);
     }
 
     public function test_a_listener_cannot_import_or_remove_one(): void

@@ -104,6 +104,8 @@ export default function Study() {
      once they have been idle for RESUME_AFTER_MS. */
   const [paused, setPaused] = useState(false)
   const resumeTimer = useRef(null)
+  const touchRef = useRef(null)
+  const swipedRef = useRef(false)
 
   const holdForUser = useCallback(() => {
     setPaused(true)
@@ -208,15 +210,18 @@ export default function Study() {
     if (abs === 1) {
       return {
         transform: `translate3d(${side * 62}%, 0, 0) rotate(${side * 11}deg) scale(0.9)`,
-        opacity: 0.55,
+        opacity: 1,
         zIndex: 20,
       }
     }
-    // Everything further out waits behind the centre, invisible but still
-    // transitioning, so stepping into view animates rather than snaps.
+    // NO TRANSLUCENCY ANYWHERE. Neighbours were 0.55 and the rest faded to 0,
+    // so on a phone two covers bled through each other ("HSK 1" over "HSK 2"),
+    // and a fade that stalls mid-way leaves exactly that ghost. The rest now
+    // sit UNDER their neighbour, same spot, lower z: hidden by being covered,
+    // not by being transparent, so no frame can show a see-through card.
     return {
-      transform: `translate3d(${side * 80}%, 0, 0) rotate(${side * 16}deg) scale(0.8)`,
-      opacity: 0,
+      transform: `translate3d(${side * 62}%, 0, 0) rotate(${side * 11}deg) scale(0.9)`,
+      opacity: 1,
       zIndex: 10,
       pointerEvents: 'none',
     }
@@ -300,6 +305,35 @@ export default function Study() {
           <div
             className="st-stage"
             onPointerDown={holdForUser}
+            /* SWIPE: on a phone the arrows are gone (mobile.css), so a
+               sideways drag of 40px+ that beats the vertical one turns the
+               carousel. `swipedRef` swallows the click the lift-off would
+               otherwise send to whichever book is under the finger. */
+            onTouchStart={(e) => {
+              const t = e.touches[0]
+              touchRef.current = { x: t.clientX, y: t.clientY }
+              swipedRef.current = false
+            }}
+            onTouchEnd={(e) => {
+              const start = touchRef.current
+              touchRef.current = null
+              if (!start) return
+              const t = e.changedTouches[0]
+              const dx = t.clientX - start.x
+              const dy = t.clientY - start.y
+              if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                swipedRef.current = true
+                holdForUser()
+                step(dx < 0 ? 1 : -1)
+              }
+            }}
+            onClickCapture={(e) => {
+              if (swipedRef.current) {
+                e.preventDefault()
+                e.stopPropagation()
+                swipedRef.current = false
+              }
+            }}
             style={
               paused
                 ? { '--st-move': '0.52s', '--st-ease': 'cubic-bezier(0.25, 0.8, 0.25, 1)' }

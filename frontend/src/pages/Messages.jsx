@@ -7,11 +7,6 @@ import PageTools from '../components/PageTools'
 import { invalidateUnreadMessages } from '../hooks/useUnreadMessages'
 import './Messages.css'
 
-/* How often an open thread re-asks for new messages. Faster than the rail's
-   own count, because this is the screen you are actually watching while you
-   wait for a reply. */
-const THREAD_POLL_MS = 8000
-
 /* Laid out from design/message.png: a "Chat" title with an accent rule, then a
    374px thread panel beside a wide conversation panel. Colours are this app's
    palette rather than the mockup's neutral greys. */
@@ -184,6 +179,16 @@ function ArrowIcon() {
   )
 }
 
+function MoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.55" />
+      <circle cx="12" cy="12" r="1.55" />
+      <circle cx="12" cy="19" r="1.55" />
+    </svg>
+  )
+}
+
 function Avatar({ name, src, className = '' }) {
   if (src) return <img className={`ms-avatar ${className}`} src={src} alt="" />
   return (
@@ -218,6 +223,7 @@ export default function Messages() {
   const [file, setFile] = useState(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const [error, setError] = useState(null)
+  const [openMessageMenu, setOpenMessageMenu] = useState(null)
 
   const bottomRef = useRef(null)
   const fileRef = useRef(null)
@@ -262,30 +268,26 @@ export default function Messages() {
     else setActive(null)
   }, [openId, openThread])
 
-  /* THE OPEN THREAD REFRESHES ITSELF. Nothing here is pushed — there are no
-     websockets in this app — so a reply that arrived while you sat on the
-     thread simply was not on screen until you reloaded the page, which is what
-     "I have to refresh to see the message" was.
+  useEffect(() => {
+    const closeMessageMenu = (event) => {
+      if (!event.target.closest('.ms-message-actions')) setOpenMessageMenu(null)
+    }
+    document.addEventListener('pointerdown', closeMessageMenu)
+    return () => document.removeEventListener('pointerdown', closeMessageMenu)
+  }, [])
 
-     `setInterval`, not requestAnimationFrame: rAF is throttled to a standstill
-     in a background tab, which is exactly when a thread is left open. The tick
-     is skipped while the tab is hidden for the same reason — a poll nobody can
-     see is a request spent for nothing — and fires once on return, which is the
-     moment the thread is most likely to be out of date.
-
-     It reuses `openThread`, so the refresh also marks arriving messages read
-     and re-sorts the thread list, rather than being a second way to load a
-     conversation that could drift from the first. */
+  /* Pusher announces a private, content-free conversation change. Refresh the
+     affected thread through Verbo's API so the chat body never sits in a
+     broadcast payload. */
   useEffect(() => {
     if (!openId) return undefined
-    const tick = () => {
-      if (document.visibilityState === 'visible') openThread(openId)
+    const onConversationUpdated = (event) => {
+      const changed = String(event.detail?.conversation_id) === String(openId)
+      if (changed && document.visibilityState === 'visible') openThread(openId)
     }
-    const id = setInterval(tick, THREAD_POLL_MS)
-    document.addEventListener('visibilitychange', tick)
+    window.addEventListener('verbo:conversation-updated', onConversationUpdated)
     return () => {
-      clearInterval(id)
-      document.removeEventListener('visibilitychange', tick)
+      window.removeEventListener('verbo:conversation-updated', onConversationUpdated)
     }
   }, [openId, openThread])
 
@@ -314,19 +316,68 @@ export default function Messages() {
     // A picture on its own is a perfectly good message, so either will do.
     if (!body && !file) return
 
+    const clientId = globalThis.crypto?.randomUUID?.()
+      || `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const temporary = {
+      id: `local:${clientId}`,
+      client_id: clientId,
+      body,
+      kind: 'text',
+      sender_id: null,
+      sender_name: null,
+      mine: true,
+      created_at: new Date().toISOString(),
+      read_at: null,
+      attachment: file ? {
+        name: file.name,
+        mime: file.type,
+        size: file.size,
+        is_image: file.type.startsWith('image/'),
+      } : null,
+      delivery_state: 'sending',
+    }
+
+    // Clear and paint first. A slow request must never make typing feel slow.
+    setActive((current) => current
+      ? { ...current, messages: [...current.messages, temporary] }
+      : current)
+    setDraft('')
+    setFile(null)
+    setShowEmoji(false)
+    if (fileRef.current) fileRef.current.value = ''
     setSending(true)
     setError(null)
     try {
-      await api.sendMessage(token, active.id, body, file)
-      setDraft('')
-      setFile(null)
-      setShowEmoji(false)
-      if (fileRef.current) fileRef.current.value = ''
-      // Refetch rather than appending locally: the server owns ids, ordering
-      // and read state, and a reply may have arrived meanwhile.
-      openThread(active.id)
+      const saved = await api.sendMessage(token, active.id, body, file, clientId)
+      setActive((current) => current
+        ? {
+            ...current,
+            messages: current.messages.map((message) =>
+              message.client_id === clientId
+                ? { ...saved, delivery_state: 'sent' }
+                : message,
+            ),
+          }
+        : current)
+      // The affected thread alone moves to the top; no whole-list refetch.
+      setThreads((current) => {
+        const patch = (items) => items.map((thread) => thread.id === active.id
+          ? { ...thread, preview: saved.body || 'Sent an attachment', last_message_at: saved.created_at }
+          : thread)
+        return { tutors: patch(current.tutors), courses: patch(current.courses) }
+      })
     } catch (err) {
-      setError(err.message)
+      setActive((current) => current
+        ? {
+            ...current,
+            messages: current.messages.map((message) =>
+              message.client_id === clientId
+                ? { ...message, delivery_state: 'failed' }
+                : message,
+            ),
+          }
+        : current)
+      setError('Message failed to send. Use Retry to try again.')
     } finally {
       setSending(false)
     }
@@ -360,6 +411,7 @@ export default function Messages() {
       // The thread list shows a preview of the last message, which may be the
       // one that just went.
       loadThreads()
+      setOpenMessageMenu(null)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -655,31 +707,57 @@ export default function Messages() {
                               only drawn when there is something to say. */}
                           {m.body && <p className="ms-bubble">{m.body}</p>}
                           <time className="ms-time">
-                            {clockFmt.format(new Date(m.created_at))}
-                            {m.mine && m.read_at ? ' · Read' : ''}
-                            {/* Only on your own messages: you can take back
-                                what you said, not what someone said to you.
-
-                                Arms on the first click and acts on the second
-                                — the pattern Scan's delete and the Bookings
-                                clear use — because this cannot be undone and
-                                the control sits right beside a timestamp
-                                somebody may be aiming a scroll at. */}
-                            {m.mine && (
+                            <span>{clockFmt.format(new Date(m.created_at))}</span>
+                            {m.mine && m.delivery_state === 'sending' && (
+                              <span className="ms-message-state">Sending…</span>
+                            )}
+                            {m.mine && m.delivery_state === 'failed' && (
+                              <span className="ms-message-state ms-message-state-failed">Failed</span>
+                            )}
+                            {m.mine && m.read_at && <span className="ms-message-read">Read</span>}
+                            {m.mine && m.delivery_state === 'failed' && (
                               <button
                                 type="button"
-                                className={
-                                  'ms-unsend' + (armedId === m.id ? ' armed' : '')
-                                }
-                                onClick={() => unsend(m.id)}
-                                disabled={deletingId === m.id}
+                                className="ms-retry"
+                                onClick={() => {
+                                  setDraft(m.body || '')
+                                  setActive((current) => current
+                                    ? { ...current, messages: current.messages.filter((item) => item.id !== m.id) }
+                                    : current)
+                                  inputRef.current?.focus()
+                                }}
                               >
-                                {deletingId === m.id
-                                  ? 'Deleting…'
-                                  : armedId === m.id
-                                    ? 'Tap again to delete'
-                                    : 'Delete'}
+                                Retry
                               </button>
+                            )}
+                            {m.mine && !String(m.id).startsWith('local:') && (
+                              <span className="ms-message-actions">
+                                <button
+                                  type="button"
+                                  className="ms-message-more"
+                                  aria-label="Message options"
+                                  aria-expanded={openMessageMenu === m.id}
+                                  onClick={() => setOpenMessageMenu((current) => current === m.id ? null : m.id)}
+                                >
+                                  <MoreIcon />
+                                </button>
+                                {openMessageMenu === m.id && (
+                                  <span className="ms-message-menu">
+                                    <button
+                                      type="button"
+                                      className={armedId === m.id ? 'armed' : ''}
+                                      onClick={() => unsend(m.id)}
+                                      disabled={deletingId === m.id}
+                                    >
+                                      {deletingId === m.id
+                                        ? 'Deleting…'
+                                        : armedId === m.id
+                                          ? 'Tap again to delete'
+                                          : 'Delete'}
+                                    </button>
+                                  </span>
+                                )}
+                              </span>
                             )}
                           </time>
                         </div>

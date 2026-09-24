@@ -48,6 +48,7 @@ class Flashcard extends Model
         'source_type',
         'source_id',
         'example',
+        'card_type',
     ];
 
     /**
@@ -57,6 +58,7 @@ class Flashcard extends Model
      * once — the same trap `source_module` and `Booking.status` hit.
      */
     protected $attributes = [
+        'card_type' => 'word',
         'review_count' => 0,
         'correct_streak' => 0,
         'lapses' => 0,

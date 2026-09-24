@@ -377,6 +377,104 @@
   background: var(--vb-well);
 }
 
+.vb-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* The same quiet text button as "+ Add a word", in the row menu's delete red
+   (#b3261e / #fdecea), so the two actions read as a pair and only the colour
+   says which one destroys. */
+.vb-clear-toggle {
+  color: #b3261e;
+}
+
+.vb-clear-toggle:hover {
+  background: #fdecea;
+}
+
+/* The confirmation, shaped like the Add-a-word panel it replaces in the same
+   slot (same radius, padding and gap), tinted the error red so it cannot be
+   mistaken for a form. Question left, buttons right; stacks on a phone. */
+.vb-clear {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #f6c6c1;
+  border-radius: 14px;
+  background: #fdf6f5;
+}
+
+.vb-clear-copy {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.vb-clear-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--vb-text);
+}
+
+.vb-clear-text {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--vb-muted);
+}
+
+.vb-clear-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex: none;
+}
+
+/* Cap-band pair for a 600 label (0.076em), as on the app's other pills. */
+.vb-clear-cancel,
+.vb-clear-confirm {
+  padding: calc(0.55rem - 0.076em) 1.1rem calc(0.55rem + 0.076em);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vb-clear-cancel {
+  border: 1px solid var(--vb-line);
+  background: #fff;
+  color: var(--vb-text);
+}
+
+.vb-clear-cancel:hover:not(:disabled) {
+  background: var(--vb-well);
+}
+
+/* Outlined at the question, FILLED once armed: the second ask is louder than
+   the first. Static classes - the fill is the state, never transitioned. */
+.vb-clear-confirm {
+  border: 1px solid #d93636;
+  background: #fff;
+  color: #b3261e;
+}
+
+.vb-clear-confirm.armed {
+  background: #d93636;
+  color: #fff;
+}
+
+.vb-clear-confirm:disabled,
+.vb-clear-cancel:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .vb-add {
   display: flex;
   flex-wrap: wrap;
@@ -636,6 +734,26 @@
 .vb-state-mastered {
   background: #e7f2ec;
   color: #1f7a45;
+}
+
+.vb-state-sentence {
+  background: #eeeafb;
+  color: #6a6191;
+}
+
+.vb-row-sentence .vb-row-head {
+  display: block;
+}
+
+.vb-row-sentence .vb-word {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.55;
+  white-space: normal;
+}
+
+.vb-row-sentence .vb-pinyin {
+  margin-left: 0.55rem;
 }
 
 /* ---- "where you learned this" ---- */

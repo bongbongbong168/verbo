@@ -194,18 +194,23 @@
   .ql {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
-    gap: 1rem;
-    padding: 1.6rem 1.3rem 1.8rem;
+    gap: 0.7rem;
+    padding: 1rem 1rem 1.2rem;
     text-align: center;
+    border-radius: 16px;
+    box-shadow:
+      0 7px 0 0 var(--ql-stroke),
+      0 14px 28px rgba(28, 23, 48, 0.14);
   }
 
   .ql-stage {
     min-height: 0;
-    padding: 1rem;
+    padding: 0.6rem;
+    border-radius: 12px;
   }
 
   .ql-art {
-    height: 150px;
+    height: 104px;
   }
 
   .ql-copy {
@@ -213,6 +218,19 @@
   }
 
   .ql-heading {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .ql-lede {
+    margin-top: 0.4rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .ql-start {
+    margin-top: 0.9rem;
+    font-size: 0.86rem;
+    padding-left: 1.8rem;
+    padding-right: 1.8rem;
   }
 }

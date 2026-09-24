@@ -34,6 +34,21 @@ function PlusIcon() {
   );
 }
 
+function EmptyFolderIllustration() {
+  return (
+    <svg className="cl-log-empty-illustration" viewBox="0 0 180 128" fill="none" aria-hidden="true">
+      <ellipse cx="90" cy="115" rx="54" ry="5" fill="#e4ddf7" />
+      <path d="M28 48c0-7 6-13 13-13h31l11 12h56c7 0 13 6 13 13v35c0 8-6 14-14 14H42c-8 0-14-6-14-14V48Z" fill="#f1edfc" stroke="#7d76a1" strokeWidth="2" />
+      <path d="M28 61h124v34c0 8-6 14-14 14H42c-8 0-14-6-14-14V61Z" fill="#fff" stroke="#7d76a1" strokeWidth="2" />
+      <circle cx="76" cy="84" r="4" fill="#6a6191" />
+      <circle cx="105" cy="84" r="4" fill="#6a6191" />
+      <path d="M80 97h21" stroke="#6a6191" strokeWidth="3" strokeLinecap="round" />
+      <path d="M137 27v16M129 35h16" stroke="#a89ce3" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="151" cy="20" r="5" fill="#d8cef7" />
+    </svg>
+  )
+}
+
 function ClockIcon() {
   return (
     <svg className="cl-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -132,6 +147,17 @@ export default function Classroom() {
   const [creating, setCreating] = useState(false);
   const [settings, setSettings] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
+
+  /* Escape closes the delete pop-up, unless the delete is already running. */
+  useEffect(() => {
+    if (!askDelete) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !busy) setAskDelete(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [askDelete, busy]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -240,12 +266,14 @@ export default function Classroom() {
                 readable by the people who were in it, so this word changes;
                 on the hub every row is un-archived by construction, which is
                 why that card badges ungraded work instead. */}
-            <span
-              className={`cl-status${cls.archived_at ? " archived" : ""}`}
-            >
-              <span className="cl-status-dot" aria-hidden="true" />
-              {cls.archived_at ? "Archived" : "Active"}
-            </span>
+            {/* "Active" came off at the user's request; only the
+                exception, an archived class, still says so. */}
+            {cls.archived_at && (
+              <span className="cl-status archived">
+                <span className="cl-status-dot" aria-hidden="true" />
+                Archived
+              </span>
+            )}
           </div>
 
           {cls.description && (
@@ -334,9 +362,7 @@ export default function Classroom() {
                an empty panel. Dashed, because it is a slot waiting to be
                filled rather than a card with content in it. */
             <div className="cl-log-empty">
-              {/* No mark. A plus in a chip directly above a button that already
-                  says "Post to class" is the same instruction twice, and the
-                  larger, quieter of the two was the one carrying no words. */}
+              <EmptyFolderIllustration />
               <p className="cl-log-empty-title">
                 {isTeacher ? "Nothing posted yet" : "Nothing here yet"}
               </p>
@@ -516,11 +542,57 @@ export default function Classroom() {
             <button
               type="button"
               className="cl-danger-btn"
-              onClick={removeClass}
+              onClick={() => setAskDelete(true)}
               disabled={busy}
             >
               Delete class
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* The SECOND ask, as a pop-up: the button above only opens this, and
+          only this one deletes. Same scrim and dialog shell as the create
+          dialog (`ci-`), so it reads as part of the page. */}
+      {askDelete && (
+        <div
+          className="ci-scrim"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !busy) setAskDelete(false);
+          }}
+        >
+          <div
+            className="ci cl-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="cl-confirm-title"
+          >
+            <h2 id="cl-confirm-title" className="cl-confirm-title">
+              Delete {cls.name}?
+            </h2>
+            <p className="cl-confirm-text">
+              This removes the roster, every assignment and every submission
+              for good. Students lose access straight away.
+            </p>
+            <div className="cl-confirm-actions">
+              <button
+                type="button"
+                className="cl-btn cl-btn-ghost"
+                onClick={() => setAskDelete(false)}
+                disabled={busy}
+                autoFocus
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="cl-danger-btn"
+                onClick={removeClass}
+                disabled={busy}
+              >
+                {busy ? "Deleting..." : "Delete class"}
+              </button>
+            </div>
           </div>
         </div>
       )}

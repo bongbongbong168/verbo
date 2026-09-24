@@ -123,6 +123,75 @@
   margin: 1rem 0;
 }
 
+.sc-allowance {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.25rem 0 -0.35rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #ddd6f4;
+  border-radius: 16px;
+  background: #fbfaff;
+  color: #2b2643;
+}
+
+.sc-allowance.low {
+  border-color: #e8bc72;
+  background: #fffaf1;
+}
+
+.sc-allowance.exhausted {
+  border-color: #c9bdf3;
+  background: #f5f1ff;
+}
+
+.sc-allowance img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.sc-allowance-copy { flex: 1; min-width: 0; }
+.sc-allowance-kicker {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: #7d76a0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sc-allowance h2 { margin: 0; font-size: 1rem; line-height: 1.25; }
+.sc-allowance p { margin: 0.22rem 0 0; color: #716b8e; font-size: 0.82rem; }
+.sc-allowance-track {
+  width: min(360px, 100%);
+  height: 7px;
+  margin-top: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9e4f7;
+}
+.sc-allowance-track span { display: block; height: 100%; border-radius: inherit; background: #7d76a0; }
+.sc-allowance.low .sc-allowance-track span { background: #d28a27; }
+.sc-allowance-cta {
+  flex: 0 0 auto;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  background: #2b2643;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.sc-allowance-cta:hover { background: #3d3860; }
+.sc-btn:disabled, .sc-empty-upload:disabled { cursor: not-allowed; opacity: 0.55; }
+
+@media (max-width: 680px) {
+  .sc-allowance { align-items: flex-start; flex-wrap: wrap; }
+  .sc-allowance-cta { width: 100%; text-align: center; }
+}
+
 /* Vertical padding sets the banner's height, which in turn caps how large the
    notebook art can be: the art is near-square and rotated, so it stands ~1.13x
    its own width on screen. At 2.2rem the banner was 222px and a 235px-wide
@@ -645,8 +714,57 @@
 }
 
 .sc-empty {
+  min-height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   color: var(--sc-text-muted);
+  padding: 1rem 1rem 2rem;
+}
+
+.sc-empty svg {
+  width: 180px;
+  height: 128px;
+  margin-bottom: 0.2rem;
+}
+
+.sc-empty h3 {
+  margin: 0;
+  color: var(--sc-text);
+  font-size: 1.08rem;
+}
+
+.sc-empty p {
+  margin: 0.38rem 0 1rem;
   font-size: 0.9rem;
+}
+
+.sc-empty-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--sc-border);
+  border-radius: 999px;
+  padding: 0.58rem 0.95rem;
+  background: #fff;
+  color: var(--sc-text);
+  font: 600 0.86rem 'Hellix', sans-serif;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.sc-empty-upload svg {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+}
+
+.sc-empty-upload:hover {
+  transform: translateY(-1px);
+  border-color: #a89ce3;
+  box-shadow: 0 5px 14px rgba(74, 61, 120, 0.12);
 }
 
 .sc-table-wrap {

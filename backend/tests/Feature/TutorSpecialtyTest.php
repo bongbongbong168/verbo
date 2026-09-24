@@ -29,11 +29,15 @@ class TutorSpecialtyTest extends TestCase
         $this->putJson("/api/tutors/{$profile->id}/specialties", [
             'specialties' => ['speaking', 'hsk', 'conversational'],
             'main_specialty' => 'conversational',
+            'teaches_levels' => ['Beginner', 'Advanced'],
+            'teaching_languages' => ['Mandarin', 'English'],
         ])->assertOk()
             ->assertJsonPath('main_specialty', 'conversational')
             ->assertJsonPath('specialty_list.0.key', 'conversational')
             ->assertJsonPath('specialty_list.0.main', true)
-            ->assertJsonPath('specialty_list.0.label', 'Conversational Chinese')
+            ->assertJsonPath('specialty_list.0.label', 'Conversation')
+            ->assertJsonPath('teaches_levels.1', 'Advanced')
+            ->assertJsonPath('teaching_languages.1', 'English')
             ->assertJsonCount(3, 'specialty_list');
     }
 
@@ -66,6 +70,30 @@ class TutorSpecialtyTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_a_tutor_can_save_their_student_fit_and_teaching_languages(): void
+    {
+        [$user, $profile] = $this->tutor();
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/tutors/{$profile->id}/profile", [
+            'teaches_levels' => ['Beginner', 'Intermediate'],
+            'specialties' => ['hsk', 'travel'],
+            'teaching_languages' => ['English', 'Mandarin'],
+            'availability' => '9am - 12am, 1pm - 7pm',
+        ])->assertOk()
+            ->assertJsonPath('teaches_levels.0', 'Beginner')
+            ->assertJsonPath('specialties.1', 'travel')
+            ->assertJsonPath('specialty_list.0.key', 'hsk')
+            ->assertJsonPath('teaching_languages.0', 'English')
+            ->assertJsonPath('teaches_level_options.0', 'Beginner')
+            ->assertJsonPath('languages_spoken', 'English, Mandarin');
+
+        $this->assertDatabaseHas('tutor_profiles', [
+            'id' => $profile->id,
+            'languages_spoken' => 'English, Mandarin',
+        ]);
+    }
+
     public function test_an_application_must_name_at_least_one_specialty(): void
     {
         Sanctum::actingAs(User::factory()->create());
@@ -73,7 +101,7 @@ class TutorSpecialtyTest extends TestCase
         $this->postJson('/api/tutor-profile', [
             'bio' => str_repeat('I teach Mandarin to adults. ', 3),
             'subjects' => 'Chinese Tutor',
-            'languages_spoken' => 'Chinese, English',
+            'teaching_languages' => ['Mandarin', 'English'],
             'country' => 'China',
             'chinese_level' => 'Native speaker',
             'teaches_levels' => ['Beginner'],

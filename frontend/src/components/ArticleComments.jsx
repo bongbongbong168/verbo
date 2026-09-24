@@ -234,6 +234,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
   const [error, setError] = useState(null);
 
   const [draft, setDraft] = useState("");
+  const [composing, setComposing] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [editing, setEditing] = useState(null);
@@ -298,6 +299,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
     run(async () => {
       await api.addArticleComment(token, articleId, draft);
       setDraft("");
+      setComposing(false);
     });
   }
 
@@ -315,46 +317,50 @@ export default function ArticleComments({ articleId, onCountChange }) {
            the same face-and-name row, so what you write already looks like
            where it will land. The field has no frame of its own - the card
            is the frame, and it lights up while you are in it. */
+        /* COLLAPSED UNTIL CLICKED: one slim row, the face and a one-line
+           field. Focusing it opens the card to three lines with Cancel and
+           Comment on the right. Cancel clears the draft and folds it back;
+           posting folds it back too. No keyboard shortcut, at the user's
+           request - Enter is always a new line. */
         <form
-          className="rd-cm-new"
+          className={`rd-cm-new${composing ? " open" : ""}`}
           onSubmit={(e) => {
             e.preventDefault();
             post();
           }}
         >
-          <div className="rd-cm-head">
+          <div className="rd-cm-new-row">
             <Face name={user.name} src={user.avatar_url} />
-            <span className="rd-cm-new-who">
-              <span className="rd-cm-name">{user.name}</span>
-              <span className="rd-cm-new-sub">Commenting publicly</span>
-            </span>
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onFocus={() => setComposing(true)}
+              placeholder="Add a comment…"
+              rows={1}
+              aria-label="Write a comment"
+            />
           </div>
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              // Ctrl/Cmd+Enter posts; a plain Enter is a new line.
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                post();
-              }
-            }}
-            placeholder="Ask a question or share what you noticed…"
-            rows={3}
-            aria-label="Write a comment"
-          />
-          <div className="rd-cm-new-foot">
-            <span className="rd-cm-new-hint">
-              <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to post
-            </span>
-            <button
-              type="submit"
-              className="rd-cm-send"
-              disabled={busy || !draft.trim()}
-            >
-              Post
-            </button>
-          </div>
+          {composing && (
+            <div className="rd-cm-new-foot">
+              <button
+                type="button"
+                className="rd-cm-quiet"
+                onClick={() => {
+                  setDraft("");
+                  setComposing(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rd-cm-send"
+                disabled={busy || !draft.trim()}
+              >
+                Comment
+              </button>
+            </div>
+          )}
         </form>
       ) : (
         <p className="rd-cm-locked">Please log in to join the discussion.</p>

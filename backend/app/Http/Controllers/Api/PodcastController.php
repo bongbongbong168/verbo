@@ -6,14 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Models\PodcastListenDay;
 use App\Models\PodcastProgress;
+use App\Models\SavedItem;
 use App\Services\DictionaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 class PodcastController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         /* image_path is selected so the image_url accessor resolves on list
            rows; user:id,name feeds the author line on the episode cards.
@@ -21,10 +23,17 @@ class PodcastController extends Controller
            `audio_path` so a card can say an episode has no recording yet —
            the raw column rather than audio_url, which would build a streaming
            URL for a file that is not there. */
+        $saved = SavedItem::where('user_id', $request->user()->id)->where('kind', 'podcast')->pluck('item_id')->all();
+
         return Podcast::query()
             ->with('user:id,name')
             ->latest()
-            ->get(['id', 'title', 'level', 'category', 'bio', 'host', 'image_path', 'audio_path', 'user_id', 'created_at']);
+            ->get(['id', 'title', 'level', 'category', 'is_premium', 'bio', 'host', 'image_path', 'audio_path', 'user_id', 'created_at'])
+            ->each(function (Podcast $podcast) use ($request, $saved) {
+                $podcast->setAttribute('saved', in_array($podcast->id, $saved));
+                $podcast->setAttribute('premium_locked', $this->premiumLocked($request, $podcast));
+                $podcast->setAttribute('has_audio', (bool) $podcast->audio_path);
+            });
     }
 
     /**
@@ -37,11 +46,12 @@ class PodcastController extends Controller
      * Public on purpose: the file is already reachable via /storage, so this
      * adds no exposure, and an <audio src> cannot send a bearer token.
      */
-    public function audio(Podcast $podcast)
+    public function audio(Request $request, Podcast $podcast)
     {
         abort_unless($podcast->audio_path, 404);
+        abort_if($podcast->is_premium && ! $request->hasValidSignature(), 403);
 
-        $path = Storage::disk('public')->path($podcast->audio_path);
+        $path = Storage::disk($podcast->audioDisk())->path($podcast->audio_path);
         abort_unless(is_file($path), 404);
 
         return response()->file($path);
@@ -50,6 +60,7 @@ class PodcastController extends Controller
     public function show(Request $request, Podcast $podcast, DictionaryService $dictionary)
     {
         $podcast->load('user:id,name');
+        $locked = $this->premiumLocked($request, $podcast);
 
         /* The viewer's own place in this episode, so the player can pick up
            where they stopped without a second request before it can start. */
@@ -57,9 +68,20 @@ class PodcastController extends Controller
             ->where('podcast_id', $podcast->id)
             ->first();
 
-        return array_merge($podcast->toArray(), [
-            'tokens' => $podcast->transcript ? $dictionary->annotate($podcast->transcript) : [],
-            'progress' => $progress ? [
+        $payload = $podcast->toArray();
+        $payload['premium_locked'] = $locked;
+        $payload['has_audio'] = (bool) $podcast->audio_path;
+        $payload['audio_url'] = $locked
+            ? null
+            : ($podcast->is_premium && $podcast->audio_path
+                ? URL::temporarySignedRoute('podcasts.audio', now()->addMinutes(30), ['podcast' => $podcast->id])
+                : $podcast->audio_url);
+        $payload['transcript'] = $locked ? null : $podcast->transcript;
+        $payload['transcript_en'] = $locked ? null : $podcast->transcript_en;
+
+        return array_merge($payload, [
+            'tokens' => ! $locked && $podcast->transcript ? $dictionary->annotate($podcast->transcript) : [],
+            'progress' => ! $locked && $progress ? [
                 'position_seconds' => $progress->position_seconds,
                 'duration_seconds' => $progress->duration_seconds,
                 'completed_at' => $progress->completed_at,
@@ -79,6 +101,8 @@ class PodcastController extends Controller
      */
     public function saveProgress(Request $request, Podcast $podcast)
     {
+        abort_if($this->premiumLocked($request, $podcast), 403, 'Verbo Pro is required to play this episode.');
+
         $data = $request->validate([
             'position_seconds' => ['required', 'integer', 'min:0'],
             'duration_seconds' => ['nullable', 'integer', 'min:0'],
@@ -158,10 +182,12 @@ class PodcastController extends Controller
                 'podcast' => array_merge(
                     $p->podcast->only([
                         'id', 'title', 'level', 'category', 'bio', 'host', 'created_at',
+                        'is_premium',
                     ]),
                     [
                         'image_url' => $p->podcast->image_url,
                         'author' => $p->podcast->user?->name,
+                        'premium_locked' => $this->premiumLocked($request, $p->podcast),
                     ]
                 ),
                 'position_seconds' => $p->position_seconds,
@@ -197,6 +223,7 @@ class PodcastController extends Controller
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
+            'is_premium' => ['sometimes', 'boolean'],
             'bio' => ['nullable', 'string'],
             'host' => ['nullable', 'string', 'max:120'],
             /* Nullable, not required: an episode can be written before it is
@@ -214,7 +241,8 @@ class PodcastController extends Controller
         ]);
 
         if ($request->hasFile('audio')) {
-            $data['audio_path'] = $request->file('audio')->store('podcasts', 'public');
+            $disk = ! empty($data['is_premium']) ? 'local' : 'public';
+            $data['audio_path'] = $request->file('audio')->store('podcasts', $disk);
         }
         unset($data['audio']);
 
@@ -238,6 +266,7 @@ class PodcastController extends Controller
             'transcript_en' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'in:Beginner,Intermediate,Advanced'],
             'category' => ['nullable', 'string', Rule::in(Podcast::CATEGORIES)],
+            'is_premium' => ['sometimes', 'boolean'],
             'bio' => ['nullable', 'string'],
             'host' => ['nullable', 'string', 'max:120'],
             'audio' => ['nullable', 'file', 'mimes:'.self::AUDIO_MIMES, 'max:'.self::AUDIO_MAX_KB],
@@ -247,9 +276,21 @@ class PodcastController extends Controller
             'audio.mimes' => 'The audio must be one of: '.str_replace(',', ', ', self::AUDIO_MIMES).'.',
         ]);
 
+        $wasPremium = (bool) $podcast->is_premium;
+        $willBePremium = array_key_exists('is_premium', $data)
+            ? (bool) $data['is_premium']
+            : $wasPremium;
+
         if ($request->hasFile('audio')) {
-            Storage::disk('public')->delete($podcast->audio_path);
-            $data['audio_path'] = $request->file('audio')->store('podcasts', 'public');
+            if ($podcast->audio_path) {
+                Storage::disk($podcast->audioDisk())->delete($podcast->audio_path);
+            }
+            $data['audio_path'] = $request->file('audio')->store(
+                'podcasts',
+                $willBePremium ? 'local' : 'public'
+            );
+        } elseif ($podcast->audio_path && $wasPremium !== $willBePremium) {
+            $this->moveAudio($podcast, $willBePremium ? 'local' : 'public');
         }
         unset($data['audio']);
 
@@ -270,12 +311,42 @@ class PodcastController extends Controller
     {
         abort_unless($request->user()->is_admin, 403);
 
-        Storage::disk('public')->delete($podcast->audio_path);
+        Storage::disk($podcast->audioDisk())->delete($podcast->audio_path);
         if ($podcast->image_path) {
             Storage::disk('public')->delete($podcast->image_path);
         }
         $podcast->delete();
 
         return response()->json(['message' => 'Deleted']);
+    }
+
+    private function premiumLocked(Request $request, Podcast $podcast): bool
+    {
+        $user = $request->user();
+
+        return (bool) $podcast->is_premium
+            && ! $user->is_pro
+            && ! $user->is_admin;
+    }
+
+    /** Move an existing recording between public and private storage. */
+    private function moveAudio(Podcast $podcast, string $toDisk): void
+    {
+        $fromDisk = $podcast->audioDisk();
+        if ($fromDisk === $toDisk || ! Storage::disk($fromDisk)->exists($podcast->audio_path)) {
+            return;
+        }
+
+        $stream = Storage::disk($fromDisk)->readStream($podcast->audio_path);
+        abort_unless(is_resource($stream), 500, 'Verbo could not move this episode audio.');
+
+        try {
+            $written = Storage::disk($toDisk)->put($podcast->audio_path, $stream);
+        } finally {
+            fclose($stream);
+        }
+
+        abort_unless($written, 500, 'Verbo could not move this episode audio.');
+        Storage::disk($fromDisk)->delete($podcast->audio_path);
     }
 }

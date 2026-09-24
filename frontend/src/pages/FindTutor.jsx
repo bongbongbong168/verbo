@@ -10,59 +10,43 @@ import ImageCropper from "../components/ImageCropper";
 import PageTools from "../components/PageTools";
 import FilterSelect from "../components/FilterSelect";
 import PriceRange from "../components/PriceRange";
+import SaveHeartButton from "../components/SaveHeartButton";
+import TutorCover from "../components/TutorCover";
+import TutorMedia from "../components/TutorMedia";
 import "./FindTutor.css";
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6.875 6.5v11c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L8.475 5.6c-.7-.4-1.6.1-1.6.9z" />
-    </svg>
-  );
-}
-
-function PersonIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="8" r="3.5" />
-      <path d="M5 20a7 7 0 0 1 14 0" />
-    </svg>
-  );
-}
-
-/* 12-lobe seal generated around (12,12) so it is centred in its own viewBox and
-   fills 92% of it. The previous path sat 1.9 units high and filled only 69%,
-   which made the badge render small and float above the name's baseline. */
-function VerifiedIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-label="Verified" role="img">
-      <path
-        fill="#d61f1f"
-        d="M12.00 1.00 L9.64 3.21 L6.50 2.47 L5.57 5.57 L2.47 6.50 L3.21 9.64 L1.00 12.00 L3.21 14.36 L2.47 17.50 L5.57 18.43 L6.50 21.53 L9.64 20.79 L12.00 23.00 L14.36 20.79 L17.50 21.53 L18.43 18.43 L21.53 17.50 L20.79 14.36 L23.00 12.00 L20.79 9.64 L21.53 6.50 L18.43 5.57 L17.50 2.47 L14.36 3.21 Z"
-      />
-      <path
-        d="M7.6 12.1 10.5 15 16.4 9.1"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="2.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 /* Rating is real (see reviews_avg_rating). Student count and years of
    experience are still stand-ins — neither has a backend, and both would need
    new tracking rather than a new query. */
 const PLACEHOLDER_STATS = { students: "268", experience: "5y" };
+
+function fitLevels(tutor) {
+  return tutor.teaches_levels?.length ? tutor.teaches_levels : ['All levels']
+}
+
+function fitFocuses(tutor) {
+  const labels = (tutor.specialty_list || []).map((item) => item.label)
+  return labels.length ? [...new Set(labels)] : (tutor.subjects ? [tutor.subjects] : [])
+}
+
+function teachingLanguages(tutor) {
+  if (tutor.teaching_languages?.length) return tutor.teaching_languages
+  return (tutor.languages_spoken || '')
+    .split(',')
+    .map((item) => item.trim().replace(/\s*\([^)]*\)\s*/g, ''))
+    .filter(Boolean)
+}
+
+function displayAvailability(value) {
+  return (value || '')
+    .replace(/[()|]/g, '')
+    .replace(/\s*-\s*/g, '–')
+    // Legacy daytime strings sometimes called noon "12am". Preserve a real
+    // late-night 11pm–12am window while correcting an am-to-noon range.
+    .replace(/(\bam)\s*–\s*12am\b/gi, '$1–12pm')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
 
 function TutorPreview({ tutor, isSelf, alreadySent, onBook }) {
   if (!tutor) {
@@ -79,23 +63,8 @@ function TutorPreview({ tutor, isSelf, alreadySent, onBook }) {
           its rounded corners with overflow:hidden, which was cutting off the
           half of the avatar that is meant to hang below it. */}
       <div className="ft-preview-media">
-        <div className="ft-preview-video">
-          {tutor.photo_url && <img src={tutor.photo_url} alt="" />}
-          <button
-            type="button"
-            className="ft-preview-play"
-            aria-label="Play introduction"
-          >
-            <PlayIcon />
-          </button>
-        </div>
-        <span className="ft-preview-avatar">
-          {tutor.photo_url ? (
-            <img src={tutor.photo_url} alt={tutor.user.name} />
-          ) : (
-            <span>{tutor.user.name.charAt(0).toUpperCase()}</span>
-          )}
-        </span>
+        <TutorMedia tutor={tutor} className="ft-preview-video" previewOnHover={false} priority />
+        <TutorCover id={tutor.id} photoUrl={tutor.photo_url} name={tutor.user.name} className="ft-preview-avatar" />
       </div>
 
       <div className="ft-preview-head">
@@ -141,7 +110,6 @@ function TutorPreview({ tutor, isSelf, alreadySent, onBook }) {
       </button>
 
       <Link to={`/find-tutor/${tutor.id}`} className="ft-preview-profile">
-        <PersonIcon />
         View profile
       </Link>
     </aside>
@@ -174,26 +142,26 @@ function TagIcon() {
 function TutorSummary({ tutor }) {
   if (!tutor) return null;
 
-  const languages = (tutor.languages_spoken || "")
-    .split(",")
-    .map((l) => l.trim())
-    .filter(Boolean);
-
   const rows = [
-    tutor.subjects && {
-      key: "subjects",
+    {
+      key: "best-for",
       Icon: GradCapIcon,
-      value: tutor.subjects,
+      value: `Best for: ${fitLevels(tutor).join(' · ')}`,
     },
-    languages.length > 0 && {
-      key: "languages",
+    fitFocuses(tutor).length > 0 && {
+      key: "focus",
+      Icon: FocusIcon,
+      value: `Focus: ${fitFocuses(tutor).join(' · ')}`,
+    },
+    teachingLanguages(tutor).length > 0 && {
+      key: "teaching-languages",
       Icon: LangIcon,
-      value: languages.join(" · "),
+      value: `Teaches in: ${teachingLanguages(tutor).join(' · ')}`,
     },
     tutor.availability && {
       key: "availability",
       Icon: ClockIcon,
-      value: tutor.availability,
+      value: `Available: ${displayAvailability(tutor.availability)}`,
     },
     tutor.hourly_rate != null && {
       key: "rate",
@@ -299,6 +267,15 @@ function LangIcon() {
   );
 }
 
+function FocusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.3 15.3 4.2 4.2" />
+    </svg>
+  )
+}
+
 function ClockIcon() {
   return (
     <svg
@@ -345,7 +322,8 @@ export default function FindTutor() {
   // Which card the preview panel is showing. Null falls back to the first
   // tutor in the filtered list, so the panel is never empty.
   const [selectedId, setSelectedId] = useState(null);
-  const [learnFilter, setLearnFilter] = useState("");
+  const [bestForFilter, setBestForFilter] = useState("");
+  const [focusFilter, setFocusFilter] = useState("");
   const [availFilter, setAvailFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState(null);
   // The tutor whose booking dialog is open, or null. The message field lives
@@ -403,17 +381,20 @@ export default function FindTutor() {
 
   const filteredTutors = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const learn = learnFilter.trim().toLowerCase();
+    const bestFor = bestForFilter.trim().toLowerCase();
+    const focus = focusFilter.trim().toLowerCase();
     const avail = availFilter.trim().toLowerCase();
     return tutors.filter((t) => {
       if (q) {
-        const haystack = [t.user.name, t.subjects, t.bio, t.languages_spoken]
+        const haystack = [t.user.name, t.subjects, t.bio, ...fitLevels(t), ...fitFocuses(t), ...teachingLanguages(t)]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
         if (!haystack.includes(q)) return false;
       }
-      if (learn && !(t.subjects || "").toLowerCase().includes(learn))
+      if (bestFor && !fitLevels(t).some((level) => level.toLowerCase() === bestFor))
+        return false;
+      if (focus && !fitFocuses(t).some((item) => item.toLowerCase() === focus))
         return false;
       if (avail && !(t.availability || "").toLowerCase().includes(avail))
         return false;
@@ -428,12 +409,16 @@ export default function FindTutor() {
       }
       return true;
     });
-  }, [tutors, search, learnFilter, availFilter, priceFilter]);
+  }, [tutors, search, bestForFilter, focusFilter, availFilter, priceFilter]);
 
   // Filter options come from the tutors themselves — a fixed list would offer
   // choices that match nobody.
-  const languageOptions = useMemo(
-    () => [...new Set(tutors.map((t) => t.subjects).filter(Boolean))].sort(),
+  const bestForOptions = useMemo(
+    () => [...new Set(tutors.flatMap((t) => fitLevels(t)))].sort(),
+    [tutors],
+  );
+  const focusOptions = useMemo(
+    () => [...new Set(tutors.flatMap((t) => fitFocuses(t)))].sort(),
     [tutors],
   );
   const availabilityOptions = useMemo(
@@ -511,11 +496,19 @@ export default function FindTutor() {
         <span className="ft-filterbar-label">Filter by:</span>
 
         <FilterSelect
-          value={learnFilter}
-          onChange={setLearnFilter}
-          options={languageOptions}
-          placeholder="Chinese ( Mandarin )"
-          anyLabel="All subjects"
+          value={bestForFilter}
+          onChange={setBestForFilter}
+          options={bestForOptions}
+          placeholder="Best for"
+          anyLabel="All levels"
+        />
+
+        <FilterSelect
+          value={focusFilter}
+          onChange={setFocusFilter}
+          options={focusOptions}
+          placeholder="Focus"
+          anyLabel="All focus areas"
         />
 
         <FilterSelect
@@ -566,6 +559,14 @@ export default function FindTutor() {
                     }
                   }}
                 >
+                  <SaveHeartButton
+                    saved={!!t.saved}
+                    label={t.user.name}
+                    onToggle={async () => {
+                      const result = await api.toggleTutorSave(token, t.id);
+                      setTutors((rows) => rows.map((row) => row.id === t.id ? { ...row, saved: result.saved } : row));
+                    }}
+                  />
                   <span className="ft-card-frame">
                     {/* Placeholder — the API has no presence tracking yet */}
                     <span className="ft-card-online" aria-hidden="true" />
@@ -583,17 +584,12 @@ export default function FindTutor() {
                         Photo
                       </button>
                     )}
-                    {t.photo_url ? (
-                      <img
-                        className="ft-card-photo"
-                        src={t.photo_url}
-                        alt={t.user.name}
-                      />
-                    ) : (
-                      <span className="ft-card-photo-placeholder">
-                        {t.user.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
+                    <TutorMedia
+                      tutor={t}
+                      className="ft-card-photo"
+                      previewOnHover={false}
+                      showIntro={false}
+                    />
                   </span>
                   <div className="ft-card-body">
                     <div className="ft-card-name-row">
@@ -603,10 +599,7 @@ export default function FindTutor() {
                           its badge stranded on the next row. Inline, it follows
                           the last word wherever that word ends up. */}
                       <p className="ft-card-name">
-                        {t.user.name}{' '}
-                        <span className="ft-card-verified">
-                          <VerifiedIcon />
-                        </span>
+                        {t.user.name}
                       </p>
                       {/* Same number the profile card shows — both come from
                           the catalogue via TutorLesson::scopeBookablePriced, so
@@ -619,30 +612,25 @@ export default function FindTutor() {
                         )
                       )}
                     </div>
-                    {t.bio && <p className="ft-card-bio">{t.bio}</p>}
+                    {(t.short_bio?.trim() || t.bio) && (
+                      <p className="ft-card-bio">{t.short_bio?.trim() || t.bio}</p>
+                    )}
                     <div className="ft-meta">
-                      {t.subjects && (
+                      <span className="ft-meta-row">
+                        <GradCapIcon /> Best for: {fitLevels(t).join(' · ')}
+                      </span>
+                      {fitFocuses(t).length > 0 && (
                         <span className="ft-meta-row">
-                          <GradCapIcon /> {t.subjects}
-                        </span>
-                      )}
-                      {t.languages_spoken && (
-                        <span className="ft-meta-row">
-                          <LangIcon /> {t.languages_spoken}
+                          <FocusIcon /> Focus: {fitFocuses(t).join(' · ')}
                         </span>
                       )}
                       {t.availability && (
                         <span className="ft-meta-row">
-                          <ClockIcon /> Availability | ( {t.availability} )
+                          <ClockIcon /> Available: {displayAvailability(t.availability)}
                         </span>
                       )}
                     </div>
 
-                    {/* Booking moved to the preview panel, per the design —
-                        the cards stay purely informational. */}
-                    {user && Number(t.user.id) === Number(user.id) && (
-                      <span className="ft-card-self">This is your profile</span>
-                    )}
                     {bookingSentTo[t.user.id] && (
                       <span className="ft-card-sent">Trial booked</span>
                     )}

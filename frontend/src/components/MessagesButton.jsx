@@ -50,10 +50,11 @@ export default function MessagesButton() {
     }
 
     load()
-    const id = setInterval(() => load(true), POLL_MS)
+    const onConversationUpdated = () => load(true)
+    window.addEventListener('verbo:conversation-updated', onConversationUpdated)
     return () => {
       live = false
-      clearInterval(id)
+      window.removeEventListener('verbo:conversation-updated', onConversationUpdated)
     }
   }, [token])
 

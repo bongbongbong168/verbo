@@ -1,0 +1,166 @@
+.ssp {
+  position: fixed;
+  z-index: 70;
+  box-sizing: border-box;
+  transform: translate(-50%, -100%);
+  padding: 0.82rem 1rem 0.68rem;
+  border-radius: 14px;
+  background: #2b2643;
+  box-shadow: 0 18px 38px rgba(27, 22, 48, 0.32);
+  color: #fff;
+  font-family: "Hellix", system-ui, sans-serif;
+  animation: ssp-in 120ms ease-out;
+}
+
+.ssp-below {
+  transform: translate(-50%, 0);
+  animation-name: ssp-in-below;
+}
+
+.ssp::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--ssp-arrow, 0px));
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 2px;
+  background: #2b2643;
+  transform: rotate(45deg);
+}
+
+.ssp-below::after {
+  top: -5px;
+  bottom: auto;
+}
+
+.ssp-head {
+  display: block;
+}
+
+.ssp-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ssp-pinyin {
+  display: block;
+  margin-top: 0.34rem;
+  color: #c9bdf3;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ssp-translation {
+  margin: 0.38rem 0 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.ssp-translation-pending {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.ssp button {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  width: 100%;
+  margin-top: 0.62rem;
+  padding: 0.56rem 0 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ssp button:hover {
+  color: #fff;
+}
+
+.ssp button:focus-visible {
+  outline: 2px solid #c9bdf3;
+  outline-offset: 4px;
+}
+
+.ssp button:disabled {
+  cursor: default;
+}
+
+.ssp-save-icon {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(201, 189, 243, 0.16);
+  color: #d8cff7;
+}
+
+.ssp-save-icon svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.ssp-save-label {
+  line-height: 1;
+}
+
+.ssp-saved button,
+.ssp-saved .ssp-save-icon {
+  color: #a8e6b8;
+}
+
+.ssp-saved .ssp-save-icon {
+  background: rgba(168, 230, 184, 0.14);
+}
+
+/* A text selection can leave its last hovered word active. Show one contextual
+   card at a time so the two actions never stack over each other. */
+.sentence-selection-active .wp {
+  display: none;
+}
+
+.rd-reader ::selection,
+.pe-transcript-panel ::selection,
+.sd-panel ::selection,
+.un-reading-body ::selection,
+.sentence-selection-active ::selection {
+  background: #7d76a0;
+  color: #fff;
+}
+
+@keyframes ssp-in {
+  from {
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+}
+
+@keyframes ssp-in-below {
+  from {
+    transform: translate(-50%, 4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssp {
+    animation: none;
+  }
+}

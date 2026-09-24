@@ -1,6 +1,10 @@
 /* Price range slider. Prefix `pr-`. Same palette as the filter dropdown beside
    it, so the two controls read as one row. */
 
+.pr:has(.pr-pop) {
+  z-index: 40;
+}
+
 .pr {
   position: relative;
   z-index: 20;

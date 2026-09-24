@@ -361,6 +361,16 @@
   padding: 26px 30px 30px;
 }
 
+/* The rail is one decision-making unit — upcoming learning, activity and daily
+   quests belong together — so the PANEL sticks, never its individual cards.
+   It deliberately has no internal scrollbar: when a desktop window is too
+   short, the height query below returns it to normal page scrolling instead. */
+.db-rail {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
 .db-section {
   margin-bottom: 1.9rem;
 }
@@ -523,13 +533,10 @@
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  /* A 26px ramp, not 60. The point of the fade is to avoid a hard chop at the
-     panel edge, not to dim the card behind it — over 60px it washed out about a
-     quarter of the third card, so a real title and cover read as greyed-out
-     rather than as content continuing past the edge. Short enough to be almost
-     unnoticed, long enough that nothing is visibly guillotined. */
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  /* A visible 42px ramp: it clearly signals that the row continues while
+     retaining enough of the next card to make its content recognisable. */
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 42px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 42px), transparent);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
 }
@@ -785,7 +792,7 @@
   margin-top: 10px;
   padding: calc(8px - 0.076em) 12px calc(8px + 0.076em);
   border-radius: 12px;
-  background: var(--db-edge);
+  background: var(--db-hero);
   color: #fff;
   font-size: 0.76rem;
   font-weight: 600;
@@ -866,6 +873,7 @@
 /* ---- podcast card ---- */
 
 .db-pod {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -958,28 +966,17 @@
   color: var(--db-text-muted);
 }
 
-/* One line, as in the design — a second line pushes the card 17px past its
-   208px height and breaks the row's even card heights. */
-/* A title too long for its tile FADES OUT rather than cutting to an ellipsis.
-   The mask only bites where the text actually reaches the right edge, so a
-   short title is left completely untouched — no JS overflow detection needed,
-   and nothing to get out of step with the real text width. */
-/* TWO LINES with a downward fade, replacing a single nowrap line that faded
-   sideways. Episode titles are authored "中文 - English" now — "在咖啡店点单 -
-   Ordering at the Coffee Shop" — and on one line the English half was always
-   the half that got cut, which is the half saying what the episode is about.
-   3.3em is 2.6em of text plus the 0.7em the fade needs below it, so a two-line
-   title is crisp and the softening only appears on a third. Both podcast cards
-   take this rule, so the pick-up tile and the one in the Podcasts grid stay the
-   same height as each other. */
+/* Keep two crisp lines. Long titles stop at the same point on every card, but
+   no opacity mask softens the final visible line. */
 .db-pod-title {
+  display: -webkit-box;
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
-  height: 3.3em;
+  height: 2.6em;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .db-pod-author {
@@ -1002,6 +999,7 @@
    play button, and a reading time instead of an author. */
 
 .db-read-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1034,25 +1032,16 @@
   color: var(--db-text-muted);
 }
 
-/* Two lines, then FADE — not an ellipsis. Read titles are longer than podcast
-   titles (they now carry an English half as well as the Chinese), so the
-   single nowrap line the podcast card uses would cut most of them off. Pinned
-   to exactly two lines like the study card's title, so the card height cannot
-   move with the length of the title in it, and the downward mask lands on
-   nothing when a title only needs one. */
+/* Match podcast titles: two fully opaque lines, with overflow clamped. */
 .db-read-tile-title {
+  display: -webkit-box;
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
-  /* 3.3em for a TWO-line title: 2.6em of text plus the 0.7em the bottom fade
-     needs below it. Sized to the text exactly, the second line sits inside the
-     fade's ramp and comes out visibly greyer than the first — which is what
-     made a title that fits look like a title that had been cut. The phone card
-     does the same thing one line further down. */
-  height: 3.3em;
+  height: 2.6em;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 10px), transparent);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* Pinned to the BOTTOM of the stretched tile, so the space the podcast card
@@ -1074,9 +1063,15 @@
    is only what a tutor genuinely is. */
 
 .db-teacher {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  height: auto;
+  /* Each row below has its own measured spacing. A blanket gap made the tag
+     sit as close to the language as the rating sits to the name, even though
+     the tag begins a new visual group. The individual margins below add up to
+     the same 25px, so this correction does not make the card taller. */
+  gap: 0;
   /* The podcast and read cards both have this; the teacher card did not, and
      that is the whole reason the sections did not line up. Given the same
      `flex-basis: 74%`, content-box added its 20px of padding and 2px of border
@@ -1084,16 +1079,25 @@
      of the same width, so every section edge below Recommend Teachers sat 22px
      further right. */
   box-sizing: border-box;
-  padding: 12px;
+  padding: 10px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 16px;
+  border-radius: 14px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
   transition:
     transform 0.14s ease,
     box-shadow 0.14s ease;
+}
+
+.db-pod > .shb,
+.db-read-tile > .shb,
+.db-teacher > .shb {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
 }
 
 /* The BOX only. The tones, the photo and the oversized initial moved to
@@ -1104,13 +1108,12 @@
    initial has to be scaled along with the box, or the same tutor's letter
    shrinks relative to their card. 112/92 of the old 1rem. */
 .db-teacher-cover {
-  /* 4px under the podcast card's 112, which is what pays for this card's
-     even rhythm (6 under the photo, 8 before the pill, 8 before the button)
-     while the two cards still finish on the same line. */
-  height: 132px;
-  margin-bottom: 2px;
-  border-radius: 12px;
-  font-size: 1.34rem;
+  /* The podcast card's 112px cover, followed by a clear break before the
+     teacher details begin. */
+  height: 112px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  font-size: 1.22rem;
 }
 
 /* THE NAME LEADS, after the reference: the rating used to sit above it in the
@@ -1125,7 +1128,7 @@
   align-items: center;
   gap: 0.3rem;
   min-width: 0;
-  font-size: 0.98rem;
+  font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -1141,8 +1144,10 @@
   width: 15px;
   height: 15px;
   flex: none;
-  /* The badge's visible shape sits high against the name's cap height. */
-  transform: translateY(3px);
+  /* Hellix 700 sits 0.086em low in its line box, so the badge follows it
+     by the same em rather than a guessed px shove. */
+  margin-top: 0.086em;
+  margin-bottom: -0.086em;
 }
 
 /* Star, rating, then the lesson count — one line, as the reference draws it. */
@@ -1150,7 +1155,9 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.82rem;
+  margin-top: 3px;
+  /* Matches the podcast card's presenter line. */
+  font-size: 0.8rem;
   color: var(--db-text);
 }
 
@@ -1158,9 +1165,9 @@
   width: 16px;
   height: 16px;
   flex: none;
-  color: var(--db-accent);
-  /* A larger mark centres on the rating's actual glyphs, not its line box. */
-  transform: translateY(-0.5px);
+  color: #f5b301;
+  /* The star's ink sits high in its view box, so it needs a small drop. */
+  transform: translateY(1px);
 }
 
 .db-teacher-dot {
@@ -1177,15 +1184,19 @@
 .db-teacher-languages {
   display: grid;
   gap: 2px;
+  margin-top: 3px;
   min-width: 0;
   color: var(--db-text-muted);
-  font-size: 0.73rem;
-  line-height: 1.25;
+  /* The language is a primary teacher fact, like the rating above it. It was
+     11.5px while the rating was 12.8px, which made "Speaks" look like a note
+     attached to the specialty pill instead of part of the teacher card. */
+  font-size: 0.8rem;
+  line-height: 1.15;
 }
 
 .db-teacher-languages > span {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -1210,20 +1221,26 @@
 .db-teacher-tags {
   display: flex;
   gap: 4px;
-  min-height: 25px;
-  margin: 0;
+  min-height: 20px;
+  margin: 4px 0 0;
   min-width: 0;
 }
 
+/* Block + line-height, not a grid: a grid item cannot take text-overflow, and
+   the 600 cap band sits 0.076em low, so the line is cut short by 2x that and
+   the difference goes to padding-bottom (the .db-tag construction). */
 .db-teacher-tag {
+  display: block;
+  box-sizing: border-box;
+  height: 20px;
   max-width: 100%;
-  padding: calc(4px - 0.076em) 8px calc(4px + 0.076em);
+  padding: 0 7px 0.152em;
+  line-height: calc(20px - 0.152em);
   border-radius: 999px;
   background: var(--db-pill-bg);
   color: var(--db-accent);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 600;
-  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1245,9 +1262,9 @@
 }
 
 .db-teacher-price {
-  margin: 1px 0 2px;
+  margin: 0;
   color: var(--db-text);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -1257,13 +1274,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 2px;
+  margin-top: 7px;
   box-sizing: border-box;
-  height: 28px;
+  height: 26px;
   min-height: 0;
-  padding: 0 10px;
+  /* Hellix 600 sits 0.076em low, so the label is lifted by that much. */
+  padding: 0 10px 0.152em;
   border-radius: 8px;
-  background: var(--db-text);
+  background: var(--db-hero);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 600;
@@ -1272,7 +1290,7 @@
 /* The fill IS the feedback and is not transitioned — a transition that never
    gets a frame leaves the button looking dead under the pointer. */
 .db-teacher:hover .db-teacher-cta {
-  background: var(--db-text);
+  background: var(--db-accent);
 }
 
 /* ---- Top Reads ---- */
@@ -1364,45 +1382,69 @@
 
 /* Fast, as asked: 0.28s against the 0.42 it replaced, on a curve that leaves
    quickly and settles. */
-.db-reads .db-read {
+.db-reads .db-read-wrap {
   animation: db-read-land 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* Five rows is the whole list, so the ladder is written out rather than
    generated. The last starts 120ms in, short enough that the list still
    reads as one movement rather than five. */
-.db-reads .db-read:nth-child(2) {
+.db-reads .db-read-wrap:nth-child(2) {
   animation-delay: 0.03s;
 }
-.db-reads .db-read:nth-child(3) {
+.db-reads .db-read-wrap:nth-child(3) {
   animation-delay: 0.06s;
 }
-.db-reads .db-read:nth-child(4) {
+.db-reads .db-read-wrap:nth-child(4) {
   animation-delay: 0.09s;
 }
-.db-reads .db-read:nth-child(5) {
+.db-reads .db-read-wrap:nth-child(5) {
   animation-delay: 0.12s;
 }
 
 /* Safe to strip outright precisely because every keyframe rests at the static
    position - removing the motion leaves the list saying what it already said. */
 @media (prefers-reduced-motion: reduce) {
-  .db-reads .db-read {
+  .db-reads .db-read-wrap {
     animation: none;
   }
 }
 
 /* Rows are filled with the page background, not white — they read as insets
    in the panel rather than cards floating on it. */
+/* The row and its save button are siblings, so the wrap is what positions the
+   button against the row. */
+.db-read-wrap {
+  position: relative;
+}
+
+/* Centred on the row, not pinned to its top corner: in a one-line-title row
+   the corner left the button floating above the text it belongs to. `calc`,
+   not a translate, because `.shb` owns its own transform transition. */
+.db-read-wrap > .shb {
+  position: absolute;
+  top: calc(50% - 15px);
+  right: 14px;
+  z-index: 2;
+}
+
+/* The glyph is centred here rather than pushed off to the corner the shelf
+   cards use: at 116px the offset cropped it into a lopsided fragment. */
+.db-read-thumb .ac-glyph {
+  transform: none;
+}
+
+/* Rows are filled with the page background, not white — they read as insets
+   in the panel rather than cards floating on it. The right pad clears the
+   save button. */
 .db-read {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 12px 14px;
+  gap: 14px;
+  padding: 10px 52px 10px 10px;
   background: var(--db-bg);
   border: 1px solid var(--db-edge);
-  border-radius: 12px;
+  border-radius: 14px;
   text-decoration: none;
   color: var(--db-text);
   transition:
@@ -1415,42 +1457,78 @@
   background: var(--db-pill-bg);
 }
 
+/* Fixed box, cover fills it. The format badge comes off at this size: the
+   eyebrow beside it already names the piece, and a badge on a 64px-tall thumb
+   covers most of the picture. */
+.db-read-thumb {
+  display: block;
+  position: relative;
+  width: 116px;
+  height: 76px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--db-cover);
+}
+
+.db-read-thumb .ac.ac-sm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+.db-read-thumb .ac img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.db-read-thumb .ac-format {
+  display: none;
+}
+
 .db-read-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 4px;
   min-width: 0;
 }
 
-.db-read-title {
-  font-size: 0.94rem;
+.db-read-eyebrow {
+  color: var(--db-accent);
+  font-size: 0.66rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.db-read-excerpt {
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: var(--db-text-muted);
+/* Two lines, clamped: titles are authored "中文 - English" and a single line
+   always cut the English half. A clamp, not a fade, because the box is sized
+   by its content. */
+.db-read-title {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
-.db-read-thumb {
-  display: block;
-  width: 112px;
-  height: 56px;
-  flex: none;
-  overflow: hidden;
-  border-radius: 8px;
-  background: var(--db-cover);
-}
-
-.db-read-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.db-read-meta {
+  color: var(--db-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.3;
 }
 
 /* ---- right rail: My Course ---- */
@@ -1749,6 +1827,13 @@ a.db-course:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Once the two columns stack, the rail returns to the document flow. It
+     must never pin over the one-column content or the mobile bottom bar. */
+  .db-rail {
+    position: static;
+    top: auto;
+  }
+
   .db-grid3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1895,14 +1980,14 @@ a.db-course:hover {
   width: 34px;
   height: 34px;
   flex: none;
-  border-radius: 11px;
-  background: var(--db-pill-bg);
+  /* No chip, at the user's request: the glyph alone, grown to fill the box
+     the chip used to take, so the title beside it does not move. */
   color: var(--db-accent);
 }
 
 .db-quest-badge svg {
-  width: 18px;
-  height: 18px;
+  width: 30px;
+  height: 30px;
 }
 
 /* ASYMMETRIC ON PURPOSE, AND THE NUMBER IS MEASURED. Hellix reserves more
@@ -2030,6 +2115,11 @@ a.db-course:hover {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+/* The arrows read heavier than the other marks at the same ink area. */
+.db-goal-mark img.db-goal-art-refresh {
+  transform: scale(0.82);
 }
 
 /* Bigger than the old 17px: it sits in a row beside 3D art filling the whole
@@ -2360,13 +2450,21 @@ a.db-course:hover {
 
 /* The chosen one is filled, and it is a static class — nothing here depends on
    a frame arriving. */
+.db-quest-levels button:hover:not(.on):not(:disabled) {
+  border-color: var(--db-viewall);
+  background: var(--db-pill-bg);
+}
+
+/* The app's own deep purple with white on it (~6:1). It was the pale fill
+   lavender with navy text, which read washed out beside the art. */
 .db-quest-levels button.on {
-  border-color: transparent;
-  background: var(--db-progress);
+  border-color: var(--db-accent);
+  background: var(--db-accent);
+  color: #fff;
 }
 
 .db-quest-levels button.on em {
-  color: var(--db-text);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .db-quest-why,

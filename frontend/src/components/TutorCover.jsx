@@ -25,7 +25,7 @@ export default function TutorCover({ id, photoUrl, name, className = '' }) {
   return (
     <span className={`tc ${className}`.trim()} data-tone={Number(id) % 5}>
       {photoUrl ? (
-        <img src={photoUrl} alt="" />
+        <img src={photoUrl} alt="" loading="lazy" decoding="async" />
       ) : (
         <span className="tc-mark" aria-hidden="true">
           {(name || '?').charAt(0).toUpperCase()}

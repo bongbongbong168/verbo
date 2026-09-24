@@ -163,6 +163,7 @@ export default function ReadHero({ data }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const rootRef = useRef(null)
+  const touchRef = useRef(null)
 
   /* Slides are built from what actually came back. An article slide with no
      article is not rendered at all rather than shown empty, so a new account
@@ -234,6 +235,23 @@ export default function ReadHero({ data }) {
       onFocus={() => setPaused(true)}
       onBlur={(e) => {
         if (!rootRef.current?.contains(e.relatedTarget)) setPaused(false)
+      }}
+      /* SWIPE, because on a phone the arrows are gone and the dots are the
+         only affordance - dots promise a slide, so a slide has to work. A
+         horizontal move of 40px+ that beats the vertical one flips a slide;
+         anything more vertical is left alone so the page still scrolls. */
+      onTouchStart={(e) => {
+        const t = e.touches[0]
+        touchRef.current = { x: t.clientX, y: t.clientY }
+      }}
+      onTouchEnd={(e) => {
+        const start = touchRef.current
+        touchRef.current = null
+        if (!start) return
+        const t = e.changedTouches[0]
+        const dx = t.clientX - start.x
+        const dy = t.clientY - start.y
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(active + (dx < 0 ? 1 : -1))
       }}
     >
       {/* `key` still remounts, which is what resets any per-slide state; there is

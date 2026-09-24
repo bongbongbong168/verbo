@@ -120,21 +120,25 @@
   grid-column: 1;
   grid-row: 2;
 }
-.td-specialties {
+.td-about {
   grid-column: 1;
   grid-row: 3;
 }
-.td-resume {
+.td-specialties {
   grid-column: 1;
   grid-row: 4;
 }
-.td-reviews {
+.td-resume {
   grid-column: 1;
   grid-row: 5;
 }
-.td-similar {
+.td-reviews {
   grid-column: 1;
   grid-row: 6;
+}
+.td-similar {
+  grid-column: 1;
+  grid-row: 7;
 }
 
 /* A flex child of the sticky rail now, so it no longer places itself on the
@@ -188,6 +192,12 @@
   background: #f1edfc;
   font-size: 1.2rem;
   line-height: 1;
+}
+
+.td-spec-mark svg {
+  width: 20px;
+  height: 20px;
+  color: var(--td-accent);
 }
 
 .td-spec-body {
@@ -444,11 +454,54 @@
   color: var(--td-accent);
 }
 
-.td-bio {
+.td-short-intro {
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.6;
   margin: 0 0 0.9rem;
+}
+
+/* The longer tutor-written introduction belongs beside their specialties, not
+   inside the compact identity card. The preview holds three full lines before
+   Read more appears, so the control only promises content that is actually
+   hidden. */
+.td-about {
+  padding-top: 1.35rem;
+  border-top: 1px solid var(--td-border);
+}
+
+.td-about-copy {
+  margin: 0;
+  color: var(--td-text);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.td-about-copy-clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.td-about-more {
+  margin-top: 0.9rem;
+  padding: 0.46rem 0.95rem;
+  border: 1px solid var(--td-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--td-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.td-about-more:hover {
+  border-color: var(--td-edge-soft);
+  background: var(--td-pill);
 }
 
 .td-meta {
@@ -977,23 +1030,22 @@
   box-shadow: 0 3px 0 0 var(--td-edge);
 }
 
-/* An explicit height rather than aspect-ratio + max-height: once the height is
-   capped, aspect-ratio shrinks the *width* to preserve the ratio, which left
-   the video 34px narrower than the buttons under it. The image crops via
-   object-fit instead.
-
-   flex: 1 lets the video absorb whatever height the card has left after the
-   price row and buttons, so the card fills its spanned rows without any
-   hand-tuned pixel value. */
+/* The poster has a bounded height. Letting it flex into the spare space made a
+   portrait photo stretch the hire card into a screen-tall column; the media is
+   an introduction, not the page's main content. */
 .td-video {
   position: relative;
   width: 100%;
-  flex: 1;
-  min-height: 150px;
+  height: clamp(150px, 16vw, 190px);
+  flex: none;
   border-radius: 10px;
   overflow: hidden;
   background: #2b2643;
   margin-bottom: 0.9rem;
+}
+
+.td-video.tm {
+  display: grid;
 }
 
 /* Absolutely positioned so it contributes no height. In the flow at
@@ -1010,26 +1062,40 @@
   filter: grayscale(0.4);
 }
 
-.td-play {
-  position: absolute;
+.td-video.tm > img {
+  position: static;
+  inset: auto;
+  opacity: 1;
+  filter: none;
+}
+
+/* The profile has one deliberate video destination, so it keeps one central
+   play control. Browse cards use the smaller bottom-corner Intro marker. */
+
+.td-video.tm.tm-profile .tm-intro {
   top: 50%;
+  right: auto;
+  bottom: auto;
   left: 50%;
-  transform: translate(-50%, -50%);
-  display: grid;
-  place-items: center;
   width: 58px;
   height: 58px;
-  border: none;
+  justify-content: center;
+  padding: 0;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.85);
   color: var(--td-text);
-  cursor: pointer;
 }
 
-.td-play svg {
+.td-video.tm.tm-profile .tm-intro svg {
   width: 24px;
   height: 24px;
 }
+
+.td-video.tm.tm-profile .tm-intro span {
+  display: none;
+}
+
 
 .td-price-row {
   display: flex;
@@ -1268,6 +1334,7 @@
      nothing at all. The items are these six. */
   .td-profile,
   .td-stats,
+  .td-about,
   .td-specialties,
   .td-resume,
   .td-reviews,
@@ -1297,17 +1364,20 @@
   .td-lessons {
     order: 4;
   }
-  .td-specialties {
+  .td-about {
     order: 5;
   }
-  .td-resume {
+  .td-specialties {
     order: 6;
   }
-  .td-reviews {
+  .td-resume {
     order: 7;
   }
-  .td-similar {
+  .td-reviews {
     order: 8;
+  }
+  .td-similar {
+    order: 9;
   }
 
   /* One row per card once the page is a single column. The 160px floor here
@@ -1316,22 +1386,6 @@
   .td-similar-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-/* Fills the video box once playback starts, replacing the still + play button */
-.td-video-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: #000;
-  object-fit: cover;
-}
-
-.td-play.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* ---- reviews ---- */

@@ -11,6 +11,7 @@ import swooshSmall from "../assets/scan/swoosh-small.png";
 import fileIcon from "../assets/scan/file-icon.png";
 import PageTools from "../components/PageTools";
 import ReaderSwitch from "../components/ReaderSwitch";
+import SentenceSavePopover from "../components/SentenceSavePopover";
 import "./ScanDocument.css";
 
 function CopyIcon() {
@@ -79,7 +80,7 @@ function formatDate(value) {
   });
 }
 
-function useScanTranslation(id, token) {
+function useScanTranslation(id, token, onUsage) {
   const key = `${id}:${token}`;
   const [state, setState] = useState({});
   const { pairs = [], busy = false, error = "", visible = false } = state.key === key ? state : {};
@@ -89,8 +90,10 @@ function useScanTranslation(id, token) {
     setState({ key, busy: true });
     try {
       const result = await api.translateScan(token, id);
+      if (result.usage) onUsage(result.usage);
       setState((current) => current.key === key ? { key, pairs: result.pairs, visible: true } : current);
     } catch (err) {
+      if (err.data?.usage) onUsage(err.data.usage);
       setState((current) => current.key === key ? { key, error: err.message || "Translation is unavailable. Please try again." } : current);
     }
   }
@@ -114,10 +117,11 @@ function tokenSentences(tokens) {
 export default function ScanDocument() {
   const { id } = useParams();
   const { token } = useAuth();
-  const translation = useScanTranslation(id, token);
   const navigate = useNavigate();
 
   const [scan, setScan] = useState(null);
+  const [translationUsage, setTranslationUsage] = useState(null);
+  const translation = useScanTranslation(id, token, setTranslationUsage);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState({});
@@ -138,6 +142,7 @@ export default function ScanDocument() {
      handler closes over the FIRST render, where `scan` is still null. Without
      this the saved word would lose the document it came from. */
   const scanRef = useRef(null);
+  const sentenceScopeRef = useRef(null);
   const [hovered, setHovered] = useState(null);
   const translatedTokenSentences = useMemo(() => tokenSentences(scan?.tokens || []), [scan?.tokens]);
 
@@ -163,6 +168,7 @@ export default function ScanDocument() {
     const cached = readCache(key);
     if (cached) {
       setScan(cached);
+      setTranslationUsage(cached.translation_usage || null);
       scanRef.current = cached;
       setLoading(false);
       if (isFresh(key)) return;
@@ -174,6 +180,7 @@ export default function ScanDocument() {
       .getScan(token, id)
       .then((data) => {
         setScan(data);
+        setTranslationUsage(data.translation_usage || null);
         scanRef.current = data;
         writeCache(key, data);
       })
@@ -411,14 +418,18 @@ export default function ScanDocument() {
       {/* Text on the left, word list aside — the same split the Study unit's
           reading view uses, since the content is the same shape. */}
       <div className="sd-body">
-        <section className="sd-panel">
+        <section ref={sentenceScopeRef} className="sd-panel">
           {text && <div className="sd-reader-controls">
             <div className="sd-reading-controls">
               {tokens.length > 0 && (
                 <ReaderSwitch label="Pinyin" on={showPinyin} onChange={() => setShowPinyin((v) => !v)} />
               )}
-              <ReaderSwitch label={translation.busy ? "Translating..." : "Translation"} on={translation.visible}
-                onChange={translation.toggle} disabled={translation.busy} />
+              <ReaderSwitch label={translation.busy
+                ? "Translating..."
+                : `Translation · ${translationUsage?.remaining == null ? "Unlimited" : `${translationUsage.remaining} left`}`}
+                on={translation.visible}
+                onChange={translation.toggle}
+                disabled={translation.busy || (translationUsage?.available === false && !scan?.translation_cached && !translation.pairs.length)} />
             </div>
             {text && (
               <label className="sd-size" htmlFor="sd-text-size">
@@ -432,6 +443,12 @@ export default function ScanDocument() {
               </label>
             )}
           </div>}
+          {translationUsage?.available === false && !scan?.translation_cached && !translation.pairs.length && (
+            <p className="sd-translation-limit">
+              Full-text translations are used for this month. Pinyin, word meanings, and saving vocabulary still work. Resets {new Date(`${translationUsage.reset_date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.{" "}
+              {!translationUsage.is_pro && <Link to="/upgrade">Unlock more with Verbo Pro</Link>}
+            </p>
+          )}
           {text && !translation.visible ? (
             <p className={"sd-text" + (showPinyin ? " sd-text-ruby" : "")} style={{ "--sd-reader-scale": readerScale / 100 }}>
               {tokens.map((tok, idx) => renderToken(tok, idx))}
@@ -502,6 +519,15 @@ export default function ScanDocument() {
         word={hovered?.tok}
         rect={hovered?.rect}
         saved={!!saved[hovered?.tok?.text]}
+      />
+      <SentenceSavePopover
+        scopeRef={sentenceScopeRef}
+        token={token}
+        sourceModule="scan"
+        sourceType="scan"
+        sourceId={scan.id}
+        tokens={scan.tokens}
+        onSaved={setLastSaved}
       />
     </div>
   );

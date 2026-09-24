@@ -7,8 +7,8 @@ use InvalidArgumentException;
 /**
  * Turn the transcriber's output into what the podcast player reads.
  *
- * tools/transcriber/process_podcast.py (WhisperX) writes text plus a time for
- * every CHARACTER. That is not yet anything a learner can use: Chinese has no
+ * Deepgram writes text plus a time for every recognised unit. That is not yet
+ * anything a learner can use: Chinese has no
  * spaces, so a character is not a word, and nothing in that file says what a
  * word means. This class adds both, and it does it with the app's own
  * DictionaryService - the same CC-CEDICT segmentation, pinyin and meanings
@@ -18,8 +18,8 @@ use InvalidArgumentException;
  *   character times -> dictionary segmentation -> each word takes the span of
  *   its characters -> pinyin + meaning attached
  *
- * WhisperX's own word grouping is deliberately NOT trusted: for Chinese it is
- * a character per "word", so it has no opinion about 学习 being one word.
+ * A provider's own word grouping is deliberately NOT trusted: for Chinese it
+ * may be one character per "word", so it has no opinion about 学习 being one word.
  *
  * NOTHING HERE IS ALLOWED TO BREAK THE TRANSCRIPT. A word with no dictionary
  * entry keeps its text and time with a null meaning; a word the aligner could
@@ -159,7 +159,7 @@ class TimedTranscriptBuilder
        One character for one, so the timings stay index-aligned. */
     private const FULL_WIDTH = [',' => '，', '.' => '。', ':' => '：', ';' => '；', '!' => '！', '?' => '？'];
 
-    /* Where a line ends. Whisper hands back ~30 second windows, which is a
+    /* Where a line ends. A provider may hand back long windows, which is a
        paragraph, not something to follow along with; the player shows one
        sentence per line instead. */
     private const SENTENCE_END = ['。', '！', '？', '!', '?'];

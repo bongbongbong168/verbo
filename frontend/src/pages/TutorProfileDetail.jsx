@@ -10,6 +10,7 @@ import CourseDialog from '../components/CourseDialog'
 import TutorLessonsCard from '../components/TutorLessonsCard'
 import TutorEditDrawer from '../components/TutorEditDrawer'
 import TutorCover from '../components/TutorCover'
+import TutorMedia from '../components/TutorMedia'
 /* The one relativeTime in the app. Lives beside the notification bits
    because that is where it was first needed; duplicating it here so the
    import reads tidier is exactly how two wordings drift apart. */
@@ -27,48 +28,37 @@ const PLACEHOLDER_STATS = { students: '268', lessons: '1,229', experience: '5y' 
    the entries under it are real rows from the API. */
 const RESUME_SECTIONS = ['Education', 'Certifications']
 
-/**
- * Turn a pasted link into something playable.
- *
- * Returns {kind: 'embed', src} for YouTube/Vimeo — their watch URLs cannot go
- * in an iframe directly, they have to be rewritten to the /embed form — or
- * {kind: 'file', src} for a direct video file, which a <video> can play as-is.
- * Anything else returns null and the card falls back to the still image.
- */
-function resolveVideo(url) {
-  if (!url) return null
-  let parsed
-  try {
-    parsed = new URL(url)
-  } catch {
-    return null
-  }
-
-  const host = parsed.hostname.replace(/^www\./, '')
-
-  if (host === 'youtu.be') {
-    const id = parsed.pathname.slice(1)
-    return id ? { kind: 'embed', src: `https://www.youtube.com/embed/${id}?autoplay=1` } : null
-  }
-
-  if (host === 'youtube.com' || host === 'm.youtube.com') {
-    const id = parsed.searchParams.get('v') || parsed.pathname.split('/').pop()
-    return id ? { kind: 'embed', src: `https://www.youtube.com/embed/${id}?autoplay=1` } : null
-  }
-
-  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
-    const id = parsed.pathname.split('/').filter(Boolean).pop()
-    return /^\d+$/.test(id || '')
-      ? { kind: 'embed', src: `https://player.vimeo.com/video/${id}?autoplay=1` }
-      : null
-  }
-
-  if (/\.(mp4|webm|ogg|mov)$/i.test(parsed.pathname)) {
-    return { kind: 'file', src: url }
-  }
-
-  return null
+const SPECIALTY_BLURBS = {
+  hsk: 'Prepare for HSK exams with structured lessons, vocabulary and practice tests.',
+  conversational: 'Build fluency through guided conversation and live correction.',
+  speaking: 'Build fluency through guided conversation and live correction.',
+  everyday: 'Use practical Chinese for daily situations and real conversations.',
+  travel: 'Learn the Chinese you need to travel with confidence.',
+  pronunciation: 'Improve tones, sounds and natural Mandarin pronunciation.',
+  grammar: 'Understand Chinese grammar clearly and use it with confidence.',
+  business: 'Communicate clearly in professional Chinese settings.',
+  exam: 'Build exam skills with targeted practice and feedback.',
+  kids: 'Engaging Chinese lessons designed for young learners.',
 }
+
+const fitLevels = (tutor) => tutor.teaches_levels?.length ? tutor.teaches_levels : ['All levels']
+const fitFocuses = (tutor) => {
+  const labels = (tutor.specialty_list || []).map((item) => item.label)
+  return labels.length ? [...new Set(labels)] : (tutor.subjects ? [tutor.subjects] : [])
+}
+const teachingLanguages = (tutor) => tutor.teaching_languages?.length
+  ? tutor.teaching_languages
+  : (tutor.languages_spoken || '').split(',').map((item) => item.trim().replace(/\s*\([^)]*\)\s*/g, '')).filter(Boolean)
+const shortIntroduction = (tutor) => {
+  const text = (tutor.short_bio || tutor.bio || '').trim()
+  return text.length > 180 ? `${text.slice(0, 177).trimEnd()}…` : text
+}
+const displayAvailability = (value) => (value || '')
+  .replace(/[()|]/g, '')
+  .replace(/\s*-\s*/g, '–')
+  .replace(/(\bam)\s*–\s*12am\b/gi, '$1–12pm')
+  .replace(/\s{2,}/g, ' ')
+  .trim()
 
 function VerifiedIcon() {
   return (
@@ -85,30 +75,6 @@ function VerifiedIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  )
-}
-
-function BookmarkIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 4h12v16l-6-4-6 4V4z" />
-    </svg>
-  )
-}
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6.875 6.5v11c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L8.475 5.6c-.7-.4-1.6.1-1.6.9z" />
     </svg>
   )
 }
@@ -160,6 +126,15 @@ function LangIcon() {
       <path d="M3 6h9M7.5 4v2M10 6c0 4-3.5 7-7 7" />
       <path d="M6 10.5c1.5 2 3.5 3.2 5.5 3.7" />
       <path d="m13 20 4-9 4 9M14.4 17h5.2" />
+    </svg>
+  )
+}
+
+function FocusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.3 15.3 4.2 4.2" />
     </svg>
   )
 }
@@ -304,8 +279,8 @@ export default function TutorProfileDetail() {
   const [confirmingReview, setConfirmingReview] = useState(null)
   const [opening, setOpening] = useState(false)
   const [resumeTab, setResumeTab] = useState('Education')
-  const [playing, setPlaying] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [aboutExpanded, setAboutExpanded] = useState(false)
 
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewBody, setReviewBody] = useState('')
@@ -481,8 +456,6 @@ export default function TutorProfileDetail() {
   // usable password — the same rule the API enforces in authorizeProfile.
   const canEdit = Boolean(isSelf || user?.is_admin)
   const specialties = tutor.specialty_list || []
-  const mainSpecialty = specialties.find((sp) => sp.main) || null
-  const video = resolveVideo(tutor.video_url)
   const booked = alreadyBooked || justSent
   const resumeEntries = (tutor.resume_entries || []).filter((e) => e.section === resumeTab)
   const reviews = tutor.reviews || []
@@ -501,62 +474,45 @@ export default function TutorProfileDetail() {
           {/* ---- profile ---- */}
           <section className="td-card td-profile">
             <header className="td-profile-head">
-              <span className="td-avatar">
-                {tutor.photo_url ? (
-                  <img src={tutor.photo_url} alt={tutor.user.name} />
-                ) : (
-                  <span>{tutor.user.name.charAt(0).toUpperCase()}</span>
-                )}
-              </span>
+              <TutorCover id={tutor.id} photoUrl={tutor.photo_url} name={tutor.user.name} className="td-avatar" />
 
               <div className="td-ident">
                 <p className="td-name">
                   {tutor.user.name}
-                  <span className="td-verified">
-                    <VerifiedIcon />
-                  </span>
                 </p>
-                <p className="td-role">{tutor.subjects || 'Chinese Teacher'}</p>
-                {/* The one thing this tutor is best at, before anything else. */}
-                {mainSpecialty && (
-                  <p className="td-mainspec">
-                    <span className="td-mainspec-label">Specializes in</span>
-                    <span className="td-mainspec-pill">
-                      <span aria-hidden="true">{mainSpecialty.emoji}</span>
-                      {mainSpecialty.label}
-                    </span>
-                  </p>
-                )}
+                <p className="td-role">Chinese tutor</p>
               </div>
 
-              <div className="td-head-actions">
-                {canEdit && (
+              {/* The bookmark came off at the user's request; it had no click
+                  handler, so it was a control that did nothing. */}
+              {canEdit && (
+                <div className="td-head-actions">
                   <button type="button" className="td-edit" onClick={() => setShowEdit(true)}>
                     <PencilIcon /> Edit profile
                   </button>
-                )}
-                <button type="button" className="td-bookmark" aria-label="Save this tutor">
-                  <BookmarkIcon />
-                </button>
-              </div>
+                </div>
+              )}
             </header>
 
-            {tutor.bio && <p className="td-bio">{tutor.bio}</p>}
+            {shortIntroduction(tutor) && <p className="td-short-intro">{shortIntroduction(tutor)}</p>}
 
             <div className="td-meta">
-              {tutor.subjects && (
+              <span className="td-meta-row">
+                <GradCapIcon /> Best for: {fitLevels(tutor).join(' · ')}
+              </span>
+              {fitFocuses(tutor).length > 0 && (
                 <span className="td-meta-row">
-                  <GradCapIcon /> {tutor.subjects}
+                  <FocusIcon /> Focus: {fitFocuses(tutor).join(' · ')}
                 </span>
               )}
-              {tutor.languages_spoken && (
+              {teachingLanguages(tutor).length > 0 && (
                 <span className="td-meta-row">
-                  <LangIcon /> {tutor.languages_spoken}
+                  <LangIcon /> Teaches in: {teachingLanguages(tutor).join(' · ')}
                 </span>
               )}
               {tutor.availability && (
                 <span className="td-meta-row">
-                  <ClockIcon /> Availability | ( {tutor.availability} )
+                  <ClockIcon /> Available: {displayAvailability(tutor.availability)}
                 </span>
               )}
             </div>
@@ -586,30 +542,51 @@ export default function TutorProfileDetail() {
             </div>
           </section>
 
-          {/* ---- teaching specialties ----
-               Between who the tutor is and their resume: what you can book
-               them FOR comes before where they studied. Chosen by the tutor
-               from a fixed list (TutorProfile::SPECIALTIES), main one first.
-               Hidden from visitors when empty; the tutor and admins get a
-               nudge instead. */}
+          {tutor.bio && (
+            <section className="td-about" aria-label="About the teacher">
+              <h2 className="td-h2">About the teacher</h2>
+              <p className={'td-about-copy' + (aboutExpanded ? '' : ' td-about-copy-clamped')}>
+                {tutor.bio}
+              </p>
+              {tutor.bio.length > 180 && (
+                <button
+                  type="button"
+                  className="td-about-more"
+                  onClick={() => setAboutExpanded((expanded) => !expanded)}
+                  aria-expanded={aboutExpanded}
+                >
+                  {aboutExpanded ? 'Show less' : 'Read more'}
+                </button>
+              )}
+            </section>
+          )}
+
+          {/* Teaching specialties answer a different question from the compact
+              Focus line above: this is the fuller, scannable view of what a
+              learner can book with the tutor. */}
           {(specialties.length > 0 || canEdit) && (
             <section className="td-specialties">
               <h2 className="td-h2">Teaching Specialties</h2>
               {specialties.length === 0 ? (
                 <p className="td-empty-inline">
-                  No specialties yet. Add them from Edit profile so learners know what to book you for.
+                  No teaching specialties yet. Add your focus areas from Edit profile.
                 </p>
               ) : (
                 <ul className="td-spec-grid">
-                  {specialties.map((sp) => (
-                    <li key={sp.key} className={'td-spec' + (sp.main ? ' td-spec-main' : '')}>
-                      <span className="td-spec-mark" aria-hidden="true">{sp.emoji}</span>
+                  {specialties.map((specialty) => (
+                    <li
+                      key={specialty.key}
+                      className={'td-spec' + (specialty.main ? ' td-spec-main' : '')}
+                    >
+                      <span className="td-spec-mark" aria-hidden="true"><FocusIcon /></span>
                       <span className="td-spec-body">
                         <span className="td-spec-title">
-                          {sp.label}
-                          {sp.main && <span className="td-spec-tag">Main</span>}
+                          {specialty.label}
+                          {specialty.main && <span className="td-spec-tag">Main</span>}
                         </span>
-                        <span className="td-spec-blurb">{sp.blurb}</span>
+                        <span className="td-spec-blurb">
+                          {SPECIALTY_BLURBS[specialty.key] || 'Chinese lessons tailored to your learning goals.'}
+                        </span>
                       </span>
                     </li>
                   ))}
@@ -833,15 +810,12 @@ export default function TutorProfileDetail() {
                         tutor who speaks only Mandarin was credited with a
                         second language nobody had entered. It counts the real
                         remainder now and says nothing when there is none. */}
-                      {t.languages_spoken && (
+                      {teachingLanguages(t).length > 0 && (
                         <span className="td-similar-lang">
                           <LangIcon />
                           <span>
                             {(() => {
-                              const langs = t.languages_spoken
-                                .split(',')
-                                .map((l) => l.trim())
-                                .filter(Boolean)
+                              const langs = teachingLanguages(t)
                               const more = langs.length - 1
                               return more > 0 ? `${langs[0]} +${more}` : langs[0]
                             })()}
@@ -860,35 +834,7 @@ export default function TutorProfileDetail() {
         {/* ---- right rail ---- */}
         <aside className="td-side">
           <section className="td-card td-hire">
-            <div className="td-video">
-              {playing && video ? (
-                video.kind === 'embed' ? (
-                  <iframe
-                    className="td-video-frame"
-                    src={video.src}
-                    title={`${tutor.user.name} introduction`}
-                    allow="autoplay; fullscreen; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video className="td-video-frame" src={video.src} controls autoPlay />
-                )
-              ) : (
-                <>
-                  {tutor.photo_url && <img src={tutor.photo_url} alt="" />}
-                  <button
-                    type="button"
-                    className={'td-play' + (video ? '' : ' disabled')}
-                    onClick={() => video && setPlaying(true)}
-                    disabled={!video}
-                    title={video ? 'Play introduction' : 'No introduction video linked yet'}
-                    aria-label="Play introduction"
-                  >
-                    <PlayIcon />
-                  </button>
-                </>
-              )}
-            </div>
+            <TutorMedia tutor={tutor} className="td-video" previewOnHover={false} priority variant="profile" />
 
             {/* The cheapest lesson you can actually book, not the free-text
                 rate the tutor typed — those had drifted, and the old number

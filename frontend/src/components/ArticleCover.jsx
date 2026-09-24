@@ -54,8 +54,13 @@ export default function ArticleCover({ article, small = false }) {
           {TOPIC_ART[article.category] || '读'}
         </span>
       )}
-      {article.type && (
-        <span className="ac-format">{TYPE_LABELS[article.type] || article.type}</span>
+      {(article.type || article.is_premium) && (
+        <span className="ac-badges">
+          {article.type && (
+            <span className="ac-format">{TYPE_LABELS[article.type] || article.type}</span>
+          )}
+          {article.is_premium && <span className="ac-pro">Pro</span>}
+        </span>
       )}
     </div>
   )

@@ -13,12 +13,20 @@ import "./VocabularyBank.css";
    learner meets most words in down to the manual add. */
 const SOURCES = [
   { key: "", label: "All" },
+  { key: "sentence", label: "Sentences" },
   { key: "podcast", label: "Podcasts" },
   { key: "read", label: "Reading" },
   { key: "study", label: "Modules" },
   { key: "scan", label: "Scanned" },
   { key: "manual", label: "Added by you" },
 ];
+
+function listFilters(filter, search) {
+  return {
+    ...(filter === "sentence" ? { type: "sentence" } : filter ? { source: filter } : {}),
+    q: search,
+  };
+}
 
 /* The stat cards, in the reference's order. Every one is a real count —
    the reference's fourth slot was "Categories", which flashcards do not have,
@@ -175,6 +183,39 @@ export default function VocabularyBank() {
   const [rowMenuFor, setRowMenuFor] = useState(null);
   const [menuUp, setMenuUp] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(null);
+  /* Emptying the whole bank asks TWICE: 1 opens the panel that says what will
+     go, 2 arms its button, and only the click after that deletes. The armed
+     step drops back to the question after 4s (a timer, not blur - the same
+     rule as the per-row delete). 0 is idle. */
+  const [clearStep, setClearStep] = useState(0);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    if (clearStep !== 2) return undefined;
+    const t = setTimeout(() => setClearStep(1), 4000);
+    return () => clearTimeout(t);
+  }, [clearStep]);
+
+  async function clearAll() {
+    if (clearStep < 2) {
+      setClearStep(2);
+      return;
+    }
+    setClearing(true);
+    setError(null);
+    try {
+      await api.deleteAllFlashcards(token);
+      setCards([]);
+      setTotal(0);
+      setOpenId(null);
+      setClearStep(0);
+      loadStats();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setClearing(false);
+    }
+  }
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState(null);
@@ -230,7 +271,7 @@ export default function VocabularyBank() {
     setLoading(true);
     setError(null);
     api
-      .getFlashcards(token, 1, { source, q: search })
+      .getFlashcards(token, 1, listFilters(source, search))
       .then((res) => {
         if (!live) return;
         setCards(res.data);
@@ -265,7 +306,8 @@ export default function VocabularyBank() {
      that word was closed just fills the cache, which is exactly what should
      happen. */
   useEffect(() => {
-    if (!openId || askedRef.current.has(openId)) return;
+    const openCard = cards.find((card) => card.id === openId);
+    if (!openId || openCard?.card_type === "sentence" || askedRef.current.has(openId)) return;
 
     askedRef.current.add(openId);
     setExamples((e) => ({ ...e, [openId]: { loading: true } }));
@@ -274,12 +316,12 @@ export default function VocabularyBank() {
       .getFlashcardExamples(token, openId)
       .then((items) => setExamples((e) => ({ ...e, [openId]: { items } })))
       .catch(() => setExamples((e) => ({ ...e, [openId]: { items: [] } })));
-  }, [openId, token]);
+  }, [openId, token, cards]);
 
   async function loadMore() {
     setLoadingMore(true);
     try {
-      const res = await api.getFlashcards(token, page + 1, { source, q: search });
+      const res = await api.getFlashcards(token, page + 1, listFilters(source, search));
       // Append rather than replace, so earlier pages stay on screen.
       setCards((prev) => [...prev, ...res.data]);
       setPage(res.current_page);
@@ -353,6 +395,7 @@ export default function VocabularyBank() {
   /* NEW / LEARNING / MASTERED, derived from what the card actually records —
      "new" is genuinely never reviewed, not merely recent. */
   function state(card) {
+    if (card.card_type === "sentence") return { key: "sentence", label: "Sentence" };
     if (card.is_mastered) return { key: "mastered", label: "Mastered" };
     if (!card.review_count) return { key: "new", label: "New" };
     if (card.is_difficult) return { key: "hard", label: "Difficult" };
@@ -377,7 +420,7 @@ export default function VocabularyBank() {
       </div>
 
       <p className="vb-lede">
-        Every word you save anywhere in Verbo lands here, still pointing back at
+        Every word and sentence you save in Verbo lands here, still pointing back at
         where you found it.
       </p>
 
@@ -408,7 +451,8 @@ export default function VocabularyBank() {
             className={"vb-review" + (menuOpen ? " open" : "")}
             onClick={() => setMenuOpen((v) => !v)}
             aria-expanded={menuOpen}
-            disabled={starting}
+            disabled={starting || source === "sentence"}
+            title={source === "sentence" ? "Sentence review is not part of word practice" : undefined}
           >
             <PlayIcon />
             {starting ? "Starting…" : "Review"}
@@ -433,7 +477,7 @@ export default function VocabularyBank() {
               ))}
               {/* Only offered when a source filter is actually on — an entry
                   reading "From All" would say nothing. */}
-              {source && (
+              {source && source !== "sentence" && (
                 <button
                   type="button"
                   className="vb-menu-item"
@@ -460,13 +504,20 @@ export default function VocabularyBank() {
       {/* ---- where the words came from ---- */}
       <div className="vb-filters">
         {SOURCES.map((s) => {
-          const n = s.key ? stats?.by_source?.[s.key] : stats?.words;
+          const n = s.key === "sentence"
+            ? stats?.sentences
+            : s.key
+              ? stats?.by_source?.[s.key]
+              : stats?.total;
           return (
             <button
               type="button"
               key={s.key || "all"}
               className={"vb-filter" + (source === s.key ? " active" : "")}
-              onClick={() => setSource(s.key)}
+              onClick={() => {
+                setSource(s.key);
+                setMenuOpen(false);
+              }}
             >
               {s.label}
               {n != null && <span className="vb-filter-n">{n}</span>}
@@ -486,14 +537,63 @@ export default function VocabularyBank() {
               : "Recently saved"}
           {!loading && <span className="vb-list-n">{total}</span>}
         </h2>
-        <button
-          type="button"
-          className="vb-add-toggle"
-          onClick={() => setAdding((v) => !v)}
-        >
-          {adding ? "Cancel" : "+ Add a word"}
-        </button>
+        <div className="vb-list-actions">
+          {source !== "sentence" && (
+            <button
+              type="button"
+              className="vb-add-toggle"
+              onClick={() => setAdding((v) => !v)}
+            >
+              {adding ? "Cancel" : "+ Add a word"}
+            </button>
+          )}
+          {stats?.total > 0 && clearStep === 0 && (
+            <button
+              type="button"
+              className="vb-add-toggle vb-clear-toggle"
+              onClick={() => setClearStep(1)}
+            >
+              Delete all
+            </button>
+          )}
+        </div>
       </div>
+
+      {clearStep > 0 && (
+        <div className="vb-clear" role="alertdialog" aria-labelledby="vb-clear-title">
+          <div className="vb-clear-copy">
+            <p id="vb-clear-title" className="vb-clear-title">
+              Delete all {stats?.total} saved words?
+            </p>
+            <p className="vb-clear-text">
+              Every word, its example sentence and its review history will be
+              removed. This cannot be undone.
+            </p>
+          </div>
+          <div className="vb-clear-actions">
+            <button
+              type="button"
+              className="vb-clear-cancel"
+              onClick={() => setClearStep(0)}
+              disabled={clearing}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={"vb-clear-confirm" + (clearStep === 2 ? " armed" : "")}
+              onClick={clearAll}
+              disabled={clearing}
+            >
+              {clearing
+                ? "Deleting..."
+                : clearStep === 2
+                  ? "Tap again to delete"
+                  : "Delete all"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {adding && (
         <form className="vb-add" onSubmit={add}>
@@ -523,18 +623,21 @@ export default function VocabularyBank() {
         <p className="vb-empty">Loading your words…</p>
       ) : cards.length === 0 ? (
         <p className="vb-empty">
-          {search || source
-            ? "Nothing here yet. Try another filter."
-            : "No words saved yet. Hover any Chinese word in Read, Podcast, Scan or Study and press Alt+1 to keep it."}
+          {source === "sentence"
+            ? "No saved sentences yet. Select Chinese text in Read, Podcast, Scan or Study to keep it."
+            : search || source
+              ? "Nothing here yet. Try another filter."
+              : "No words or sentences saved yet. Hover a word and press Alt+1, or select Chinese text to save a sentence."}
         </p>
       ) : (
         <ul className="vb-list">
           {cards.map((card) => {
             const st = state(card);
             const open = openId === card.id;
+            const isSentence = card.card_type === "sentence";
 
             return (
-              <li className={"vb-row" + (open ? " open" : "")} key={card.id}>
+              <li className={"vb-row" + (isSentence ? " vb-row-sentence" : "") + (open ? " open" : "")} key={card.id}>
                 {/* The row button and the ⋮ are SIBLINGS, not nested: a button
                     inside a button is invalid and the inner one never gets its
                     own click. `.vb-row-top` is what keeps them on one line. */}
@@ -553,9 +656,11 @@ export default function VocabularyBank() {
                       )}
                     </span>
 
-                    <span className="vb-meaning">
-                      {card.translation || "No meaning saved yet"}
-                    </span>
+                    {(!isSentence || card.translation) && (
+                      <span className="vb-meaning">
+                        {card.translation || "No meaning saved yet"}
+                      </span>
+                    )}
 
                     {/* The source line is what makes this a history rather
                         than a word list. */}
@@ -647,7 +752,7 @@ export default function VocabularyBank() {
                     and a way back to the content it came from. */}
                 {open && (
                   <div className="vb-detail">
-                    {card.example ? (
+                    {!isSentence && (card.example ? (
                       <>
                         <p className="vb-detail-label">Where you met it</p>
                         <p className="vb-detail-example">
@@ -658,18 +763,18 @@ export default function VocabularyBank() {
                       <p className="vb-detail-none">
                         No example sentence was captured for this word.
                       </p>
-                    )}
+                    ))}
 
                     {/* Sentences found across everything else in the library.
                         Distinct from the one above, which is the passage this
                         learner actually read — so it keeps its own heading
                         rather than being folded into one undifferentiated
                         list. */}
-                    <Examples
+                    {!isSentence && <Examples
                       state={examples[card.id]}
                       word={card.word}
                       hasSaved={!!card.example}
-                    />
+                    />}
 
                     <div className="vb-detail-foot">
                       {card.source ? (
@@ -687,7 +792,9 @@ export default function VocabularyBank() {
                           which is why it could not be found — and it deleted on
                           a single click, the one delete in the app that did. */}
                       <span className="vb-detail-stats">
-                        {card.review_count
+                        {isSentence
+                          ? "Saved sentence"
+                          : card.review_count
                           ? `Reviewed ${card.review_count}× · ${card.correct_streak} in a row`
                           : "Not reviewed yet"}
                       </span>

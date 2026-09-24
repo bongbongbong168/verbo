@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import { exampleFor } from "../sentence";
@@ -12,9 +12,11 @@ import ArticleActions from "../components/ArticleActions";
 import ArticleComments from "../components/ArticleComments";
 import RecommendedArticles from "../components/RecommendedArticles";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
+import SentenceSavePopover from "../components/SentenceSavePopover";
 import "./Read.css";
 import ReaderSwitch from '../components/ReaderSwitch'
 import { englishSentences, sentencesOf } from "../sentences";
+import proOwl from '../assets/assistant/graduate-bot.png';
 
 function formatDate(value) {
   if (!value) return "";
@@ -41,6 +43,12 @@ export default function ReadArticle() {
      is showing. */
   const [showPinyin, setShowPinyin] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [generatedTranslation, setGeneratedTranslation] = useState({
+    articleId: null,
+    pairs: [],
+    busy: false,
+    error: null,
+  });
   const [readerScale, setReaderScale] = useState(100);
   const [interactions, setInteractions] = useState(null);
   const hoveredWordRef = useRef(null);
@@ -51,6 +59,22 @@ export default function ReadArticle() {
      carrying the article's id and every card silently lost its source. Same
      ref trick as `hoveredWordRef`, for the same reason. */
   const articleRef = useRef(null);
+  const sentenceScopeRef = useRef(null);
+
+  // Switching Pinyin or Translation can replace the current token DOM before
+  // the browser emits mouseleave. Clear the fixed popover first so it cannot
+  // stay stranded over the newly-rendered sentence.
+  function clearHoveredWord() {
+    hoveredWordRef.current = null;
+    setHovered(null);
+  }
+
+  // Translation has a second render when the API result arrives. Without this
+  // cleanup, a word hovered before the switch can reappear as a fixed card
+  // after that later render even though the pointer is now on the controls.
+  useEffect(() => {
+    clearHoveredWord();
+  }, [showTranslation, generatedTranslation.busy]);
 
   /* The drawer holds the fields now — it is seeded from `article` when it
      opens, so there is no second copy of the article on this page to keep in
@@ -58,8 +82,15 @@ export default function ReadArticle() {
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
+    // A cached response belongs to one entitlement level. Clear the previous
+    // viewer's article before loading, so changing accounts can never flash a
+    // Pro body to a free reader while their own response is in flight.
+    articleRef.current = null;
+    setArticle(null);
     loadArticle();
-  }, [token, id]);
+    setShowTranslation(false);
+    setGeneratedTranslation({ articleId: null, pairs: [], busy: false, error: null });
+  }, [token, id, user?.id, user?.is_admin, user?.is_pro]);
 
   /* Opening an article is recorded TWICE, into two tables that answer two
      different questions, and both calls belong here:
@@ -103,14 +134,16 @@ export default function ReadArticle() {
      load. Reopening an article you have already read then paints immediately
      instead of waiting on a request that may stall for seconds. */
   function loadArticle() {
-    const cached = readCache(`article:${id}`);
+    const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free';
+    const cacheKey = `article:${id}:viewer:${user?.id || 'anonymous'}:${access}`;
+    const cached = readCache(cacheKey);
     if (cached) {
       setArticle(cached);
       articleRef.current = cached;
       setLoading(false);
       // Fresh enough that refetching buys nothing — but the VIEW is still
       // recorded, because opening it again is a real read.
-      if (isFresh(`article:${id}`)) {
+      if (isFresh(cacheKey)) {
         recordVisit(cached);
         return;
       }
@@ -123,7 +156,7 @@ export default function ReadArticle() {
       .then((data) => {
         setArticle(data);
         articleRef.current = data;
-        writeCache(`article:${id}`, data);
+        writeCache(cacheKey, data);
         recordVisit(data);
       })
       // Only surface a failure that leaves the reader with nothing — a stalled
@@ -167,7 +200,18 @@ export default function ReadArticle() {
     }
 
     window.addEventListener("scroll", drop, true);
-    return () => window.removeEventListener("scroll", drop, true);
+    // A click on a reader control has to dismiss the card immediately. The
+    // token itself is the one exception, so hovering and Alt+1 remain intact.
+    function dropOnOutsideClick(event) {
+      if (event.target instanceof Element && event.target.closest('.rd-word')) return;
+      drop();
+    }
+
+    window.addEventListener('pointerdown', dropOnOutsideClick, true);
+    return () => {
+      window.removeEventListener("scroll", drop, true);
+      window.removeEventListener('pointerdown', dropOnOutsideClick, true);
+    };
   }, [hovered]);
 
   useEffect(() => {
@@ -223,20 +267,68 @@ export default function ReadArticle() {
   if (error && !article) return <p className="rd-error">{error}</p>;
   if (!article) return null;
 
-  const hasEnglish = Boolean(article.body_en && article.body_en.trim());
-
   /* Computed every render rather than memoised: the token list is a few
      hundred entries and this runs once per paint, which is nothing beside
      the render it feeds. */
   const cnSentences = sentencesOf(article.tokens || []);
   const enSentences = englishSentences(article.body_en);
-  /* Pair only when each Chinese sentence has exactly one authored English
-     sentence. A mismatch means the alignment would be invented. */
+  const authoredTranslationFits =
+    cnSentences.length > 0 && cnSentences.length === enSentences.length;
+  const generatedEnglish =
+    generatedTranslation.articleId === article.id
+      ? generatedTranslation.pairs.map((pair) => pair.translation)
+      : [];
+  const visibleEnglish = authoredTranslationFits ? enSentences : generatedEnglish;
   const paired =
     showTranslation &&
-    hasEnglish &&
     cnSentences.length > 0 &&
-    cnSentences.length === enSentences.length;
+    cnSentences.length === visibleEnglish.length;
+  const premiumLocked = article.premium_locked === true;
+  const translationUsage = article.translation_usage;
+  const translationNeedsAllowance = !authoredTranslationFits
+    && generatedEnglish.length !== cnSentences.length
+    && !article.translation_cached;
+  const translationLimitReached = translationNeedsAllowance && translationUsage?.available === false;
+
+  async function toggleTranslation() {
+    clearHoveredWord();
+
+    if (showTranslation) {
+      setShowTranslation(false);
+      return;
+    }
+
+    setShowTranslation(true);
+    if (authoredTranslationFits || generatedEnglish.length === cnSentences.length) return;
+
+    setGeneratedTranslation({ articleId: article.id, pairs: [], busy: true, error: null });
+    try {
+      const result = await api.translateArticle(token, article.id);
+      if (result.usage) {
+        const nextArticle = { ...article, translation_usage: result.usage, translation_cached: true };
+        setArticle(nextArticle);
+        articleRef.current = nextArticle;
+      }
+      setGeneratedTranslation({
+        articleId: article.id,
+        pairs: result.pairs || [],
+        busy: false,
+        error: null,
+      });
+    } catch (err) {
+      if (err.data?.usage) {
+        const nextArticle = { ...article, translation_usage: err.data.usage };
+        setArticle(nextArticle);
+        articleRef.current = nextArticle;
+      }
+      setGeneratedTranslation({
+        articleId: article.id,
+        pairs: [],
+        busy: false,
+        error: err.message || "Translation is unavailable. Please try again.",
+      });
+    }
+  }
 
   /* One renderer for both layouts — the interleaved one and the plain
      passage — so the hover, the saved highlight and the pinyin ruby cannot
@@ -283,10 +375,14 @@ export default function ReadArticle() {
 
   return (
     <div className="rd">
-      {/* The page title lives in the tools row, as on Read and Podcast, so
-          it costs no height of its own above the article. */}
       <div className="rd-topbar">
-        <h1 className="rd-title">Read Station</h1>
+        <nav className="rd-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/read">Read</Link>
+          <span className="rd-breadcrumb-sep" aria-hidden="true">/</span>
+          <span className="rd-breadcrumb-current" aria-current="page" title={article.title}>
+            {article.title}
+          </span>
+        </nav>
         <div className="rd-topbar-icons">
           <PageTools />
         </div>
@@ -358,6 +454,9 @@ export default function ReadArticle() {
                   {value}
                 </span>
               ))}
+              {article.is_premium && (
+                <span className="rd-chip rd-chip-pro">Verbo Pro</span>
+              )}
               <span className="rd-chip rd-chip-time">
                 {article.reading_minutes} min read
               </span>
@@ -379,7 +478,10 @@ export default function ReadArticle() {
               <ReaderSwitch
                 label="Pinyin"
                 on={showPinyin}
-                onChange={() => setShowPinyin((v) => !v)}
+                onChange={() => {
+                  clearHoveredWord();
+                  setShowPinyin((v) => !v);
+                }}
               />
 
               <label className="rd-size" htmlFor="rd-text-size">
@@ -396,20 +498,25 @@ export default function ReadArticle() {
               </label>
 
               <ReaderSwitch
-                label="Translation"
+                label={generatedTranslation.busy
+                  ? "Translating..."
+                  : `Translation · ${translationUsage?.remaining == null ? "Unlimited" : `${translationUsage.remaining} left`}`}
                 on={showTranslation}
-                onChange={() => setShowTranslation((v) => !v)}
-                disabled={!hasEnglish}
-                title={
-                  hasEnglish
-                    ? "Show the English translation"
-                    : "No English translation for this article yet"
-                }
+                onChange={toggleTranslation}
+                disabled={premiumLocked || translationLimitReached}
+                title={premiumLocked
+                  ? "Full translation is included with Verbo Pro"
+                  : showTranslation ? "Hide the English translation" : "Show the English translation"}
               />
 
-              {!hasEnglish && (
-                <span className="rd-controls-note">
-                  No English translation for this article yet.
+              {generatedTranslation.error && showTranslation && (
+                <span className="rd-controls-note" role="alert">
+                  {generatedTranslation.error}
+                </span>
+              )}
+              {translationLimitReached && (
+                <span className="rd-controls-note rd-translation-limit">
+                  Full-text translations reset {new Date(`${translationUsage.reset_date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. Pinyin and vocabulary tools remain available. {!translationUsage.is_pro && <Link to="/upgrade">Get Verbo Pro</Link>}
                 </span>
               )}
             </div>
@@ -420,10 +527,15 @@ export default function ReadArticle() {
               </p>
             )}
 
-            <div className="rd-reader" style={{ "--rd-reader-scale": readerScale / 100 }}>
+            <div
+              ref={sentenceScopeRef}
+              className={'rd-reader' + (premiumLocked ? ' rd-reader-preview' : '')}
+              style={{ "--rd-reader-scale": readerScale / 100 }}
+            >
               <p className="rd-hint">
-                Hover a word and press Alt+1 to save it to your flashcard bank.
+                Hover a word and press Alt+1 to save it. Select Chinese text to save a sentence.
               </p>
+              <div className="rd-reader-copy">
               {paired ? (
               /* Translation sits directly below its Chinese sentence only
                  when the two sides genuinely line up. If they do not, the
@@ -438,7 +550,7 @@ export default function ReadArticle() {
                   >
                     {renderTokens(sentence, `s${i}-`)}
                   </p>
-                  <p className="rd-pair-en">{enSentences[i]}</p>
+                  <p className="rd-pair-en">{visibleEnglish[i]}</p>
                 </div>
               ))
             ) : (
@@ -450,15 +562,26 @@ export default function ReadArticle() {
                 {renderTokens(article.tokens)}
               </p>
             )}
-
-            {/* body_en is one free-text block, not per-sentence data, so the
-                  translation sits UNDER the Chinese as its own passage rather
-                  than pretending to be aligned line by line. */}
-              {showTranslation && hasEnglish && !paired && (
-              <div className="rd-translation">
-                <span className="rd-translation-label">English</span>
-                <p className="rd-translation-body">{article.body_en}</p>
               </div>
+
+              {premiumLocked && (
+                <>
+                  <div className="rd-pro-tease" aria-hidden="true">
+                    <span /><span /><span /><span /><span />
+                  </div>
+                  <section className="rd-paywall" aria-labelledby="rd-paywall-title">
+                    <img className="rd-paywall-owl" src={proOwl} alt="" aria-hidden="true" />
+                    <div className="rd-paywall-copy">
+                      <span className="rd-paywall-eyebrow">Verbo Pro</span>
+                      <h3 id="rd-paywall-title">Keep reading without breaking your flow</h3>
+                      <p>Unlock the full article, its translation, and every Pro read.</p>
+                    </div>
+                    <Link className="rd-paywall-cta" to="/upgrade">
+                      Unlock with Verbo Pro
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </section>
+                </>
               )}
             </div>
           </>
@@ -513,6 +636,15 @@ export default function ReadArticle() {
         word={hovered?.tok}
         rect={hovered?.rect}
         saved={!!saved[hovered?.tok?.text]}
+      />
+      <SentenceSavePopover
+        scopeRef={sentenceScopeRef}
+        token={token}
+        sourceModule="read"
+        sourceType="article"
+        sourceId={article.id}
+        tokens={article.tokens}
+        onSaved={setLastSaved}
       />
     </div>
   );

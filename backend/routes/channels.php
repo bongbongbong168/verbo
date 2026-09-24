@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
+use App\Models\Conversation;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+Broadcast::channel('users.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+// A conversation channel is useful for a future full live thread view. Its
+// rule mirrors Conversation::allows(), so a guessed id never grants access.
+Broadcast::channel('conversations.{conversation}', function ($user, $conversation) {
+    return Conversation::find($conversation)?->allows($user) ?? false;
 });

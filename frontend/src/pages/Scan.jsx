@@ -16,6 +16,7 @@ import swooshLarge from "../assets/scan/swoosh-large.png";
 import fileIcon from "../assets/scan/file-icon.png";
 import sortIcon from "../assets/scan/sort-icon.png";
 import notebookPencil from "../assets/scan/notebook-pencil.png";
+import graduateBot from "../assets/assistant/graduate-bot.png";
 import PageTools from "../components/PageTools";
 import "./Scan.css";
 import MenuDotsIcon from "../components/MenuDotsIcon";
@@ -129,6 +130,21 @@ function ScanLinesIcon() {
   );
 }
 
+function EmptyScansIcon() {
+  return (
+    <svg viewBox="0 0 180 128" fill="none" aria-hidden="true">
+      <ellipse cx="90" cy="115" rx="54" ry="5" fill="#e4ddf7" />
+      <path d="M28 48c0-7 6-13 13-13h31l11 12h56c7 0 13 6 13 13v35c0 8-6 14-14 14H42c-8 0-14-6-14-14V48Z" fill="#f1edfc" stroke="#7d76a1" strokeWidth="2" />
+      <path d="M28 61h124v34c0 8-6 14-14 14H42c-8 0-14-6-14-14V61Z" fill="#fff" stroke="#7d76a1" strokeWidth="2" />
+      <circle cx="76" cy="84" r="4" fill="#6a6191" />
+      <circle cx="105" cy="84" r="4" fill="#6a6191" />
+      <path d="M80 97h21" stroke="#6a6191" strokeWidth="3" strokeLinecap="round" />
+      <path d="M137 27v16M129 35h16" stroke="#a89ce3" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="151" cy="20" r="5" fill="#d8cef7" />
+    </svg>
+  )
+}
+
 const ROW_COLORS = ["#2b2643", "#2b2643", "#7d76a1", "#2b2643"];
 
 // Mirrors `max:10240` (KB) in ScanController::store. Checked here as well as on
@@ -139,6 +155,14 @@ function formatBytes(bytes) {
   const kb = bytes / 1024;
   if (kb < 1024) return `${Math.round(kb)} KB`;
   return `${(kb / 1024).toFixed(1)} MB`;
+}
+
+function formatResetDate(value) {
+  if (!value) return "next month";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function Scan() {
@@ -166,10 +190,14 @@ export default function Scan() {
   const [showAll, setShowAll] = useState(false);
   const [sortKey, setSortKey] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
+  const [scanUsage, setScanUsage] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadHistory();
+    api.getUsageAllowances(token)
+      .then((data) => setScanUsage(data.usage?.scans || null))
+      .catch(() => {});
   }, [token]);
 
   // Dismiss the row menu on any click outside it (the toggle button lives
@@ -218,6 +246,10 @@ export default function Scan() {
      through here, so the size limit and the error wording cannot drift apart
      between them. */
   const addFiles = useCallback((incoming) => {
+    if (scanUsage && !scanUsage.available) {
+      setError("You have used all of this month's scans.");
+      return;
+    }
     const images = [...incoming].filter((f) => f.type.startsWith("image/"));
     if (images.length === 0) {
       setError("That is not an image. Drop or paste a photo of Chinese text.");
@@ -225,7 +257,10 @@ export default function Scan() {
     }
 
     const tooBig = images.filter((f) => f.size > MAX_UPLOAD_MB * 1024 * 1024);
-    const ok = images.filter((f) => f.size <= MAX_UPLOAD_MB * 1024 * 1024);
+    let ok = images.filter((f) => f.size <= MAX_UPLOAD_MB * 1024 * 1024);
+    if (scanUsage?.remaining != null) {
+      ok = ok.slice(0, scanUsage.remaining);
+    }
 
     setError(
       tooBig.length
@@ -244,7 +279,7 @@ export default function Scan() {
         })),
       ]);
     }
-  }, []);
+  }, [scanUsage]);
 
   function handleFileChange(e) {
     addFiles(e.target.files);
@@ -256,6 +291,7 @@ export default function Scan() {
   }
 
   function openUploader() {
+    if (scanUsage && !scanUsage.available) return;
     setError(null);
     setUploaderOpen(true);
   }
@@ -327,8 +363,10 @@ export default function Scan() {
           ),
         );
         patch(item.id, { status: "done", progress: 1, scanId: data.id });
+        if (data.usage) setScanUsage(data.usage);
         completed.push(data);
       } catch (err) {
+        if (err.data?.usage) setScanUsage(err.data.usage);
         patch(item.id, { status: "failed", error: err.message });
         setError(err.message);
       }
@@ -477,6 +515,27 @@ export default function Scan() {
 
       {error && <p className="sc-error">{error}</p>}
 
+      {scanUsage && (
+        <section className={"sc-allowance" + (!scanUsage.available ? " exhausted" : scanUsage.remaining === 1 ? " low" : "")}>
+          {!scanUsage.available && <img src={graduateBot} alt="" />}
+          <div className="sc-allowance-copy">
+            <span className="sc-allowance-kicker">Monthly scan allowance</span>
+            <h2>{scanUsage.available
+              ? scanUsage.limit == null ? "Unlimited scans" : `${scanUsage.remaining} of ${scanUsage.limit} scans left`
+              : scanUsage.is_pro ? "You’ve used this month’s Pro scans." : "You’ve used this month’s free scans."}</h2>
+            <p>{scanUsage.available
+              ? `Your allowance resets on ${formatResetDate(scanUsage.reset_date)}.`
+              : `Your saved scans stay available. Your allowance resets on ${formatResetDate(scanUsage.reset_date)}.`}</p>
+            {scanUsage.limit != null && scanUsage.available && (
+              <div className="sc-allowance-track" aria-label={`${scanUsage.used} of ${scanUsage.limit} scans used`}>
+                <span style={{ width: `${Math.min(100, (scanUsage.used / scanUsage.limit) * 100)}%` }} />
+              </div>
+            )}
+          </div>
+          {!scanUsage.available && !scanUsage.is_pro && <Link className="sc-allowance-cta" to="/upgrade">Unlock more scans with Verbo Pro</Link>}
+        </section>
+      )}
+
       <div className="sc-upload-card">
         <div className="sc-upload-bg-clip">
           <img className="sc-swoosh-large" src={swooshLarge} alt="" />
@@ -490,8 +549,7 @@ export default function Scan() {
           </p>
 
           <div className="sc-upload-actions">
-            <button type="button" className="sc-btn" onClick={openUploader}>
-              <CloudUploadIcon />
+            <button type="button" className="sc-btn" onClick={openUploader} disabled={scanUsage ? !scanUsage.available : false}>
               Add photo
             </button>
           </div>
@@ -692,7 +750,15 @@ export default function Scan() {
           <Skeleton style={{ height: 52 }} />
         </div>
       ) : sortedScans.length === 0 ? (
-        <p className="sc-empty">No scans yet.</p>
+        <div className="sc-empty">
+          <EmptyScansIcon />
+          <h3>No scans yet</h3>
+          <p>Upload a photo of Chinese text to see it here.</p>
+          <button type="button" className="sc-empty-upload" onClick={openUploader} disabled={scanUsage ? !scanUsage.available : false}>
+            <CloudUploadIcon />
+            Add a photo
+          </button>
+        </div>
       ) : (
         <div className="sc-table-wrap">
           <table className="sc-table">
