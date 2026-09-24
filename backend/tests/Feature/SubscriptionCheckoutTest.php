@@ -62,6 +62,9 @@ class SubscriptionCheckoutTest extends TestCase
         $this->assertSame('price_pro', $session['line_items'][0]['price']);
         $this->assertStringStartsWith('https://verbo.test/upgrade/success', $session['return_url']);
         $this->assertArrayNotHasKey('success_url', $session);
+        $this->assertSame(['card'], $session['payment_method_types']);
+        $this->assertSame(['american_express', 'discover_global_network'],
+            $session['payment_method_options']['card']['restrictions']['brands_blocked']);
 
         // Starting a checkout grants nothing; only the webhook does.
         $this->assertFalse((bool) $user->fresh()->is_pro);

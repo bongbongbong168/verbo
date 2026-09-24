@@ -222,18 +222,24 @@
   gap: 16px;
 }
 
-.uc-email {
-  margin: 0;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: var(--uc-pale);
-  font-size: 0.86rem;
-  color: var(--uc-muted);
+.uc-cards {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.uc-email strong {
-  color: var(--uc-text);
-  font-weight: 600;
+.uc-brands {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.uc-brand {
+  display: block;
+  width: 42px;
+  height: 26px;
 }
 
 .uc-alert {

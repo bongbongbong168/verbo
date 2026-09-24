@@ -69,7 +69,13 @@ class SubscriptionService
         $front = rtrim(config('services.stripe.frontend_url'), '/');
         $params = ['mode' => 'subscription', 'customer' => $customer,
             'client_reference_id' => (string) $user->id, 'metadata' => $meta, 'subscription_data' => ['metadata' => $meta],
-            'line_items' => [['price' => $price['id'], 'quantity' => 1]]];
+            'line_items' => [['price' => $price['id'], 'quantity' => 1]],
+            // Cards only, and only Visa and Mastercard — enforced here, not
+            // just hidden in the page, so no other method can be used.
+            'payment_method_types' => ['card'],
+            'payment_method_options' => ['card' => ['restrictions' => [
+                'brands_blocked' => ['american_express', 'discover_global_network'],
+            ]]]];
         $params += $ui === 'elements'
             ? ['ui_mode' => 'elements', 'return_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}']
             : ['success_url' => $front.'/upgrade/success?session_id={CHECKOUT_SESSION_ID}', 'cancel_url' => $front.'/upgrade'];

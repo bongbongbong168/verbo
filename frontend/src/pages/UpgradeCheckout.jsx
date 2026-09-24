@@ -105,12 +105,15 @@ function PayForm({ fallbackPrice }) {
 
   return (
     <form className="uc-form" onSubmit={subscribe} noValidate>
-      {checkout.email && (
-        <p className="uc-email">
-          Receipts go to <strong>{checkout.email}</strong>
-        </p>
-      )}
-      <PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
+      {/* Visa and Mastercard only — the session blocks every other brand. */}
+      <div className="uc-cards">
+        <span>Card</span>
+        <span className="uc-brands" aria-label="Visa and Mastercard accepted">
+          <VisaMark />
+          <MastercardMark />
+        </span>
+      </div>
+      <PaymentElement options={{ wallets: { link: 'never', applePay: 'never', googlePay: 'never' } }} />
 
       {error && <p className="uc-alert" role="alert">{error}</p>}
 
@@ -292,6 +295,25 @@ function Svg({ children }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {children}
+    </svg>
+  )
+}
+/* Card-brand marks, drawn rather than fetched. */
+function VisaMark() {
+  return (
+    <svg className="uc-brand" viewBox="0 0 48 30" role="img" aria-label="Visa">
+      <rect width="48" height="30" rx="5" fill="#fff" stroke="#e7e3f6" />
+      <text x="24" y="20" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="12.5" fontStyle="italic" fontWeight="700" fill="#1a1f71">VISA</text>
+    </svg>
+  )
+}
+function MastercardMark() {
+  return (
+    <svg className="uc-brand" viewBox="0 0 48 30" role="img" aria-label="Mastercard">
+      <rect width="48" height="30" rx="5" fill="#fff" stroke="#e7e3f6" />
+      <circle cx="20" cy="15" r="8" fill="#eb001b" />
+      <circle cx="28" cy="15" r="8" fill="#f79e1b" />
+      <path d="M24 8.1a8 8 0 0 1 0 13.8 8 8 0 0 1 0-13.8z" fill="#ff5f00" />
     </svg>
   )
 }
