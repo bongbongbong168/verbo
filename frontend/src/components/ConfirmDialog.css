@@ -1,0 +1,99 @@
+/* Confirm popup. Prefix `cfm-` (`cf-` is Confetti).
+   Same scrim and navy outline as the course/booking cards. No entrance
+   animation: it must be readable the instant it mounts. */
+
+.cfm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(28, 23, 48, 0.45);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+}
+
+.cfm {
+  width: min(380px, 100%);
+  box-sizing: border-box;
+  padding: 24px 24px 20px;
+  border: 1px solid #2b2643;
+  border-radius: 21px;
+  background: #fff;
+  color: #1c1730;
+  box-shadow: 0 18px 44px rgba(28, 23, 48, 0.22);
+}
+
+.cfm-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.cfm-text {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #726c88;
+}
+
+.cfm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cfm-btn {
+  /* Cap-band pair: Hellix 600 sits 0.076em low in its line box. */
+  padding: calc(0.6rem - 0.076em) 1.15rem calc(0.6rem + 0.076em);
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  background: #fff;
+  color: #1c1730;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cfm-btn:hover:not(:disabled) {
+  border-color: #a89ce3;
+}
+
+.cfm-btn:focus-visible {
+  outline: 2px solid #a89ce3;
+  outline-offset: 2px;
+}
+
+.cfm-danger {
+  border-color: #b02a2a;
+  background: #b02a2a;
+  color: #fff;
+}
+
+.cfm-danger:hover:not(:disabled) {
+  border-color: #962222;
+  background: #962222;
+}
+
+.cfm-primary {
+  border-color: #6a6191;
+  background: #6a6191;
+  color: #fff;
+}
+
+.cfm-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 767px) {
+  .cfm-actions > * {
+    flex: 1;
+  }
+}

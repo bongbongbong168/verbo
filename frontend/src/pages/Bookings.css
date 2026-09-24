@@ -63,7 +63,7 @@
 
 /* One line: tabs left, Clear all right.
    `space-between` puts them at opposite ends, and `wrap` is the safety net —
-   on a narrow window, or with the armed note showing, the Clear-all group
+   on a narrow window the Clear-all group
    drops to its own line instead of colliding with the tab pills.
    `align-items: center` is what actually puts the button at the tabs' height,
    since the two groups are different heights. */
@@ -603,15 +603,6 @@
   flex-wrap: wrap;
 }
 
-/* The armed note renders BEFORE the button despite coming after it in the
-   DOM. Packed to the right, the natural order would put the explanation on the
-   far edge and the button in the middle — reading "…keep their records. Click
-   again to clear 6" right to left. `order` fixes the reading direction without
-   moving the markup, which keeps the button first for the keyboard. */
-.bo-bulk-note {
-  order: -1;
-}
-
 /* Sized to the tab pills directly above it, not to the smaller role switch:
    this sits in the same band and read as a different kind of control when it
    was 7px shorter in a smaller face. `flex: none` stops the flex row shrinking
@@ -654,20 +645,8 @@
   color: #b02a2a;
 }
 
-/* Armed is a static style, not an animation — the second click must be
-   unmistakably a different button from the first. */
-.bo-clear.armed {
-  background: #b02a2a;
-  border-color: #b02a2a;
-  color: #fff;
-}
-
 .bo-clear:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.bo-bulk-note {
-  font-size: 0.78rem;
-  color: var(--bo-muted);
-}

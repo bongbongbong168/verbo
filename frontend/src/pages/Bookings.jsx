@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import PageTools from '../components/PageTools'
 import './Bookings.css'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 /* Tabs are STATES, not directions — "where does this booking stand" is the
    question someone opens this page with. The order flips by role because the
@@ -160,10 +161,8 @@ export default function Bookings() {
   const [busyId, setBusyId] = useState(null)
   const [declining, setDeclining] = useState(null)
   const [reason, setReason] = useState(DECLINE_REASONS[0])
-  /* Clearing the whole list arms on the first click and acts on the second —
-     the same two-step the Scan page uses for delete. It disarms on a timer
-     rather than on blur, since blur never fires if focus never landed. */
-  const [armedClear, setArmedClear] = useState(false)
+  /* Whether the "Clear past bookings?" confirm popup is open. */
+  const [confirmClear, setConfirmClear] = useState(false)
   const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
@@ -194,24 +193,17 @@ export default function Bookings() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    if (!armedClear) return undefined
-    const id = setTimeout(() => setArmedClear(false), 4000)
-    return () => clearTimeout(id)
-  }, [armedClear])
-
+  /* Clearing opens a confirm popup rather than arming the button for a
+     second click — the usual pattern, and the one that says what happens. */
   async function clearPast() {
-    if (!armedClear) {
-      setArmedClear(true)
-      return
-    }
     setError(null)
     setClearing(true)
     try {
       await api.clearPastBookings(token, role)
-      setArmedClear(false)
+      setConfirmClear(false)
       load()
     } catch (err) {
+      setConfirmClear(false)
       setError(err.message)
     } finally {
       setClearing(false)
@@ -562,9 +554,8 @@ export default function Bookings() {
 
       {/* Tabs and the Clear-all control share one line, since one sits left and
           the other right. Wrapped in a flex row rather than pulled up with a
-          negative margin: the row can then WRAP on a narrow window, where the
-          armed note ("This only clears your own list…") would otherwise run
-          into the tab pills. */}
+          negative margin: the row can then WRAP on a narrow window instead of
+          running into the tab pills. */}
       <div className="bo-tabrow">
       <div className="bo-tabs" role="tablist">
         {tabs.map((key) => {
@@ -592,24 +583,28 @@ export default function Bookings() {
         <div className="bo-bulk">
           <button
             type="button"
-            className={`bo-clear${armedClear ? ' armed' : ''}`}
-            onClick={clearPast}
+            className="bo-clear"
+            onClick={() => setConfirmClear(true)}
             disabled={clearing}
           >
             <TrashIcon />
-            {clearing
-              ? 'Clearing…'
-              : armedClear
-                ? `Click again to clear ${list.length}`
-                : 'Clear all'}
+            Clear all
           </button>
-          {armedClear && (
-            <span className="bo-bulk-note">
-              This only clears your own list — {role === 'teacher' ? 'students' : 'your tutors'}{' '}
-              keep their records.
-            </span>
-          )}
         </div>
+      )}
+
+      {confirmClear && (
+        <ConfirmDialog
+          title={`Clear ${list.length} past ${list.length === 1 ? 'booking' : 'bookings'}?`}
+          message={`They will be removed from your list. ${
+            role === 'teacher' ? 'Your students' : 'Your tutors'
+          } keep their own records, and this can't be undone.`}
+          confirmLabel="Clear all"
+          busyLabel="Clearing…"
+          busy={clearing}
+          onConfirm={clearPast}
+          onCancel={() => setConfirmClear(false)}
+        />
       )}
       </div>
 
