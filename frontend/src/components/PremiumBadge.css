@@ -11,7 +11,7 @@
   /* Hugs the word: a small, even gap each side instead of a fixed 48px box
      with PRO floating in the middle of it. */
   height: 20px;
-  padding: 0 7px;
+  padding: 0 9px;
   border-radius: 6px;
   /* Solid, no stroke — as specified. White on it is ~13:1. */
   background: #332f4b;
