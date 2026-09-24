@@ -1,43 +1,32 @@
+/* The one Pro mark for the whole app. Change it here, never per page.
+
+   Built like the app's other small labels (the ARTICLE / STORY badge on
+   covers): a single line of text sized by padding, no fixed height and no
+   transforms. The vertical pads are measured, not borrowed: rendered at
+   1.1 (desktop) and 1 (phone), each at three sub-pixel positions, 0.04em
+   more on top than below lands PRO dead centre or within one device pixel.
+   (The usual 0.086em lift for Hellix 700 assumes line-height: normal; at
+   1.2 it put the caps 1.5px high.) */
 .pb-premium {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 2;
-  /* ONE Pro mark for the whole app — podcast covers, article covers, the
-     article and episode pages. Change it here, never per page. */
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
-  /* Hugs the word: a small, even gap each side instead of a fixed 48px box
-     with PRO floating in the middle of it. */
-  height: 20px;
-  padding: 0 9px;
+  display: inline-block;
+  padding: calc(4px + 0.04em) 9px calc(4px - 0.04em);
   border-radius: 6px;
-  /* Solid, no stroke — as specified. White on it is ~13:1. */
   background: #332f4b;
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1;
+  line-height: 1.2;
+  /* No letter-spacing: it adds a gap after the last letter too, which is
+     what pushed PRO off-centre sideways. */
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.pb-premium-text {
-  /* The line box is the pill's full height, so the text's vertical place is
-     set by the font's own metrics rather than by rounding a centred child. */
-  display: block;
-  line-height: 20px;
-  /* letter-spacing also adds its gap after the last letter; hand it back so
-     the side gaps match. */
-  margin-right: -0.04em;
-  /* Measured on the rendered ink at 1.1 (desktop) and 1 (phone), at three
-     sub-pixel positions each: this drop keeps PRO within half a device pixel
-     of centre everywhere. Without it the caps sat high. */
-  transform: translateY(0.04em);
-}
-
-/* Article metadata is part of a flowing tag row rather than a cover overlay. */
+/* In a row of tags (the article page) rather than on a cover. */
 .pb-premium-inline {
   position: static;
   flex: none;
