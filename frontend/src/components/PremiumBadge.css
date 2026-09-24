@@ -3,6 +3,8 @@
   top: 8px;
   left: 8px;
   z-index: 2;
+  /* ONE Pro mark for the whole app — podcast covers, article covers, the
+     article and episode pages. Change it here, never per page. */
   display: grid;
   place-items: center;
   box-sizing: border-box;
@@ -20,8 +22,15 @@
 }
 
 .pb-premium-text {
-  position: relative;
-  top: -1px;
+  /* Optical centring, measured on the rendered ink at 8x (not guessed):
+     - letter-spacing adds its gap AFTER the last letter too, which pushed
+       "PRO" left of centre; the negative margin hands it back.
+     - as a block in this 20px grid cell the caps sat 0.035em high, so the
+       transform drops them by that. In em so it holds at every size.
+     Result: 120/119 px left/right and 54/53 px top/bottom at 8x. */
+  display: block;
+  margin-right: -0.04em;
+  transform: translateY(0.035em);
 }
 
 /* Article metadata is part of a flowing tag row rather than a cover overlay. */

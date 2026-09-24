@@ -115,6 +115,8 @@
    no edge floated on the white. border-box so the stroke eats into the frame
    rather than growing it past the 290x167 the cropper cut to. */
 .pe-cover {
+  /* Anchors the Pro badge in the corner, as on the podcast cards. */
+  position: relative;
   width: 290px;
   height: 167px;
   box-sizing: border-box;

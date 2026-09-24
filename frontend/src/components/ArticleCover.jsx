@@ -1,4 +1,5 @@
 import './ArticleCover.css'
+import PremiumBadge from './PremiumBadge'
 
 /* A cover for every article without anyone uploading one.
  *
@@ -59,7 +60,7 @@ export default function ArticleCover({ article, small = false }) {
           {article.type && (
             <span className="ac-format">{TYPE_LABELS[article.type] || article.type}</span>
           )}
-          {article.is_premium && <span className="ac-pro">Pro</span>}
+          {article.is_premium && <PremiumBadge inline />}
         </span>
       )}
     </div>

@@ -15,6 +15,7 @@ import SyncedTranscript from '../components/SyncedTranscript'
 import SentenceSavePopover from '../components/SentenceSavePopover'
 import { englishSentences, sentencesOf } from '../sentences'
 import proOwl from '../assets/assistant/graduate-bot.png'
+import PremiumBadge from '../components/PremiumBadge'
 
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
@@ -597,6 +598,8 @@ export default function PodcastEpisode() {
         <div className="pe-card-top">
           <div className="pe-cover">
             {podcast.image_url ? <img src={podcast.image_url} alt="" /> : <div className="pe-cover-placeholder" />}
+            {/* Same place and mark as on the episode's card in the list. */}
+            {podcast.is_premium && <PremiumBadge />}
           </div>
 
           <div className="pe-card-info">
