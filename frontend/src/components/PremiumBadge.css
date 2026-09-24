@@ -5,11 +5,13 @@
   z-index: 2;
   /* ONE Pro mark for the whole app — podcast covers, article covers, the
      article and episode pages. Change it here, never per page. */
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
   box-sizing: border-box;
-  width: 48px;
+  /* Hugs the word: a small, even gap each side instead of a fixed 48px box
+     with PRO floating in the middle of it. */
   height: 20px;
+  padding: 0 7px;
   border-radius: 6px;
   /* Solid, no stroke — as specified. White on it is ~13:1. */
   background: #332f4b;
@@ -22,13 +24,17 @@
 }
 
 .pb-premium-text {
-  /* Centred as measured on the rendered ink at the app's real 1.1 scale
-     (4x device pixels): 67/68 left-right, 32/32 top-bottom. An earlier
-     0.035em nudge, fitted at an 8x test zoom, left it 0.5px low for real.
-     The negative margin hands back letter-spacing's trailing gap, which
-     otherwise pushes "PRO" left of centre. */
+  /* The line box is the pill's full height, so the text's vertical place is
+     set by the font's own metrics rather than by rounding a centred child. */
   display: block;
+  line-height: 20px;
+  /* letter-spacing also adds its gap after the last letter; hand it back so
+     the side gaps match. */
   margin-right: -0.04em;
+  /* Measured on the rendered ink at 1.1 (desktop) and 1 (phone), at three
+     sub-pixel positions each: this drop keeps PRO within half a device pixel
+     of centre everywhere. Without it the caps sat high. */
+  transform: translateY(0.04em);
 }
 
 /* Article metadata is part of a flowing tag row rather than a cover overlay. */
