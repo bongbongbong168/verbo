@@ -10,9 +10,9 @@
   box-sizing: border-box;
   width: 48px;
   height: 20px;
-  border: 1px solid #544d77;
   border-radius: 6px;
-  background: #7d76a0;
+  /* Solid, no stroke — as specified. White on it is ~13:1. */
+  background: #332f4b;
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
