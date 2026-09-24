@@ -408,6 +408,8 @@
 }
 .sd-translation-limit a { color: #4b3b86; font-weight: 700; }
 
+.sd-translation-limit-state { margin: -0.35rem 0 1rem; }
+
 .sd-translation {
   margin-top: 1.5rem;
   padding-top: 1rem;

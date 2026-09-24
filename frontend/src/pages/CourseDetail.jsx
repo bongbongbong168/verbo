@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import CourseDialog from '../components/CourseDialog'
+import Dashboard from './Dashboard'
 
 /**
  * `/courses/:id` — a direct link to one group course.
@@ -17,5 +18,14 @@ export default function CourseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  return <CourseDialog courseId={id} onClose={() => navigate(-1)} />
+  return (
+    <>
+      <Dashboard />
+      <CourseDialog
+        courseId={id}
+        onClose={() => navigate(-1)}
+        allowBackgroundScroll
+      />
+    </>
+  )
 }

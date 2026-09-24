@@ -27,7 +27,7 @@ class UsageAllowanceTest extends TestCase
         $pro = User::factory()->create(['is_pro' => true]);
         $admin = User::factory()->create(['is_admin' => true]);
 
-        $this->assertSame(5, $service->summary($free, UsageAllowanceService::SCANS)['limit']);
+        $this->assertSame(15, $service->summary($free, UsageAllowanceService::SCANS)['limit']);
         $this->assertSame(10, $service->summary($free, UsageAllowanceService::TRANSLATIONS)['limit']);
         $this->assertSame(100, $service->summary($pro, UsageAllowanceService::SCANS)['limit']);
         $this->assertSame(300, $service->summary($pro, UsageAllowanceService::TRANSLATIONS)['limit']);
@@ -141,7 +141,7 @@ class UsageAllowanceTest extends TestCase
         ]);
     }
 
-    public function test_limit_error_is_structured_and_allowance_endpoint_has_both_features(): void
+    public function test_limit_error_is_structured_and_allowance_endpoint_has_all_features(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
@@ -163,7 +163,9 @@ class UsageAllowanceTest extends TestCase
 
         $this->getJson('/api/usage/allowances')
             ->assertOk()
-            ->assertJsonPath('usage.scans.limit', 5)
-            ->assertJsonPath('usage.full_text_translations.used', 10);
+            ->assertJsonPath('usage.scans.limit', 15)
+            ->assertJsonPath('usage.full_text_translations.used', 10)
+            ->assertJsonPath('usage.ai_chat_message.limit', 10)
+            ->assertJsonPath('usage.ai_chat_message.period_type', 'day');
     }
 }

@@ -2159,6 +2159,8 @@
 }
 .rd-translation-limit a { color: #4b3b86; font-weight: 700; }
 
+.rd-translation-limit-state { flex-basis: 100%; }
+
 .rd-pair .rd-body-cn {
   margin: 0;
 }

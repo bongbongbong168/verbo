@@ -630,10 +630,6 @@ export default function FindTutor() {
                         </span>
                       )}
                     </div>
-
-                    {bookingSentTo[t.user.id] && (
-                      <span className="ft-card-sent">Trial booked</span>
-                    )}
                   </div>
                 </div>
               ))}

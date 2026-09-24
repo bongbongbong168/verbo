@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\StudyTextController;
 use App\Http\Controllers\Api\StudyUnitCompletionController;
 use App\Http\Controllers\Api\StudyUnitController;
 use App\Http\Controllers\Api\StudyVocabularyController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\TutorAvailabilityController;
 use App\Http\Controllers\Api\TutorApplicationController;
 use App\Http\Controllers\Api\TutorController;
@@ -227,6 +228,9 @@ Route::middleware('auth:sanctum')->group(function () {
        client — see PaymentService::priceOf. */
     Route::post('/payments/intent', [PaymentController::class, 'intent']);
     Route::get('/payments', [PaymentController::class, 'index']);
+    Route::get('/subscription/status', [SubscriptionController::class, 'status']);
+    Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout']);
+    Route::post('/subscription/portal', [SubscriptionController::class, 'portal']);
 
     /* The dashboard's "My Learning": upcoming private lessons and group
        classes merged into one list. Read-only, owns no table. */

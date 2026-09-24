@@ -25,9 +25,16 @@ class ScanTranslationTest extends TestCase
         $scan = $this->scan();
         config(['services.deepl.key' => 'test-key']);
         Http::fake(['api-free.deepl.com/*' => Http::response(['translations' => [['text' => 'Hello.'], ['text' => 'How are you?']]])]);
-        for ($i = 0; $i < 2; $i++) {
-            $this->postJson('/api/scans/'.$scan->id.'/translation')->assertOk()->assertJsonPath('pairs.0.translation', 'Hello.')->assertJsonPath('pairs.1.translation', 'How are you?');
-        }
+        $this->postJson('/api/scans/'.$scan->id.'/translation')
+            ->assertOk()
+            ->assertJsonPath('pairs.0.translation', 'Hello.')
+            ->assertJsonPath('pairs.1.translation', 'How are you?')
+            ->assertJsonPath('usage.used', 1)
+            ->assertJsonPath('usage.remaining', 9);
+        $this->postJson('/api/scans/'.$scan->id.'/translation')
+            ->assertOk()
+            ->assertJsonPath('usage.used', 1)
+            ->assertJsonPath('usage.remaining', 9);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request) => $request['text'] === ['你好。', '你好吗？']
             && $request['source_lang'] === 'ZH' && $request['target_lang'] === 'EN-US'

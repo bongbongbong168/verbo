@@ -275,7 +275,7 @@ function ChevronRight() {
 
 function PlayIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg className="db-pod-icon db-pod-icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M6.875 6.5v11c0 .8.9 1.3 1.6.9l8.2-5.5c.6-.4.6-1.4 0-1.8L8.475 5.6c-.7-.4-1.6.1-1.6.9z" />
     </svg>
   )
@@ -283,7 +283,7 @@ function PlayIcon() {
 
 function LockIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg className="db-pod-icon db-pod-icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="5" y="10" width="14" height="10" rx="2" />
       <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
     </svg>
@@ -1221,6 +1221,7 @@ export default function Dashboard() {
                     <TutorMedia
                       className="db-teacher-cover"
                       tutor={t}
+                      showIntro={false}
                     />
                     <span className="db-teacher-name">
                       <span className="db-teacher-name-text">{t.user.name}</span>

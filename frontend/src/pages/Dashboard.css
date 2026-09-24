@@ -957,8 +957,17 @@
 }
 
 .db-pod-play svg {
+  display: block;
   width: 15px;
   height: 15px;
+}
+
+/* SVGs are inline by default and reserve baseline space, which made their ink
+   sit a little high despite the circle itself being grid-centred. The play
+   triangle's visual weight is also left-heavy, so it gets its own optical nudge. */
+.db-pod-icon-play {
+  position: relative;
+  left: 1px;
 }
 
 .db-pod-level {

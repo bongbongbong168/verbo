@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\MonthlyFeatureUsage;
 use App\Models\User;
 use App\Services\GeminiService;
+use App\Services\UsageAllowanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -41,7 +45,7 @@ class PracticeChatTest extends TestCase
         ]);
     }
 
-    public function test_it_answers_and_returns_only_the_text()
+    public function test_it_answers_and_returns_text_with_updated_allowance()
     {
         $this->withKey();
         $this->fakeReply("我昨天去商店买了东西。\nPinyin: Wǒ zuótiān qù shāngdiàn mǎi le dōngxi.");
@@ -51,7 +55,14 @@ class PracticeChatTest extends TestCase
                 'messages' => [['role' => 'user', 'text' => '我昨天去商店买东西。']],
             ])
             ->assertOk()
-            ->assertJsonStructure(['reply'])
+            ->assertJsonStructure(['reply', 'usage' => [
+                'feature', 'used', 'limit', 'remaining', 'period_type',
+                'period_start', 'resets_at', 'is_pro', 'available',
+            ]])
+            ->assertJsonPath('usage.feature', UsageAllowanceService::AI_CHAT_MESSAGES)
+            ->assertJsonPath('usage.used', 1)
+            ->assertJsonPath('usage.remaining', 9)
+            ->assertJsonPath('usage.period_type', 'day')
             ->assertJsonMissingPath('candidates');
     }
 
@@ -169,7 +180,183 @@ class PracticeChatTest extends TestCase
             ->getJson('/api/practice-chat/status')
             ->assertOk()
             ->assertJson(['available' => true])
+            ->assertJsonPath('usage.limit', 10)
+            ->assertJsonPath('usage.remaining', 10)
             ->assertJsonCount(6, 'topics');
+    }
+
+    public function test_free_pro_and_admin_receive_the_correct_daily_access(): void
+    {
+        $this->withKey();
+        $free = User::factory()->create();
+        $pro = User::factory()->create(['is_pro' => true]);
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($free)->getJson('/api/practice-chat/status')
+            ->assertJsonPath('usage.limit', 10)
+            ->assertJsonPath('usage.is_pro', false);
+        $this->actingAs($pro)->getJson('/api/practice-chat/status')
+            ->assertJsonPath('usage.limit', 100)
+            ->assertJsonPath('usage.is_pro', true);
+        $this->actingAs($admin)->getJson('/api/practice-chat/status')
+            ->assertJsonPath('usage.limit', null)
+            ->assertJsonPath('usage.available', true);
+    }
+
+    public function test_provider_failure_and_validation_failure_consume_nothing(): void
+    {
+        $this->withKey();
+        $learner = $this->learner();
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['error' => []], 500)]);
+
+        $this->actingAs($learner)->postJson('/api/practice-chat', [
+            'messages' => [['role' => 'user', 'text' => 'hi']],
+        ])->assertStatus(503);
+
+        $this->actingAs($learner)->postJson('/api/practice-chat', [
+            'messages' => [['role' => 'user', 'text' => 'hi']],
+            'topic' => 'not allowed',
+        ])->assertStatus(422);
+
+        $usage = app(UsageAllowanceService::class)
+            ->summary($learner, UsageAllowanceService::AI_CHAT_MESSAGES);
+        $this->assertSame(0, $usage['used']);
+        $this->assertDatabaseHas('monthly_feature_usages', [
+            'user_id' => $learner->id,
+            'feature' => UsageAllowanceService::AI_CHAT_MESSAGES,
+            'used' => 0,
+            'reserved' => 0,
+        ]);
+        Http::assertSentCount(1);
+    }
+
+    public function test_malformed_gemini_response_consumes_nothing(): void
+    {
+        $this->withKey();
+        $learner = $this->learner();
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [['content' => ['parts' => []]]],
+            ]),
+        ]);
+
+        $this->actingAs($learner)->postJson('/api/practice-chat', [
+            'messages' => [['role' => 'user', 'text' => '你好']],
+        ])->assertStatus(503);
+
+        $usage = app(UsageAllowanceService::class)
+            ->summary($learner, UsageAllowanceService::AI_CHAT_MESSAGES);
+        $this->assertSame(0, $usage['used']);
+        $this->assertDatabaseHas('monthly_feature_usages', [
+            'user_id' => $learner->id,
+            'feature' => UsageAllowanceService::AI_CHAT_MESSAGES,
+            'used' => 0,
+            'reserved' => 0,
+        ]);
+    }
+
+    public function test_the_final_question_succeeds_and_the_next_is_rejected_before_gemini(): void
+    {
+        $this->withKey();
+        $this->fakeReply('ok');
+        $learner = $this->learner();
+        MonthlyFeatureUsage::create([
+            'user_id' => $learner->id,
+            'feature' => UsageAllowanceService::AI_CHAT_MESSAGES,
+            'period_start' => now()->startOfDay()->toDateString(),
+            'used' => 9,
+        ]);
+
+        $payload = ['messages' => [['role' => 'user', 'text' => 'one more']]];
+        $this->actingAs($learner)->postJson('/api/practice-chat', $payload)
+            ->assertOk()
+            ->assertJsonPath('usage.used', 10)
+            ->assertJsonPath('usage.remaining', 0)
+            ->assertJsonPath('usage.available', false);
+
+        $this->actingAs($learner)->postJson('/api/practice-chat', $payload)
+            ->assertStatus(429)
+            ->assertJsonPath('code', 'usage_limit_reached')
+            ->assertJsonPath('usage.feature', UsageAllowanceService::AI_CHAT_MESSAGES)
+            ->assertJsonPath('usage.remaining', 0);
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_daily_usage_resets_and_accounts_are_isolated(): void
+    {
+        Carbon::setTestNow('2026-09-24 23:59:00');
+        try {
+            $service = app(UsageAllowanceService::class);
+            $first = User::factory()->create();
+            $second = User::factory()->create();
+            $reservation = $service->reserve($first, UsageAllowanceService::AI_CHAT_MESSAGES);
+            $service->commit($first, UsageAllowanceService::AI_CHAT_MESSAGES, $reservation);
+
+            $this->assertSame(1, $service->summary($first, UsageAllowanceService::AI_CHAT_MESSAGES)['used']);
+            $this->assertSame(0, $service->summary($second, UsageAllowanceService::AI_CHAT_MESSAGES)['used']);
+
+            Carbon::setTestNow('2026-09-25 00:01:00');
+            $next = $service->summary($first, UsageAllowanceService::AI_CHAT_MESSAGES);
+            $this->assertSame(0, $next['used']);
+            $this->assertSame('2026-09-25', $next['period_start']);
+            $this->assertStringStartsWith('2026-09-26T00:00:00', $next['resets_at']);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_a_question_crossing_midnight_settles_its_original_reservation(): void
+    {
+        Carbon::setTestNow('2026-09-24 23:59:59');
+        try {
+            $service = app(UsageAllowanceService::class);
+            $learner = $this->learner();
+            $reservation = $service->reserve($learner, UsageAllowanceService::AI_CHAT_MESSAGES);
+
+            Carbon::setTestNow('2026-09-25 00:00:01');
+            $currentUsage = $service->commit(
+                $learner,
+                UsageAllowanceService::AI_CHAT_MESSAGES,
+                $reservation
+            );
+
+            $this->assertSame(0, $currentUsage['used']);
+            $this->assertDatabaseHas('monthly_feature_usages', [
+                'user_id' => $learner->id,
+                'feature' => UsageAllowanceService::AI_CHAT_MESSAGES,
+                'period_start' => '2026-09-24',
+                'used' => 1,
+                'reserved' => 0,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_simultaneous_reservations_cannot_claim_the_last_slot(): void
+    {
+        $service = app(UsageAllowanceService::class);
+        $learner = $this->learner();
+        MonthlyFeatureUsage::create([
+            'user_id' => $learner->id,
+            'feature' => UsageAllowanceService::AI_CHAT_MESSAGES,
+            'period_start' => now()->startOfDay()->toDateString(),
+            'used' => 9,
+        ]);
+
+        $reservation = $service->reserve($learner, UsageAllowanceService::AI_CHAT_MESSAGES);
+        try {
+            $service->reserve($learner, UsageAllowanceService::AI_CHAT_MESSAGES);
+            $this->fail('A second tab should not be able to reserve the final question.');
+        } catch (HttpResponseException $e) {
+            $body = json_decode($e->getResponse()->getContent(), true);
+            $this->assertSame(429, $e->getResponse()->getStatusCode());
+            $this->assertSame('usage_limit_reached', $body['code']);
+            $this->assertArrayNotHasKey('provider', $body);
+        } finally {
+            $service->release($learner, UsageAllowanceService::AI_CHAT_MESSAGES, $reservation);
+        }
     }
 
     public function test_it_is_behind_auth()

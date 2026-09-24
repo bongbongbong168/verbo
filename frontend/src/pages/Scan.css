@@ -187,6 +187,8 @@
 .sc-allowance-cta:hover { background: #3d3860; }
 .sc-btn:disabled, .sc-empty-upload:disabled { cursor: not-allowed; opacity: 0.55; }
 
+.sc-limit-state { margin: 1.25rem 0 -0.35rem; }
+
 @media (max-width: 680px) {
   .sc-allowance { align-items: flex-start; flex-wrap: wrap; }
   .sc-allowance-cta { width: 100%; text-align: center; }
@@ -700,6 +702,38 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.2rem;
+}
+
+.sc-documents-usage {
+  display: flex;
+  margin: -0.9rem 0 0.8rem;
+}
+
+.sc-usage-card {
+  min-height: 34px;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.sc-usage-card strong {
+  color: inherit;
+  font-weight: 700;
+}
+
+.sc-usage-dot {
+  margin: 0 0.35rem;
+}
+
+@media (max-width: 520px) {
+  .sc-documents-usage {
+    margin-top: -1.1rem;
+  }
+
+  .sc-usage-card {
+    white-space: normal;
+  }
 }
 
 .sc-documents-title {

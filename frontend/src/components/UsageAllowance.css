@@ -1,0 +1,110 @@
+.ua-indicator {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  box-sizing: border-box;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid #ddd6f4;
+  border-radius: 999px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.ua-indicator.low {
+  border-color: #e8bc72;
+  background: #fff7e8;
+  color: #9a641d;
+}
+
+.ua-indicator.exhausted {
+  border-color: #2b2643;
+  background: #2b2643;
+  color: #fff;
+}
+
+.ua-limit {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  box-sizing: border-box;
+  padding: 0.9rem 1rem;
+  border: 1px solid #c9bdf3;
+  border-radius: 16px;
+  background: #f5f1ff;
+  color: #1c1730;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+}
+
+.ua-limit > img {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.ua-limit-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.ua-limit h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.ua-limit p {
+  margin: 0.18rem 0 0;
+  color: #716b8e;
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+.ua-limit-copy > span {
+  display: block;
+  margin-top: 0.3rem;
+  color: #6a6191;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.ua-limit-action {
+  flex: 0 0 auto;
+  padding: 0.68rem 0.85rem;
+  border-radius: 10px;
+  background: #2b2643;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.ua-limit-action:hover { background: #3d3860; }
+.ua-limit-action:focus-visible { outline: 2px solid #7d76a0; outline-offset: 2px; }
+
+.ua-limit.compact {
+  align-items: flex-start;
+  padding: 0.75rem;
+  border-radius: 14px;
+}
+
+.ua-limit.compact > img {
+  width: 48px;
+  height: 48px;
+}
+
+.ua-limit.compact .ua-limit-action {
+  flex-basis: 100%;
+}
+
+@media (max-width: 680px) {
+  .ua-limit { align-items: flex-start; flex-wrap: wrap; }
+  .ua-limit-action { width: 100%; }
+}

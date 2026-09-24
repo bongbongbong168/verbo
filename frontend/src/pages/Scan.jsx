@@ -16,8 +16,8 @@ import swooshLarge from "../assets/scan/swoosh-large.png";
 import fileIcon from "../assets/scan/file-icon.png";
 import sortIcon from "../assets/scan/sort-icon.png";
 import notebookPencil from "../assets/scan/notebook-pencil.png";
-import graduateBot from "../assets/assistant/graduate-bot.png";
 import PageTools from "../components/PageTools";
+import { AllowanceIndicator, UsageLimitState, formatUsageReset } from "../components/UsageAllowance";
 import "./Scan.css";
 import MenuDotsIcon from "../components/MenuDotsIcon";
 
@@ -155,14 +155,6 @@ function formatBytes(bytes) {
   const kb = bytes / 1024;
   if (kb < 1024) return `${Math.round(kb)} KB`;
   return `${(kb / 1024).toFixed(1)} MB`;
-}
-
-function formatResetDate(value) {
-  if (!value) return "next month";
-  return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  });
 }
 
 export default function Scan() {
@@ -515,26 +507,13 @@ export default function Scan() {
 
       {error && <p className="sc-error">{error}</p>}
 
-      {scanUsage && (
-        <section className={"sc-allowance" + (!scanUsage.available ? " exhausted" : scanUsage.remaining === 1 ? " low" : "")}>
-          {!scanUsage.available && <img src={graduateBot} alt="" />}
-          <div className="sc-allowance-copy">
-            <span className="sc-allowance-kicker">Monthly scan allowance</span>
-            <h2>{scanUsage.available
-              ? scanUsage.limit == null ? "Unlimited scans" : `${scanUsage.remaining} of ${scanUsage.limit} scans left`
-              : scanUsage.is_pro ? "You’ve used this month’s Pro scans." : "You’ve used this month’s free scans."}</h2>
-            <p>{scanUsage.available
-              ? `Your allowance resets on ${formatResetDate(scanUsage.reset_date)}.`
-              : `Your saved scans stay available. Your allowance resets on ${formatResetDate(scanUsage.reset_date)}.`}</p>
-            {scanUsage.limit != null && scanUsage.available && (
-              <div className="sc-allowance-track" aria-label={`${scanUsage.used} of ${scanUsage.limit} scans used`}>
-                <span style={{ width: `${Math.min(100, (scanUsage.used / scanUsage.limit) * 100)}%` }} />
-              </div>
-            )}
-          </div>
-          {!scanUsage.available && !scanUsage.is_pro && <Link className="sc-allowance-cta" to="/upgrade">Unlock more scans with Verbo Pro</Link>}
-        </section>
-      )}
+      <UsageLimitState
+        usage={scanUsage}
+        className="sc-limit-state"
+        title={scanUsage?.is_pro ? "You’ve used this month’s Pro scans." : "You’ve used this month’s free scans."}
+        description="Your saved scans stay available. Your scans reset next month."
+        actionLabel="Get more scans with Verbo Pro"
+      />
 
       <div className="sc-upload-card">
         <div className="sc-upload-bg-clip">
@@ -721,6 +700,23 @@ export default function Scan() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {scanUsage && (
+        <div className="sc-documents-usage">
+          <AllowanceIndicator usage={scanUsage} className="sc-usage-card">
+            <strong>Scan usage:</strong>{" "}
+            {scanUsage.limit == null
+              ? "Unlimited"
+              : `${scanUsage.remaining} of ${scanUsage.limit} left`}
+            {scanUsage.resets_at || scanUsage.reset_date ? (
+              <>
+                <span className="sc-usage-dot" aria-hidden="true">·</span>
+                {formatUsageReset(scanUsage, { monthStyle: "short" })}
+              </>
+            ) : null}
+          </AllowanceIndicator>
         </div>
       )}
 

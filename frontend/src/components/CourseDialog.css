@@ -26,6 +26,14 @@
   backdrop-filter: blur(7px);
 }
 
+/* A dashboard course opens as detail over the page it came from. Keep enough
+   separation to read the card, but let the real dashboard stay recognisable. */
+.cx-scrim-dashboard {
+  background: rgba(28, 23, 48, 0.32);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
 .cx {
   --cx-card: #ffffff;
   --cx-body: #fcfcff;

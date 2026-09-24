@@ -590,6 +590,9 @@ export const api = {
   paymentConfig: () => request('/payments/config'),
   paymentIntent: (token, kind, id) =>
     request('/payments/intent', { method: 'POST', token, body: { kind, id } }),
+  getSubscriptionStatus: (token) => request('/subscription/status', { token }),
+  createSubscriptionCheckout: (token) => request('/subscription/checkout', { method: 'POST', token }),
+  createSubscriptionPortal: (token) => request('/subscription/portal', { method: 'POST', token }),
 
   /* The DEMO settle path, kept for when Stripe is switched off. It now 422s
      once keys are configured — otherwise a student could POST here and take a

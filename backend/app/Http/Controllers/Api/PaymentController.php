@@ -7,6 +7,8 @@ use App\Models\Booking;
 use App\Models\CourseEnrollment;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use App\Models\StripeEvent;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\SignatureVerificationException;
@@ -111,7 +113,7 @@ class PaymentController extends Controller
      * `auth:sanctum` because Stripe holds no token, so an unverified request
      * here would let anyone on the internet confirm any booking for free.
      */
-    public function webhook(Request $request)
+    public function webhook(Request $request, SubscriptionService $subscriptions)
     {
         $secret = config('services.stripe.webhook_secret');
         abort_unless(filled($secret), 400, 'Webhook secret is not configured.');
@@ -130,9 +132,11 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 400);
         }
 
-        $intent = $event->data->object;
-
-        switch ($event->type) {
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($event, $subscriptions) {
+                StripeEvent::create(['stripe_event_id' => $event->id, 'type' => $event->type, 'processed_at' => now()]);
+                $intent = $event->data->object;
+                switch ($event->type) {
             case 'payment_intent.succeeded':
                 $this->fulfil($intent);
                 break;
@@ -154,6 +158,30 @@ class PaymentController extends Controller
                         'refunded_at' => now(),
                     ]);
                 break;
+            case 'checkout.session.completed':
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated':
+            case 'customer.subscription.deleted':
+                if ($event->type === 'checkout.session.completed') {
+                    if (($intent->mode ?? null) !== 'subscription' || ($intent->payment_status ?? null) !== 'paid') break;
+                    $sub = PaymentService::client()->subscriptions->retrieve($intent->subscription);
+                    $subscriptions->sync($sub);
+                } else {
+                    $subscriptions->sync($intent);
+                }
+                break;
+            case 'invoice.payment_succeeded':
+            case 'invoice.payment_failed':
+                if (!empty($intent->subscription)) {
+                    $sub = PaymentService::client()->subscriptions->retrieve($intent->subscription);
+                    $subscriptions->sync($sub);
+                }
+                break;
+                }
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (str_contains(strtolower($e->getMessage()), 'stripe_events')) return response()->json(['received' => true]);
+            throw $e;
         }
 
         // Always 200 for an event we understood. A non-2xx makes Stripe retry,

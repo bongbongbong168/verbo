@@ -9,8 +9,9 @@ import { useEffect } from 'react'
 
    Hiding html's scrollbar widens the page by its gutter, so that width is
    handed back as padding and nothing moves sideways. */
-export default function useScrollLock() {
+export default function useScrollLock(enabled = true) {
   useEffect(() => {
+    if (!enabled) return undefined
     const root = document.documentElement
     const gutter = window.innerWidth - root.clientWidth
     const prev = { overflow: root.style.overflow, paddingRight: root.style.paddingRight }
@@ -20,5 +21,5 @@ export default function useScrollLock() {
       root.style.overflow = prev.overflow
       root.style.paddingRight = prev.paddingRight
     }
-  }, [])
+  }, [enabled])
 }

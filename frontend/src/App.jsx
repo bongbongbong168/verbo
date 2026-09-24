@@ -33,6 +33,7 @@ import Profile from "./pages/Profile";
 import SavedArticles from "./pages/SavedArticles";
 import Settings from "./pages/Settings";
 import Upgrade from "./pages/Upgrade";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -121,6 +122,7 @@ function App() {
             which is what makes this read as part of the app rather than a
             marketing page bolted on beside it. */}
         <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/upgrade/success" element={<SubscriptionSuccess />} />
       </Route>
     </Routes>
   );

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
 import graduateBot from '../assets/assistant/graduate-bot.png'
+import { AllowanceIndicator, UsageLimitState } from './UsageAllowance'
 import './PracticeAssistant.css'
 
 /**
@@ -66,6 +67,7 @@ export default function PracticeAssistant() {
   const [draft, setDraft] = useState('')
   const [topic, setTopic] = useState(null)
   const [sending, setSending] = useState(false)
+  const [usage, setUsage] = useState(null)
   /* How far the panel has been nudged from its CSS corner, in `#root`'s own
      pixels. Null until it is moved, so it sits in the default corner via CSS
      rather than needing a position measured on first paint. */
@@ -86,6 +88,7 @@ export default function PracticeAssistant() {
       .then((s) => {
         if (!live) return
         setAvailable(Boolean(s.available))
+        if (s.usage) setUsage(s.usage)
         if (Array.isArray(s.topics) && s.topics.length) setTopics(s.topics)
       })
       .catch(() => {})
@@ -187,7 +190,7 @@ export default function PracticeAssistant() {
   const send = useCallback(
     async (text) => {
       const body = text.trim()
-      if (!body || sending) return
+      if (!body || sending || usage?.available === false) return
 
       const next = [...messages, { role: 'user', text: body }]
       setMessages(next)
@@ -200,7 +203,10 @@ export default function PracticeAssistant() {
         const history = next.filter((m) => m !== GREETING).slice(-12)
         const res = await api.sendPracticeChat(token, { messages: history, topic })
         setMessages((prev) => [...prev, { role: 'model', text: res.reply }])
+        if (res.usage) setUsage(res.usage)
       } catch (err) {
+        if (err.data?.usage) setUsage(err.data.usage)
+        if (err.data?.code === 'usage_limit_reached') return
         /* Shown as a bubble rather than a banner: it is a reply to what was
            just asked, and it belongs in the thread beside it. */
         setMessages((prev) => [
@@ -211,7 +217,7 @@ export default function PracticeAssistant() {
         setSending(false)
       }
     },
-    [messages, sending, token, topic],
+    [messages, sending, token, topic, usage?.available],
   )
 
   if (!token || !available) return null
@@ -223,6 +229,10 @@ export default function PracticeAssistant() {
      kind of transform the element had — measured, it landed 11.7px below the
      pointer on that drag alone while every later one was exact. */
   const anchorStyle = { transform: `translate(${pos?.x ?? 0}px, ${pos?.y ?? 0}px)` }
+  const exhausted = usage?.available === false
+  const remainingLabel = usage?.remaining == null
+    ? 'Unlimited'
+    : `${usage.remaining} left`
 
   /* Minimised and closed are the same resting state on purpose: both put the
      learner back at one small button, which is the thing the brief asks for
@@ -265,6 +275,9 @@ export default function PracticeAssistant() {
           <strong>AI Chinese Practice</strong>
           <em>Practice Chinese with AI</em>
         </span>
+        <AllowanceIndicator usage={usage} className="pa-allowance">
+          {remainingLabel}
+        </AllowanceIndicator>
         <span className="pa-head-actions">
           <button
             type="button"
@@ -323,6 +336,17 @@ export default function PracticeAssistant() {
           </p>
         ))}
 
+        <UsageLimitState
+          usage={usage}
+          compact
+          className="pa-limit"
+          title={usage?.is_pro ? 'You’ve used today’s Pro questions.' : 'You’ve used today’s free questions.'}
+          description={usage?.is_pro
+            ? 'Your questions reset tomorrow.'
+            : 'Your questions reset tomorrow. Upgrade to Verbo Pro for more daily practice.'}
+          actionLabel="Get more questions with Verbo Pro"
+        />
+
         {sending && (
           /* Three dots that are VISIBLE at frame 0 and only bob after that.
              An indicator whose keyframes start invisible shows nothing at all
@@ -346,7 +370,8 @@ export default function PracticeAssistant() {
           className="pa-input"
           rows={1}
           value={draft}
-          placeholder="Type in Chinese..."
+          placeholder={exhausted ? 'Questions reset tomorrow' : 'Type in Chinese...'}
+          disabled={exhausted}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             // Enter sends, Shift+Enter breaks the line — a textarea rather
@@ -360,11 +385,11 @@ export default function PracticeAssistant() {
         {/* Dictation is the browser's own, and it is only offered where the
             browser actually has it — a mic that does nothing on Firefox would
             be a button that lies. */}
-        <DictateButton onText={(t) => setDraft((d) => (d ? d + ' ' + t : t))} />
+        <DictateButton disabled={exhausted} onText={(t) => setDraft((d) => (d ? d + ' ' + t : t))} />
         <button
           type="submit"
           className="pa-send"
-          disabled={!draft.trim() || sending}
+          disabled={!draft.trim() || sending || exhausted}
           aria-label="Send"
           title="Send"
         >
@@ -384,7 +409,7 @@ export default function PracticeAssistant() {
  * the draft rather than sent, so a misheard sentence can be fixed before it
  * goes.
  */
-function DictateButton({ onText }) {
+function DictateButton({ onText, disabled = false }) {
   const [listening, setListening] = useState(false)
   const recRef = useRef(null)
 
@@ -396,6 +421,7 @@ function DictateButton({ onText }) {
   if (!Supported) return null
 
   const toggle = () => {
+    if (disabled) return
     if (listening) {
       recRef.current?.stop()
       return
@@ -416,6 +442,7 @@ function DictateButton({ onText }) {
       type="button"
       className={'pa-mic' + (listening ? ' on' : '')}
       onClick={toggle}
+      disabled={disabled}
       aria-label={listening ? 'Stop dictating' : 'Dictate in Chinese'}
       title={listening ? 'Stop' : 'Speak'}
     >

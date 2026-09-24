@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\GeminiService;
+use App\Services\UsageAllowanceService;
 use Illuminate\Http\Request;
 
 /**
@@ -21,7 +22,7 @@ class PracticeChatController extends Controller
     /** The chips the widget offers. A closed list, so the prompt cannot be steered from the client. */
     public const TOPICS = ['Daily Chat', 'Travel', 'Food', 'Work', 'HSK', 'Free Chat'];
 
-    public function store(Request $request, GeminiService $gemini)
+    public function store(Request $request, GeminiService $gemini, UsageAllowanceService $allowances)
     {
         $data = $request->validate([
             'messages' => ['required', 'array', 'min:1', 'max:'.GeminiService::MAX_HISTORY],
@@ -44,26 +45,41 @@ class PracticeChatController extends Controller
             return response()->json(['message' => 'The last message must be yours.'], 422);
         }
 
-        $result = $gemini->reply($data['messages'], $data['topic'] ?? null);
+        $reservation = $allowances->reserve($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES);
+
+        try {
+            $result = $gemini->reply($data['messages'], $data['topic'] ?? null);
+        } catch (\Throwable $e) {
+            $allowances->release($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES, $reservation);
+            throw $e;
+        }
 
         if (! $result['ok']) {
+            $allowances->release($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES, $reservation);
             // 503, not 500: nothing here is broken, the upstream is
             // unavailable or declined. The widget shows `error` as a bubble.
             return response()->json(['message' => $result['error']], 503);
         }
 
-        return response()->json(['reply' => $result['reply']]);
+        $usage = $allowances->commit(
+            $request->user(),
+            UsageAllowanceService::AI_CHAT_MESSAGES,
+            $reservation
+        );
+
+        return response()->json(['reply' => $result['reply'], 'usage' => $usage]);
     }
 
     /**
      * Whether the assistant is usable, so the widget can stay hidden entirely
      * rather than offering a button that only ever errors.
      */
-    public function status()
+    public function status(Request $request, UsageAllowanceService $allowances)
     {
         return response()->json([
             'available' => GeminiService::configured(),
             'topics' => self::TOPICS,
+            'usage' => $allowances->summary($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES),
         ]);
     }
 }

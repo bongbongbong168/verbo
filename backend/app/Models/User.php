@@ -37,6 +37,7 @@ class User extends Authenticatable
            separately as `has_google`, which is the only part the UI cares
            about. */
         'google_id',
+        'stripe_customer_id',
     ];
 
     /**
@@ -86,6 +87,11 @@ class User extends Authenticatable
     public function paymentMethods()
     {
         return $this->hasMany(PaymentMethod::class);
+    }
+
+    public function subscription()
+    {
+        return $this->hasOne(Subscription::class);
     }
 
     public function scans()

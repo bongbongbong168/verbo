@@ -12,6 +12,13 @@ import fileIcon from "../assets/scan/file-icon.png";
 import PageTools from "../components/PageTools";
 import ReaderSwitch from "../components/ReaderSwitch";
 import SentenceSavePopover from "../components/SentenceSavePopover";
+import { AllowanceIndicator, UsageLimitState } from "../components/UsageAllowance";
+import { useUsageAllowance } from "../useUsageAllowance";
+import {
+  TRANSLATION_FEATURE,
+  translationNeedsProvider,
+  writeTranslationContentCache,
+} from "../usageAllowances";
 import "./ScanDocument.css";
 
 function CopyIcon() {
@@ -80,7 +87,7 @@ function formatDate(value) {
   });
 }
 
-function useScanTranslation(id, token, onUsage) {
+function useScanTranslation(id, token, onSuccess, onUsage) {
   const key = `${id}:${token}`;
   const [state, setState] = useState({});
   const { pairs = [], busy = false, error = "", visible = false } = state.key === key ? state : {};
@@ -90,7 +97,7 @@ function useScanTranslation(id, token, onUsage) {
     setState({ key, busy: true });
     try {
       const result = await api.translateScan(token, id);
-      if (result.usage) onUsage(result.usage);
+      onSuccess(result);
       setState((current) => current.key === key ? { key, pairs: result.pairs, visible: true } : current);
     } catch (err) {
       if (err.data?.usage) onUsage(err.data.usage);
@@ -118,10 +125,32 @@ export default function ScanDocument() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { usage: translationUsage, updateUsage: updateTranslationUsage } = useUsageAllowance(
+    token,
+    TRANSLATION_FEATURE,
+  );
 
   const [scan, setScan] = useState(null);
-  const [translationUsage, setTranslationUsage] = useState(null);
-  const translation = useScanTranslation(id, token, setTranslationUsage);
+  function syncScanTranslationUsage(usage, { translated = false } = {}) {
+    if (!usage) return;
+    updateTranslationUsage(usage);
+    setScan((current) => {
+      const next = writeTranslationContentCache(
+        `scan:${id}`,
+        current,
+        usage,
+        { translated },
+      );
+      scanRef.current = next;
+      return next;
+    });
+  }
+  const translation = useScanTranslation(
+    id,
+    token,
+    (result) => syncScanTranslationUsage(result.usage, { translated: true }),
+    (usage) => syncScanTranslationUsage(usage),
+  );
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState({});
@@ -168,7 +197,6 @@ export default function ScanDocument() {
     const cached = readCache(key);
     if (cached) {
       setScan(cached);
-      setTranslationUsage(cached.translation_usage || null);
       scanRef.current = cached;
       setLoading(false);
       if (isFresh(key)) return;
@@ -180,7 +208,6 @@ export default function ScanDocument() {
       .getScan(token, id)
       .then((data) => {
         setScan(data);
-        setTranslationUsage(data.translation_usage || null);
         scanRef.current = data;
         writeCache(key, data);
       })
@@ -322,6 +349,11 @@ export default function ScanDocument() {
   const tokens = scan.tokens || [];
   const charCount = text.replace(/\s/g, "").length;
   const unsavedCount = scan.words.filter((w) => !saved[w.word]).length;
+  const translationNeedsAllowance = translationNeedsProvider({
+    loaded: translation.pairs.length > 0,
+    cached: scan.translation_cached,
+  });
+  const translationRequestBlocked = translationNeedsAllowance && translationUsage?.available === false;
 
   return (
     <div className="sd">
@@ -424,12 +456,17 @@ export default function ScanDocument() {
               {tokens.length > 0 && (
                 <ReaderSwitch label="Pinyin" on={showPinyin} onChange={() => setShowPinyin((v) => !v)} />
               )}
-              <ReaderSwitch label={translation.busy
-                ? "Translating..."
-                : `Translation · ${translationUsage?.remaining == null ? "Unlimited" : `${translationUsage.remaining} left`}`}
+              <ReaderSwitch label={translation.busy ? "Translating..." : "Translation"}
                 on={translation.visible}
                 onChange={translation.toggle}
-                disabled={translation.busy || (translationUsage?.available === false && !scan?.translation_cached && !translation.pairs.length)} />
+                disabled={translation.busy || translationRequestBlocked} />
+              {translationUsage && (
+                <AllowanceIndicator usage={translationUsage}>
+                  {translationUsage.remaining == null
+                    ? "Unlimited translations"
+                    : `${translationUsage.remaining} translations left`}
+                </AllowanceIndicator>
+              )}
             </div>
             {text && (
               <label className="sd-size" htmlFor="sd-text-size">
@@ -443,12 +480,14 @@ export default function ScanDocument() {
               </label>
             )}
           </div>}
-          {translationUsage?.available === false && !scan?.translation_cached && !translation.pairs.length && (
-            <p className="sd-translation-limit">
-              Full-text translations are used for this month. Pinyin, word meanings, and saving vocabulary still work. Resets {new Date(`${translationUsage.reset_date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.{" "}
-              {!translationUsage.is_pro && <Link to="/upgrade">Unlock more with Verbo Pro</Link>}
-            </p>
-          )}
+          <UsageLimitState
+            usage={translationUsage}
+            compact
+            className="sd-translation-limit-state"
+            title={translationUsage?.is_pro ? "You’ve used this month’s Pro translations." : "You’ve used this month’s free translations."}
+            description="Pinyin, word meanings, and saving vocabulary still work. Your translations reset next month."
+            actionLabel="Get more translations with Verbo Pro"
+          />
           {text && !translation.visible ? (
             <p className={"sd-text" + (showPinyin ? " sd-text-ruby" : "")} style={{ "--sd-reader-scale": readerScale / 100 }}>
               {tokens.map((tok, idx) => renderToken(tok, idx))}

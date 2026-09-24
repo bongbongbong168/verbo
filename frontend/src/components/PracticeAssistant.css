@@ -208,6 +208,13 @@
   color: var(--pa-muted);
 }
 
+.pa-allowance {
+  flex: none;
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pa-head-actions {
   display: flex;
   gap: 0.2rem;
@@ -350,6 +357,16 @@
   color: #b3261e;
 }
 
+.pa-limit {
+  flex-wrap: wrap;
+  margin-top: 0.1rem;
+}
+
+.pa-limit .ua-limit-action {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* ---- typing indicator ---- */
 
 .pa-typing {
@@ -434,6 +451,11 @@
   border-color: var(--pa-fill);
 }
 
+.pa-input:disabled {
+  color: var(--pa-muted);
+  cursor: not-allowed;
+}
+
 .pa-send,
 .pa-mic {
   display: grid;
@@ -470,6 +492,11 @@
 .pa-mic:hover {
   border-color: var(--pa-fill);
   color: var(--pa-accent);
+}
+
+.pa-mic:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* Listening is a static fill, not a pulse — a pulse that stalls says nothing,
@@ -525,6 +552,11 @@
 
   .pa-head {
     cursor: default;
+  }
+
+  .pa-allowance {
+    max-width: 112px;
+    font-size: 0.64rem;
   }
 
   .pa-fab {

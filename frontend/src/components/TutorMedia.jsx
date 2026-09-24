@@ -21,7 +21,7 @@ export default function TutorMedia({
   previewOnHover = true,
   priority = false,
   variant = 'card',
-  showIntro = true,
+  showIntro = false,
 }) {
   const instance = useRef(`tutor-media-${Math.random().toString(36).slice(2)}`)
   const timer = useRef(null)

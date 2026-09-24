@@ -16,6 +16,13 @@ import SentenceSavePopover from "../components/SentenceSavePopover";
 import PremiumBadge from "../components/PremiumBadge";
 import "./Read.css";
 import ReaderSwitch from '../components/ReaderSwitch'
+import { AllowanceIndicator, UsageLimitState } from '../components/UsageAllowance'
+import { useUsageAllowance } from '../useUsageAllowance'
+import {
+  TRANSLATION_FEATURE,
+  translationNeedsProvider,
+  writeTranslationContentCache,
+} from '../usageAllowances'
 import { englishSentences, sentencesOf } from "../sentences";
 import proOwl from '../assets/assistant/graduate-bot.png';
 
@@ -32,6 +39,12 @@ export default function ReadArticle() {
   const { id } = useParams();
   const { token, user } = useAuth();
   const navigate = useNavigate();
+  const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free';
+  const articleCacheKey = `article:${id}:viewer:${user?.id || 'anonymous'}:${access}`;
+  const { usage: translationUsage, updateUsage: updateTranslationUsage } = useUsageAllowance(
+    token,
+    TRANSLATION_FEATURE,
+  );
 
   const [article, setArticle] = useState(null);
   const [error, setError] = useState(null);
@@ -135,16 +148,14 @@ export default function ReadArticle() {
      load. Reopening an article you have already read then paints immediately
      instead of waiting on a request that may stall for seconds. */
   function loadArticle() {
-    const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free';
-    const cacheKey = `article:${id}:viewer:${user?.id || 'anonymous'}:${access}`;
-    const cached = readCache(cacheKey);
+    const cached = readCache(articleCacheKey);
     if (cached) {
       setArticle(cached);
       articleRef.current = cached;
       setLoading(false);
       // Fresh enough that refetching buys nothing — but the VIEW is still
       // recorded, because opening it again is a real read.
-      if (isFresh(cacheKey)) {
+      if (isFresh(articleCacheKey)) {
         recordVisit(cached);
         return;
       }
@@ -157,7 +168,7 @@ export default function ReadArticle() {
       .then((data) => {
         setArticle(data);
         articleRef.current = data;
-        writeCache(cacheKey, data);
+        writeCache(articleCacheKey, data);
         recordVisit(data);
       })
       // Only surface a failure that leaves the reader with nothing — a stalled
@@ -285,11 +296,28 @@ export default function ReadArticle() {
     cnSentences.length > 0 &&
     cnSentences.length === visibleEnglish.length;
   const premiumLocked = article.premium_locked === true;
-  const translationUsage = article.translation_usage;
-  const translationNeedsAllowance = !authoredTranslationFits
-    && generatedEnglish.length !== cnSentences.length
-    && !article.translation_cached;
-  const translationLimitReached = translationNeedsAllowance && translationUsage?.available === false;
+  const translationNeedsAllowance = translationNeedsProvider({
+    authored: authoredTranslationFits,
+    loaded: generatedEnglish.length === cnSentences.length,
+    cached: article.translation_cached,
+  });
+  const translationLimitReached = translationUsage?.available === false;
+  const translationRequestBlocked = translationNeedsAllowance && translationLimitReached;
+
+  function syncArticleTranslationUsage(usage, { translated = false } = {}) {
+    if (!usage) return;
+    updateTranslationUsage(usage);
+    setArticle((current) => {
+      const next = writeTranslationContentCache(
+        articleCacheKey,
+        current,
+        usage,
+        { translated },
+      );
+      articleRef.current = next;
+      return next;
+    });
+  }
 
   async function toggleTranslation() {
     clearHoveredWord();
@@ -306,9 +334,7 @@ export default function ReadArticle() {
     try {
       const result = await api.translateArticle(token, article.id);
       if (result.usage) {
-        const nextArticle = { ...article, translation_usage: result.usage, translation_cached: true };
-        setArticle(nextArticle);
-        articleRef.current = nextArticle;
+        syncArticleTranslationUsage(result.usage, { translated: true });
       }
       setGeneratedTranslation({
         articleId: article.id,
@@ -318,9 +344,7 @@ export default function ReadArticle() {
       });
     } catch (err) {
       if (err.data?.usage) {
-        const nextArticle = { ...article, translation_usage: err.data.usage };
-        setArticle(nextArticle);
-        articleRef.current = nextArticle;
+        syncArticleTranslationUsage(err.data.usage);
       }
       setGeneratedTranslation({
         articleId: article.id,
@@ -499,27 +523,36 @@ export default function ReadArticle() {
               </label>
 
               <ReaderSwitch
-                label={generatedTranslation.busy
-                  ? "Translating..."
-                  : `Translation · ${translationUsage?.remaining == null ? "Unlimited" : `${translationUsage.remaining} left`}`}
+                label={generatedTranslation.busy ? "Translating..." : "Translation"}
                 on={showTranslation}
                 onChange={toggleTranslation}
-                disabled={premiumLocked || translationLimitReached}
+                disabled={premiumLocked || translationRequestBlocked}
                 title={premiumLocked
                   ? "Full translation is included with Verbo Pro"
                   : showTranslation ? "Hide the English translation" : "Show the English translation"}
               />
+
+              {translationUsage && (
+                <AllowanceIndicator usage={translationUsage}>
+                  {translationUsage.remaining == null
+                    ? "Unlimited translations"
+                    : `${translationUsage.remaining} translations left`}
+                </AllowanceIndicator>
+              )}
 
               {generatedTranslation.error && showTranslation && (
                 <span className="rd-controls-note" role="alert">
                   {generatedTranslation.error}
                 </span>
               )}
-              {translationLimitReached && (
-                <span className="rd-controls-note rd-translation-limit">
-                  Full-text translations reset {new Date(`${translationUsage.reset_date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. Pinyin and vocabulary tools remain available. {!translationUsage.is_pro && <Link to="/upgrade">Get Verbo Pro</Link>}
-                </span>
-              )}
+              <UsageLimitState
+                usage={translationUsage}
+                compact
+                className="rd-translation-limit-state"
+                title={translationUsage?.is_pro ? "You’ve used this month’s Pro translations." : "You’ve used this month’s free translations."}
+                description="Pinyin and vocabulary tools remain available. Your translations reset next month."
+                actionLabel="Get more translations with Verbo Pro"
+              />
             </div>
 
             {lastSaved && (

@@ -47,6 +47,9 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'pro_price_id' => env('STRIPE_PRO_PRICE_ID'),
+        'pro_monthly_amount' => env('STRIPE_PRO_MONTHLY_AMOUNT'),
+        'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost:5173')),
         // Prices across the app are whole dollars; Stripe works in the smallest
         // currency unit, so amounts are multiplied by 100 in one place only.
         'currency' => env('STRIPE_CURRENCY', 'usd'),

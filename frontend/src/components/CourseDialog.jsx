@@ -109,7 +109,7 @@ export function ClockIcon() {
  *
  * Either `course` (already loaded) or `courseId` (fetched here) must be given.
  */
-export default function CourseDialog({ course: initial, courseId, onClose }) {
+export default function CourseDialog({ course: initial, courseId, onClose, allowBackgroundScroll = false }) {
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
@@ -155,7 +155,7 @@ export default function CourseDialog({ course: initial, courseId, onClose }) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  useScrollLock()
+  useScrollLock(!allowBackgroundScroll)
 
   async function openGroupChat() {
     setError(null)
@@ -357,9 +357,18 @@ export default function CourseDialog({ course: initial, courseId, onClose }) {
 
   return (
     <div
-      className="cx-scrim"
+      className={`cx-scrim${allowBackgroundScroll ? ' cx-scrim-dashboard' : ''}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
+      }}
+      onWheel={(e) => {
+        /* The dashboard remains the visible page behind this detail card.
+           Passing backdrop-wheel movement to it makes the context browseable
+           without letting a click through the modal. */
+        if (allowBackgroundScroll && e.target === e.currentTarget) {
+          e.preventDefault()
+          window.scrollBy({ top: e.deltaY, left: e.deltaX })
+        }
       }}
     >
       <div
