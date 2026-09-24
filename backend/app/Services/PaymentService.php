@@ -121,9 +121,8 @@ class PaymentService
         $intent = $stripe->paymentIntents->create([
             'amount' => $amount,
             'currency' => $currency,
-            // Lets Stripe offer whatever the account has enabled (cards,
-            // wallets) without this app having to enumerate them.
-            'automatic_payment_methods' => ['enabled' => true],
+            // Cards only — no wallets or pay-later methods at checkout.
+            'payment_method_types' => ['card'],
             /* The webhook fulfils from this metadata alone. It must never have
                to trust anything the browser sends back, because the browser may
                never come back at all. */

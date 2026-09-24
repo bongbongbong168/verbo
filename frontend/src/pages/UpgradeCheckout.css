@@ -361,3 +361,34 @@
     border-radius: 18px;
   }
 }
+
+/* ---- shared with the lesson checkout (Checkout.jsx) ---- */
+
+/* The tutor's face in place of the Pro crown. */
+.uc-plan-photo {
+  overflow: hidden;
+  background: var(--uc-fill);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.uc-plan-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Back is a history step there (it may come from a dialog), so a button
+   wearing the link's look. */
+.uc-back-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.uc-fine-gap {
+  margin-top: 14px;
+}

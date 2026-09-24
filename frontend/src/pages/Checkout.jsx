@@ -4,37 +4,18 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
+import { CARD_APPEARANCE, MastercardMark, VisaMark } from '../components/CardBrands'
 import './Checkout.css'
+import './UpgradeCheckout.css'
 
-/* The page has TWO payment modes, chosen by whether the server has Stripe keys.
+/* Card payments only. The card form is rendered by the payment provider in
+   iframes, so card numbers go straight from the browser to the provider and
+   never touch Verbo's server. This page does NOT confirm anything on success;
+   the webhook does, because a student who pays and closes the tab must still
+   get their lesson.
 
-   Live: Stripe's Payment Element mounts here and card details go straight to
-   Stripe from the browser — they never touch Verbo's server. This page does NOT
-   confirm anything on success; Stripe's webhook does, because a student who
-   pays and closes the tab must still get their lesson.
-
-   Demo: no keys configured, so the button calls the old settle endpoint and
-   says plainly on screen that nothing is charged. Kept rather than deleted so
-   a fresh checkout with no Stripe account still works end to end. */
-const METHODS = [
-  { key: 'card', label: 'Credit / Debit Card', note: 'Visa, Mastercard, Amex' },
-  { key: 'wallet', label: 'Verbo Wallet', note: 'Not available yet', disabled: true },
-]
-
-/* Matches the app's own palette so Stripe's iframe does not arrive looking like
-   a different website pasted into the card. */
-const STRIPE_APPEARANCE = {
-  theme: 'stripe',
-  variables: {
-    colorPrimary: '#a89ce3',
-    colorText: '#1c1730',
-    colorTextSecondary: '#726c88',
-    colorDanger: '#b02a2a',
-    fontFamily: 'Hellix, system-ui, sans-serif',
-    borderRadius: '10px',
-    spacingUnit: '4px',
-  },
-}
+   Laid out like the Pro checkout (`uc-` classes from UpgradeCheckout.css) so
+   every place Verbo takes money looks like one product. */
 
 const whenFmt = new Intl.DateTimeFormat(undefined, {
   weekday: 'long',
@@ -117,7 +98,11 @@ function StripePayForm({ amountLabel, onPaid }) {
     })
 
     if (err) {
-      setError(err.message || 'That payment could not be completed.')
+      setError(
+        err.type === 'card_error'
+          ? `${err.message} No charge was made.`
+          : err.message || 'That payment could not be completed.',
+      )
       setBusy(false)
       return
     }
@@ -136,13 +121,23 @@ function StripePayForm({ amountLabel, onPaid }) {
   }
 
   return (
-    <form onSubmit={submit}>
-      <PaymentElement onReady={() => setReady(true)} />
+    <form className="uc-form" onSubmit={submit}>
+      <div className="uc-cards">
+        <span>Card</span>
+        <span className="uc-brands" aria-label="Visa and Mastercard accepted">
+          <VisaMark />
+          <MastercardMark />
+        </span>
+      </div>
+      <PaymentElement
+        onReady={() => setReady(true)}
+        options={{ wallets: { link: 'never', applePay: 'never', googlePay: 'never' } }}
+      />
 
-      {error && <p className="ck-error">{error}</p>}
+      {error && <p className="uc-alert" role="alert">{error}</p>}
 
-      <button type="submit" className="ck-cta ck-pay-btn" disabled={!stripe || !ready || busy}>
-        {busy ? 'Processing…' : `Pay ${amountLabel} →`}
+      <button type="submit" className="uc-cta" disabled={!stripe || !ready || busy}>
+        {busy ? 'Processing…' : `Pay ${amountLabel}`}
       </button>
     </form>
   )
@@ -164,8 +159,8 @@ export default function Checkout() {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [method, setMethod] = useState('card')
-  const [paying, setPaying] = useState(false)
+  // 'loading' until we know; 'off' when card payments are not set up.
+  const [payState, setPayState] = useState('loading')
   const [paid, setPaid] = useState(false)
 
   const [stripeKey, setStripeKey] = useState(null)
@@ -186,9 +181,7 @@ export default function Checkout() {
     [stripeKey],
   )
 
-  /* Ask whether payments are live, and if so mint the intent for THIS purchase.
-     Both are swallowed on failure: the page falls back to the demo button
-     rather than stranding the student on a checkout that cannot render. */
+  /* Ask whether payments are live, and if so mint the intent for THIS purchase. */
   useEffect(() => {
     let live = true
     if (!item) return undefined
@@ -196,14 +189,25 @@ export default function Checkout() {
     api
       .paymentConfig()
       .then((cfg) => {
-        if (!live || !cfg.enabled) return null
+        if (!live) return null
+        if (!cfg.enabled) {
+          setPayState('off')
+          return null
+        }
         setStripeKey(cfg.publishable_key)
         return api.paymentIntent(token, isCourse ? 'course' : 'lesson', item.id)
       })
       .then((intent) => {
-        if (live && intent?.client_secret) setClientSecret(intent.client_secret)
+        if (live && intent?.client_secret) {
+          setClientSecret(intent.client_secret)
+          setPayState('ready')
+        }
       })
-      .catch((err) => live && setError(err.message))
+      .catch((err) => {
+        if (!live) return
+        setError(err.message)
+        setPayState('error')
+      })
 
     return () => {
       live = false
@@ -229,26 +233,6 @@ export default function Checkout() {
     }
   }, [token, id, isCourse])
 
-  async function pay() {
-    setError(null)
-    setPaying(true)
-    try {
-      /* The seam: today this just records payment. When Stripe lands, its
-         webhook calls the same endpoint and this button opens the card sheet.
-
-         A private lesson is NOT confirmed here — paying turns it into a request
-         the tutor still has to accept. A course is, because a course has no
-         approval step: the tutor published the schedule and seats are seats. */
-      if (isCourse) await api.confirmEnrollment(token, item.id)
-      else await api.payBooking(token, item.id)
-      setPaid(true)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setPaying(false)
-    }
-  }
-
   if (loading) return <p className="ck-note">Loading your order…</p>
 
   if (!item) {
@@ -267,6 +251,7 @@ export default function Checkout() {
     ? {
         title: item.course?.title,
         tutor: item.course?.tutor_profile?.user?.name,
+        photo: item.course?.tutor_profile?.photo_url,
         price: item.course?.price,
         lines: [
           { label: 'Course', value: item.course?.title },
@@ -292,6 +277,8 @@ export default function Checkout() {
     : {
         title: item.lesson?.name || 'Lesson',
         tutor: item.tutor?.name,
+        // The tutor's marketing photo first, then their account picture.
+        photo: item.tutor?.tutor_profile?.photo_url || item.tutor?.avatar_url,
         price: item.lesson?.price ?? 0,
         lines: [
           { label: 'Tutor', value: item.tutor?.name },
@@ -348,119 +335,163 @@ export default function Checkout() {
     )
   }
 
+  const tutorName = order.tutor || 'Your tutor'
+  const amount = `$${Number(order.price).toFixed(2)}`
+  /* The tutor and the lesson are already in the card's header, so the rows
+     beneath it are the facts that remain — when, and for how long. */
+  const details = order.lines.filter((l) => !['Tutor', 'Teacher', 'Lesson', 'Course'].includes(l.label))
+
   return (
-    <div className="ck">
-      {/* ONE CENTRED COLUMN, and Back belongs inside it. The layout is capped
-          at 980px, so on a wide screen it was pinned to the page's left gutter
-          with the whole remainder empty to its right — two cards adrift in a
-          room. Centring only `.ck-layout` would have left Back behind at the
-          old edge, which is why this is a wrapper rather than a margin. */}
-      <div className="ck-col">
-        <button type="button" className="ck-back" onClick={() => navigate(-1)}>
-          ← Back
+    <div className="uc">
+      <header className="uc-head">
+        <button type="button" className="uc-back uc-back-btn" onClick={() => navigate(-1)}>
+          <ArrowLeftIcon /> Back
         </button>
+        <h1 className="uc-title">Checkout</h1>
+      </header>
 
-        <div className="ck-layout">
-        {/* Screen 4: what you are paying for. */}
-        <section className="ck-card">
-          <h1 className="ck-h1">Booking summary</h1>
-          <dl className="ck-summary">
-            {order.lines.map((l) => (
-              <div key={l.label}>
-                <dt>{l.label}</dt>
-                <dd>{l.value || '—'}</dd>
-              </div>
-            ))}
-            <div className="ck-total">
-              <dt>Total</dt>
-              <dd>${order.price}</dd>
-            </div>
-          </dl>
-        </section>
-
-        {/* Screen 5: payment. */}
-        <section className="ck-card ck-pay">
-          <h2 className="ck-h2">Payment</h2>
-          <p className="ck-amount">${Number(order.price).toFixed(2)}</p>
-
-          {/* The hand-rolled method list belongs to the demo path only. With
-              Stripe live, the Payment Element offers whatever the account has
-              actually enabled, and a second list beside it would claim choices
-              that may not exist. */}
-          {!clientSecret && (
-            <div className="ck-methods">
-              {METHODS.map((m) => (
-                <label
-                  key={m.key}
-                  className={`ck-method${method === m.key ? ' active' : ''}${m.disabled ? ' off' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="method"
-                    value={m.key}
-                    checked={method === m.key}
-                    disabled={m.disabled}
-                    onChange={() => setMethod(m.key)}
-                  />
-                  <span>
-                    {m.label}
-                    <em>{m.note}</em>
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {clientSecret && stripePromise ? (
-            <>
-              {/* THE PROCESSOR IS NEVER NAMED ON SCREEN. The sentence still
-                  has to be true and still has to say the thing that matters —
-                  that Verbo's own server never sees a card number — so it
-                  names the guarantee rather than the vendor. The code below
-                  is unchanged; this is wording, not plumbing. */}
-              <p className="ck-secure">
-                <LockIcon />
-                Card details go straight to the payment provider and never reach
-                Verbo.
+      <div className="uc-grid">
+        {/* ---- what you are paying for ---- */}
+        <aside className="uc-card uc-summary">
+          <div className="uc-plan">
+            <span className="uc-plan-mark uc-plan-photo">
+              {order.photo ? (
+                <img src={order.photo} alt="" />
+              ) : (
+                <span>{tutorName.charAt(0).toUpperCase()}</span>
+              )}
+            </span>
+            <div>
+              <h2 className="uc-plan-name">{order.title}</h2>
+              <p className="uc-plan-sub">
+                with {tutorName}
               </p>
+            </div>
+          </div>
 
-              {error && <p className="ck-error">{error}</p>}
+          <ul className="uc-benefits">
+            {details.map((l) => (
+              <li key={l.label}>
+                <span className="uc-benefit-mark">{DETAIL_ICONS[l.label] || <CalendarIcon />}</span>
+                <span>
+                  <strong>{l.value || '—'}</strong>
+                  {l.label}
+                </span>
+              </li>
+            ))}
+          </ul>
 
+          <dl className="uc-order">
+            <div>
+              <dt>{order.title}</dt>
+              <dd>{amount}</dd>
+            </div>
+            <div className="uc-order-total">
+              <dt>Total</dt>
+              <dd>{amount}</dd>
+            </div>
+            {!isCourse && (
+              <p className="uc-order-note">
+                {tutorName} confirms the lesson after you pay. If they decline, it isn’t booked.
+              </p>
+            )}
+          </dl>
+        </aside>
+
+        {/* ---- payment ---- */}
+        <section className="uc-card uc-pay" aria-labelledby="ck-pay-title">
+          <h2 id="ck-pay-title" className="uc-pay-title">
+            Payment details
+          </h2>
+
+          {payState === 'loading' && <PaySkeleton />}
+
+          {payState === 'ready' && clientSecret && stripePromise && (
+            <>
               {/* Keyed on the secret so a new intent remounts the provider —
                   Elements cannot be handed a different secret in place. */}
               <Elements
                 key={clientSecret}
                 stripe={stripePromise}
-                options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
+                options={{ clientSecret, appearance: CARD_APPEARANCE }}
               >
-                <StripePayForm
-                  amountLabel={`$${Number(order.price).toFixed(2)}`}
-                  onPaid={() => setPaid(true)}
-                />
+                <StripePayForm amountLabel={amount} onPaid={() => setPaid(true)} />
               </Elements>
-            </>
-          ) : (
-            <>
-              {/* Stated plainly rather than mocked up as a card form: collecting
-                  fake card numbers would be worse than admitting there is no
-                  processor wired in yet. */}
-              <p className="ck-mock">
-                <LockIcon />
-                Demo checkout — no card details are collected and nothing is
-                charged. Add payment keys to the backend&rsquo;s .env to take
-                real payments.
+              <p className="uc-fine uc-fine-gap">
+                <LockIcon /> Card details go straight to the payment provider and never reach Verbo.
               </p>
-
-              {error && <p className="ck-error">{error}</p>}
-
-              <button type="button" className="ck-cta ck-pay-btn" onClick={pay} disabled={paying}>
-                {paying ? 'Processing…' : `Pay $${order.price} →`}
-              </button>
             </>
           )}
+
+          {payState === 'off' && (
+            <div className="uc-state">
+              <h3>Card payments aren’t set up yet</h3>
+              <p>This lesson can’t be paid for right now. Please try again later.</p>
+              <Link to="/bookings" className="uc-cta uc-cta-link">
+                View my lessons
+              </Link>
+            </div>
+          )}
+
+          {payState === 'error' && (
+            <div className="uc-state">
+              <h3>Payment couldn’t start</h3>
+              <p>{error || 'Check your connection and try again.'}</p>
+              <button type="button" className="uc-cta" onClick={() => window.location.reload()}>
+                Try again
+              </button>
+            </div>
+          )}
         </section>
-        </div>
       </div>
     </div>
   )
+}
+
+function PaySkeleton() {
+  // Static on purpose: no shimmer, same rule as the rest of the app.
+  return (
+    <div className="uc-skeleton" aria-label="Loading payment form">
+      <span />
+      <span />
+      <span className="uc-skeleton-row">
+        <span />
+        <span />
+      </span>
+      <span className="uc-skeleton-cta" />
+    </div>
+  )
+}
+
+/* ---- icons: the app's set — 24 grid, 1.7 stroke, currentColor ---- */
+
+function Svg({ children }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  )
+}
+function ArrowLeftIcon() {
+  return <Svg><path d="M19 12H5M11 6l-6 6 6 6" /></Svg>
+}
+function CalendarIcon() {
+  return <Svg><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" /></Svg>
+}
+function ClockIcon() {
+  return <Svg><circle cx="12" cy="12" r="9" /><path d="M12 7v5.3l3.2 1.9" /></Svg>
+}
+function RepeatIcon() {
+  return <Svg><path d="M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4" /></Svg>
+}
+function StackIcon() {
+  return <Svg><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></Svg>
+}
+
+const DETAIL_ICONS = {
+  Date: <CalendarIcon />,
+  Time: <ClockIcon />,
+  Runs: <CalendarIcon />,
+  Schedule: <RepeatIcon />,
+  Classes: <StackIcon />,
 }

@@ -64,7 +64,8 @@ class BookingController extends Controller
             // itself survives for the other party.
             'sent' => $request->user()->bookingsAsStudent()
                 ->whereNull('hidden_for_student_at')
-                ->with(['tutor:id,name,email', 'lesson'])->latest()->get(),
+                // avatar_path and the tutor photo let checkout show the tutor's face.
+                ->with(['tutor:id,name,email,avatar_path', 'tutor.tutorProfile:id,user_id,photo_path', 'lesson'])->latest()->get(),
             'received' => $request->user()->bookingsAsTutor()
                 ->whereNull('hidden_for_tutor_at')
                 ->with(['student:id,name,email', 'lesson'])->latest()->get(),
