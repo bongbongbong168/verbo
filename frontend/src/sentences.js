@@ -69,3 +69,64 @@ export function englishSentences(text) {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 }
+
+/**
+ * Split the annotated tokens along sentences that were cut from the RAW text
+ * (the body or transcript), keeping every word token intact.
+ *
+ * The pages pair English by the raw text's sentences when the token stream's
+ * own boundaries disagree with it. Rendering those raw sentences as plain
+ * strings lost the word spans, and with them hover, pinyin and Alt+1. This
+ * hands back token arrays instead, so the paired view stays interactive.
+ *
+ * Alignment is by non-whitespace characters. A word that would straddle two
+ * sentences, or text that does not add up, returns null and the caller keeps
+ * its unpaired layout rather than pairing wrongly.
+ */
+export function tokensBySentences(tokens, rawSentences) {
+  const targets = rawSentences.map((s) => String(s).replace(/\s+/gu, "").length);
+  if (!targets.length || targets.some((n) => n === 0)) return null;
+
+  const groups = [];
+  let current = [];
+  let count = 0;
+  const close = () => {
+    groups.push(trimEdges(current));
+    current = [];
+    count = 0;
+  };
+
+  for (const tok of tokens) {
+    if (groups.length >= targets.length) {
+      // Only whitespace may follow the last sentence.
+      if (String(tok.text).trim()) return null;
+      continue;
+    }
+    if (tok.type === "word") {
+      const n = String(tok.text).replace(/\s+/gu, "").length;
+      if (count + n > targets[groups.length]) return null;
+      current.push(tok);
+      count += n;
+      if (count === targets[groups.length]) close();
+      continue;
+    }
+    // Plain text may be split anywhere, one character at a time.
+    let buf = "";
+    for (const ch of String(tok.text)) {
+      if (groups.length >= targets.length) {
+        if (ch.trim()) return null;
+        continue;
+      }
+      buf += ch;
+      if (!/\s/u.test(ch)) count += 1;
+      if (count === targets[groups.length]) {
+        current.push({ type: "text", text: buf });
+        buf = "";
+        close();
+      }
+    }
+    if (buf) current.push({ type: "text", text: buf });
+  }
+
+  return groups.length === targets.length ? groups : null;
+}

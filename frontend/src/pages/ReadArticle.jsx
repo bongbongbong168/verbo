@@ -23,7 +23,7 @@ import {
   translationNeedsProvider,
   writeTranslationContentCache,
 } from '../usageAllowances'
-import { englishSentences, sentencesOf } from "../sentences";
+import { englishSentences, sentencesOf, tokensBySentences } from "../sentences";
 import proOwl from '../assets/assistant/graduate-bot.png';
 
 function formatDate(value) {
@@ -291,23 +291,38 @@ export default function ReadArticle() {
     .map((sentence) => sentence.trim())
     .filter(Boolean);
   const enSentences = englishSentences(article.body_en);
+  /* The article's own English fits if it lines up with EITHER the token
+     sentences or the raw body's sentences. Checking only the tokens threw
+     authored English away on older articles and asked the translation
+     service (spending an allowance) for text the article already had. */
   const authoredTranslationFits =
-    cnSentences.length > 0 && cnSentences.length === enSentences.length;
+    enSentences.length > 0 &&
+    (cnSentences.length === enSentences.length ||
+      (rawCnSentences.length === enSentences.length &&
+        Boolean(tokensBySentences(article.tokens || [], rawCnSentences))));
   const generatedEnglish =
     generatedTranslation.articleId === article.id
       ? generatedTranslation.pairs.map((pair) => pair.translation)
       : [];
   const visibleEnglish = authoredTranslationFits ? enSentences : generatedEnglish;
-  const rawTranslationFits = rawCnSentences.length > 0 && rawCnSentences.length === visibleEnglish.length;
   const tokenTranslationFits = cnSentences.length > 0 && cnSentences.length === visibleEnglish.length;
-  const pairedSentences = tokenTranslationFits ? cnSentences : rawCnSentences;
+  /* When the tokens' own boundaries disagree, split the TOKENS along the raw
+     sentences — never render the raw strings, which have no word spans and
+     so lose hover, pinyin and Alt+1. */
+  const rawTokenSentences =
+    !tokenTranslationFits && rawCnSentences.length === visibleEnglish.length
+      ? tokensBySentences(article.tokens || [], rawCnSentences)
+      : null;
+  const rawTranslationFits = Boolean(rawTokenSentences);
+  const pairedSentences = tokenTranslationFits ? cnSentences : rawTokenSentences || [];
   const paired =
     showTranslation &&
     (rawTranslationFits || tokenTranslationFits);
   const premiumLocked = article.premium_locked === true;
   const translationNeedsAllowance = translationNeedsProvider({
     authored: authoredTranslationFits,
-    loaded: generatedEnglish.length === cnSentences.length,
+    loaded: generatedEnglish.length > 0 &&
+      (generatedEnglish.length === cnSentences.length || generatedEnglish.length === rawCnSentences.length),
     cached: article.translation_cached,
   });
   const translationLimitReached = translationUsage?.available === false;
@@ -337,7 +352,7 @@ export default function ReadArticle() {
     }
 
     setShowTranslation(true);
-    if (authoredTranslationFits || generatedEnglish.length === cnSentences.length) return;
+    if (authoredTranslationFits || generatedEnglish.length > 0) return;
 
     setGeneratedTranslation({ articleId: article.id, pairs: [], busy: true, error: null });
     try {
@@ -591,7 +606,7 @@ export default function ReadArticle() {
                       "rd-body rd-body-cn" + (showPinyin ? " rd-body-ruby" : "")
                     }
                   >
-                    {tokenTranslationFits ? renderTokens(sentence, `s${i}-`) : sentence}
+                    {renderTokens(sentence, `s${i}-`)}
                   </p>
                   <p className="rd-pair-en">{visibleEnglish[i]}</p>
                 </div>

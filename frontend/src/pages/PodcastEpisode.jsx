@@ -13,7 +13,7 @@ import ReaderSwitch from '../components/ReaderSwitch'
 import PageTools from '../components/PageTools'
 import SyncedTranscript from '../components/SyncedTranscript'
 import SentenceSavePopover from '../components/SentenceSavePopover'
-import { englishSentences, sentencesOf } from '../sentences'
+import { englishSentences, sentencesOf, tokensBySentences } from '../sentences'
 import proOwl from '../assets/assistant/graduate-bot.png'
 import PremiumBadge from '../components/PremiumBadge'
 
@@ -549,9 +549,16 @@ export default function PodcastEpisode() {
     .map((line) => line.trim())
     .filter(Boolean)
   const enSentences = englishSentences(podcast.transcript_en)
-  const canPairRaw = rawCnSentences.length > 0 && rawCnSentences.length === enSentences.length
   const tokenTranslationFits = cnSentences.length > 0 && cnSentences.length === enSentences.length
-  const pairedSentences = tokenTranslationFits ? cnSentences : rawCnSentences
+  /* Split the TOKENS along the raw sentences rather than rendering the raw
+     strings — plain strings have no word spans, so hover, pinyin and Alt+1
+     all stopped working in the paired view. */
+  const rawTokenSentences =
+    !tokenTranslationFits && rawCnSentences.length === enSentences.length
+      ? tokensBySentences(podcast.tokens || [], rawCnSentences)
+      : null
+  const canPairRaw = Boolean(rawTokenSentences)
+  const pairedSentences = tokenTranslationFits ? cnSentences : rawTokenSentences || []
   const paired = showTranslation && hasEnglish && (canPairRaw || tokenTranslationFits)
 
   /* IN SYNCED MODE THE ENGLISH IS MATCHED TO SEGMENTS BY LINE INDEX, so it may
@@ -931,7 +938,7 @@ export default function PodcastEpisode() {
               pairedSentences.map((sentence, i) => (
               <div className="pe-pair" key={`pair-${i}`}>
                 <p className={'pe-transcript pe-transcript-pair' + (showPinyin ? ' pe-transcript-ruby' : '')}>
-                    {tokenTranslationFits ? renderPlainTokens(sentence, `s${i}-`) : sentence}
+                    {renderPlainTokens(sentence, `s${i}-`)}
                 </p>
                 <p className="pe-pair-en">{enSentences[i]}</p>
               </div>
