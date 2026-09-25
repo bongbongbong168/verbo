@@ -36,18 +36,33 @@ class PodcastTranscriptController extends Controller
             return response()->json(['message' => 'Upload an audio file before generating a synced transcript.'], 422);
         }
         $podcast->markTimedTranscript('processing');
-        try {
-            $timed = $builder->build($deepgram->transcribe($podcast));
-            $timed = $this->translateSegments($timed);
-            $podcast->saveTimedTranscript($timed);
-            $this->syncPlainTranscripts($podcast, $timed);
 
-            return response()->json($this->show($request, $podcast->refresh()));
-        } catch (\Throwable $e) {
-            $podcast->markTimedTranscript('failed', $e->getMessage());
+        /* Deepgram may need up to two minutes for a long recording, and
+           enriching the result can add more provider calls. Run it after
+           Laravel has sent this response so Railway's HTTP gateway does not
+           have to keep the request open. The editor already polls this
+           endpoint while status is `processing`. This deliberately uses the
+           application termination hook: production has no queue worker and
+           QUEUE_CONNECTION=sync, so a regular queued job would run inline. */
+        $podcastId = $podcast->id;
+        app()->terminating(function () use ($podcastId, $deepgram, $builder) {
+            $episode = Podcast::find($podcastId);
+            if (! $episode) {
+                return;
+            }
 
-            return response()->json($this->show($request, $podcast->refresh()), 422);
-        }
+            try {
+                $timed = $builder->build($deepgram->transcribe($episode));
+                $timed = $this->translateSegments($timed);
+                $episode->saveTimedTranscript($timed);
+                $this->syncPlainTranscripts($episode, $timed);
+            } catch (\Throwable $e) {
+                report($e);
+                $episode->markTimedTranscript('failed', $e->getMessage());
+            }
+        });
+
+        return response()->json($this->show($request, $podcast->refresh()), 202);
     }
 
     /** Translate each timed line together, preserving its Chinese/English pair. */

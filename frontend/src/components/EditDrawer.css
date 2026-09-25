@@ -315,6 +315,30 @@
   cursor: default;
 }
 
+/* Kept beside the action, where an editor's eyes are after clicking Save.
+   The general success banner remains useful for broader operations such as
+   transcript generation, but it can be above the drawer's scroll position. */
+.ed-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: #1f7a45;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.ed-save-status > span {
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: #1f7a45;
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
 /* Also used on a <label> wrapping a file input, so the shared rule has to hold
    its own weight — `.ed-form label` would otherwise win on specificity, which
    is exactly how the Study "Add photo" button lost its styling. */

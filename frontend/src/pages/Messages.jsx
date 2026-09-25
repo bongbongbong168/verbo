@@ -214,6 +214,7 @@ export default function Messages() {
   const [params, setParams] = useSearchParams()
 
   const [threads, setThreads] = useState({ tutors: [], courses: [] })
+  const [threadsError, setThreadsError] = useState(null)
   const [active, setActive] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -234,13 +235,18 @@ export default function Messages() {
   const fileRef = useRef(null)
   const inputRef = useRef(null)
   const openId = params.get('c')
+  const openIdRef = useRef(openId)
+  openIdRef.current = openId
 
   const loadThreads = useCallback(
     () =>
       api
         .getConversations(token)
-        .then(setThreads)
-        .catch((err) => setError(err.message)),
+        .then((data) => {
+          setThreads(data)
+          setThreadsError(null)
+        })
+        .catch((err) => setThreadsError(err.message)),
     [token],
   )
 
@@ -255,6 +261,7 @@ export default function Messages() {
       api
         .getConversation(token, id)
         .then((c) => {
+          if (String(openIdRef.current) !== String(id)) return
           setActive(c)
           loadThreads()
           /* Opening a thread marks the other side's messages read, so the
@@ -263,7 +270,9 @@ export default function Messages() {
              instead of showing unread messages you are looking at. */
           invalidateUnreadMessages()
         })
-        .catch((err) => setError(err.message))
+        .catch((err) => {
+          if (String(openIdRef.current) === String(id)) setError(err.message)
+        })
     },
     [token, loadThreads],
   )
@@ -290,7 +299,7 @@ export default function Messages() {
         .getConversation(token, id)
         .then((c) => {
           setActive((current) => {
-            if (current && String(current.id) !== String(c.id)) return current
+            if (!current || String(current.id) !== String(c.id)) return current
             const onServer = new Set(c.messages.map((m) => m.client_id).filter(Boolean))
             const inFlight = (current?.messages || []).filter(
               (m) => m.delivery_state && m.delivery_state !== 'sent' && !onServer.has(m.client_id),
@@ -375,6 +384,8 @@ export default function Messages() {
     const body = draft.trim()
     // A picture on its own is a perfectly good message, so either will do.
     if (!body && !file) return
+    const conversationId = active?.id
+    if (!conversationId) return
 
     const clientId = globalThis.crypto?.randomUUID?.()
       || `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -394,11 +405,12 @@ export default function Messages() {
         size: file.size,
         is_image: file.type.startsWith('image/'),
       } : null,
+      retry_file: file,
       delivery_state: 'sending',
     }
 
     // Clear and paint first. A slow request must never make typing feel slow.
-    setActive((current) => current
+    setActive((current) => String(current?.id) === String(conversationId)
       ? { ...current, messages: [...current.messages, temporary] }
       : current)
     setDraft('')
@@ -408,8 +420,8 @@ export default function Messages() {
     setSending(true)
     setError(null)
     try {
-      const saved = await api.sendMessage(token, active.id, body, file, clientId)
-      setActive((current) => current
+      const saved = await api.sendMessage(token, conversationId, body, file, clientId)
+      setActive((current) => String(current?.id) === String(conversationId)
         ? {
             ...current,
             messages: current.messages.map((message) =>
@@ -421,23 +433,77 @@ export default function Messages() {
         : current)
       // The affected thread alone moves to the top; no whole-list refetch.
       setThreads((current) => {
-        const patch = (items) => items.map((thread) => thread.id === active.id
+        const patch = (items) => items.map((thread) => thread.id === conversationId
           ? { ...thread, preview: saved.body || 'Sent an attachment', last_message_at: saved.created_at }
           : thread)
         return { tutors: patch(current.tutors), courses: patch(current.courses) }
       })
     } catch (err) {
-      setActive((current) => current
+      const rejected = err.status >= 400 && err.status < 500
+        && err.status !== 408 && err.status !== 429
+      setActive((current) => String(current?.id) === String(conversationId)
         ? {
             ...current,
-            messages: current.messages.map((message) =>
-              message.client_id === clientId
-                ? { ...message, delivery_state: 'failed' }
-                : message,
-            ),
+            messages: rejected
+              ? current.messages.filter((message) => message.client_id !== clientId)
+              : current.messages.map((message) =>
+                message.client_id === clientId
+                  ? { ...message, delivery_state: 'failed' }
+                  : message,
+              ),
           }
         : current)
-      setError('Message failed to send. Use Retry to try again.')
+      if (String(openIdRef.current) === String(conversationId)) {
+        if (rejected) {
+          // Validation failures cannot succeed by repeating the same request.
+          // Put the content back so the person can fix it.
+          setDraft(body)
+          setFile(file)
+        }
+        setError(rejected ? err.message : 'Message failed to send. Use Retry to try again.')
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function retryMessage(message) {
+    if (sending || message.delivery_state !== 'failed') return
+    const conversationId = active?.id
+    if (!conversationId) return
+
+    // Keep the original client id. The first request may have been saved even
+    // though its response never reached this tab; the server then returns that
+    // row instead of posting the same words or attachment twice.
+    setSending(true)
+    setError(null)
+    setActive((current) => String(current?.id) === String(conversationId)
+      ? { ...current, messages: current.messages.map((item) =>
+        item.client_id === message.client_id
+          ? { ...item, delivery_state: 'sending' }
+          : item) }
+      : current)
+    try {
+      const saved = await api.sendMessage(
+        token, conversationId, message.body, message.retry_file, message.client_id,
+      )
+      setActive((current) => String(current?.id) === String(conversationId)
+        ? { ...current, messages: current.messages.map((item) =>
+          item.client_id === message.client_id
+            ? { ...saved, delivery_state: 'sent' }
+            : item) }
+        : current)
+      loadThreads()
+    } catch {
+      setActive((current) => String(current?.id) === String(conversationId)
+        ? { ...current, messages: current.messages.map((item) =>
+          item.client_id === message.client_id
+            ? { ...item, delivery_state: 'failed' }
+            : item) }
+        : current)
+      if (String(openIdRef.current) === String(conversationId)) {
+        setError('Message failed to send. Use Retry to try again.')
+      }
     } finally {
       setSending(false)
     }
@@ -540,13 +606,18 @@ export default function Messages() {
             </label>
           </div>
 
-          {rows.length === 0 ? (
+          {threadsError && (
+            <p className="ms-list-error" role="alert">
+              Could not load conversations. <button type="button" onClick={loadThreads}>Retry</button>
+            </p>
+          )}
+          {rows.length === 0 && !threadsError ? (
             <p className="ms-empty">
               {search
                 ? 'No conversations match that.'
                 : 'No conversations yet. Message a tutor from their profile, or join a course.'}
             </p>
-          ) : (
+          ) : rows.length > 0 && (
             <ul className="ms-threads">
               {rows.map((t) => (
                 <li key={`${t.kind}-${t.id}`}>
@@ -755,7 +826,9 @@ export default function Messages() {
                           {!m.mine && active.type === 'course' && (
                             <span className="ms-sender">{m.sender_name}</span>
                           )}
-                          {m.attachment && (
+                          {m.attachment && m.delivery_state && m.delivery_state !== 'sent' ? (
+                            <span className="ms-attach ms-attach-pending">{m.attachment.name}</span>
+                          ) : m.attachment && (
                             <MessageAttachment
                               messageId={m.id}
                               attachment={m.attachment}
@@ -779,13 +852,8 @@ export default function Messages() {
                               <button
                                 type="button"
                                 className="ms-retry"
-                                onClick={() => {
-                                  setDraft(m.body || '')
-                                  setActive((current) => current
-                                    ? { ...current, messages: current.messages.filter((item) => item.id !== m.id) }
-                                    : current)
-                                  inputRef.current?.focus()
-                                }}
+                                onClick={() => retryMessage(m)}
+                                disabled={sending}
                               >
                                 Retry
                               </button>

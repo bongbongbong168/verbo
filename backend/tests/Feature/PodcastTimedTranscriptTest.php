@@ -175,6 +175,13 @@ class PodcastTimedTranscriptTest extends TestCase
         Sanctum::actingAs(User::where('is_admin', true)->first());
 
         $this->postJson("/api/podcasts/{$podcast->id}/timed-transcript/generate")
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'processing');
+
+        // The response is returned before the potentially long transcription
+        // work. Laravel's test kernel runs the termination callback before
+        // this follow-up request, matching the editor's production polling.
+        $this->getJson("/api/podcasts/{$podcast->id}/timed-transcript")
             ->assertOk()
             ->assertJsonPath('status', 'completed')
             ->assertJsonPath('model', 'deepgram/nova-3')

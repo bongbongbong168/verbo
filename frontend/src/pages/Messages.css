@@ -851,6 +851,25 @@
   font-size: 0.86rem;
 }
 
+.ms-list-error {
+  margin: 1rem 1.4rem;
+  padding: 0.75rem;
+  border-radius: 9px;
+  background: #fdecea;
+  color: #b02a2a;
+  font-size: 0.86rem;
+}
+
+.ms-list-error button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 @media (max-width: 900px) {
   .ms-page {
     padding: 1.2rem 1.1rem 2rem;
@@ -998,6 +1017,13 @@
 .ms-attach.mine {
   border-color: transparent;
   background: rgba(255, 255, 255, 0.9);
+}
+
+.ms-attach-pending {
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ms-attach svg {

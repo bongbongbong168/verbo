@@ -176,6 +176,9 @@ class ConversationController extends Controller
                 ->get()
                 ->map(fn (Message $m) => [
                     'id' => $m->id,
+                    // Reconcile an optimistic send with this saved row after
+                    // a refresh or a retry whose first response was lost.
+                    'client_id' => $m->client_id,
                     'body' => $m->body,
                     // 'event' is written by the app when a booking changes
                     // state; the page draws it as a note, not a chat bubble.

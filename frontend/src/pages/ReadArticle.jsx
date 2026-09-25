@@ -283,6 +283,13 @@ export default function ReadArticle() {
      hundred entries and this runs once per paint, which is nothing beside
      the render it feeds. */
   const cnSentences = sentencesOf(article.tokens || []);
+  /* Older articles can have paragraph and punctuation boundaries that differ
+     from the annotated token stream. The translation service works from the
+     article body, so use those same source sentences when pairing English. */
+  const rawCnSentences = String(article.body || '')
+    .split(/\r?\n[ \t\r]*\n+|(?<=[。！？!?])\s*/u)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
   const enSentences = englishSentences(article.body_en);
   const authoredTranslationFits =
     cnSentences.length > 0 && cnSentences.length === enSentences.length;
@@ -291,10 +298,12 @@ export default function ReadArticle() {
       ? generatedTranslation.pairs.map((pair) => pair.translation)
       : [];
   const visibleEnglish = authoredTranslationFits ? enSentences : generatedEnglish;
+  const rawTranslationFits = rawCnSentences.length > 0 && rawCnSentences.length === visibleEnglish.length;
+  const tokenTranslationFits = cnSentences.length > 0 && cnSentences.length === visibleEnglish.length;
+  const pairedSentences = tokenTranslationFits ? cnSentences : rawCnSentences;
   const paired =
     showTranslation &&
-    cnSentences.length > 0 &&
-    cnSentences.length === visibleEnglish.length;
+    (rawTranslationFits || tokenTranslationFits);
   const premiumLocked = article.premium_locked === true;
   const translationNeedsAllowance = translationNeedsProvider({
     authored: authoredTranslationFits,
@@ -575,14 +584,14 @@ export default function ReadArticle() {
                  when the two sides genuinely line up. If they do not, the
                  English remains one passage below rather than being paired
                  incorrectly. */
-              cnSentences.map((sentence, i) => (
+              pairedSentences.map((sentence, i) => (
                 <div className="rd-pair" key={`pair-${i}`}>
                   <p
                     className={
                       "rd-body rd-body-cn" + (showPinyin ? " rd-body-ruby" : "")
                     }
                   >
-                    {renderTokens(sentence, `s${i}-`)}
+                    {tokenTranslationFits ? renderTokens(sentence, `s${i}-`) : sentence}
                   </p>
                   <p className="rd-pair-en">{visibleEnglish[i]}</p>
                 </div>

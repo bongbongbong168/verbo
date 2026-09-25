@@ -16,10 +16,13 @@ class PodcastTranslationTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create(['is_admin' => true]));
         config(['services.deepl.key' => 'test-key']);
-        Http::fake(['api-free.deepl.com/*' => Http::response(['translations' => [['text' => 'Hello, everyone.']]])]);
-        $this->postJson('/api/podcasts/translate', ['text' => '大家好。'])
-            ->assertOk()->assertJson(['translation' => 'Hello, everyone.']);
-        Http::assertSent(fn ($request) => $request['text'] === ['大家好。']
+        Http::fake(['api-free.deepl.com/*' => Http::response(['translations' => [['text' => 'Hello.'], ['text' => 'How are you?']]])]);
+        $this->postJson('/api/podcasts/translate', ['text' => '大家好。你好吗？'])
+            ->assertOk()
+            ->assertJsonPath('translation', "Hello.\nHow are you?")
+            ->assertJsonPath('translations.0', 'Hello.')
+            ->assertJsonPath('translations.1', 'How are you?');
+        Http::assertSent(fn ($request) => $request['text'] === ['大家好。', '你好吗？']
             && $request->hasHeader('Authorization', 'DeepL-Auth-Key test-key'));
     }
 

@@ -93,6 +93,18 @@ class SubscriptionCheckoutTest extends TestCase
             ->assertDontSee('ui_mode');
     }
 
+    public function test_a_customer_creation_error_is_returned_as_a_checkout_error(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $this->http->failCustomers = true;
+
+        $this->postJson('/api/subscription/checkout', ['ui' => 'elements'])
+            ->assertStatus(503)
+            ->assertJsonPath('message', 'Checkout could not be started. Please try again in a moment.');
+
+        $this->assertNull($this->http->last('/v1/checkout/sessions'));
+    }
+
     public function test_an_unknown_checkout_type_is_refused(): void
     {
         Sanctum::actingAs(User::factory()->create());
@@ -107,6 +119,7 @@ class FakeStripeHttp implements ClientInterface
 {
     public array $calls = [];
     public bool $failSessions = false;
+    public bool $failCustomers = false;
 
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
     {
@@ -115,6 +128,9 @@ class FakeStripeHttp implements ClientInterface
 
         if ($this->failSessions && $path === '/v1/checkout/sessions') {
             return [json_encode(['error' => ['message' => 'The following parameters are not supported with `ui_mode: elements`', 'type' => 'invalid_request_error']]), 400, []];
+        }
+        if ($this->failCustomers && $path === '/v1/customers') {
+            return [json_encode(['error' => ['message' => 'Stripe customer unavailable', 'type' => 'api_error']]), 500, []];
         }
 
         $body = match (true) {

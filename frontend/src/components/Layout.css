@@ -291,6 +291,13 @@
     opacity 0.15s ease;
 }
 
+/* Match the conversation list: keep the label at the left and the unread
+   count at the far right of its row. */
+.sb-sub-wrap .sb-sub-link {
+  display: flex;
+  align-items: center;
+}
+
 /* The tick joining the item to the tree line. */
 .sb-sub-link::before {
   content: '';
@@ -1126,24 +1133,39 @@
 
 /* On a section header the caret already owns the right-hand end, so the badge
    sits beside it rather than taking the auto margin for itself. */
-.sb-group-btn .sb-count {
+.sb:not(.collapsed) .sb-group-btn .sb-count {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  line-height: 1;
   margin-right: 0.35rem;
 }
 
-/* In a sub-link the label is inline text, so the badge follows it: a true
-   circle with a small gap, the digit centred on its cap band (0.086em, 700). */
-.sb-sub-link .sb-count {
-  display: inline-grid;
+/* The shared glyph nudge is tuned for a narrow 1. Let the header badge's
+   square grid center wider digits such as 2 on both axes. */
+.sb:not(.collapsed) .sb-group-btn .sb-count-text {
+  left: 0;
+  top: 0;
+}
+
+/* Use the conversation badge's 20px circle and let 9+ grow into a pill. */
+.sb-sub-wrap .sb-sub-link .sb-count {
+  display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
-  min-width: 0;
-  /* Negative block margins keep the 18px circle out of the line box, so an
-     unread count never makes the Messages row taller than its siblings. */
-  margin: -4px 0 -4px 6px;
-  padding: 0;
+  min-width: 20px;
+  height: 20px;
+  margin: 0 0 0 auto;
+  padding: 0 5px;
+  font-size: 0.72rem;
   line-height: 1;
-  vertical-align: 0.115em; /* measured: lands the circle on the label's cap band */
+}
+
+.sb-sub-wrap .sb-sub-link .sb-count-text {
+  left: 0;
+  top: 0;
 }
 
 /* The grid centres the glyph's advance box. A narrow `1` has uneven side

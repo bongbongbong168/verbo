@@ -113,4 +113,27 @@ class ConversationRealtimeTest extends TestCase
         $this->getJson("/api/conversations/{$conversation->id}")->assertOk();
         Event::assertNotDispatched(ConversationChanged::class);
     }
+
+    public function test_retrying_a_send_with_the_same_client_id_returns_one_message(): void
+    {
+        Event::fake([ConversationChanged::class]);
+        [$tutor, $student, $conversation] = $this->thread();
+        Sanctum::actingAs($student);
+        $payload = ['body' => 'Can we practise tomorrow?', 'client_id' => 'demo-send-123'];
+
+        $first = $this->postJson("/api/conversations/{$conversation->id}/messages", $payload)
+            ->assertCreated()
+            ->assertJsonPath('client_id', 'demo-send-123');
+        $this->postJson("/api/conversations/{$conversation->id}/messages", $payload)
+            ->assertOk()
+            ->assertJsonPath('id', $first->json('id'));
+
+        $this->assertSame(1, $conversation->messages()->count());
+        $this->assertSame(1, $tutor->notifications()->where('type', 'message')->count());
+        Event::assertDispatchedTimes(ConversationChanged::class, 1);
+
+        $this->getJson("/api/conversations/{$conversation->id}")
+            ->assertOk()
+            ->assertJsonPath('messages.0.client_id', 'demo-send-123');
+    }
 }

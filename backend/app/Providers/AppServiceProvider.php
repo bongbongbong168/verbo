@@ -6,6 +6,7 @@ use App\Database\PostgresConnection;
 use App\Mail\BrevoTransport;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,6 +30,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Railway terminates TLS before forwarding requests to the PHP
+        // container. Keep generated URLs (including signed media URLs) HTTPS
+        // in production even if a proxy header or APP_URL is misconfigured.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         /*
          * The `brevo` mail driver — Laravel has no built-in one.
          *

@@ -311,7 +311,12 @@ class PodcastController extends Controller
     {
         abort_unless($request->user()->is_admin, 403);
 
-        Storage::disk($podcast->audioDisk())->delete($podcast->audio_path);
+        // Draft episodes can be created before an audio recording is uploaded.
+        // FilesystemAdapter::delete(null) is not a valid path and can turn an
+        // otherwise ordinary delete into a production 500.
+        if ($podcast->audio_path) {
+            Storage::disk($podcast->audioDisk())->delete($podcast->audio_path);
+        }
         if ($podcast->image_path) {
             Storage::disk('public')->delete($podcast->image_path);
         }

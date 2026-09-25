@@ -818,6 +818,17 @@
   color: var(--pe-text);
 }
 
+/* Legacy translations still need a readable fallback when their old sentence
+   boundaries do not match the Chinese. Keep them in the same open reader flow
+   as the paired layout; the old framed English box hid that relationship. */
+.pe-legacy-translation {
+  margin-top: 0.8rem;
+}
+
+.pe-legacy-translation .pe-pair-en {
+  margin: 0.15rem 0 0.7rem;
+}
+
 .pe-btn-primary {
   font-family: 'Hellix', sans-serif;
   font-weight: 600;

@@ -64,7 +64,12 @@ class SubscriptionService
         abort_unless(in_array($ui, self::CHECKOUT_UIS, true), 422, 'Unknown checkout type.');
         $price = $this->price(); abort_unless($price, 422, 'The Pro monthly price is not configured.');
         abort_if($user->subscription?->grantsAccess(), 409, 'This account already has Pro.');
-        $customer = $this->customer($user);
+        try {
+            $customer = $this->customer($user);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Pro checkout could not prepare the customer', ['error' => $e->getMessage(), 'user' => $user->id]);
+            abort(503, 'Checkout could not be started. Please try again in a moment.');
+        }
         $meta = ['purpose' => 'verbo_pro', 'user_id' => (string) $user->id, 'stripe_customer_id' => $customer];
         $front = rtrim(config('services.stripe.frontend_url'), '/');
         $params = ['mode' => 'subscription', 'customer' => $customer,

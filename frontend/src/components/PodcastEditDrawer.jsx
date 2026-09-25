@@ -335,7 +335,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
         if (saved) setCreatedPodcast(saved)
         setAudio(null)
         setImage(null)
-        setFlash('Saved')
+        setFlash('Changes saved')
       } else {
         onClose()
       }
@@ -433,7 +433,13 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
         error={error}
         flash={flash}
       >
-        <form className="ed-form" onSubmit={submit}>
+        <form
+          className="ed-form"
+          onSubmit={submit}
+          /* Once a field changes again, the confirmation must disappear: it
+             describes the version on the server, not the new draft. */
+          onChange={() => flash && setFlash(null)}
+        >
           {tab === 'Episode' && (
             <>
               <label className="ed-field">
@@ -538,11 +544,12 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                 />
               </label>
               <button type="button" className="ed-btn-ghost" onClick={translateTranscript} disabled={!transcript.trim() || translating}>
-                {translating ? 'Translating…' : 'Translate to English'}
+                {translating ? 'Translating…' : transcriptEn.trim() ? 'Refresh English translation' : 'Translate to English'}
               </button>
               <p className="ed-hint">
-                A Chinese-only episode is valid. Without English, the listener's
-                Translation switch stays disabled rather than opening a blank pane.
+                Verbo makes one English line per Chinese sentence, so refreshed
+                legacy episodes use the same translation layout as new ones. Save
+                changes to publish the refreshed translation.
               </p>
             </>
           )}
@@ -630,8 +637,13 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
 
           {tab !== 'Sync' && (
           <div className="ed-actions">
+            {flash === 'Changes saved' && (
+              <span className="ed-save-status" role="status">
+                <span aria-hidden="true">✓</span> Changes saved
+              </span>
+            )}
             <button type="submit" className="ed-btn-primary" disabled={busy}>
-              {busy ? 'Saving…' : editing ? 'Save changes' : 'Publish'}
+              {busy ? 'Saving…' : flash === 'Changes saved' ? 'Saved ✓' : editing ? 'Save changes' : 'Publish'}
             </button>
           </div>
           )}

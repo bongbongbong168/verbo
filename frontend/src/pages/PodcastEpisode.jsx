@@ -540,8 +540,19 @@ export default function PodcastEpisode() {
   const hasTimedTranscript = Boolean(timed && timed.length)
   const synced = Boolean(hasTimedTranscript && podcast.audio_url && showSynced)
   const cnSentences = sentencesOf(podcast.tokens || [])
+  /* Legacy podcasts can have valid sentence punctuation in the raw transcript
+     while older token payloads fail to preserve those boundaries. Use the
+     source text as the pairing authority so one sentence always gets one
+     translation line. */
+  const rawCnSentences = String(podcast.transcript || '')
+    .split(/(?<=[。！？!?])\s*/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
   const enSentences = englishSentences(podcast.transcript_en)
-  const paired = showTranslation && hasEnglish && cnSentences.length > 0 && cnSentences.length === enSentences.length
+  const canPairRaw = rawCnSentences.length > 0 && rawCnSentences.length === enSentences.length
+  const tokenTranslationFits = cnSentences.length > 0 && cnSentences.length === enSentences.length
+  const pairedSentences = tokenTranslationFits ? cnSentences : rawCnSentences
+  const paired = showTranslation && hasEnglish && (canPairRaw || tokenTranslationFits)
 
   /* IN SYNCED MODE THE ENGLISH IS MATCHED TO SEGMENTS BY LINE INDEX, so it may
      only be used when there is exactly one line per segment. Without that
@@ -902,7 +913,7 @@ export default function PodcastEpisode() {
               ? 'Click a word to play from it. Hover and press Alt+1 to save a word, or select text to save a sentence.'
               : 'Hover and press Alt+1 to save a word, or select Chinese text to save a sentence.'}
           </p>
-          {hasTimedTranscript ? (
+          {synced && syncedPaired ? (
             <SyncedTranscript
               segments={timed}
               translations={syncedPaired ? timedTranslations : null}
@@ -917,14 +928,28 @@ export default function PodcastEpisode() {
               onSeek={seekTo}
             />
           ) : paired ? (
-            cnSentences.map((sentence, i) => (
+              pairedSentences.map((sentence, i) => (
               <div className="pe-pair" key={`pair-${i}`}>
                 <p className={'pe-transcript pe-transcript-pair' + (showPinyin ? ' pe-transcript-ruby' : '')}>
-                  {renderPlainTokens(sentence, `s${i}-`)}
+                    {tokenTranslationFits ? renderPlainTokens(sentence, `s${i}-`) : sentence}
                 </p>
                 <p className="pe-pair-en">{enSentences[i]}</p>
               </div>
             ))
+          ) : synced ? (
+            <SyncedTranscript
+              segments={timed}
+              translations={null}
+              audioRef={audioRef}
+              syncWithAudio={synced}
+              showPinyin={showPinyin}
+              showTranslation={showTranslation}
+              readerScale={readerScale}
+              saved={saved}
+              onHoverWord={hoverTimedWord}
+              onLeaveWord={leaveTimedWord}
+              onSeek={seekTo}
+            />
           ) : (
             <p className={'pe-transcript' + (showPinyin ? ' pe-transcript-ruby' : '')}>
               {renderPlainTokens(podcast.tokens)}
@@ -937,10 +962,11 @@ export default function PodcastEpisode() {
           {/* Whichever view is on decides whether the English was already
               placed line by line — `paired` describes the plain transcript and
               means nothing while the synced one is showing. */}
-          {showTranslation && hasEnglish && !(hasTimedTranscript ? syncedPaired : paired) && (
-            <div className="pe-translation">
-              <span className="pe-translation-label">English</span>
-              <p className="pe-translation-body">{podcast.transcript_en}</p>
+          {showTranslation && hasEnglish && !(syncedPaired || paired) && (
+            <div className="pe-legacy-translation" aria-label="English translation">
+              {englishSentences(podcast.transcript_en).map((line, i) => (
+                <p className="pe-pair-en" key={`legacy-en-${i}`}>{line}</p>
+              ))}
             </div>
           )}
         </div>
