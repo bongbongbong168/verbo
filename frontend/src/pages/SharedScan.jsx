@@ -93,7 +93,7 @@ export default function SharedScan() {
                       onMouseEnter={(e) =>
                         setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
                       }
-                      onMouseLeave={() => setHovered((cur) => (cur?.tok === tok ? null : cur))}
+                      onMouseLeave={() => setHovered(null)}
                     >
                       {tok.text}
                     </span>

@@ -21,7 +21,10 @@ const IS_BREAK = /^\r?\n[ \t\r]*\r?\n+$|[。！？!?]/u;
    and wrong the moment each sentence becomes its own box. Only the EDGES are
    trimmed — the spaces inside a sentence are still the author's. */
 function trimEdges(parts) {
-  const out = parts.map((part) => ({ ...part }));
+  /* Copy only the text parts this trims. WORD TOKENS MUST STAY THE SAME
+     OBJECTS: the hover handlers match on identity, and a fresh copy every
+     render meant leaving a word never matched, so its card stuck open. */
+  const out = parts.map((part) => (part.type === "text" ? { ...part } : part));
   while (out.length && out[0].type === "text") {
     out[0].text = String(out[0].text).replace(/^\s+/u, "");
     if (out[0].text) break;

@@ -181,7 +181,7 @@ export default function ScanDocument() {
     if (tok.type !== "word") return <span key={`${prefix}${idx}`}>{tok.text.replace(/\r?\n[\t ]*(?:\r?\n[\t ]*)+/g, "\n")}</span>;
     return <span key={`${prefix}${idx}`} className={"sd-token" + (saved[tok.text] ? " saved" : "") + (hovered?.tok === tok ? " active" : "")}
       onMouseEnter={(e) => { hoveredWordRef.current = tok; setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() }); }}
-      onMouseLeave={() => { if (hoveredWordRef.current === tok) hoveredWordRef.current = null; setHovered((cur) => (cur?.tok === tok ? null : cur)); }}>
+      onMouseLeave={() => { hoveredWordRef.current = null; setHovered(null); }}>
       {showPinyin && tok.pinyin && <span className="sd-token-py">{tok.pinyin}</span>}
       <span className="sd-token-hz">{tok.text}</span>
     </span>;

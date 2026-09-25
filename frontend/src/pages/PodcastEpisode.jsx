@@ -583,8 +583,9 @@ export default function PodcastEpisode() {
           setHovered({ tok, rect: e.currentTarget.getBoundingClientRect() })
         }}
         onMouseLeave={() => {
-          if (hoveredWordRef.current === tok) hoveredWordRef.current = null
-          setHovered((cur) => (cur?.tok === tok ? null : cur))
+          // Always clear — see ReadArticle: an identity check stuck the card open.
+          hoveredWordRef.current = null
+          setHovered(null)
         }}
       >
         {showPinyin && tok.pinyin && <span className="pe-word-py">{tok.pinyin}</span>}

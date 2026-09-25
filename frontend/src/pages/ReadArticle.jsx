@@ -403,9 +403,11 @@ export default function ReadArticle() {
                       });
                     }}
                     onMouseLeave={() => {
-                      if (hoveredWordRef.current === tok)
-                        hoveredWordRef.current = null;
-                      setHovered((cur) => (cur?.tok === tok ? null : cur));
+                      // Always clear: leave fires before the next word's
+                      // enter, and an identity check here is what let a
+                      // re-rendered word leave its card stuck open.
+                      hoveredWordRef.current = null;
+                      setHovered(null);
                     }}
                   >
                     {/* Pinyin sits ABOVE the character, the way a textbook

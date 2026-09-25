@@ -854,7 +854,7 @@ export default function StudyUnit() {
                                   })
                                 }}
                                 onMouseLeave={() => {
-                                  if (hoveredWordRef.current === tok) hoveredWordRef.current = null
+                                  hoveredWordRef.current = null
                                   setHovered(null)
                                 }}
                               >
