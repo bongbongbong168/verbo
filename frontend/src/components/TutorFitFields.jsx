@@ -1,5 +1,14 @@
 import './TutorFitFields.css'
 
+/* The onboarding chip's remove mark: a selected chip says it can be undone. */
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <path d="m7 7 10 10M17 7 7 17" />
+    </svg>
+  )
+}
+
 function toggle(values, value) {
   return values.includes(value) ? values.filter((item) => item !== value) : [...values, value]
 }
@@ -21,6 +30,7 @@ export default function TutorFitFields({ value, options, onChange, required = fa
             <button key={item} type="button" className={bestFor.includes(item) ? 'on' : ''}
               aria-pressed={bestFor.includes(item)} onClick={() => onChange({ teaches_levels: toggle(bestFor, item) })}>
               {item}
+              {bestFor.includes(item) && <CloseIcon />}
             </button>
           ))}
         </div>
@@ -34,6 +44,7 @@ export default function TutorFitFields({ value, options, onChange, required = fa
             <button key={item.key} type="button" className={focus.includes(item.key) ? 'on' : ''}
               aria-pressed={focus.includes(item.key)} onClick={() => onChange({ specialties: toggle(focus, item.key) })}>
               {item.label}
+              {focus.includes(item.key) && <CloseIcon />}
             </button>
           ))}
         </div>
@@ -47,6 +58,7 @@ export default function TutorFitFields({ value, options, onChange, required = fa
             <button key={item} type="button" className={languages.includes(item) ? 'on' : ''}
               aria-pressed={languages.includes(item)} onClick={() => onChange({ teaching_languages: toggle(languages, item) })}>
               {item}
+              {languages.includes(item) && <CloseIcon />}
             </button>
           ))}
         </div>

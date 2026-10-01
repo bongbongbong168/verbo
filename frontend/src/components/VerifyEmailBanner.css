@@ -38,7 +38,7 @@
   flex: none;
   width: 30px;
   height: 30px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--ve-fill);
   color: #fff;
 }
@@ -53,6 +53,11 @@
   min-width: 220px;
   font-size: 0.88rem;
   line-height: 1.5;
+  /* The sentence's letters sat 0.86px below the icon and buttons (flex
+     centres the line box, and Hellix rides low in it). Equal-and-opposite
+     margins lift it by 0.055em without changing the row's height. */
+  margin-top: -0.055em;
+  margin-bottom: 0.055em;
 }
 
 .ve-title {
@@ -75,7 +80,7 @@
   width: 116px;
   padding: 0.42rem 0.6rem;
   border: 1px solid var(--ve-line);
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fff;
   font-family: inherit;
   font-size: 0.95rem;
@@ -104,7 +109,7 @@
   flex: none;
   padding: calc(0.45rem - 1.021px) 0.9rem calc(0.45rem + 1.021px);
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--ve-fill);
   color: #fff;
   font-family: inherit;
@@ -137,7 +142,7 @@
   flex: none;
   padding: calc(0.45rem - 1.021px) 0.7rem calc(0.45rem + 1.021px);
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: var(--ve-accent);
   font-family: inherit;
@@ -188,7 +193,7 @@
 }
 
 .ve-msg-bad {
-  color: #b3261e;
+  color: #b02a2a;
 }
 
 /* Visually hidden, still read aloud. The field has a placeholder but a

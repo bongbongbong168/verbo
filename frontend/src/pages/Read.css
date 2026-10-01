@@ -176,10 +176,10 @@
 }
 
 .rd-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -261,7 +261,7 @@
   color: var(--rd-text);
   background: var(--rd-panel-bg);
   border: 1px solid var(--rd-outline);
-  border-radius: 10px;
+  border-radius: 12px;
   /* Asymmetric: symmetric padding centres the LINE BOX, and Hellix reserves
      more ascent than these labels use.
 
@@ -405,7 +405,7 @@
   flex-direction: column;
   background: var(--rd-panel-bg);
   border: 1px solid var(--rd-outline);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   text-decoration: none;
   color: var(--rd-text);
@@ -538,7 +538,8 @@
   font-size: 0.92rem;
   line-height: 1.5;
   margin: 0;
-  max-width: 46ch;
+  /* Wide enough to use the space beside the cover instead of a narrow column. */
+  max-width: 72ch;
 }
 
 /* ---- thumbnails ---- */
@@ -547,7 +548,7 @@
   position: relative;
   width: 110px;
   height: 68px;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: linear-gradient(135deg, #cfc6ef, #a99ce0);
   flex-shrink: 0;
@@ -605,30 +606,42 @@
   margin-top: 0.9rem;
 }
 
+/* Every chip is the same soft pill; a small leading icon says what kind of
+   fact it is (bars = level, compass = topic, tag = tag, clock = time). Only
+   the level is filled, since it is the one fact a learner scans for. Borders
+   are inset shadows so every chip is exactly one height. */
 .rd-chip {
-  /* Measured cap-band correction against a flat-capped `H` at 400px: the label
-     sat low under a symmetric pad. The pair sums to the original, so the box
-     height is unchanged and only the text moves. */
-
-  padding: calc(0.2rem - 0.899px) 0.6rem calc(0.2rem + 0.899px);
-  border-radius: 7px;
-  background: #f1edfc;
-  color: var(--rd-accent);
+  /* Hellix 600 cap-band pair (0.076em). */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: calc(0.32rem - 0.076em) 0.72rem calc(0.32rem + 0.076em);
+  border-radius: 999px;
+  background: #f6f3fd;
+  box-shadow: inset 0 0 0 1px #ebe6f9;
+  color: #2b2643;
   font-size: 0.74rem;
   font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-/* The level is the one fact a learner scans for, so it takes the solid fill. */
+.rd-chip svg {
+  flex: none;
+  color: #8d87ad;
+  /* Same em as the label's cap-band pair, so the glyph sits with the text. */
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
+}
+
 .rd-chip-level {
-  background: var(--rd-accent-light);
+  background: #a89ce3;
+  box-shadow: none;
   color: #fff;
 }
 
-.rd-chip-time {
-  background: transparent;
-  color: var(--rd-text-muted);
-  box-shadow: inset 0 0 0 1px var(--rd-border);
+.rd-chip-level svg {
+  color: #fff;
 }
 
 /* ---- reading aids ---- */
@@ -643,7 +656,7 @@
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--rd-border);
   border-radius: 12px;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 .rd-controls-note {
@@ -763,14 +776,14 @@
   padding: 1rem 1.1rem;
   border-left: 3px solid var(--rd-accent-light);
   border-radius: 0 12px 12px 0;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 .rd-translation-label {
   display: inline-block;
   margin-bottom: 0.4rem;
   padding: 0.12rem 0.5rem;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #f1edfc;
   color: var(--rd-accent);
   font-size: 0.68rem;
@@ -808,14 +821,23 @@
      at 400px against a flat-capped H), so the pair is in em and holds at every
      size and screen; this label is 600. The pair sums to the old padding. */
   padding: calc(0.5rem - 0.076em) 0.95rem calc(0.5rem + 0.076em);
-  border: 1px solid var(--rd-border);
+  /* A soft lavender fill at rest, so the three pills read as one row of
+     controls rather than white outlines fading into the page. */
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: #fff;
-  color: var(--rd-text-muted);
+  background: #f1edfc;
+  color: #4d4670;
   font-family: inherit;
   font-size: 0.87rem;
   font-weight: 600;
   cursor: pointer;
+  /* Ornament only: the resting pill is complete, so a transition that never
+     advances in a frozen tab leaves nothing wrong on screen. */
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
 }
 
 .rd-act svg {
@@ -828,30 +850,155 @@
   margin-bottom: -0.076em;
 }
 
-/* Instant — the colour is the state, not an animation. */
+/* Hover lifts the pill a pixel with a soft navy-tinted shadow; pressing
+   sinks it. The colour change is part of the feedback, not the state. */
 .rd-act:hover:not(:disabled) {
-  border-color: var(--rd-accent-light);
-  color: var(--rd-accent);
+  border-color: #d9d1f5;
+  background: #e9e3fb;
+  color: #2b2643;
+  box-shadow: 0 4px 12px rgba(43, 38, 68, 0.08);
+  transform: translateY(-1px);
 }
 
-/* Liked is red because a heart is; saved is the theme lavender. Two different
-   states should not look like the same one. */
-.rd-act.liked {
-  border-color: #f0b3ad;
-  background: #fdecea;
-  color: #b02a2a;
+.rd-act:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: none;
 }
 
+/* Liked is a warm rose: a heart is warm, and the old red-on-pink turned
+   purple under the hover rule (which outranked it), so a liked button read
+   as two colour families at once. Its hover now stays in its own hue. */
+.rd-act.liked,
+.rd-act.liked:hover:not(:disabled) {
+  border-color: #f4b8c1;
+  background: #fff1f3;
+  color: #c93b56;
+}
+
+.rd-act.liked:hover:not(:disabled) {
+  background: #ffe7eb;
+  box-shadow: 0 4px 12px rgba(201, 59, 86, 0.14);
+}
+
+/* Saved works like Liked: a soft tint in its own hue with the mark filled,
+   not a solid block. The two sit side by side, so one tinted and one solid
+   read as two different kinds of state. Lavender is Save's hue. */
 .rd-act.saved,
-.rd-act.open {
-  border-color: var(--rd-accent-light);
-  background: #f1edfc;
-  color: var(--rd-accent);
+.rd-act.saved:hover:not(:disabled) {
+  border-color: #cfc6f3;
+  background: #f4f1fd;
+  color: #6a6191;
 }
 
+.rd-act.saved:hover:not(:disabled) {
+  background: #ece7fb;
+  box-shadow: 0 4px 12px rgba(106, 97, 145, 0.14);
+}
+
+/* Share while its sheet is open stays the solid lavender, dark text. */
+.rd-act.open,
+.rd-act.open:hover:not(:disabled) {
+  /* One step deeper than the resting fill, so on/off is visible. Dark text:
+     white on #a89ce3 is ~1.9:1. */
+  border-color: #a89ce3;
+  background: #a89ce3;
+  color: #2b2643;
+}
+
+/* Busy is a click in flight, not a disabled control: dimming it mid-pop
+   made every like flicker. */
 .rd-act:disabled {
-  opacity: 0.6;
-  cursor: default;
+  cursor: progress;
+}
+
+.rd-act-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Share's arrow nudges up on hover. */
+.rd-act:hover .rd-act-icon svg {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.rd-share-wrap .rd-act:hover:not(:disabled) .rd-act-icon svg {
+  transform: translateY(-1.5px);
+}
+
+/* The pops. Every keyframe STARTS AND ENDS at rest (scale 1), so a tab that
+   never composites shows the finished icon, never a stuck mid-frame. They
+   only play when switched ON by a click (the key remounts the span). */
+.rd-pop svg {
+  animation: rd-heart-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* A ring bursts off the heart. Its resting state is invisible, which is the
+   correct rest for a burst: nothing about the state lives in it. */
+.rd-pop::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 2px solid #f07a90;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: rd-heart-ring 0.55s ease-out;
+}
+
+.rd-pop-save svg {
+  animation: rd-save-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The heart's ring burst, in Save's lavender. Rests invisible, like the heart's. */
+.rd-pop-save::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 2px solid #a89ce3;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: rd-heart-ring 0.55s ease-out;
+}
+
+@keyframes rd-heart-pop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.35); }
+  55% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes rd-heart-ring {
+  0% { opacity: 0; transform: scale(0.5); }
+  20% { opacity: 0.7; }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+@keyframes rd-save-pop {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-3px) scale(1.15); }
+  70% { transform: translateY(0.5px) scale(0.96); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-act,
+  .rd-act .rd-act-icon svg {
+    transition: none;
+  }
+
+  .rd-act:hover:not(:disabled),
+  .rd-act:active:not(:disabled),
+  .rd-share-wrap .rd-act:hover:not(:disabled) .rd-act-icon svg {
+    transform: none;
+  }
+
+  .rd-pop svg,
+  .rd-pop::after,
+  .rd-pop-save svg,
+  .rd-pop-save::after {
+    animation: none;
+  }
 }
 
 .rd-act-count {
@@ -891,7 +1038,7 @@
   box-sizing: border-box;
   padding: 0.9rem;
   border: 1px solid var(--rd-outline);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
   /* A small nudge, never a big slide — a keyframe that starts far off would
@@ -1046,7 +1193,7 @@
   margin: 1.1rem 0 1.4rem;
   padding: 1rem 1.15rem 0.85rem;
   border: 1px solid var(--rd-border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
 }
 
@@ -1176,8 +1323,8 @@
   box-sizing: border-box;
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--rd-border);
-  border-radius: 11px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
   font-family: inherit;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -1207,7 +1354,7 @@
      BAND (cap top -> baseline), never the ink box. The pair sums to the original
      value, so the box height is unchanged and only the text moves. */
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   /* The app's deep purple, white on it at ~6:1. The pale lavender this used
      read as already disabled even when it was not. */
   background: #6a6191;
@@ -1233,7 +1380,7 @@
 .rd-cm-quiet {
   padding: 0.45rem 0.7rem;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: var(--rd-text-muted);
   font-family: inherit;
@@ -1267,7 +1414,7 @@
 .rd-cm {
   padding: 1rem 1.15rem 0.8rem;
   border: 1px solid var(--rd-border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
 }
 
@@ -1361,7 +1508,7 @@
 .rd-cm-tools button {
   padding: calc(0.2rem - 0.95px) 0.5rem calc(0.2rem + 0.95px);
   border: none;
-  border-radius: 7px;
+  border-radius: 8px;
   background: none;
   color: var(--rd-text-muted);
   font-family: inherit;
@@ -1416,7 +1563,7 @@
   flex-direction: column;
   box-sizing: border-box;
   border: 1px solid var(--rd-outline);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   overflow: hidden;
   color: var(--rd-text);
@@ -1460,7 +1607,7 @@
   top: 8px;
   right: 8px;
   padding: calc(0.12rem - 0.907px) 0.5rem calc(0.12rem + 0.907px);
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(28, 23, 48, 0.72);
   color: #fff;
   font-size: 0.66rem;
@@ -1560,7 +1707,7 @@
 
 .rd-card-saved {
   padding: 0.08rem 0.42rem;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #f1edfc;
   color: var(--rd-accent);
   font-weight: 700;
@@ -1803,7 +1950,7 @@
   font-family: "Hellix", sans-serif;
   font-weight: 600;
   font-size: 0.85rem;
-  color: #b3261e;
+  color: #b02a2a;
   background: var(--rd-panel-bg);
   border: 1px solid #f6c6c1;
   border-radius: 999px;
@@ -1885,8 +2032,8 @@
    suggest that the story continues without putting protected text in the DOM. */
 .rd-reader-preview {
   overflow: hidden;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff 0%, #fff 48%, #f7f4ff 74%, #efebfb 100%);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff 0%, #fff 48%, #f9f8fe 74%, #efebfb 100%);
 }
 
 .rd-reader-preview .rd-reader-copy {
@@ -1975,7 +2122,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.78rem 1rem;
-  border-radius: 11px;
+  border-radius: 12px;
   color: #fff;
   background: #2b2643;
   font-size: 0.82rem;
@@ -2023,7 +2170,7 @@
    WordPopover are driven by the same state and can never disagree. */
 .rd-word {
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 8px;
   transition:
     background 0.12s ease,
     color 0.12s ease;
@@ -2153,7 +2300,7 @@
   flex-basis: 100%;
   padding: 0.65rem 0.8rem;
   border: 1px solid #ddd3f7;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f6f2ff;
   line-height: 1.4;
 }

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { announceSave } from "./SaveHeartButton";
 import {
   BookmarkIcon,
   CommentIcon,
@@ -44,6 +46,7 @@ export default function ArticleActions({
   onChange,
 }) {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
   const [state, setState] = useState(
     initial || { likes: 0, liked: false, bookmarked: false, comments: 0 },
   );
@@ -51,6 +54,9 @@ export default function ArticleActions({
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState(null);
+  /* Bumped when Like / Save is switched ON, which remounts that icon and
+     replays its pop. 0 on load, so an already-liked article does not pop. */
+  const [pop, setPop] = useState({ like: 0, save: 0 });
   const shareRef = useRef(null);
 
   useEffect(() => {
@@ -86,6 +92,7 @@ export default function ArticleActions({
       setState(next);
       // The card list behind this page shows the same counts.
       if (onChange) onChange(next);
+      return next;
     } catch (err) {
       setNote(err.message);
     } finally {
@@ -114,13 +121,16 @@ export default function ArticleActions({
       <button
         type="button"
         className={`rd-act${state.liked ? " liked" : ""}`}
-        onClick={() =>
-          run("like", () => api.toggleArticleLike(token, articleId))
-        }
+        onClick={() => {
+          if (user && !state.liked) setPop((p) => ({ ...p, like: p.like + 1 }));
+          run("like", () => api.toggleArticleLike(token, articleId));
+        }}
         disabled={busy === "like"}
         aria-pressed={state.liked}
       >
-        <HeartIcon filled={state.liked} />
+        <span key={pop.like} className={`rd-act-icon${pop.like ? " rd-pop" : ""}`}>
+          <HeartIcon filled={state.liked} />
+        </span>
         <span>{state.likes}</span>
         <span className="rd-act-label">
           {state.likes === 1 ? "Like" : "Likes"}
@@ -130,13 +140,18 @@ export default function ArticleActions({
       <button
         type="button"
         className={`rd-act${state.bookmarked ? " saved" : ""}`}
-        onClick={() =>
-          run("save", () => api.toggleArticleBookmark(token, articleId))
-        }
+        onClick={() => {
+          if (user && !state.bookmarked) setPop((p) => ({ ...p, save: p.save + 1 }));
+          run("save", () => api.toggleArticleBookmark(token, articleId)).then(
+            (next) => next && announceSave(next.bookmarked, null, navigate),
+          );
+        }}
         disabled={busy === "save"}
         aria-pressed={state.bookmarked}
       >
-        <BookmarkIcon filled={state.bookmarked} />
+        <span key={pop.save} className={`rd-act-icon${pop.save ? " rd-pop-save" : ""}`}>
+          <BookmarkIcon filled={state.bookmarked} />
+        </span>
         <span className="rd-act-label">
           {state.bookmarked ? "Saved" : "Save"}
         </span>
@@ -149,7 +164,9 @@ export default function ArticleActions({
           onClick={() => setShareOpen((v) => !v)}
           aria-expanded={shareOpen}
         >
-          <ShareIcon />
+          <span className="rd-act-icon">
+            <ShareIcon />
+          </span>
           <span className="rd-act-label">Share</span>
         </button>
 

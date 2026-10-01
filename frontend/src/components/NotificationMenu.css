@@ -77,7 +77,7 @@
   width: 356px;
   box-sizing: border-box;
   border: 1px solid #2b2643;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 18px 40px rgba(28, 23, 48, 0.18);
   font-family: "Hellix", system-ui, sans-serif;
@@ -160,7 +160,7 @@
   padding: 0.6rem 0.65rem;
   box-sizing: border-box;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: none;
   font-family: inherit;
   text-align: left;
@@ -174,7 +174,7 @@
 /* Unread carries a tint AND a dot — two signals, so the state survives being
    glanced at rather than read. */
 .nm-item.unread {
-  background: #f7f4ff;
+  background: #f9f8fe;
 }
 
 .nm-item.unread:hover {
@@ -339,4 +339,29 @@
 
 .nm-clear.armed:hover {
   text-decoration: none;
+}
+
+/* A soft ring breathes out from the unread dot, gently. The ring rests
+   INVISIBLE at frame 0 and 100%, which is the right rest for an ornament: the
+   dot itself (static) carries the state, so a tab that never composites just
+   shows the plain dot. Off under reduced motion. */
+.nm-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: #a89ce3;
+  opacity: 0;
+  pointer-events: none;
+  animation: nm-dot-pulse 2.4s ease-out infinite;
+}
+
+@keyframes nm-dot-pulse {
+  0% { transform: scale(1); opacity: 0; }
+  12% { opacity: 0.45; }
+  70%, 100% { transform: scale(2.3); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-dot::after { animation: none; }
 }

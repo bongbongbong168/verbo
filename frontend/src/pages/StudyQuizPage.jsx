@@ -13,13 +13,14 @@ import artBooks from '../assets/quiz/books.webp'
 import artBamboo from '../assets/quiz/bamboo.webp'
 import artPhones from '../assets/quiz/headphones.webp'
 import './StudyQuizPage.css'
+import { PageSkeleton } from '../components/Skeleton'
 
 const LETTERS = ['A', 'B', 'C', 'D']
 
 /* Past this many questions the progress bar stops drawing one segment each. */
 const MAX_SEGMENTS = 24
 
-function BackIcon() {
+export function BackIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -35,7 +36,7 @@ function BackIcon() {
   )
 }
 
-function ChevronIcon() {
+export function ChevronIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -51,7 +52,7 @@ function ChevronIcon() {
   )
 }
 
-function CheckIcon() {
+export function CheckIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -67,7 +68,7 @@ function CheckIcon() {
   )
 }
 
-function CrossIcon() {
+export function CrossIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -83,7 +84,7 @@ function CrossIcon() {
   )
 }
 
-function DashIcon() {
+export function DashIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -150,6 +151,13 @@ export default function StudyQuizPage() {
 
   const [marking, setMarking] = useState(false)
   const [results, setResults] = useState(null) // marked list, set at the end
+  /* Finishing lands on the SCORE. The results replace the last question,
+     which was usually scrolled down, so without this the page stayed low
+     and the score sat above the fold. Instant, not smooth: a smooth scroll
+     is an animation, and a tab that is not drawing would leave it midway. */
+  useEffect(() => {
+    if (results) window.scrollTo(0, 0)
+  }, [results])
   // Counts finished runs; each one re-keys the confetti so it plays again.
   const [bursts, setBursts] = useState(0)
   const markingRef = useRef(false)
@@ -358,7 +366,7 @@ export default function StudyQuizPage() {
 
   const backTo = `/study/units/${id}`
 
-  if (loading) return <p className="qp-note">Loading quiz…</p>
+  if (loading) return <PageSkeleton label="Loading quiz" />
 
   if (error && !unit) {
     return (

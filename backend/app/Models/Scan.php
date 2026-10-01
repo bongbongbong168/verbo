@@ -16,10 +16,13 @@ class Scan extends Model
         'words',
         'size_bytes',
         'share_token',
+        'uncertain_lines',
     ];
 
     protected $casts = [
         'words' => 'array',
+        'uncertain_lines' => 'array',
+        'size_bytes' => 'integer',
     ];
 
     public function user()

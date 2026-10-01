@@ -1,5 +1,5 @@
 .su {
-  --su-bg: #f6f5fc;
+  --su-bg: #f9f8fe;
   --su-input-bg: #e4e3f2;
   --su-text: #1c1730;
   --su-text-muted: #8d86ad;
@@ -161,10 +161,10 @@
 }
 
 .su-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.55rem 0.8rem;
   font-size: 0.85rem;
   margin: -0.6rem 0 1rem;

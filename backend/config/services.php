@@ -49,6 +49,9 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'pro_price_id' => env('STRIPE_PRO_PRICE_ID'),
         'pro_monthly_amount' => env('STRIPE_PRO_MONTHLY_AMOUNT'),
+        // Optional yearly Pro price. The Upgrade page only offers Yearly once
+        // this is set (and validates as an active 1-year recurring price).
+        'pro_annual_price_id' => env('STRIPE_PRO_ANNUAL_PRICE_ID'),
         'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost:5173')),
         // Prices across the app are whole dollars; Stripe works in the smallest
         // currency unit, so amounts are multiplied by 100 in one place only.
@@ -69,6 +72,8 @@ return [
      */
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
+        // Where the redirect sign-in sends the browser back to.
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
     ],
 
     /*
@@ -125,6 +130,8 @@ return [
         'key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-3-flash-preview'),
         'timeout' => env('GEMINI_TIMEOUT', 20),
+        // Extra tries after a dropped connection or a 5xx (never after a 429).
+        'retries' => env('GEMINI_RETRIES', 1),
         // Scan's reader. Defaults to the assistant's model; longer timeout
         // because an image upload is bigger than a chat turn. A failure here
         // falls back to Tesseract rather than failing the scan.
@@ -140,6 +147,8 @@ return [
         'tts_timeout' => env('GEMINI_TTS_TIMEOUT', 30),
         'ocr_model' => env('GEMINI_OCR_MODEL'),
         'ocr_timeout' => env('GEMINI_OCR_TIMEOUT', 30),
+        'translate_timeout' => env('GEMINI_TRANSLATE_TIMEOUT', 45),
+        'quiz_timeout' => env('GEMINI_QUIZ_TIMEOUT', 30),
     ],
 
     /*

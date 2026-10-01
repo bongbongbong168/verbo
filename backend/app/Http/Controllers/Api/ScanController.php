@@ -22,7 +22,7 @@ class ScanController extends Controller
         // are public. Safe here: this endpoint only ever returns the caller's
         // own rows.
         return $request->user()->scans()->latest()->get([
-            'id', 'original_filename', 'raw_text', 'size_bytes', 'created_at', 'share_token',
+            'id', 'original_filename', 'size_bytes', 'created_at', 'share_token',
         ]);
     }
 
@@ -46,6 +46,43 @@ class ScanController extends Controller
                 'translation_usage' => $allowances->summary($request->user(), UsageAllowanceService::TRANSLATIONS),
             ]
         );
+    }
+
+    /**
+     * The learner's review of the recognised text.
+     *
+     * Saving replaces the text, rebuilds the word list from it and clears the
+     * unsure flags - reviewed text is confirmed text. Owner only. No AI call:
+     * this is the learner's own correction, so it costs nothing.
+     */
+    public function updateText(Request $request, Scan $scan, DictionaryService $dictionary, UsageAllowanceService $allowances)
+    {
+        if ((int) $scan->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'raw_text' => ['required', 'string', 'max:20000'],
+        ]);
+
+        $text = OcrService::tidy($data['raw_text']);
+        if ($text === '') {
+            return response()->json(['message' => 'Keep at least one line of Chinese.'], 422);
+        }
+
+        $scan->update([
+            'raw_text' => $text,
+            'uncertain_lines' => [],
+            'words' => collect($dictionary->segment($text))
+                ->map(fn (string $word) => [
+                    'word' => $word,
+                    'pinyin' => $dictionary->pinyinFor($word),
+                    'translation' => $dictionary->lookup($word),
+                ])
+                ->values(),
+        ]);
+
+        return $this->show($request, $scan, $dictionary, $allowances);
     }
 
     /**
@@ -124,7 +161,9 @@ class ScanController extends Controller
     public function store(Request $request, OcrService $ocr, DictionaryService $dictionary, UsageAllowanceService $allowances)
     {
         $request->validate([
-            'image' => ['required', 'image', 'max:10240'],
+            /* Photos and PDFs. By extension (`mimes:`), not sniffed mimetype,
+               the trap podcast audio hit; a PDF is read by Gemini directly. */
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,bmp,pdf', 'max:10240'],
         ]);
 
         $reservation = $allowances->reserve($request->user(), UsageAllowanceService::SCANS);
@@ -149,7 +188,8 @@ class ScanController extends Controller
         $fullPath = storage_path('app/'.$path);
 
         try {
-            $text = $ocr->extractChineseText($fullPath);
+            $read = $ocr->read($fullPath);
+            $text = $read['text'];
         } catch (ProcessFailedException $e) {
             // ProcessFailedException stringifies the whole command line —
             // the tesseract binary path, --tessdata-dir and the upload's
@@ -161,6 +201,10 @@ class ScanController extends Controller
             return response()->json([
                 'message' => 'Could not read that image. Try a clearer photo, or one with more contrast.',
             ], 422);
+        } catch (\DomainException $e) {
+            // A PDF Gemini could not read: Tesseract cannot open PDFs.
+            $allowances->release($request->user(), UsageAllowanceService::SCANS, $reservation);
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
             $allowances->release($request->user(), UsageAllowanceService::SCANS, $reservation);
             throw $e;
@@ -182,6 +226,7 @@ class ScanController extends Controller
                 'raw_text' => $text,
                 'words' => $words,
                 'size_bytes' => $sizeBytes,
+                'uncertain_lines' => $read['uncertain'],
             ]);
 
             $usage = $allowances->commit($request->user(), UsageAllowanceService::SCANS, $reservation);

@@ -47,7 +47,7 @@
 
 .tt-word {
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 8px;
   /* Centres the fill under letter-spacing; see `.pe-word` for the why. */
   padding-left: 0.25em;
   margin-left: -0.25em;

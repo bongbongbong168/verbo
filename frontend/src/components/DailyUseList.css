@@ -78,7 +78,7 @@
   color: #1c1730;
   background: #fff;
   border: 1px solid #2b2643;
-  border-radius: 10px;
+  border-radius: 12px;
   /* Asymmetric, measured on the CAP BAND: Hellix reserves more ascent than
      these labels use, so symmetric padding centres the line box and leaves the
      glyphs a pixel low. The same pair the Read page's pills carry. */
@@ -179,7 +179,7 @@
   box-sizing: border-box;
   min-width: 0;
   border: 1px solid #2b2643;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   background: #fff;
   color: inherit;
@@ -281,7 +281,7 @@
   text-transform: uppercase;
   color: #1c1730;
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 7px;
+  border-radius: 8px;
   padding: 4px 8px 5px;
 }
 

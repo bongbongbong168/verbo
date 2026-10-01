@@ -52,6 +52,21 @@ class BookingController extends Controller
      * "2:00 AM". The context card at the top of the thread already shows when,
      * rendered in each reader's own local time, and it stays correct.
      */
+    /**
+     * What a toast about this booking needs. `starts_at` is UTC; the client
+     * formats it in the reader's own timezone, which the server cannot know.
+     */
+    private static function toastData(Booking $booking): array
+    {
+        return [
+            'booking_id' => $booking->id,
+            'starts_at' => $booking->starts_at
+                ? \Illuminate\Support\Carbon::parse($booking->starts_at)->toIso8601String()
+                : null,
+            'lesson' => optional($booking->lesson)->name,
+        ];
+    }
+
     private static function describe(Booking $booking): string
     {
         return optional($booking->lesson)->name ?? 'a lesson';
@@ -274,7 +289,8 @@ class BookingController extends Controller
             'title' => 'New booking request',
             'body' => trim($studentName.' requested '
                 .(optional($booking->lesson)->name ?? 'a lesson').'.'),
-            'link' => '/bookings',
+            'link' => '/bookings?tab=requests',
+            'data' => self::toastData($booking),
         ]);
 
         /* The thread starts here, not at `store`: an unpaid hold lapses in
@@ -352,6 +368,7 @@ class BookingController extends Controller
             'title' => 'Booking accepted',
             'body' => ($request->user()->name ?? 'Your tutor').' accepted your lesson request.',
             'link' => '/bookings',
+            'data' => self::toastData($booking),
         ]);
 
         $tutor = $request->user()->name ?? 'Your tutor';
@@ -492,6 +509,7 @@ class BookingController extends Controller
             'body' => ($request->user()->name ?? 'Your tutor').' could not take that time.'
                 .($request->input('reason') ? ' '.$request->input('reason') : ''),
             'link' => '/bookings',
+            'data' => self::toastData($booking),
         ]);
 
         // A tutor who turns a request down must never keep the money.
@@ -539,6 +557,7 @@ class BookingController extends Controller
                 'body' => ($request->user()->name ?? 'The other person').' cancelled the lesson.'
                     .($request->input('reason') ? ' '.$request->input('reason') : ''),
                 'link' => '/bookings',
+                'data' => self::toastData($booking) + ['cancelled_by' => $actorIsTutor ? 'tutor' : 'student'],
             ]
         );
 

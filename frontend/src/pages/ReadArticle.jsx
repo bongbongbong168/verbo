@@ -10,6 +10,7 @@ import WordPopover from "../components/WordPopover";
 import PageTools from "../components/PageTools";
 import ArticleActions from "../components/ArticleActions";
 import ArticleComments from "../components/ArticleComments";
+import ContentQuiz from "../components/ContentQuiz";
 import RecommendedArticles from "../components/RecommendedArticles";
 import ArticleEditDrawer from "../components/ArticleEditDrawer";
 import SentenceSavePopover from "../components/SentenceSavePopover";
@@ -24,7 +25,8 @@ import {
   writeTranslationContentCache,
 } from '../usageAllowances'
 import { englishSentences, sentencesOf, tokensBySentences } from "../sentences";
-import proOwl from '../assets/assistant/graduate-bot.png';
+import proOwl from '../assets/assistant/pixel-panda.png';
+import { confirmDelete } from '../components/ConfirmDelete'
 
 function formatDate(value) {
   if (!value) return "";
@@ -33,6 +35,16 @@ function formatDate(value) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+/* Cut to at most `max` characters at a word boundary, with an ellipsis only
+   when something was actually cut. */
+function clipWords(text, max) {
+  const t = (text || '').replace(/\s+/g, ' ').trim()
+  if (t.length <= max) return t
+  const cut = t.slice(0, max)
+  const at = cut.lastIndexOf(' ')
+  return (at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,;:.-]+$/, '') + '…'
 }
 
 export default function ReadArticle() {
@@ -180,6 +192,11 @@ export default function ReadArticle() {
   async function handleSaveWord(word) {
     // Read off the ref, not the state — see the note on `articleRef`.
     const current = articleRef.current;
+    /* Optimistic: the word reads as saved the instant the key is pressed.
+       The request can stall for seconds on the deployed API, and waiting on it
+       made saving feel slow. A failure below puts it back. */
+    setSaved((prev) => ({ ...prev, [word.text]: true }));
+    setLastSaved(word.text);
     try {
       await api.addFlashcard(token, {
         word: word.text,
@@ -194,9 +211,8 @@ export default function ReadArticle() {
         source_id: current?.id,
         example: exampleFor(current?.tokens, word),
       });
-      setLastSaved(word.text);
-      setSaved((prev) => ({ ...prev, [word.text]: true }));
     } catch (err) {
+      setSaved((prev) => ({ ...prev, [word.text]: false }));
       setError(err.message);
     }
   }
@@ -254,6 +270,7 @@ export default function ReadArticle() {
   }
 
   async function handleDelete() {
+    if (!(await confirmDelete({ title: 'Delete this article?', text: 'Comments, likes and saves go with it.' }))) return;
     try {
       await api.deleteArticle(token, id);
       // The article is gone; nothing may keep serving it from cache.
@@ -468,25 +485,33 @@ export default function ReadArticle() {
         <div className="rd-featured rd-featured-static">
           <div className="rd-featured-body">
             <h2 className="rd-featured-title">{article.title}</h2>
-            {article.body_en && (
+            {/* The admin's own description wins; otherwise the start of the
+                translation, cut at a word so it never ends mid-word. */}
+            {(article.summary || article.body_en) && (
               <p className="rd-featured-excerpt">
-                {article.body_en.slice(0, 140)}
+                {article.summary || clipWords(article.body_en, 220)}
               </p>
             )}
             {/* Learning metadata. Each chip renders only when the article
                 actually carries that field — the five articles written before
                 this existed show none rather than a row of blanks. */}
             <div className="rd-meta">
+              {/* Level and difficulty are ONE fact now (difficulty is derived
+                  from HSK server-side), so they share one pill rather than two
+                  chips repeating each other. */}
               {article.hsk_level && (
                 <span className="rd-chip rd-chip-level">
-                  {article.hsk_level}
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 19v-4M12 19V10M19 19V5" /></svg>
+                  {article.difficulty
+                    ? `${article.hsk_level} · ${article.difficulty}`
+                    : article.hsk_level}
                 </span>
               )}
               {article.category && (
-                <span className="rd-chip">{article.category}</span>
-              )}
-              {article.difficulty && (
-                <span className="rd-chip">{article.difficulty}</span>
+                <span className="rd-chip rd-chip-topic">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></svg>
+                  {article.category}
+                </span>
               )}
               {/* Deduped by VALUE: an article tagged "Travel" as both a goal
                   and an interest is one idea to the reader, and two identical
@@ -495,13 +520,17 @@ export default function ReadArticle() {
               {[
                 ...new Set(
                   (article.tags || [])
+                    // Style is derived from the format and only feeds the
+                    // recommender; as a chip it just says "Articles" on an article.
+                    .filter((t) => t.kind !== 'style')
                     .map((t) => t.value)
                     .filter(
                       (v) => v !== article.category && v !== article.difficulty,
                     ),
                 ),
               ].map((value) => (
-                <span key={value} className="rd-chip">
+                <span key={value} className="rd-chip rd-chip-tag">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3.5 12.5V4h8.5l8.5 8.5-8 8z" /><circle cx="8" cy="8.5" r="1.3" /></svg>
                   {value}
                 </span>
               ))}
@@ -509,6 +538,7 @@ export default function ReadArticle() {
                 <PremiumBadge inline />
               )}
               <span className="rd-chip rd-chip-time">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
                 {article.reading_minutes} min read
               </span>
             </div>
@@ -559,7 +589,7 @@ export default function ReadArticle() {
               />
 
               {translationUsage && (
-                <AllowanceIndicator usage={translationUsage}>
+                <AllowanceIndicator usage={translationUsage} className="ua-indicator-reader">
                   {translationUsage.remaining == null
                     ? "Unlimited translations"
                     : `${translationUsage.remaining} translations left`}
@@ -656,6 +686,9 @@ export default function ReadArticle() {
             initial={interactions || article.interactions}
             onChange={setInteractions}
           />
+
+          {/* Optional; fetches nothing until pressed. Locked pieces stay locked. */}
+          {!premiumLocked && <ContentQuiz kind="articles" id={article.id} label="this article" />}
 
           <ArticleComments
             articleId={article.id}

@@ -1,0 +1,403 @@
+/* On-screen toasts. Verbo's palette: white card, soft lavender outline, a
+   navy-tinted shadow (never neutral black, which greys the lavender page),
+   and one accent per type carried by the icon chip and the progress strip. */
+
+.ts-anchor {
+  /* Sticky and zero-height at the top of the page column: the stack below is
+     absolute against it, so it is contained in Verbo but never scrolls away. */
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  height: 0;
+  pointer-events: none;
+}
+
+.ts-stack {
+  position: absolute;
+  /* Clears the notch when the page paints under it (viewport-fit=cover:
+     landscape, or added to the home screen). 0 in ordinary portrait Safari. */
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100% - 32px));
+}
+
+.ts-toast {
+  --ts-accent: #6a6191;
+  --ts-soft: #f1edfc;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  overflow: hidden;
+  padding: 12px 34px 14px 12px;
+  border: 1px solid #d9d3f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 1px 2px rgba(43, 38, 68, 0.06),
+    0 8px 24px rgba(43, 38, 68, 0.12);
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  pointer-events: auto;
+  animation: ts-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ts-success { --ts-accent: #1f7a45; --ts-soft: #e5f4ea; }
+.ts-error { --ts-accent: #b02a2a; --ts-soft: #fbe9e9; }
+.ts-warning { --ts-accent: #b86e00; --ts-soft: #fdf1dc; }
+.ts-info { --ts-accent: #6a6191; --ts-soft: #f1edfc; }
+
+.ts-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ts-soft);
+  color: var(--ts-accent);
+}
+
+.ts-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ts-face {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+
+.ts-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e7e3f6;
+}
+
+/* White ring so the badge reads against any photo. */
+.ts-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--ts-accent);
+  color: #fff;
+}
+
+.ts-badge svg {
+  width: 11px;
+  height: 11px;
+}
+
+.ts-body {
+  min-width: 0;
+  flex: 1;
+  padding-top: 1px;
+}
+
+.ts-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #2b2643;
+}
+
+.ts-message {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #726c88;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+/* Cap-band pad for a 600 label. */
+/* A title-only toast (the Settings confirmations) centres on the icon row
+   instead of hugging the top. The title's line box is centred, and Hellix
+   600 reads 0.076em low in it, so the bottom pad lifts the glyphs by that.
+   The close button follows the row's middle too. */
+.ts-solo {
+  align-items: center;
+}
+
+.ts-solo .ts-body {
+  padding-top: 0;
+}
+
+.ts-solo .ts-title {
+  padding-bottom: 0.152em;
+}
+
+.ts-solo .ts-close {
+  top: 50%;
+  margin-top: -11px;
+}
+
+.ts-action {
+  margin-top: 8px;
+  padding: calc(5px - 0.076em) 10px calc(5px + 0.076em);
+  border: 1px solid #2b2643;
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2b2643;
+  cursor: pointer;
+}
+
+.ts-action:hover {
+  background: #f1edfc;
+}
+
+.ts-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #8a84a3;
+  cursor: pointer;
+}
+
+.ts-close:hover {
+  background: #f1edfc;
+  color: #2b2643;
+}
+
+.ts-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ts-action:focus-visible,
+.ts-close:focus-visible {
+  outline: 2px solid #a89ce3;
+  outline-offset: 2px;
+}
+
+/* Rests FULL: a strip frozen by a tab that never composites reads as "just
+   arrived", never as "about to vanish". The timer in JS is what dismisses. */
+.ts-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--ts-accent);
+  opacity: 0.75;
+  transform-origin: left center;
+  animation-name: ts-drain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.ts-paused {
+  animation-play-state: paused;
+}
+
+/* Each toast sits in a slot whose ROW collapses on exit, so the stack closes
+   up smoothly instead of jumping. The 10px gap is the slot's own margin so it
+   collapses with it. */
+.ts-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  margin-bottom: 10px;
+  transition:
+    grid-template-rows 0.24s ease 0.08s,
+    margin-bottom 0.24s ease 0.08s;
+}
+
+.ts-slot-inner {
+  min-height: 0;
+}
+
+.ts-leaving {
+  grid-template-rows: 0fr;
+  margin-bottom: 0;
+}
+
+.ts-leaving .ts-toast {
+  animation: ts-out 0.2s ease forwards;
+}
+
+/* Transform-only entrance, a short nudge from the right: stuck at frame 0 it
+   is a fully visible toast 14px off its mark, never an invisible one. */
+@keyframes ts-in {
+  from { transform: translateX(14px) scale(0.97); }
+  to { transform: none; }
+}
+
+@keyframes ts-out {
+  to { opacity: 0; transform: translateX(24px); }
+}
+
+@keyframes ts-drain {
+  /* A rounded clip rather than scaleX, which would squash the round ends. */
+  from { clip-path: inset(0 0 0 0 round 999px); }
+  to { clip-path: inset(0 100% 0 0 round 999px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-toast,
+  .ts-leaving .ts-toast {
+    animation: none;
+  }
+
+  .ts-slot {
+    transition: none;
+  }
+
+  /* The countdown strip is information, not motion: it stays, static. */
+  .ts-progress {
+    animation: none;
+  }
+}
+
+/* ---- minimal layout (after the supplied reference) ----
+   Type icon, title over a muted line, then the action and the close in the
+   same row; the countdown strip runs along the bottom. White card, lavender hairline, navy text:
+   the app's own card, not the reference's dark one. */
+.ts-toast {
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px 14px 18px;
+  /* The app's card stroke, so a toast reads as one of its cards. */
+  border: 1px solid #2b2643;
+  border-radius: 14px;
+  background: #fff;
+  backdrop-filter: none;
+}
+
+.ts-body {
+  padding-top: 0;
+}
+
+.ts-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b2643;
+}
+
+.ts-message {
+  margin-top: 3px;
+  font-size: 13px;
+  color: #726c88;
+}
+
+/* Cap-band pad for 600. */
+.ts-action {
+  flex: none;
+  margin: 0;
+  padding: calc(6px - 0.076em) 12px calc(6px + 0.076em);
+  border: 1px solid #e7e3f6;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2b2643;
+  white-space: nowrap;
+}
+
+.ts-action:hover {
+  border-color: #a89ce3;
+  background: #f9f8fe;
+}
+
+.ts-close,
+.ts-solo .ts-close {
+  position: static;
+  flex: none;
+  margin: 0;
+  width: 26px;
+  height: 26px;
+}
+
+/* ---- the supplied icon set: solid circle, white mark, matching strip ---- */
+.ts-success { --ts-accent: #3aa65c; }
+.ts-error { --ts-accent: #e0564f; }
+.ts-warning { --ts-accent: #e8b52e; }
+.ts-info { --ts-accent: #3f8ee6; }
+
+.ts-icon {
+  width: 26px;
+  height: 26px;
+  background: none;
+  color: var(--ts-accent);
+}
+
+.ts-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.ts-badge {
+  background: none;
+  color: var(--ts-accent);
+}
+
+.ts-badge svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ts-progress {
+  /* Inset from the edges with round ends, a pill rather than a flat strip. */
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 4px;
+  border-radius: 999px;
+  opacity: 1;
+  background: var(--ts-accent);
+}
+
+/* ---- saving ---- */
+.ts-loading { --ts-accent: #a89ce3; }
+
+.ts-spin {
+  animation: ts-spin 0.8s linear infinite;
+}
+
+@keyframes ts-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-spin { animation-duration: 2.4s; }
+}
+
+/* Two lines at most: a long name ("在咖啡店点单 - Ordering at the Coffee
+   Shop is in your saved list.") ran to three and made the card fat. The
+   full sentence stays available to screen readers; only the paint clamps. */
+.ts-toast .ts-message {
+  -webkit-line-clamp: 2;
+}
+
+/* The action sits closer to the close button, so it reads as the toast's
+   right-hand control rather than floating mid-card. */
+.ts-toast .ts-action {
+  margin-right: -6px;
+}

@@ -126,7 +126,7 @@
   box-sizing: border-box;
   background: #fff;
   border: 1px solid #e7e3f6;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 14px 34px rgba(28, 23, 48, 0.14);
   /* Transform-only, fully opaque at frame 0: a menu that fades in is invisible
      when the frames never arrive. */
@@ -145,7 +145,7 @@
   color: #1c1730;
   background: none;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   /* Asymmetric: Hellix reserves more ascent than these labels use, so
      symmetric padding centres the line box and leaves the text sitting low. */
   padding: 8px 0.7rem 10px;

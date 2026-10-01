@@ -83,7 +83,7 @@ export function CategoryIcon({ category }) {
  *   same markup under different class names, and this is the one place that
  *   knows it.
  */
-export function NotificationFace({ prefix, category, photoUrl, name }) {
+export function NotificationFace({ prefix, category, photoUrl }) {
   const [failed, setFailed] = useState(false)
   const showPhoto = photoUrl && !failed
 

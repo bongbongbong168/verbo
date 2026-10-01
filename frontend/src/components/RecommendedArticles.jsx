@@ -57,7 +57,7 @@ export default function RecommendedArticles({ exclude, limit = 3 }) {
                   <span className="rd-chip rd-chip-level">{a.hsk_level}</span>
                 )}
                 {a.tags?.slice(0, 2).map((t) => (
-                  <span key={t.kind + t.value} className="rd-chip">
+                  <span key={t.kind + t.value} className="rd-chip rd-chip-tag">
                     {t.value}
                   </span>
                 ))}

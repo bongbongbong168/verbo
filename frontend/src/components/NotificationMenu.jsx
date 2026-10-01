@@ -10,11 +10,11 @@ import { fetchThrough, isFresh, readCache, writeCache } from '../dataCache'
    rebuilt by mirroring the bell's own symmetric left half. */
 import iconBell from '../assets/dashboard/icon-bell-plain.png'
 import { NotificationFace, relativeTime } from './notifications'
+import { isRealtimeConnected } from '../hooks/usePusherConversationUpdates'
 import './NotificationMenu.css'
 
-/* A short request once a minute, rather than a long-poll that keeps a PHP
-   worker occupied for 20 seconds. Pusher handles time-sensitive messages; the
-   bell can update on this lighter cadence without slowing the whole app. */
+/* A short fallback request once a minute. When the live channel works, the
+   event below updates the bell immediately and this poll does no network work. */
 const POLL_MS = 60_000
 
 /* Shared with nothing else, but held in the app-wide cache so the count
@@ -54,12 +54,27 @@ export default function NotificationMenu() {
     [token],
   )
 
-  // The badge is the only thing polled. The list itself loads on open.
+  // The list still loads only on open. The badge listens to live events and
+  // polls solely while the socket is unavailable.
   useEffect(() => {
     if (!token) return
     loadCount()
-    const id = window.setInterval(() => loadCount(), POLL_MS)
-    return () => window.clearInterval(id)
+    const refresh = () => loadCount(true)
+    const id = window.setInterval(() => {
+      if (!isRealtimeConnected() && document.visibilityState === 'visible') refresh()
+    }, POLL_MS)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('verbo:notification-created', refresh)
+    window.addEventListener('verbo:conversation-updated', refresh)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.clearInterval(id)
+      window.removeEventListener('verbo:notification-created', refresh)
+      window.removeEventListener('verbo:conversation-updated', refresh)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [token, loadCount])
 
   /* Disarm on a timer rather than on blur: blur never fires if focus never
@@ -174,7 +189,17 @@ export default function NotificationMenu() {
         ref={buttonRef}
         type="button"
         className={`nm-trigger${open ? ' open' : ''}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          /* On a phone the dropdown is a cramped card over the page; the full
+             Notifications page is the better screen, so the bell goes there.
+             Same breakpoint as mobile.css. */
+          if (window.matchMedia?.('(max-width: 767px)').matches) {
+            setOpen(false)
+            navigate('/notifications')
+            return
+          }
+          setOpen((v) => !v)
+        }}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
@@ -232,7 +257,6 @@ export default function NotificationMenu() {
                   prefix="nm"
                   category={n.category}
                   photoUrl={n.actor_photo_url}
-                  name={n.actor?.name}
                 />
                 <span className="nm-body">
                   <span className="nm-item-title">{n.title}</span>

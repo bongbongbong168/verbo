@@ -1,4 +1,12 @@
-/* Phone layer. Imported after fonts.css so it wins on equal specificity.
+/* EVERY SELECTOR HERE STARTS WITH `html `, and that is load-bearing. Page
+   stylesheets are lazy chunks that load AFTER this file, so at equal
+   specificity the page won and many phone rules silently did nothing (the
+   190px dashboard cards, the 32px quest ⋯, the Read pill row, the podcast
+   row that scrolled the page sideways). The extra type selector makes every
+   rule here outrank its page rule regardless of load order. Keep it on any
+   rule you add.
+
+   Phone layer. Imported after fonts.css so it wins on equal specificity.
    Everything here is inside a `max-width: 767px` query — the desktop app is
    untouched.
 
@@ -18,7 +26,7 @@
    767px block they started in. The gutter comes in with them; at this width it
    is the difference between a usable panel and a sliver. */
 @media (max-width: 1100px) {
-  .ms-page {
+  html .ms-page {
     padding-left: 24px;
     padding-right: 24px;
   }
@@ -34,13 +42,13 @@
 
      `:has()` is doing the work. Unsupported browsers simply keep the stacked
      behaviour, which is the layout as it was rather than a broken one. */
-  .ms-layout {
+  html .ms-layout {
     grid-template-columns: minmax(0, 1fr) !important;
     display: block;
   }
 
   /* Nothing open: the empty chat pane is not worth a screen. */
-  .ms-chat:has(.ms-empty-chat) {
+  html .ms-chat:has(.ms-empty-chat) {
     display: none;
   }
 
@@ -49,12 +57,12 @@
      CSS forbids nesting :has() inside :has(), so the obvious
      `:has(.ms-chat:not(:has(...)))` is an INVALID selector and silently does
      nothing. This is a single :has() and actually applies. */
-  .ms-layout:has(.ms-thread.active) .ms-list-panel {
+  html .ms-layout:has(.ms-thread.active) .ms-list-panel {
     display: none;
   }
 
   /* The way back, since the list is now hidden. */
-  .ms-back {
+  html .ms-back {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -64,13 +72,13 @@
     padding: 0;
     margin-right: 2px;
     border: 1px solid #e7e3f6;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #fff;
     color: #1c1730;
     cursor: pointer;
   }
 
-  .ms-back svg {
+  html .ms-back svg {
     width: 17px;
     height: 17px;
   }
@@ -128,24 +136,24 @@
      zooms back out — which is why a form can leave you stranded at 150% with
      the layout off screen. 16px is the threshold, so every field gets it.
      `max-width: 100%` stops a fixed-width input widening the page. */
-  input,
-  select,
-  textarea {
+  html input,
+  html select,
+  html textarea {
     font-size: 16px;
     max-width: 100%;
   }
 
   /* The grey flash on tap is a browser default that reads as a web page. Real
      controls keep their own :active styling. */
-  * {
+  html * {
     -webkit-tap-highlight-color: transparent;
   }
 
   /* An image or table wider than the phone drags the whole layout sideways,
      and horizontal page scroll is the other big "not an app" tell. */
-  img,
-  video,
-  canvas {
+  html img,
+  html video,
+  html canvas {
     max-width: 100%;
     height: auto;
   }
@@ -162,45 +170,32 @@
      exactly like a page that is handled. Five pages were keeping their full
      desktop gutter on a phone. When adding a page here, copy its root class out
      of the JSX rather than guessing it from the prefix. */
-  .db,
-  .rd,
-  .pc,
-  /* The episode page. `.pc` above is the podcast LIST; this is the reader, and
-     the two are different containers. Left off, its card measured 195px inside
-     a 375px viewport and the title ran out past the card's edge. */
-  .pe,
-  .sc,
-  .sd,
-  .ft,
-  /* The tutor profile page. Missing from this list, it kept its 90px desktop
-     gutters on a 390px phone — 180px of padding left a 210px column. */
-  .td,
-  .cd,
-  .ck,
-  .bo-page,
-  .ms-page,
-  .vb,
-  .nt,
-  .pf,
-  .se,
-  .cl,
-  .st,
-  /* The level page, and the same omission as `.td` above: left off this list it
-     kept the 90px desktop gutter on a 352px screen, so 180px of padding left
-     the hero 172px to stand in — a portrait sliver with its title broken to one
-     word a line. */
-  .sl,
-  .un,
-  .qp-page,
-  .up,
-  /* Pro checkout, root `.uc` in UpgradeCheckout.jsx. */
-  .uc,
-  /* Tutor verification: the application and the admin review queue. Both
-     carry the 90px desktop gutter, so both belong here — checked against the
-     JSX root class, not guessed from the prefix. */
-  .bt,
-  .ta,
-  .ss {
+  html .db,
+  html .rd,
+  html .pc,
+  html .pe,
+  html .sc,
+  html .sd,
+  html .ft,
+  html .td,
+  html .cd,
+  html .ck,
+  html .bo-page,
+  html .ms-page,
+  html .vb,
+  html .nt,
+  html .pf,
+  html .se,
+  html .cl,
+  html .st,
+  html .sl,
+  html .un,
+  html .qp-page,
+  html .up,
+  html .uc,
+  html .bt,
+  html .ta,
+  html .ss {
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
@@ -208,28 +203,21 @@
   /* ---- multi-column bodies collapse ----
      The app's two-panel pages are all built on the same 749fr / 420fr split.
      None of them fit side by side on a phone. */
-  .db-body,
-  .pf-body,
-  .ft-layout,
-  /* The tutor profile page. Missed in the first pass, which is why its right
-     rail (the video / price / Lessons cards) still sat at desktop coordinates
-     and pushed 20px off the side of the screen. */
-  .td-layout,
-  .ck-grid,
-  /* `.ms-panels` was listed here and matches nothing — Messages' wrapper is
-     `.ms-layout`, and it gets its own one-panel-at-a-time treatment further
-     down. Removed rather than corrected, so there is exactly one place that
-     decides how that page behaves on a phone. */
-  .un-layout,
-  .sd-layout,
-  .ss-layout {
+  html .db-body,
+  html .pf-body,
+  html .ft-layout,
+  html .td-layout,
+  html .ck-grid,
+  html .un-layout,
+  html .sd-layout,
+  html .ss-layout {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
   /* The desktop column gutter became a 26px vertical break once the dashboard
      stacked on a phone, leaving the continuation shelf needlessly far below
      the daily plan. Keep a small, deliberate separation instead. */
-  .db-body {
+  html .db-body {
     row-gap: 12px;
   }
 
@@ -256,13 +244,13 @@
   /* Continue-learning is the first useful decision after the dashboard hero.
      Move its panel ahead of the rail so it does not sit below the daily quests
      on a phone. Desktop keeps the measured two-column arrangement. */
-  .db-panel {
+  html .db-panel {
     order: -3;
   }
 
   /* The Dashboard's rail holds My Learning, activity and daily quests. It
      follows the continuation shelf in the phone reading order. */
-  .db-rail {
+  html .db-rail {
     order: -2;
   }
 
@@ -271,36 +259,36 @@
      lift price and booking above the résumé and reviews, not above the person.
      (An earlier pass put the booking card at the very top, which answered
      "how much" before "who", and read like a checkout for a stranger.) */
-  .td-profile {
+  html .td-profile {
     order: -4;
   }
-  .td-stats {
+  html .td-stats {
     order: -3;
   }
 
   /* The header: avatar and name share the top row and the actions drop to
      their own row beneath. Beside the name they squeezed it into a 90px
      column, so "Xu Jiayin" broke over two lines and the badge fell under it. */
-  .td-profile-head {
+  html .td-profile-head {
     flex-wrap: wrap;
   }
-  .td-ident {
+  html .td-ident {
     flex: 1;
     min-width: 0;
   }
-  .td-name {
+  html .td-name {
     font-size: 1.5rem;
     flex-wrap: wrap;
   }
-  .td-head-actions {
+  html .td-head-actions {
     order: 3;
     width: 100%;
     justify-content: flex-end;
   }
-  .td-hire {
+  html .td-hire {
     order: -2;
   }
-  .td-lessons {
+  html .td-lessons {
     order: -1;
   }
 
@@ -313,13 +301,13 @@
   /* Explicit grid placement is a desktop instruction. Left in place it fights
      `order` — the browser honours the row/column coordinates and ignores the
      ordering — so the single-column stack has to be freed from it first. */
-  .td-profile,
-  .td-stats,
-  .td-resume,
-  .td-reviews,
-  .td-similar,
-  .td-hire,
-  .td-lessons {
+  html .td-profile,
+  html .td-stats,
+  html .td-resume,
+  html .td-reviews,
+  html .td-similar,
+  html .td-hire,
+  html .td-lessons {
     grid-column: auto !important;
     grid-row: auto !important;
   }
@@ -331,25 +319,25 @@
      Measured at 2.27 screens down, below the results it was meant to preview.
      Hidden rather than reordered: there is nothing here a phone user can reach
      that the card above and the profile behind it do not already give them. */
-  .ft-side {
+  html .ft-side {
     display: none !important;
   }
 
   /* A sticky right rail becomes a block that scrolls with everything else —
      pinned to a viewport this short, it would cover the content. */
-  .td-side,
-  .pf-side,
-  .un-aside,
-  .sd-aside,
-  .ss-aside {
+  html .td-side,
+  html .pf-side,
+  html .un-aside,
+  html .sd-aside,
+  html .ss-aside {
     position: static !important;
     width: auto !important;
   }
 
   /* Fixed panel heights are a desktop affordance: two columns that scroll
      independently. On one narrow column the page itself is the scroller. */
-  .ms-list,
-  .ms-thread {
+  html .ms-list,
+  html .ms-thread {
     height: auto !important;
     max-height: none !important;
   }
@@ -357,14 +345,14 @@
   /* ---- dialogs become sheets ----
      A centred 452px card floating on a 390px screen reads as a web modal. Full
      width, anchored to the bottom, is what a phone does. */
-  .bk-scrim,
-  .cx-scrim {
+  html .bk-scrim,
+  html .cx-scrim {
     align-items: flex-end;
     padding: 0;
   }
 
-  .bk,
-  .cx {
+  html .bk,
+  html .cx {
     width: 100%;
     max-height: 92dvh;
     border-radius: 20px 20px 0 0;
@@ -388,7 +376,10 @@
      card shadows breathe past the page gutter. Against a 16px gutter they
      reach 8px past the viewport. Re-cut to the gutter so the bleed still
      exists but ends exactly at the edge. */
-  .pc-row {
+  /* `.pc` prefix: Podcast.css is a lazy chunk loaded AFTER this file, so at
+     equal specificity its -24px margin won and the row ran 8px past a 375px
+     screen, giving the whole page a sideways scroll. */
+  html .pc .pc-row {
     padding-left: 16px;
     padding-right: 16px;
     margin-left: -16px;
@@ -397,8 +388,8 @@
 
   /* Find Tutor and Scan: a search field plus two selects on one unbreakable
      row. `flex-shrink: 0` is what pinned them at full desktop width. */
-  .ft-header-controls,
-  .sc-header-controls {
+  html .ft-header-controls,
+  html .sc-header-controls {
     flex-wrap: wrap;
     flex-shrink: 1;
     gap: 0.6rem;
@@ -406,14 +397,14 @@
     min-width: 0;
   }
 
-  .ft-header-controls > *,
-  .sc-header-controls > * {
+  html .ft-header-controls > *,
+  html .sc-header-controls > * {
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  .ft-header,
-  .sc-header {
+  html .ft-header,
+  html .sc-header {
     flex-wrap: wrap;
     gap: 0.7rem;
   }
@@ -426,7 +417,7 @@
      fade out below, so there is no edge to see. (`clip`, not `hidden`: with
      `hidden` the other axis computes to `auto` and would clip anyway.)
      Full bleed, so that side clip is the screen edge, never a visible box. */
-  .st-stage {
+  html .st-stage {
     overflow: visible;
     overflow-x: clip;
     box-sizing: content-box;
@@ -438,47 +429,47 @@
 
   /* 35% of the stage: a touch under the 38% that read too big, still above
      the desktop 33%. */
-  .st-book {
+  html .st-book {
     width: min(250px, 35%);
   }
 
   /* Arrows back, smaller: 30px circles and a slimmer dot pill, so the bar
      reads as a quiet control under the books rather than a second toolbar.
      Lifted above the books so a shadow never sits over it. */
-  .st-controls {
+  html .st-controls {
     position: relative;
     z-index: 40;
     gap: 0.6rem;
   }
 
-  .st-arrow {
+  html .st-arrow {
     width: 30px;
     height: 30px;
   }
 
-  .st-dots {
+  html .st-dots {
     gap: 0.45rem;
     padding: 0.4rem 0.7rem;
   }
   /* The HSK / Daily use switch was desktop-sized (1rem label, 1.8rem pads)
      and ran half the screen wide. Same pill, smaller; the cap-band pair is
      kept as em so the label stays centred at the new size. */
-  .st-toggle {
+  html .st-toggle {
     border-radius: 12px;
     padding: 3px;
   }
 
-  .st-toggle-item {
-    border-radius: 9px;
+  html .st-toggle-item {
+    border-radius: 8px;
     font-size: 0.88rem;
     padding: calc(0.45rem - 0.076em) 1.15rem calc(0.45rem + 0.076em);
   }
 
-  .st-active-title {
+  html .st-active-title {
     font-size: 1.55rem;
   }
 
-  .st-active-description {
+  html .st-active-description {
     font-size: 1rem;
     line-height: 1.5;
   }
@@ -492,22 +483,22 @@
   /* ---- Find Tutor ---- */
   /* The tools wrapped onto their own line and sat left, stranded under the
      search field. Pushed back to the right where they live everywhere else. */
-  .ft-header-controls {
+  html .ft-header-controls {
     justify-content: flex-end;
   }
 
-  .ft-search {
+  html .ft-search {
     flex: 1 1 100%;
   }
 
   /* Each pill was taking a full line — three stacked rows to say "Chinese,
      Availability, Price". They flow now, two to a row. */
-  .ft-filterbar {
+  html .ft-filterbar {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .ft-pill {
+  html .ft-pill {
     flex: 0 1 auto;
   }
 
@@ -516,27 +507,27 @@
   /* Compact tutor card: reported too big. Smaller pads and photo, a smaller
      name, the bio clamped to two lines (the profile has the rest), and the
      meta lines one step down. */
-  .ft-card {
+  html .ft-card {
     gap: 0.75rem;
     padding: 0.85rem;
   }
 
-  .ft-card-photo,
-  .ft-card-photo-placeholder {
+  html .ft-card-photo,
+  html .ft-card-photo-placeholder {
     width: 72px;
     height: 86px;
     min-height: 0;
   }
 
-  .ft-card-name {
+  html .ft-card-name {
     font-size: 1.1rem;
   }
 
-  .ft-card-rate {
+  html .ft-card-rate {
     font-size: 0.82rem;
   }
 
-  .ft-card-bio {
+  html .ft-card-bio {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -546,18 +537,18 @@
     line-height: 1.4;
   }
 
-  .ft-meta {
+  html .ft-meta {
     gap: 0.25rem;
     margin-bottom: 0.4rem;
   }
 
   /* 0.76rem; the glyph drops to 14px and its cap-band nudge is rescaled from
      the desktop 8.917px (at 0.84rem) to 8.07px, less half the mark. */
-  .ft-meta-row {
+  html .ft-meta-row {
     font-size: 0.76rem;
   }
 
-  .ft-meta-row svg {
+  html .ft-meta-row svg {
     width: 14px;
     height: 14px;
     margin-top: 1.07px;
@@ -583,14 +574,14 @@
      rows, which pushed the title down and made the card look cut off.
      310 - 28 - 135 - 14 = 133px, enough for Unit and HSK to sit side by side
      as the pair they are meant to be. */
-  .db-pickup > .db-study {
+  html .db-pickup > .db-study {
     flex: 0 0 310px;
     width: 310px;
     min-width: 310px;
   }
 
 
-  .db-pickup > .db-pod {
+  html .db-pickup > .db-pod {
     flex: 0 0 190px;
     width: 190px;
     min-width: 190px;
@@ -602,7 +593,17 @@
      390px phone is a 113px card: narrower than its own cover, with the title
      broken to four lines. Any new card type added to this row needs a width
      here, or it inherits that same 3-up maths. */
-  .db-pickup > .db-read-tile {
+  html .db-pickup > .db-read-tile {
+    flex: 0 0 190px;
+    width: 190px;
+    min-width: 190px;
+  }
+
+  /* Teachers and Podcasts take the same 190px as the pick-up cards above
+     them. Dashboard.css sizes them at 74% of the row, which is 208px on one
+     phone and something else on the next (Safari's width differs), so the
+     sections never matched. `.db-pickup` is excluded: it has its own widths. */
+  html .db-grid3 > * {
     flex: 0 0 190px;
     width: 190px;
     min-width: 190px;
@@ -616,25 +617,25 @@
   /* Top Reads rows: the panel leaves ~250px, so the desktop 116px cover left
      the text 87px wide. A smaller cover and a tighter button reserve give it
      back, and the button sits tighter to the corner. */
-  .db-read {
+  html .db-read {
     gap: 10px;
     padding: 8px 40px 8px 8px;
   }
 
-  .db-read-thumb {
+  html .db-read-thumb {
     width: 84px;
     height: 68px;
   }
 
-  .db-read-thumb .ac-glyph {
+  html .db-read-thumb .ac-glyph {
     font-size: 2.6rem;
   }
 
-  .db-read-wrap > .shb {
+  html .db-read-wrap > .shb {
     right: 8px;
   }
 
-  .db-read-tile-title {
+  html .db-read-tile-title {
     /* 4.6em, not the 3.9 that three lines actually measure. The title fades
        out over its bottom 10px, so a box sized to exactly three lines puts the
        last one INSIDE the fade — "(dinner table)" came out visibly dimmer than
@@ -646,7 +647,7 @@
 
   /* ---- Dashboard: hero ----
      253px of an 844px screen was going on the greeting before any content. */
-  .db-hero {
+  html .db-hero {
     /* Compact: 18/16 pads, a 20px corner and 1.4rem below. It was reported
        "too big" at 22/18 with a 1.35rem greeting and a full-size button. */
     padding: 18px 16px;
@@ -656,7 +657,7 @@
 
   /* .db-greeting, not .db-greet - an earlier attempt used the wrong class and
      silently did nothing. */
-  .db-greeting {
+  html .db-greeting {
     font-size: 1.15rem;
     margin-bottom: 0.5rem;
     /* The badge is absolutely positioned top-right, so the greeting needs a
@@ -664,28 +665,28 @@
     padding-right: 112px;
   }
 
-  .db-quote-chinese {
+  html .db-quote-chinese {
     font-size: 0.88rem;
   }
 
-  .db-quote-english {
+  html .db-quote-english {
     font-size: 0.78rem;
     margin-bottom: 0.9rem;
   }
 
-  .db-quote-empty {
+  html .db-quote-empty {
     margin-bottom: 0.9rem;
   }
 
   /* Same pill, smaller. The 1.5px cap-band pair is kept so the label stays
      centred; the pads shrink around it. */
-  .db-btn-cta {
+  html .db-btn-cta {
     font-size: 0.82rem;
     padding: calc(0.5rem - 1.5px) 1.1rem calc(0.5rem + 1.5px);
     border-radius: 16px;
   }
   /* Smaller and tucked in, so it clears the greeting beneath it. */
-  .db-streak-badge {
+  html .db-streak-badge {
     top: 12px;
     right: 12px;
     font-size: 0.75rem;
@@ -696,7 +697,9 @@
      22px is a comfortable pointer target and a poor thumb one, and this is the
      only way into changing a quest. The glyph stays the same size; the box
      around it grows and tucks into the tile's corner so the row does not. */
-  .db-goal-more {
+  /* `.db` prefix: Dashboard.css is a lazy chunk loaded after this file, so the
+     bare selector lost and the button stayed 22px on a phone. */
+  html .db .db-goal-more {
     top: 3px;
     right: 3px;
     width: 32px;
@@ -704,7 +707,7 @@
   }
 
   /* The reserve has to grow with it, or a long label runs under the button. */
-  .db-goal-label {
+  html .db-goal-label {
     padding-right: 30px;
   }
 
@@ -722,28 +725,28 @@
      line. Now one slim header row (a smaller profile pill, so the name keeps
      the room), a stacked context card with the link under it, and
      smaller composer buttons. */
-  .ms-chat-head {
+  html .ms-chat-head {
     gap: 0.6rem;
     padding: 0.7rem 0.85rem;
   }
 
-  .ms-avatar-lg {
+  html .ms-avatar-lg {
     width: 38px;
     height: 38px;
-    border-radius: 11px;
+    border-radius: 12px;
     font-size: 0.95rem;
   }
 
-  .ms-chat-who {
+  html .ms-chat-who {
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  .ms-chat-name {
+  html .ms-chat-name {
     font-size: 1.02rem;
   }
 
-  .ms-chat-role {
+  html .ms-chat-role {
     font-size: 0.74rem;
     white-space: nowrap;
   }
@@ -752,59 +755,59 @@
      fixed 420px+ panel (which left most of it empty with two threads), a
      slimmer head, and tighter rows with a smaller avatar. A long group name
      ellipses on one line so every row is the same height. */
-  .ms-list-panel {
+  html .ms-list-panel {
     height: auto;
     min-height: 0;
     max-height: calc(var(--app-vh) - 200px);
   }
 
-  .ms-list-head {
+  html .ms-list-head {
     gap: 0.6rem;
     padding: 0.8rem 0.85rem 0.6rem;
   }
 
-  .ms-h2 {
+  html .ms-h2 {
     font-size: 1.1rem;
   }
 
-  .ms-search {
+  html .ms-search {
     padding: 0.35rem 0.7rem;
   }
 
-  .ms-search input {
+  html .ms-search input {
     font-size: 0.8rem;
   }
 
-  .ms-thread {
+  html .ms-thread {
     gap: 0.65rem;
     padding: 0.6rem 0.85rem;
   }
 
-  .ms-thread .ms-avatar {
+  html .ms-thread .ms-avatar {
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
-  .ms-thread-name {
+  html .ms-thread-name {
     font-size: 0.86rem;
     min-width: 0;
   }
 
-  .ms-thread-name > :first-child {
+  html .ms-thread-name > :first-child {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .ms-profile-btn {
+  html .ms-profile-btn {
     margin-left: auto;
     padding: 0.35rem 0.45rem 0.35rem 0.7rem;
     font-size: 0.74rem;
   }
 
-  .ms-context {
+  html .ms-context {
     flex-direction: column;
     align-items: stretch;
     gap: 0.3rem;
@@ -814,41 +817,41 @@
 
   /* The lesson name is what the card is about: it wraps rather than being
      clamped to "HSK…", and now has the whole width to do it in. */
-  .ms-context-lesson {
+  html .ms-context-lesson {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
     font-size: 0.9rem;
   }
 
-  .ms-context-facts {
+  html .ms-context-facts {
     gap: 0.6rem;
     font-size: 0.74rem;
   }
 
-  .ms-context-link {
+  html .ms-context-link {
     align-self: flex-start;
     margin-left: -0.6rem;
     padding: 0.2rem 0.45rem 0.2rem 0.6rem;
     font-size: 0.74rem;
   }
 
-  .ms-composer {
+  html .ms-composer {
     gap: 0.45rem;
     padding: 0.6rem 0.75rem 0.75rem;
   }
 
-  .ms-composer input {
+  html .ms-composer input {
     padding: 0.55rem 0.9rem;
     font-size: 0.88rem;
   }
 
-  .ms-composer button {
+  html .ms-composer button {
     width: 34px;
     height: 34px;
   }
 
-  .ms-composer svg {
+  html .ms-composer svg {
     width: 15px;
     height: 15px;
   }
@@ -860,8 +863,8 @@
      sat left inside a 358px box — stranded under the search field rather than
      sitting at the right where they are on every other page. It keeps its own
      width, and pushes itself to the end of the wrapped line. */
-  .ft-header-icons,
-  .sc-header-icons {
+  html .ft-header-icons,
+  html .sc-header-icons {
     flex: 0 0 auto !important;
     margin-left: auto;
     justify-content: flex-end;
@@ -878,20 +881,20 @@
      going `static` changed nothing.
 
      Every item is released to auto placement so they stack in source order. */
-  .td-profile,
-  .td-stats,
-  .td-resume,
-  .td-reviews,
-  .td-similar,
-  .td-hire,
-  .td-lessons {
+  html .td-profile,
+  html .td-stats,
+  html .td-resume,
+  html .td-reviews,
+  html .td-similar,
+  html .td-hire,
+  html .td-lessons {
     grid-column: auto !important;
     grid-row: auto !important;
   }
 
   /* The price/video card spanned two rows to match the left column's height —
      meaningless once everything is one column. */
-  .td-hire {
+  html .td-hire {
     align-self: auto !important;
   }
 }
@@ -904,85 +907,44 @@
      Scoped to phones deliberately: on desktop the card is short enough that the
      stretch is not visible, and this is not the moment to move the desktop
      layout around. */
-  .ft-card-frame {
+  html .ft-card-frame {
     align-self: flex-start;
   }
 }
 
 @media (max-width: 767px) {
-  /* ---- Scan: the illustration was sitting on the copy ----
-     `.sc-notebook` is absolutely positioned at z-index 2 with the text at 1, so
-     on a 390px card the 245px artwork covered "Upload a Photo" and most of the
-     sentence under it. On desktop the card is wide enough for both; on a phone
-     the art has to give way, because the words are the part that matters.
-
-     It shrinks, moves to the corner, and drops BEHIND the copy — decoration
-     again rather than an obstruction. */
-  .sc-notebook {
-    width: 112px !important;
-    height: auto !important;
-    right: -6px !important;
-    bottom: -8px !important;
-    top: auto !important;
-    z-index: 1 !important;
-    opacity: 0.9;
-  }
-
-  .sc-upload-content {
-    position: relative;
-    z-index: 3;
-    /* Stops the text running under what is left of the artwork. */
-    padding-right: 96px;
-  }
-
   /* Small banner, matching the Dashboard's compact hero: reported too big at
      2.4rem pads, a 1.6rem title and a full-size button. */
-  .sc-upload-card {
+  html .sc-upload-card {
     padding: 18px 16px;
     margin: 1rem 0 1.4rem;
     border-radius: 20px;
   }
 
-  .sc-upload-title {
+  html .sc-upload-title {
     font-size: 1.15rem;
     margin-bottom: 0.35rem;
   }
 
-  .sc-upload-subtitle {
+  html .sc-upload-subtitle {
     font-size: 0.8rem;
     line-height: 1.45;
   }
 
-  .sc-upload-actions {
+  html .sc-upload-actions {
     margin-top: 0.9rem;
   }
 
-  .sc-upload-actions .sc-btn {
+  html .sc-upload-actions .sc-btn {
     font-size: 0.82rem;
     padding: calc(0.5rem - 1.265px) 1.1rem calc(0.5rem + 1.265px);
     border-radius: 16px;
   }
 
-  /* The book sits INSIDE the card now, centred on its height at the right,
-     instead of hanging off the bottom corner at 90% opacity with a dark
-     swoosh blob showing through behind it. */
-  .sc-notebook {
-    width: 84px !important;
-    right: 16px !important;
-    top: 50% !important;
-    bottom: auto !important;
-    transform: translateY(-50%) rotate(6deg);
-    opacity: 1;
-  }
-
-  .sc-swoosh-small {
-    display: none;
-  }
-
   /* Same stranded-icons problem Find Tutor had. The earlier rule guessed
      `.sc-header-icons`; the class this page actually uses is
      `.sc-topbar-icons`, so it had been doing nothing. */
-  .sc-topbar-icons {
+  html .sc-topbar-icons {
     flex: 0 0 auto !important;
     width: auto !important;
     margin-left: auto;
@@ -998,7 +960,7 @@
 
      Two things were stealing the width: the panel's own 25.6px padding on top
      of the page's 16px gutter, and the thumb itself. Both give some back. */
-  .rd-panel {
+  html .rd-panel {
     padding-left: 12px !important;
     padding-right: 12px !important;
     margin-left: 0 !important;
@@ -1021,7 +983,7 @@
      material in a script whose strokes need room, so the floor is legibility,
      not density. The pinyin above each character rides the same `em`, so it
      scales with it and needs no rule of its own. */
-  .rd-body-cn {
+  html .rd-body-cn {
     font-size: 1.08rem;
     letter-spacing: 0.1em;
     line-height: 1.9;
@@ -1030,7 +992,7 @@
   /* Ruby mode pays twice, once per character and again per word: every token
      is an `inline-flex` box carrying its own side margins, and a Chinese word
      is one or two characters, so those margins land constantly. */
-  .rd-body-ruby .rd-word {
+  html .rd-body-ruby .rd-word {
     margin: 0 0.06em 0.3em;
   }
 
@@ -1040,17 +1002,17 @@
      one of these tokenized surfaces has been changed alone they have drifted
      (the reading-aid switch's cap-band pad, the photo-less tutor cover, the
      two section toggles). One reading experience, one set of numbers. */
-  .pe-transcript {
+  html .pe-transcript {
     font-size: 1.08rem;
     letter-spacing: 0.1em;
     line-height: 1.9;
   }
 
-  .pe-transcript-ruby .pe-word {
+  html .pe-transcript-ruby .pe-word {
     margin: 0 0.06em 0.3em;
   }
 
-  .rd-thumb {
+  html .rd-thumb {
     width: 104px !important;
     min-width: 104px;
     flex: 0 0 104px !important;
@@ -1058,7 +1020,7 @@
 
   /* The featured card leads the page, so it keeps a larger image than the
      rows beneath it — just not one that crowds out its own headline. */
-  .rd-thumb-lg {
+  html .rd-thumb-lg {
     width: 132px !important;
     min-width: 132px;
     flex: 0 0 132px !important;
@@ -1072,32 +1034,32 @@
      clamped to three lines; only the level and reading time stay as chips.
      Doubled class + !important because Read.css's own narrow rule
      (flex-direction: column, a full-width 16:9 thumb) is also !important. */
-  .rd-featured.rd-featured-static {
+  html .rd-featured.rd-featured-static {
     flex-direction: row;
     align-items: center;
     gap: 12px;
     padding: 10px;
     margin-bottom: 0.9rem;
-    border-radius: 14px;
+    border-radius: 16px;
   }
 
-  .rd-featured.rd-featured-static .rd-thumb,
-  .rd-featured.rd-featured-static .rd-thumb-lg {
+  html .rd-featured.rd-featured-static .rd-thumb,
+  html .rd-featured.rd-featured-static .rd-thumb-lg {
     order: -1;
     width: 84px !important;
     min-width: 84px !important;
     height: 68px;
     flex: 0 0 84px !important;
     aspect-ratio: auto;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
-  .rd-featured-static .rd-thumb-date,
-  .rd-featured-static .rd-featured-excerpt {
+  html .rd-featured-static .rd-thumb-date,
+  html .rd-featured-static .rd-featured-excerpt {
     display: none;
   }
 
-  .rd-featured-static .rd-featured-title {
+  html .rd-featured-static .rd-featured-title {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -1107,21 +1069,21 @@
     line-height: 1.3;
   }
 
-  .rd-featured-static .rd-meta {
+  html .rd-featured-static .rd-meta {
     gap: 4px;
   }
 
-  .rd-featured-static .rd-chip:not(.rd-chip-level):not(.rd-chip-time) {
+  html .rd-featured-static .rd-chip:not(.rd-chip-level):not(.rd-chip-time) {
     display: none;
   }
 
-  .rd-featured-static .rd-chip {
+  html .rd-featured-static .rd-chip {
     font-size: 0.66rem;
   }
 
   /* The reading aids: one slim row, not a boxed panel. Switches and the text
      size slider on a single line with no card around them. */
-  .rd-controls {
+  html .rd-controls {
     flex-wrap: nowrap;
     gap: 6px;
     margin-bottom: 0.8rem;
@@ -1130,7 +1092,7 @@
     background: none;
   }
 
-  .rd-size {
+  html .rd-size {
     gap: 4px;
     min-height: 0;
   }
@@ -1139,41 +1101,51 @@
      52px, so on a narrow phone (~330px) it shrinks instead of pushing its
      big "A" past the edge. Below ~36px of slider the row wraps and the
      control moves to its own line, right-aligned. */
-  .rd-controls {
+  html .rd-controls {
     flex-wrap: wrap;
   }
 
   /* The reading-aid switches, a size down on a phone (every page that uses
      ReaderSwitch: Read, Podcast, Study), so Pinyin, Translation and the size
      control share one row. The 0.031em cap-band pair is kept. */
-  .rs-switch {
+  html .rs-switch {
     gap: 0.35rem;
     padding: calc(0.25rem - 0.031em) 0.55rem calc(0.25rem + 0.031em) 0.3rem;
     font-size: 0.76rem;
   }
 
-  .rs-track {
+  /* The translations-left pill beside them takes the same size down. */
+  html .ua-indicator.ua-indicator-reader {
+    /* It wraps onto its own line here, so it cannot stretch to the switches;
+       their height is pinned instead. */
+    min-height: 26px;
+    height: 26px;
+    padding: 0 0.6rem;
+    font-size: 0.76rem;
+  }
+
+  html .rs-track {
     width: 26px;
     height: 16px;
   }
 
-  .rs-knob {
+  html .rs-knob {
     width: 10px;
     height: 10px;
   }
 
-  .rs-switch.on .rs-knob {
+  html .rs-switch.on .rs-knob {
     left: 13px;
   }
 
-  .rd-size {
+  html .rd-size {
     flex: 1 1 0;
     min-width: 58px;
     gap: 3px;
     justify-content: flex-end;
   }
 
-  .rd-size input {
+  html .rd-size input {
     width: auto;
     flex: 1 1 auto;
     min-width: 28px;
@@ -1181,7 +1153,7 @@
   }
 
   /* "Hover a word and press Alt+1" - a phone has neither hover nor Alt. */
-  .rd-reader > .rd-hint {
+  html .rd-reader > .rd-hint {
     display: none;
   }
 
@@ -1200,7 +1172,7 @@
 
      `overflow-x: auto` computes `overflow-y` to `auto` too, which would clip a
      hover lift — harmless on a touch screen, where there is no hover. */
-  .rd-row {
+  html .rd-row {
     display: flex !important;
     gap: 0.8rem;
     overflow-x: auto;
@@ -1211,7 +1183,7 @@
     padding-bottom: 4px;
   }
 
-  .rd-row::-webkit-scrollbar {
+  html .rd-row::-webkit-scrollbar {
     display: none;
   }
 
@@ -1224,29 +1196,65 @@
      desktop 289px, so one page's cards were nearly screen-wide and the
      other's a size smaller. 210 shows a card and a good slice of the next,
      the proportion store and podcast apps use for a browse row. */
-  .rd-row > .rd-tile-wrap,
-  .rd-row > .rd-tile {
+  html .rd-row > .rd-tile-wrap,
+  html .rd-row > .rd-tile {
     flex: 0 0 210px;
     scroll-snap-align: start;
   }
 
-  .pc-row .pc-card {
+  /* `.pc` prefix: Podcast.css loads after this file and its 289px won, so
+     podcast cards were 289 wide beside Read's 210. */
+  html .pc .pc-row .pc-card {
     flex: 0 0 210px;
     height: auto;
     scroll-snap-align: start;
   }
 
-  .pc-card-cover {
+  html .pc .pc-card-cover {
     height: 118px;
   }
 
   /* The description is the thing that made the podcast card tall; at this
      width the title already says what the episode is about. */
-  .pc-row .pc-card-bio {
+  /* Same footprint as a Read shelf card (210 wide, ~240 tall): the language
+     line is dropped and the play button shrinks. Author and play stay. */
+  html .pc .pc-row .pc-card-lang {
     display: none;
   }
 
-  .rd-tile-wrap > .rd-tile {
+  html .pc .pc-row .pc-card {
+    overflow: hidden;
+  }
+
+  /* Edge to edge like the Read card's cover, not inset 12px. */
+  html .pc .pc-row .pc-card-cover {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  html .pc .pc-row .pc-card-title {
+    font-size: 0.98rem;
+  }
+
+  html .pc .pc-row .pc-card-body {
+    padding: 0.6rem 0.8rem 0.7rem;
+  }
+
+  html .pc .pc-row .pc-play-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  html .pc .pc-row .pc-play-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  html .pc .pc-row .pc-card-bio {
+    display: none;
+  }
+
+  html .rd-tile-wrap > .rd-tile {
     width: 100%;
     height: 100%;
   }
@@ -1260,7 +1268,18 @@
      enough that the row can end flush against the edge with nothing to
      suggest more. The gradient only bites where a pill actually reaches the
      edge, so a short row is untouched and needs no overflow test. */
-  .rd-pills {
+  /* `.rd` prefix on both: Read.css is a lazy chunk loaded after this file, so
+     at equal specificity its `flex-wrap: wrap` won and the pills stacked one
+     per line in a 206px column beside Saved. Saved moves above, right-aligned,
+     and the pills take the full width beneath it. */
+  html .rd .rd-bar-right {
+    order: -1;
+    margin-left: auto;
+  }
+
+  html .rd .rd-pills {
+    flex: 1 1 100%;
+    min-width: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
@@ -1272,17 +1291,17 @@
     mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   }
 
-  .rd-pills::-webkit-scrollbar {
+  html .rd-pills::-webkit-scrollbar {
     display: none;
   }
 
-  .rd-pill {
+  html .rd-pill {
     flex: none;
   }
 
   /* Uppercase at 1.05rem wraps EVERYDAY CHINESE onto a second line against the
      View all pill; one step down keeps every shelf heading on one. */
-  .rd-shelf-title {
+  html .rd-shelf-title {
     font-size: 0.95rem;
   }
 }
@@ -1305,8 +1324,8 @@
      is left to fit, and the `.tg` overrides went with it. Only the gutter
      reservation still needs clearing — it was there to leave room for the
      absolute icons, and now only pushes the row off its own right edge. */
-  .pc-topbar,
-  .rd-topbar {
+  html .pc-topbar,
+  html .rd-topbar {
     padding-right: 0 !important;
   }
 
@@ -1314,11 +1333,11 @@
      42px is a comfortable desktop target; on a phone these three sit in a row
      that has to share its width with a real control, so they come down to 36 —
      still above the 32px minimum a fingertip needs. */
-  .rd-topbar-icons,
-  .pc-topbar-icons,
-  .pe-topbar-icons,
-  .ft-header-icons,
-  .sc-topbar-icons {
+  html .rd-topbar-icons,
+  html .pc-topbar-icons,
+  html .pe-topbar-icons,
+  html .ft-header-icons,
+  html .sc-topbar-icons {
     gap: 0.4rem;
     flex: none;
   }
@@ -1327,11 +1346,11 @@
      keeps them. In the wrapped controls row they sat on a line of their own
      under the search field and cost the page ~50px. The title reserves the
      room so it cannot run under them. */
-  .sc-header-row {
+  html .sc-header-row {
     position: relative;
   }
 
-  .sc-header-row .sc-topbar-icons {
+  html .sc-header-row .sc-topbar-icons {
     position: absolute;
     top: 0;
     right: 0;
@@ -1341,15 +1360,15 @@
   /* The WHOLE text block clears the icons, not just the title: the subtitle
      ran full width straight under them and read as jammed into them. It now
      wraps beside them, the Find Tutor header's shape. */
-  .sc-header-text {
+  html .sc-header-text {
     padding-right: 124px;
   }
 
-  .sc-heading {
+  html .sc-heading {
     font-size: 1.5rem;
   }
 
-  .sc-subtitle {
+  html .sc-subtitle {
     font-size: 0.82rem;
     line-height: 1.4;
   }
@@ -1359,9 +1378,9 @@
      buttons at 42px on Scan and the Dashboard — one control at two sizes
      depending on which page you were looking at. The bell's PNG is scaled by
      percentage, so its visible chip follows the box down and stays correct. */
-  .nm-trigger,
-  .mg-trigger,
-  .pm-trigger {
+  html .nm-trigger,
+  html .mg-trigger,
+  html .pm-trigger {
     width: 36px !important;
     height: 36px !important;
   }
@@ -1372,18 +1391,18 @@
      to its right exactly the shape of this cluster. Positioned rather than
      re-parented: they live inside `.ft-header-controls` in the markup, and
      moving them in the DOM would change the desktop layout too. */
-  .ft-header {
+  html .ft-header {
     position: relative;
   }
 
-  .ft-header-icons {
+  html .ft-header-icons {
     position: absolute;
     top: 0;
     right: 0;
   }
 
   /* Keeps a long title or subtitle from running under the cluster above it. */
-  .ft-header > :first-child {
+  html .ft-header > :first-child {
     padding-right: 124px;
   }
 
@@ -1398,15 +1417,15 @@
 
      nth-child(2) and (3) are Shared Users and File Size. Last Modified stays:
      "which scan was that?" is usually answered by when you made it. */
-  .sc-table th:nth-child(2),
-  .sc-table td:nth-child(2),
-  .sc-table th:nth-child(3),
-  .sc-table td:nth-child(3) {
+  html .sc-table th:nth-child(2),
+  html .sc-table td:nth-child(2),
+  html .sc-table th:nth-child(3),
+  html .sc-table td:nth-child(3) {
     display: none;
   }
 
-  .sc-table th,
-  .sc-table td {
+  html .sc-table th,
+  html .sc-table td {
     padding-left: 0.7rem;
     padding-right: 0.7rem;
   }
@@ -1415,7 +1434,7 @@
      `.sb-main` reserves 64px, but that is the bar's own height with no gap, so
      content ended flush against it — the Study page's "HSK 1" heading sat
      directly on the bar. A little breathing room, plus the home indicator. */
-  .sb-main {
+  html .sb-main {
     padding-bottom: calc(64px + 18px + env(safe-area-inset-bottom));
   }
 }
@@ -1429,22 +1448,22 @@
 
      The row wraps now and the code takes a line of its own, which is also
      where it belongs: it is read aloud across a room, so it wants width. */
-  .cl-head {
+  html .cl-head {
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 0.8rem;
   }
 
-  .cl-head-body {
+  html .cl-head-body {
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  .cl-head-chips {
+  html .cl-head-chips {
     flex-wrap: wrap;
   }
 
-  .jc {
+  html .jc {
     flex: 1 1 100%;
     justify-content: space-between;
     box-sizing: border-box;
@@ -1452,7 +1471,7 @@
 
   /* The tab strip can still outgrow a phone once a class has several tabs;
      let it wrap rather than squeezing the last one off the edge. */
-  .cl-tabs {
+  html .cl-tabs {
     flex-wrap: wrap;
   }
 }
@@ -1464,21 +1483,21 @@
   /* Dropdowns begin at their pill's LEFT edge. Right-aligning all of them made
      Availability open underneath the collapsed 76px sidebar and cut off the
      start of every option. */
-  .dd-menu {
+  html .dd-menu {
     left: 0;
     right: auto;
   }
 
   /* Price is the final control on the row and its panel has a fixed 260px
      width, so this one deliberately opens inward from the right edge. */
-  .pr-pop {
+  html .pr-pop {
     left: auto;
     right: 0;
   }
 
   /* And a floor for the narrowest phones, where even an inward-opening 260px
      panel would be wider than the viewport's usable width. */
-  .pr-pop {
+  html .pr-pop {
     width: min(260px, calc(100vw - 32px));
   }
 }
@@ -1489,28 +1508,28 @@
    page root (.sl / .un) so these win over the pages' own narrow rules
    whatever order the stylesheets load in. Cap-band pads kept in em. */
 @media (max-width: 767px) {
-  .sl .sl-hero {
+  html .sl .sl-hero {
     padding: 1rem 1rem;
     border-radius: 16px;
   }
 
-  .sl .sl-hero-pill {
+  html .sl .sl-hero-pill {
     font-size: 0.7rem;
     padding: calc(0.22rem - 0.071em) 0.65rem calc(0.22rem + 0.071em);
     margin-bottom: 0.45rem;
   }
 
-  .sl .sl-hero-title {
+  html .sl .sl-hero-title {
     font-size: 1.45rem;
     margin-bottom: 0.25rem;
   }
 
-  .sl .sl-hero-subtitle {
+  html .sl .sl-hero-subtitle {
     font-size: 0.8rem;
     margin-bottom: 0.7rem;
   }
 
-  .sl .sl-hero-btn {
+  html .sl .sl-hero-btn {
     font-size: 0.82rem;
     padding: calc(0.42rem - 0.086em) 1rem calc(0.42rem + 0.086em);
     box-shadow: 0 3px 0 0 #000;
@@ -1518,7 +1537,7 @@
 
   /* The book art set the banner's height (231px). Smaller, and anchored in
      the corner out of flow so the card sizes to its text. */
-  .sl .sl-hero-art {
+  html .sl .sl-hero-art {
     position: absolute;
     right: 8px;
     bottom: 8px;
@@ -1528,167 +1547,167 @@
     margin: 0;
   }
 
-  .sl .sl-hero-content {
+  html .sl .sl-hero-content {
     max-width: 64%;
   }
 
-  .sl .sl-section-title {
+  html .sl .sl-section-title {
     font-size: 1.4rem;
   }
 
-  .sl .sl-section-subtitle {
+  html .sl .sl-section-subtitle {
     font-size: 0.82rem;
   }
 
-  .sl .sl-panel {
+  html .sl .sl-panel {
     padding: 0.9rem;
   }
 
-  .sl .sl-modules {
+  html .sl .sl-modules {
     gap: 0.85rem;
   }
 
-  .sl .sl-module {
+  html .sl .sl-module {
     gap: 0.5rem;
     padding: 0.8rem 0.95rem;
     box-shadow: 0 3px 0 0 var(--sl-outline);
   }
 
-  .sl .sl-module-label {
+  html .sl .sl-module-label {
     font-size: 1.2rem;
     min-width: 0;
   }
 
-  .sl .sl-module-title {
+  html .sl .sl-module-title {
     font-size: 0.88rem;
   }
 
-  .sl .sl-module-meta {
+  html .sl .sl-module-meta {
     font-size: 0.72rem;
   }
 
-  .un .un-hero {
+  html .un .un-hero {
     padding: 1rem 1rem 1.2rem;
     border-radius: 16px;
     margin-bottom: 1rem;
   }
 
-  .un .un-hero-pills {
+  html .un .un-hero-pills {
     gap: 0.35rem;
     margin-bottom: 0.45rem;
   }
 
-  .un .un-hero-pill {
+  html .un .un-hero-pill {
     font-size: 0.7rem;
     padding: calc(0.22rem - 0.071em) 0.65rem calc(0.22rem + 0.071em);
   }
 
-  .un .un-hero-title {
+  html .un .un-hero-title {
     font-size: 1.45rem;
   }
 
-  .un .un-hero-subtitle {
+  html .un .un-hero-subtitle {
     font-size: 0.8rem;
   }
 
-  .un .un-tabs {
+  html .un .un-tabs {
     gap: 0.45rem;
     padding: 0.55rem;
   }
 
-  .un .un-tab {
+  html .un .un-tab {
     min-width: 0;
     flex: 1 1 28%;
     font-size: 0.8rem;
   }
 
-  .un .un-line {
+  html .un .un-line {
     padding: 1.1rem calc(0.75rem + 32px + 0.6rem) 0.8rem 1rem;
-    border-radius: 10px;
+    border-radius: 12px;
   }
 
-  .un .un-line-speaker {
+  html .un .un-line-speaker {
     top: -12px;
     left: 12px;
     font-size: 0.72rem;
     padding: 0.15rem 0.6rem;
   }
 
-  .un .un-line-chinese {
+  html .un .un-line-chinese {
     font-size: 1.15rem;
     letter-spacing: 0.08em;
   }
 
-  .un .un-line-pinyin,
-  .un .un-line-english {
+  html .un .un-line-pinyin,
+  html .un .un-line-english {
     font-size: 0.76rem;
   }
 
   /* Grammar and culture: the desktop 2rem titles and 1.75rem card pads. */
-  .un .un-grammar {
+  html .un .un-grammar {
     padding: 0.9rem;
     gap: 1.4rem;
   }
 
-  .un .un-grammar-item {
+  html .un .un-grammar-item {
     gap: 0.8rem;
   }
 
-  .un .un-grammar-head {
+  html .un .un-grammar-head {
     gap: 0.7rem;
   }
 
-  .un .un-grammar-num {
+  html .un .un-grammar-num {
     width: 34px;
     height: 34px;
     border-radius: 8px;
     font-size: 1rem;
   }
 
-  .un .un-grammar-title,
-  .un .un-grammar-structure {
+  html .un .un-grammar-title,
+  html .un .un-grammar-structure {
     font-size: 1.15rem;
   }
 
-  .un .un-grammar-card {
+  html .un .un-grammar-card {
     padding: 0.9rem 1rem;
     border-radius: 12px;
   }
 
-  .un .un-grammar-desc {
+  html .un .un-grammar-desc {
     font-size: 0.88rem;
   }
 
-  .un .un-grammar-tag {
+  html .un .un-grammar-tag {
     font-size: 0.8rem;
   }
 
-  .un .un-grammar-ex-hanzi {
+  html .un .un-grammar-ex-hanzi {
     font-size: 1rem;
   }
 
-  .un .un-grammar-ex-pinyin,
-  .un .un-grammar-ex-en {
+  html .un .un-grammar-ex-pinyin,
+  html .un .un-grammar-ex-en {
     font-size: 0.82rem;
   }
 
-  .un .un-cu-panel {
+  html .un .un-cu-panel {
     padding: 0.9rem;
   }
 
-  .un .un-cu-card {
-    border-radius: 14px;
+  html .un .un-cu-card {
+    border-radius: 16px;
     padding: 3px 3px 18px;
   }
 
-  .un .un-cu-top {
+  html .un .un-cu-top {
     padding: 0.8rem 0.8rem 0.6rem;
   }
   /* Vocabulary row as a GRID: number, word and pinyin on the left, the three
      controls in a fixed cluster on the right, the meaning on its own line
      under the word. As a wrapping flex row the speaker button fell onto a
      line by itself on most words, so rows were 2-3 lines of stray buttons. */
-  .un .un-vocab-row {
+  html .un .un-vocab-row {
     display: grid;
     grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
     grid-template-areas:
@@ -1700,7 +1719,7 @@
     padding: 0.6rem 0.8rem;
   }
 
-  .un .un-vocab-index {
+  html .un .un-vocab-index {
     grid-area: idx;
     min-width: 0;
     font-size: 0.78rem;
@@ -1708,13 +1727,13 @@
 
   /* Pinyin sits beside the hanzi and ellipses before it can push the
      buttons. */
-  .un .un-vocab-hanzi {
+  html .un .un-vocab-hanzi {
     grid-area: word;
     justify-self: start;
     font-size: 1.2rem;
   }
 
-  .un .un-vocab-pinyin {
+  html .un .un-vocab-pinyin {
     grid-area: py;
     min-width: 0;
     overflow: hidden;
@@ -1723,55 +1742,55 @@
     font-size: 0.72rem;
   }
 
-  .un .un-vocab-translation {
+  html .un .un-vocab-translation {
     grid-area: mean;
     text-align: left;
     font-size: 0.8rem;
   }
 
-  .un .un-vocab-row .un-explain-btn {
+  html .un .un-vocab-row .un-explain-btn {
     grid-area: explain;
     font-size: 0.72rem;
     padding: calc(0.35rem - 0.071em) 0.6rem calc(0.35rem + 0.071em);
     border-radius: 8px;
   }
 
-  .un .un-vocab-row .un-save-btn {
+  html .un .un-vocab-row .un-save-btn {
     grid-area: save;
     width: 30px;
     height: 30px;
     border-radius: 8px;
   }
 
-  .un .un-vocab-row .un-speak-btn {
+  html .un .un-vocab-row .un-speak-btn {
     grid-area: say;
     width: 30px;
     height: 30px;
     border-radius: 8px;
   }
-  .un .un-reading-panel {
+  html .un .un-reading-panel {
     padding: 0.85rem;
   }
 
-  .un .un-text-pill {
+  html .un .un-text-pill {
     font-size: 0.78rem;
     padding: calc(0.4rem - 0.076em) 0.9rem calc(0.4rem + 0.076em);
   }
   /* Quiz page: answer rows 60px -> 46px, tighter gaps; the back link one
      line with an ellipsis instead of running off the screen. */
-  .qp-page .qp-option {
+  html .qp-page .qp-option {
     min-height: 46px;
     gap: 0.65rem;
     padding: 0.45rem 0.8rem;
     font-size: 0.88rem;
   }
 
-  .qp-page .qp-options {
+  html .qp-page .qp-options {
     gap: 0.55rem;
     margin-top: 1.1rem;
   }
 
-  .qp-page .qp-back {
+  html .qp-page .qp-back {
     max-width: 100%;
     margin-bottom: 0.7rem;
     font-size: 0.82rem;
@@ -1781,46 +1800,486 @@
   /* Daily Use: two small cards a row, not one screen-wide card with a 190px
      photo. DailyUseList.css's own narrow rule forces one column at (0,1,0);
      `.st .du-grid` outranks it whatever order the sheets load in. */
-  .st .du-grid {
+  html .st .du-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .st .du-card-badge {
+  html .st .du-card-badge {
     left: 6px;
     top: 6px;
     font-size: 0.58rem;
     padding: 2px 6px;
   }
 
-  .st .du-card-glyph {
+  html .st .du-card-glyph {
     font-size: 2.8rem;
   }
 
-  .st .du-card-body {
+  html .st .du-card-body {
     padding: 0.6rem 0.65rem 0.7rem;
   }
 
-  .st .du-card-meta {
+  html .st .du-card-meta {
     font-size: 0.66rem;
     margin-bottom: 0.2rem;
   }
 
-  .st .du-card-title {
+  html .st .du-card-title {
     font-size: 0.84rem;
   }
 
-  .st .du-card-reason {
+  html .st .du-card-reason {
     font-size: 0.68rem;
   }
 
-  .st .du-card-count {
+  html .st .du-card-count {
     padding-top: 0.4rem;
     font-size: 0.7rem;
   }
-  .un .un-line-say {
+  html .un .un-line-say {
     right: 0.75rem;
     width: 32px;
     height: 32px;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Text-size sliders are desktop only: a phone already has pinch zoom, and
+     the slider crowded the reading-aid row. Read, Podcast and Scan. */
+  html .rd-size,
+  html .pe-size,
+  html .sd-size {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Thumb-sized tap areas for small controls (audit 2026-09-27, 375px)
+   These were 22-28px tall on a phone: easy for a mouse, easy to miss with a
+   thumb. An invisible ::after grows the touch zone to ~40px WITHOUT changing
+   how the control looks or where anything sits. None of these classes used
+   ::after already (checked); .rd-unsave is already absolutely positioned, so
+   it is a containing block and needs no position of its own.
+   Carousel dots only grow vertically, plus a few px sideways, so a dot's zone
+   never swallows its neighbour's.
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  html .ve-close,
+  html .db-viewall,
+  html .db-activity-range,
+  html .pc-viewall,
+  html .vb-row-speak,
+  html .vb-row-menu,
+  html .sc-row-menu,
+  html .bo-btn,
+  html .rh-dot,
+  html .st-dot {
+    position: relative;
+  }
+
+  html .ve-close::after,
+  html .db-viewall::after,
+  html .db-activity-range::after,
+  html .pc-viewall::after,
+  html .vb-row-speak::after,
+  html .vb-row-menu::after,
+  html .sc-row-menu::after,
+  html .bo-btn::after,
+  html .rd-unsave::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+  }
+
+  html .rh-dot::after,
+  html .st-dot::after {
+    content: '';
+    position: absolute;
+    inset: -16px -3px;
+  }
+
+  html .vb-row-actions {
+    gap: 0.875rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dashboard phone pass (2026-09-27, measured at 375px)
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* Teacher card to the pick-up and podcast cards' 190x238: the cover gives
+     up the 16px the CTA row adds, and every line of the card stays. */
+  html .db-teacher .tm-card {
+    height: 96px;
+  }
+
+  /* "Recommend Teachers" broke onto two lines beside View all. */
+  html .db-section-title {
+    white-space: nowrap;
+    font-size: 1.05rem;
+  }
+
+  /* Top Reads format pills: one swipe row, like Read's topic pills, instead
+     of wrapping to two lines above three rows. */
+  html .db-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  }
+
+  html .db-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  html .db-filter {
+    flex: none;
+  }
+
+  /* Top Reads rows were cramped: a 84px cover left the title 137px, so it
+     broke after two words. Smaller cover, smaller title. */
+  html .db-read {
+    gap: 10px;
+    padding: 8px 38px 8px 8px;
+  }
+
+  html .db-read-thumb {
+    width: 64px;
+    height: 56px;
+  }
+
+  html .db-read-thumb .ac-glyph {
+    font-size: 2rem;
+  }
+
+  html .db-read-title {
+    font-size: 0.86rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Read banner, study slider, Vocabulary Bank (phone pass, 2026-09-27)
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* Read banner: small. Eyebrow, headline and button only; the meta line and
+     the "why" sentence come off, as asked ("eliminate the text if you want"). */
+  html .rh,
+  html .rh.rh-v-week,
+  html .rh.rh-v-pro {
+    padding: 0.95rem 1rem 1rem;
+    border-radius: 16px;
+  }
+
+  html .rh-title {
+    font-size: 1.05rem;
+  }
+
+  html .rh-meta,
+  html .rh-note {
+    display: none;
+  }
+
+  html .rh-cta {
+    font-size: 0.82rem;
+    padding-top: calc(0.45rem - 0.076em);
+    padding-bottom: calc(0.45rem + 0.076em);
+  }
+
+  /* Study carousel controls: a smaller pill and arrows. */
+  html .st-controls {
+    gap: 0.6rem;
+  }
+
+  html .st-arrow {
+    width: 28px;
+    height: 28px;
+  }
+
+  html .st-arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  html .st-dots {
+    gap: 0.4rem;
+    padding: 0.4rem 0.65rem;
+  }
+
+  html .st-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  /* Vocabulary Bank: the intro sentence comes off and the four counters sit
+     on ONE row of small tiles instead of four full-width cards (~400px). */
+  html .vb-lede {
+    display: none;
+  }
+
+  html .vb-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  html .vb-stat {
+    min-height: 0;
+    padding: 8px 6px 9px;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  html .vb-stat-num {
+    font-size: 1.15rem;
+    line-height: 1.1;
+  }
+
+  html .vb-stat-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+    margin-top: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Messages, Bookings, Scan (phone pass, 2026-09-27)
+   --------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* Messages: no box around the thread list. The boxed panel ended halfway
+     down a phone screen and read as a card floating on the page; unboxed, the
+     list simply runs to the bottom navigation. */
+  html .ms-list-panel {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html .ms-list-head {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html .ms-thread {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Bookings: the bell and profile belong at the top right, beside the
+     title, as on every other page. The row wrapped them under the subtitle. */
+  html .bo-head {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  html .bo-head-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  html .bo-tools {
+    flex: none;
+  }
+
+  /* Scan upload banner: small. The illustration and subtitle come off;
+     the title sits left with Add photo on the right, and the monthly
+     meter runs full width beneath. */
+  html .sc-notebook,
+  html .sc-upload-subtitle {
+    display: none;
+  }
+
+  html .sc-upload-card {
+    min-height: 0;
+    height: auto;
+  }
+
+  html .sc-upload-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 12px;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html .sc-upload-actions {
+    display: contents;
+  }
+
+  html .sc-upload-title {
+    width: auto;
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  html .sc-upload-content .sc-btn {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  html .sc-meter {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  /* Settings > Learning chips were 29px tall: fine for a mouse, small for a
+     thumb, and there are ~50 of them in a column. min-height, so the label's
+     own cap-band padding is untouched. */
+  html .lp-chip {
+    min-height: 34px;
+  }
+
+  /* Lesson breadcrumb: one small line. The lesson title is already the
+     heading of the page it opens, so here it may end in an ellipsis. */
+  html .un-breadcrumb {
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    margin-bottom: 1rem;
+    min-width: 0;
+  }
+
+  html .un-breadcrumb > a,
+  html .un-breadcrumb-sep {
+    flex: none;
+  }
+
+  html .un-breadcrumb-current {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Conversation pill and the play / Pinyin / Translation controls on ONE
+     row, as on desktop. They wrapped because the row wanted ~360px against
+     ~310; the pieces shrink rather than any being dropped. */
+  html .un-text-tabs {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+  }
+
+  html .un-text-pill-wrap {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  html .un-text-pill {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+  }
+
+  html .un-aids {
+    flex: none;
+    gap: 4px;
+  }
+
+  html .un-aids .rs-switch {
+    gap: 0.3rem;
+    padding-right: 0.5rem;
+    padding-left: 0.3rem;
+    font-size: 0.72rem;
+  }
+
+  html .un-aids .rs-track {
+    width: 24px;
+    height: 14px;
+  }
+
+  html .un-aids .rs-knob {
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+  }
+
+  html .un-aids .rs-switch.on .rs-knob {
+    left: 12px;
+  }
+
+  /* Level page lesson cards: smaller. Tighter padding and type, and the
+     Done tag moves up beside the lesson number instead of taking a row. */
+  html .sl-module {
+    position: relative;
+    padding: 10px 12px 11px;
+  }
+
+  html .sl-module-label {
+    font-size: 1rem;
+  }
+
+  html .sl-module-divider {
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  html .sl-module-title {
+    font-size: 0.82rem;
+  }
+
+  html .sl-module-meta {
+    font-size: 0.68rem;
+  }
+
+  html .sl-module-check {
+    position: absolute;
+    top: 9px;
+    right: 10px;
+    margin: 0;
+  }
+}
+
+/* Study (HSK carousel) on a phone: the books, their arrows and the level's
+   name sat high with a blank half-screen below. The page becomes a column
+   one screen tall (minus the tab bar) and the carousel group takes the
+   middle of the space under the header. Only when the carousel is showing;
+   the Daily Use list keeps its normal flow. */
+@media (max-width: 767px) {
+  /* The main column becomes a one-screen flex column (its own padding
+     already clears the tab bar), and the page takes whatever height is left
+     after anything above it, like the email banner. A fixed min-height on
+     the page overshot by that banner's height and scrolled. */
+  html .sb-main:has(> .st > .st-stage) {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-height: var(--app-vh);
+  }
+
+  html .st:has(> .st-stage) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    min-height: 0;
+    /* The desktop 126px bottom pad would count as "space below" and push
+       the group high; the main column already clears the tab bar. */
+    padding-bottom: 0;
+  }
+
+  html .st:has(> .st-stage) > .st-stage {
+    margin-top: auto;
+  }
+
+  html .st:has(> .st-stage) > .st-active-meta {
+    margin-bottom: auto;
   }
 }

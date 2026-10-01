@@ -85,7 +85,7 @@
   padding: 1rem 1.1rem 0.9rem;
   background: #fff;
   border: 1px solid #e7e3f6;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 14px 34px rgba(28, 23, 48, 0.14);
   /* Transform-only and fully opaque at frame 0 — see FilterSelect. */
   animation: pr-in 0.13s ease-out;

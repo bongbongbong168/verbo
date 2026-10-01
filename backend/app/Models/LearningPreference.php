@@ -39,8 +39,7 @@ class LearningPreference extends Model
     ];
 
     public const STYLES = [
-        'Podcasts', 'Articles', 'Stories', 'Videos', 'Quizzes', 'Flashcards',
-        'Tutor Lessons',
+        'Podcasts', 'Articles', 'Stories', 'Flashcards',
     ];
 
     /**

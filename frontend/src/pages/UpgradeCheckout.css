@@ -91,7 +91,7 @@
   flex: none;
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--uc-pro);
   color: #fbd36b;
 }
@@ -261,6 +261,9 @@
 }
 
 .uc-cta {
+  /* border-box: as a Link (after paying) the padding was added on top of
+     width: 100% and the button ran past the card. */
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,7 +272,7 @@
   /* Cap-band pair: Hellix 600 sits 0.076em low in its line box. */
   padding: calc(0.8rem - 0.076em) 1.2rem calc(0.8rem + 0.076em);
   border: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--uc-pro);
   color: #fff;
   font-family: inherit;
@@ -365,7 +368,7 @@
   /* Side gutter comes from the shared list in mobile.css. */
   .uc-card {
     padding: 20px;
-    border-radius: 18px;
+    border-radius: 16px;
   }
 }
 
@@ -398,4 +401,84 @@
 
 .uc-fine-gap {
   margin-top: 14px;
+}
+
+/* ---- after paying (SubscriptionSuccess.jsx) ----
+   The checkout card, alone and centred, carrying the state. */
+.uc-done {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.uc .uc-head:has(+ .uc-done) {
+  max-width: 520px;
+}
+
+.uc-done-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--uc-pale);
+  font-size: 0.95rem;
+  color: var(--uc-text);
+}
+
+.uc-done-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--uc-fill);
+}
+
+.uc-done-state.is-ok .uc-done-dot {
+  background: #2f9e62;
+}
+
+.uc-done-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.uc-cta:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.uc-done-back {
+  color: var(--uc-accent);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.uc-done-back:hover {
+  text-decoration: underline;
+}
+
+/* Heading width matched to the narrow success card below it. */
+.uc-head.uc-head-narrow {
+  max-width: 520px;
+}
+
+/* Lesson booked: a green tick disc where the Pro screen has its crown. */
+.ck-done-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #ecf8f0;
+  color: #1f7a45;
+}
+
+.ck-done-icon svg {
+  width: 24px;
+  height: 24px;
 }

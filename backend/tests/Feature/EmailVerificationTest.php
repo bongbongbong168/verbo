@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\EmailCodeNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -41,6 +42,31 @@ class EmailVerificationTest extends TestCase
         $user = User::where('email', 'mei@example.test')->first();
         Notification::assertSentTo($user, EmailCodeNotification::class,
             fn ($n) => $n->purpose === EmailCode::VERIFY);
+    }
+
+    public function test_code_emails_render_html_and_plain_text_for_both_purposes()
+    {
+        config(['mail.default' => 'array']);
+        $user = $this->learner();
+        $transport = Mail::mailer('array')->getSymfonyTransport();
+
+        foreach ([EmailCode::VERIFY, EmailCode::RESET] as $purpose) {
+            $user->notify(new EmailCodeNotification('123456', $purpose));
+        }
+
+        $messages = $transport->messages();
+        $this->assertCount(2, $messages);
+
+        foreach ($messages as $message) {
+            $email = $message->getOriginalMessage();
+            $this->assertStringContainsString('123456', $email->getHtmlBody());
+            $this->assertStringContainsString('123456', $email->getTextBody());
+            $this->assertStringContainsString('Verbo', $email->getHtmlBody());
+        }
+
+        $this->assertStringContainsString('Confirm your email', $messages[0]->getOriginalMessage()->getHtmlBody());
+        $this->assertStringContainsString('Reset your password', $messages[1]->getOriginalMessage()->getHtmlBody());
+        $this->assertStringContainsString('Your password has not changed', $messages[1]->getOriginalMessage()->getTextBody());
     }
 
     /**

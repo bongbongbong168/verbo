@@ -29,6 +29,29 @@ const PLACEHOLDER_STATS = { students: '268', lessons: '1,229', experience: '5y' 
    the entries under it are real rows from the API. */
 const RESUME_SECTIONS = ['Education', 'Certifications']
 
+/* One line icon per specialty (24 grid, 1.8 stroke, currentColor), drawn
+   bare - no chip behind it. Unknown keys fall back to the chat bubble. */
+const SPEC_PATHS = {
+  hsk: 'M3 9.5 12 5l9 4.5-9 4.5L3 9.5ZM7 11.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-4.5M21 9.5V14',
+  conversational: 'M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-4.5 3.5V16.5H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2ZM8 10.5h8M8 13h5',
+  everyday: 'M4 11 12 4.5 20 11M6 9.5V19h12V9.5M10 19v-5h4v5',
+  travel: 'M2.5 13.5 21 6l-3.5 12-5-4.5-4 3v-4.5l9-6.5',
+  pronunciation: 'M12 4v16M8 8v8M16 8v8M4 11v2M20 11v2',
+  grammar: 'M5 4.5h10a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3v-12ZM5 16.5a3 3 0 0 1 3-3h10M9 8.5h5',
+  business: 'M4 8h16v11H4V8ZM9 8V5.5h6V8M4 13h16',
+  exam: 'M7 4.5h10v15H7v-15ZM10 3.5h4v2h-4v-2ZM9.5 12l2 2 3.5-3.5',
+  kids: 'M12 4.5l2.3 4.7 5.2.8-3.8 3.6.9 5.2L12 16.4l-4.6 2.4.9-5.2-3.8-3.6 5.2-.8L12 4.5Z',
+}
+SPEC_PATHS.speaking = SPEC_PATHS.conversational
+
+function SpecialtyIcon({ kind }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={SPEC_PATHS[kind] || SPEC_PATHS.conversational} />
+    </svg>
+  )
+}
+
 const SPECIALTY_BLURBS = {
   hsk: 'Prepare for HSK exams with structured lessons, vocabulary and practice tests.',
   conversational: 'Build fluency through guided conversation and live correction.',
@@ -54,12 +77,6 @@ const shortIntroduction = (tutor) => {
   const text = (tutor.short_bio || tutor.bio || '').trim()
   return text.length > 180 ? `${text.slice(0, 177).trimEnd()}…` : text
 }
-const displayAvailability = (value) => (value || '')
-  .replace(/[()|]/g, '')
-  .replace(/\s*-\s*/g, '–')
-  .replace(/(\bam)\s*–\s*12am\b/gi, '$1–12pm')
-  .replace(/\s{2,}/g, ' ')
-  .trim()
 
 function VerifiedIcon() {
   return (
@@ -249,13 +266,25 @@ export default function TutorProfileDetail() {
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
+  /* The route stays mounted when a "Teacher you may like" card swaps the id,
+     so the page kept its scroll and the new tutor opened at the bottom. */
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
   // Seeded during the first render, so a revisit never flashes a loading state.
   const [tutor, setTutor] = useState(() => readCache(`tutor:${id}`) ?? null)
   const [others, setOthers] = useState(() => {
     const all = readCache('tutors')
-    return all ? all.filter((t) => Number(t.id) !== Number(id)).slice(0, 6) : []
+    return all ? all.filter((t) => Number(t.id) !== Number(id)).slice(0, 12) : []
   })
   const [alreadyBooked, setAlreadyBooked] = useState(false)
+  /* 'Teacher you may like' shows two rows (four cards) at a time and pages
+     with arrows, instead of a long wall of cards. Back to page 1 whenever
+     another tutor's profile opens. */
+  const SIMILAR_PER_PAGE = 4
+  const [similarPage, setSimilarPage] = useState(0)
+  useEffect(() => setSimilarPage(0), [id])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(() => !hasCache(`tutor:${id}`))
 
@@ -322,7 +351,7 @@ export default function TutorProfileDetail() {
          a target — with only a handful of tutors on the platform it still
          shows however many exist, and it fills out on its own as more sign up
          instead of needing this number revisited. */
-      .then((all) => setOthers(all.filter((t) => Number(t.id) !== Number(id)).slice(0, 6)))
+      .then((all) => setOthers(all.filter((t) => Number(t.id) !== Number(id)).slice(0, 12)))
       .catch(() => {})
 
     /* This one needs BOTH — it compares the bookings against this tutor's
@@ -514,9 +543,9 @@ export default function TutorProfileDetail() {
                   <LangIcon /> Teaches in: {teachingLanguages(tutor).join(' · ')}
                 </span>
               )}
-              {tutor.availability && (
+              {tutor.hours?.summary && (
                 <span className="td-meta-row">
-                  <ClockIcon /> Available: {displayAvailability(tutor.availability)}
+                  <ClockIcon /> Available: {tutor.hours.summary}
                 </span>
               )}
             </div>
@@ -559,7 +588,10 @@ export default function TutorProfileDetail() {
                   onClick={() => setAboutExpanded((expanded) => !expanded)}
                   aria-expanded={aboutExpanded}
                 >
-                  {aboutExpanded ? 'Show less' : 'Read more'}
+                  <span>{aboutExpanded ? 'Show less' : 'Read more'}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
                 </button>
               )}
             </section>
@@ -581,12 +613,12 @@ export default function TutorProfileDetail() {
                     <li
                       key={specialty.key}
                       className={'td-spec' + (specialty.main ? ' td-spec-main' : '')}
+                      title={SPECIALTY_BLURBS[specialty.key] || undefined}
                     >
-                      <span className="td-spec-mark" aria-hidden="true"><FocusIcon /></span>
+                      <span className="td-spec-mark" aria-hidden="true"><SpecialtyIcon kind={specialty.key} /></span>
                       <span className="td-spec-body">
                         <span className="td-spec-title">
                           {specialty.label}
-                          {specialty.main && <span className="td-spec-tag">Main</span>}
                         </span>
                         <span className="td-spec-blurb">
                           {SPECIALTY_BLURBS[specialty.key] || 'Chinese lessons tailored to your learning goals.'}
@@ -787,9 +819,36 @@ export default function TutorProfileDetail() {
           {/* ---- similar tutors ---- */}
           {others.length > 0 && (
             <section className="td-similar">
-              <p className="td-sub">Teacher you may like</p>
+              <div className="td-similar-top">
+                <p className="td-sub">Teacher you may like</p>
+                {others.length > SIMILAR_PER_PAGE && (
+                  <div className="td-similar-nav">
+                    <button
+                      type="button"
+                      className="td-similar-arrow"
+                      onClick={() => setSimilarPage((p) => Math.max(0, p - 1))}
+                      disabled={similarPage === 0}
+                      aria-label="Previous teachers"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+                    </button>
+                    <span className="td-similar-count">
+                      {similarPage + 1} / {Math.ceil(others.length / SIMILAR_PER_PAGE)}
+                    </span>
+                    <button
+                      type="button"
+                      className="td-similar-arrow"
+                      onClick={() => setSimilarPage((p) => Math.min(Math.ceil(others.length / SIMILAR_PER_PAGE) - 1, p + 1))}
+                      disabled={(similarPage + 1) * SIMILAR_PER_PAGE >= others.length}
+                      aria-label="Next teachers"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="td-similar-grid">
-                {others.map((t) => (
+                {others.slice(similarPage * SIMILAR_PER_PAGE, (similarPage + 1) * SIMILAR_PER_PAGE).map((t) => (
                   <Link className="td-similar-card" to={`/find-tutor/${t.id}`} key={t.id}>
                     {/* Shared with the Dashboard's teacher card. This used to
                         be `{t.photo_url && <img/>}`, so a tutor with no photo
@@ -826,6 +885,24 @@ export default function TutorProfileDetail() {
                           </span>
                         </span>
                       )}
+                      {/* Rating and price: the two facts someone compares
+                          tutors on. An unrated tutor says so rather than 0. */}
+                      <span className="td-similar-facts">
+                        {t.reviews_avg_rating ? (
+                          <span className="td-similar-rating">
+                            <span aria-hidden="true">★</span> {Number(t.reviews_avg_rating).toFixed(1)}
+                            <em> ({t.reviews_count || 0})</em>
+                          </span>
+                        ) : (
+                          <span className="td-similar-new">New tutor</span>
+                        )}
+                        {/* The cheapest bookable lesson, the same "from" price
+                            the profile's booking card shows, never the typed
+                            Rate field, which can disagree with the real lessons. */}
+                        {t.cheapest_lesson != null && (
+                          <span className="td-similar-price"><em>from </em>${Number(t.cheapest_lesson)}</span>
+                        )}
+                      </span>
                       {t.bio && <span className="td-similar-bio">{t.bio}</span>}
                     </span>
                   </Link>

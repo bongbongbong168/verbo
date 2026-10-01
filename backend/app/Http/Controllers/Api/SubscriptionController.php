@@ -8,8 +8,14 @@ class SubscriptionController extends Controller {
     public function checkout(Request $r, SubscriptionService $s)
     {
         // Only the presentation is chosen by the client — never a price.
-        $data = $r->validate(['ui' => ['nullable', 'in:'.implode(',', SubscriptionService::CHECKOUT_UIS)]]);
-        return $s->checkout($r->user(), $data['ui'] ?? 'hosted');
+        $data = $r->validate(['ui' => ['nullable', 'in:'.implode(',', SubscriptionService::CHECKOUT_UIS)],
+            'interval' => ['nullable', 'in:'.implode(',', SubscriptionService::INTERVALS)]]);
+        return $s->checkout($r->user(), $data['ui'] ?? 'hosted', $data['interval'] ?? 'month');
     }
     public function portal(Request $r, SubscriptionService $s) { return $s->portal($r->user()); }
+    public function confirm(Request $r, SubscriptionService $s)
+    {
+        $data = $r->validate(['session_id' => ['required', 'string', 'max:255']]);
+        return $s->confirm($r->user(), $data['session_id']);
+    }
 }

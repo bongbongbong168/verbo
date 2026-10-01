@@ -33,9 +33,5 @@ class StudyUnitCompletionTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create());
         $this->getJson("/api/study-levels/{$level->id}")->assertJsonPath('units.0.completed', false);
-
-        Sanctum::actingAs($me);
-        $this->deleteJson("/api/study-units/{$one->id}/complete")->assertOk()->assertJsonPath('completed', false);
-        $this->getJson("/api/study-units/{$one->id}")->assertJsonPath('completed', false);
     }
 }

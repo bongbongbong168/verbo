@@ -66,7 +66,16 @@ class PinyinCorrector
             $expected = trim($this->dictionary->pinyinFor($chinese));
 
             if ($expected === '' || !$this->isPinyinFor($next, $expected)) {
-                continue;
+                /* The model often romanises only the QUOTED sentence of a line
+                   like `你可以说：“我想点一碗面。”`, and sometimes gets a whole
+                   syllable wrong there (`Nǐ xiǎng…` for 我想…), which the
+                   exact toneless test above can never catch. So try the
+                   quoted part, and accept a near miss: same syllable count,
+                   most syllables right. */
+                $expected = $this->nearQuoted($line, $next);
+                if ($expected === null) {
+                    continue;
+                }
             }
 
             // Keep any "Pinyin:" label the model wrote, and its punctuation.
@@ -113,6 +122,46 @@ class PinyinCorrector
             },
             $line
         ) ?? $line;
+    }
+
+    /**
+     * The dictionary pinyin of a quoted sentence in `$line` when `$next` is a
+     * near miss for it: no Han in `$next`, the same number of syllables, and
+     * at least two thirds of them equal once tones are stripped. Null when
+     * nothing qualifies - an English line never has matching syllables.
+     */
+    private function nearQuoted(string $line, string $next): ?string
+    {
+        if (trim($next) === '' || preg_match('/['.self::HAN.']/u', $next)) {
+            return null;
+        }
+        preg_match_all('/[“"「『]([^”"」』]+)[”"」』]/u', $line, $quotes);
+        preg_match('/^\s*(?:[A-Za-z]+\s*[:：]\s*)?(.*?)\s*$/u', $next, $m);
+        $written = preg_split('/\s+/u', trim(preg_replace('/[^\p{L}\s]+/u', ' ', $m[1] ?? '')), -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($quotes[1] ?? [] as $quote) {
+            $han = $this->chineseIn($quote);
+            if ($han === '') {
+                continue;
+            }
+            $expected = trim($this->dictionary->pinyinFor($han));
+            $want = preg_split('/\s+/u', $expected, -1, PREG_SPLIT_NO_EMPTY);
+            // Only per-syllable writing can be compared position by position.
+            if (count($want) !== count($written) || count($want) < 3) {
+                continue;
+            }
+            $hits = 0;
+            foreach ($want as $k => $syllable) {
+                if ($this->toneless($syllable) === $this->toneless($written[$k])) {
+                    $hits++;
+                }
+            }
+            if ($hits * 3 >= count($want) * 2) {
+                return $expected;
+            }
+        }
+
+        return null;
     }
 
     /** The Han characters in a line, with everything else dropped. */

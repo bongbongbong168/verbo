@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { useApiData } from '../useApiData'
@@ -10,13 +10,7 @@ import { TRENDING, byTrending } from '../trending'
 import PageTools from '../components/PageTools'
 import MenuDotsIcon from '../components/MenuDotsIcon'
 import TutorMedia from '../components/TutorMedia'
-import questBook from '../assets/quests/book.webp'
-import questBookClosed from '../assets/quests/book-closed.webp'
-import questBookmark from '../assets/quests/bookmark.webp'
-import questCamera from '../assets/quests/camera.webp'
-import questCheck from '../assets/quests/check.webp'
-import questHeadphones from '../assets/quests/headphones.webp'
-import questRefresh from '../assets/quests/refresh.webp'
+import { QUEST_ART } from '../questArt'
 import heroSwoosh from '../assets/dashboard/hero-swoosh-final.png'
 import heroHanzi from '../assets/dashboard/hero-hanzi.png'
 import FlameMark from '../components/FlameMark'
@@ -257,6 +251,106 @@ function whenLabel(iso, endIso) {
   return `${date} · ${time}`
 }
 
+/* The same facts as whenLabel, split for the card's time tile: a small day
+   word over a big clock time. A live session says "Now" with minutes left. */
+function whenParts(iso, endIso) {
+  const at = new Date(iso)
+  const now = new Date()
+  const live = Boolean(endIso && at <= now && new Date(endIso) > now)
+  const day = new Date(at.getFullYear(), at.getMonth(), at.getDate())
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const days = Math.round((day - midnight) / 86400000)
+  const time = at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  return {
+    month: at.toLocaleDateString(undefined, { month: 'short' }),
+    date: at.getDate(),
+    weekday: days === 0 ? 'Today' : days === 1 ? 'Tomorrow'
+      : at.toLocaleDateString(undefined, { weekday: 'short' }),
+    // A session under way says so instead of its (passed) start time.
+    time: live ? whenLabel(iso, endIso) : time,
+    live,
+    today: days === 0,
+  }
+}
+
+const ACTIVITY_RANGES = [7, 14, 30]
+
+/* "Last N days" chip that opens a three-item menu. Closes on outside click
+   and Escape. The open state is a class, not an animation. */
+function RangeMenu({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const away = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    const esc = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  return (
+    <span className="db-range" ref={ref}>
+      <button
+        type="button"
+        className="db-activity-range"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <CalendarIcon /> last {value} days
+      </button>
+      {open && (
+        <span className="db-range-menu" role="listbox" aria-label="Chart range">
+          {ACTIVITY_RANGES.map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="option"
+              aria-selected={n === value}
+              className={'db-range-opt' + (n === value ? ' on' : '')}
+              onClick={() => { onChange(n); setOpen(false) }}
+            >
+              Last {n} days
+            </button>
+          ))}
+        </span>
+      )}
+    </span>
+  )
+}
+
+/* Bars grow up in a wave with a small overshoot. Web Animations, not CSS, so a
+   timer can CANCEL them: in a tab that never composites a grow-from-zero would
+   otherwise sit at zero and report an empty week. cancel() drops straight to
+   the resting (full) height. Skipped under reduced motion. */
+function useBarWave(plotRef, trigger) {
+  useEffect(() => {
+    const plot = plotRef.current
+    if (!plot || !trigger) return undefined
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
+    const bars = [...plot.querySelectorAll('.db-chart-bar')]
+    const step = Math.min(45, 320 / Math.max(1, bars.length))
+    const anims = bars.map((bar, i) =>
+      bar.animate(
+        [
+          { transform: 'scaleY(0)' },
+          { transform: 'scaleY(1.06)', offset: 0.7 },
+          { transform: 'scaleY(1)' },
+        ],
+        { duration: 520, delay: i * step, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', fill: 'backwards' },
+      ),
+    )
+    const backstop = setTimeout(() => anims.forEach((a) => a.cancel()), 520 + bars.length * step + 400)
+    return () => {
+      clearTimeout(backstop)
+      anims.forEach((a) => a.cancel())
+    }
+  }, [plotRef, trigger])
+}
+
 function ChevronRight() {
   return (
     <svg
@@ -286,6 +380,16 @@ function LockIcon() {
     <svg className="db-pod-icon db-pod-icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="5" y="10" width="14" height="10" rx="2" />
       <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
     </svg>
   )
 }
@@ -397,15 +501,6 @@ function GoalMark({ type }) {
    headphones (wide, thin) would otherwise read far larger than the bookmark
    (tall, narrow) though both boxes measure 38. That is why the CSS needs no
    per-mark size and `object-fit` has nothing left to do. */
-const QUEST_ART = {
-  book: questBook,
-  book_closed: questBookClosed,
-  camera: questCamera,
-  check: questCheck,
-  headphones: questHeadphones,
-  refresh: questRefresh,
-  sparkle: questBookmark,
-}
 
 function QuestMark({ quest }) {
   const art = QUEST_ART[quest.mark]
@@ -465,7 +560,7 @@ function QuestRow({ quest, onChange }) {
   }
 
   return (
-    <li className={quest.done ? 'db-goal done' : 'db-goal'}>
+    <li className={quest.done ? 'db-goal done' : 'db-goal live'}>
       <QuestMark quest={quest} />
       <span className="db-goal-label">{quest.label}</span>
       <button
@@ -485,21 +580,26 @@ function QuestRow({ quest, onChange }) {
           what buys the room for the tick beside it. */}
       <span className="db-goal-track">
         <span className="db-goal-fill" style={{ width: `${(quest.progress / quest.target) * 100}%` }} />
-        <span className={'db-goal-count' + (quest.progress / quest.target >= 0.5 ? ' db-goal-count-on-fill' : '')}>
-          {quest.progress} / {quest.target}
-        </span>
       </span>
       {/* Done is a real state read off the count, so the tick is a drawing and
           not a button — there is nothing to claim here (no XP in Verbo) and
           progress cannot be ticked by hand. An empty ring before that reads as
           the thing the bar is filling towards. */}
-      <span className="db-goal-tick" aria-hidden="true">
-        {quest.done && (
+      {/* The count sits OUTSIDE the bar, beside it, dark and always readable
+          (inside, half of "5 / 10" landed on the pale empty part). Once the
+          quest is done the same slot shows the tick. The rail is ~200px, so
+          one slot for both is what leaves the name room. */}
+      {quest.done ? (
+        <span className="db-goal-tick" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12.5 10 17.5 19 7" />
           </svg>
-        )}
-      </span>
+        </span>
+      ) : (
+        <span className="db-goal-num">
+          {quest.progress}/{quest.target}
+        </span>
+      )}
 
       {panel && (
         <div className="db-quest-panel">
@@ -528,8 +628,14 @@ function QuestRow({ quest, onChange }) {
                   disabled={busy}
                   onClick={() => run(() => api.changeQuest(token, quest.id, o.key))}
                 >
+                  {/* The same 3D art as the quest rows: the flat glyphs these
+                      used were deleted, which left the chip empty. */}
                   <span className="db-quest-option-mark">
-                    <GoalMark type={o.mark} />
+                    {QUEST_ART[o.mark] ? (
+                      <img src={QUEST_ART[o.mark]} alt="" className={`db-goal-art-${o.mark}`} />
+                    ) : (
+                      <GoalMark type={o.mark} />
+                    )}
                   </span>
                   <span>
                     <strong>{o.label}</strong>
@@ -594,13 +700,31 @@ function LearningPlanCard({ quests, onQuestChange }) {
   if (!quests) return null
 
   const done = quests.filter((q) => q.done).length
+  /* What is left comes first; finished quests step back under "Done today".
+     Stable within each group, so quests never shuffle among themselves. */
+  const pending = quests.filter((q) => !q.done)
+  const finished = quests.filter((q) => q.done)
+  // A ring around the calendar mark fills with the day's progress.
+  const R = 21
+  const C = 2 * Math.PI * R
 
   return (
     <section className="db-plan">
       <div className="db-goals-head">
         {/* The reference's marked chip beside the title. Drawn rather than a
             fourth 3D file: it names the card, it is not one of the quests. */}
-        <span className="db-quest-badge" aria-hidden="true">
+        <span className="db-quest-badge db-quest-ring" aria-hidden="true">
+          <svg className="db-quest-ring-svg" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r={R} className="db-quest-ring-track" />
+            <circle
+              cx="25"
+              cy="25"
+              r={R}
+              className="db-quest-ring-fill"
+              strokeDasharray={`${(done / quests.length) * C} ${C}`}
+              transform="rotate(-90 25 25)"
+            />
+          </svg>
           <GoalMark type="calendar" />
         </span>
         <div className="db-goals-heading">
@@ -611,12 +735,23 @@ function LearningPlanCard({ quests, onQuestChange }) {
             no XP in Verbo, by decision — so the slot carries the count, which
             the user asked for by name. It warms once the day is cleared. */}
         <span className={done === quests.length ? 'db-goals-count all' : 'db-goals-count'}>
-          {done} / {quests.length}
+          <b>
+            {done}/{quests.length}
+          </b>
+          done
         </span>
       </div>
 
       <ul className="db-goals-list">
-        {quests.map((q) => (
+        {pending.map((q) => (
+          <QuestRow key={q.id} quest={q} onChange={onQuestChange} />
+        ))}
+        {finished.length > 0 && pending.length > 0 && (
+          <li className="db-goals-sep" aria-hidden="true">
+            Done today
+          </li>
+        )}
+        {finished.map((q) => (
           <QuestRow key={q.id} quest={q} onChange={onQuestChange} />
         ))}
       </ul>
@@ -718,27 +853,69 @@ export default function Dashboard() {
      costs one late section instead of a blank screen; cached, a revisit paints
      immediately and refreshes behind. See `dataCache.js`. */
   const quoteQuery = useApiData('quote', () => api.getQuote(token))
-  const tutorQuery = useApiData('tutors', () => api.getTutors(token))
+  /* Home recommends from the learner's saved preferences: tutors and podcasts
+     come back ranked by fit (HomeRecommender), articles from the same
+     recommender the Read page uses. */
+  const tutorQuery = useApiData('rec:tutors', () => api.getRecommendedTutors(token))
   const articleQuery = useApiData('articles', () => api.getArticles(token))
   const podcastQuery = useApiData('podcasts', () => api.getPodcasts(token))
+  const recPodcastQuery = useApiData('rec:podcasts', () => api.getRecommendedPodcasts(token))
+  const recArticleQuery = useApiData('rec:articles', () => api.getRecommendedArticles(token, { limit: 12 }))
   /* The level list is also the only place units_count / units_opened arrive —
      the recent-views payload carries neither, and re-deriving them there would
      be a query per row for numbers already on the wire. */
   const levelQuery = useApiData('study-levels', () => api.getStudyLevels(token))
   const recentQuery = useApiData('recent-views:3', () => api.getRecentViews(token, 3))
-  const activityQuery = useApiData('activity:7', () => api.getActivitySummary(token, 7))
+  /* The chart's range. Remembered per browser (a convenience, so storage
+     failing just falls back to 7). The API clamps to 1..31. */
+  const [activityRange, setActivityRange] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem('db-activity-range'))
+      return ACTIVITY_RANGES.includes(v) ? v : 7
+    } catch {
+      return 7
+    }
+  })
+  const chooseRange = (n) => {
+    setActivityRange(n)
+    try { localStorage.setItem('db-activity-range', String(n)) } catch { /* private mode */ }
+  }
+  const activityQuery = useApiData(`activity:${activityRange}`, () => api.getActivitySummary(token, activityRange))
   const planQuery = useApiData('learning-plan', () => api.getLearningPlan(token))
-  const learningQuery = useApiData('my-learning:3', () => api.getMyLearning(token, 3))
+  const learningQuery = useApiData('my-learning:4', () => api.getMyLearning(token, 4))
 
   const quote = quoteQuery.data ?? null
   const activity = activityQuery.data ?? null
+  const plotRef = useRef(null)
   const asList = (v) => (Array.isArray(v) ? v : EMPTY)
   const tutors = useMemo(() => asList(tutorQuery.data).slice(0, 3), [tutorQuery.data])
   const articles = asList(articleQuery.data)
   const podcasts = asList(podcastQuery.data)
+  // The Podcasts row: ranked for this learner, falling back to newest.
+  const recPodcasts = asList(recPodcastQuery.data).length ? asList(recPodcastQuery.data) : podcasts
   const levels = asList(levelQuery.data)
   const recents = asList(recentQuery.data)
-  const learning = asList(learningQuery.data)
+  const learningAll = asList(learningQuery.data)
+  const learning = learningAll.slice(0, 3)
+  const learningMore = learningAll.length > 3
+  const navigate = useNavigate()
+
+  /* A My Learning card opens the chat the lesson runs in: the tutor's thread
+     for a private lesson, the course's group chat for a course. The href
+     stays as the fallback for a middle-click or a failed open. */
+  async function openLearningChat(e, item) {
+    const chat = item.chat
+    if (!chat?.id || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
+    e.preventDefault()
+    try {
+      const conv = chat.type === 'course'
+        ? await api.openCourseConversation(token, chat.id)
+        : await api.openTutorConversation(token, chat.id)
+      navigate(`/messages?c=${conv.id}`)
+    } catch {
+      navigate('/messages')
+    }
+  }
 
   /* A quest the learner just swapped or retargeted. The server answers with
      the whole updated row, so it is folded over the fetched list rather than
@@ -930,8 +1107,11 @@ export default function Dashboard() {
     // Shared with the Read page, so the same three articles lead in the same
     // order on both — see src/trending.js.
     if (readFilter === TRENDING) return byTrending(articles).slice(0, 3)
-    return articles.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3)
-  }, [articles, readFilter])
+    // Recommended first (in the recommender's order), then everything else.
+    const rank = new Map(asList(recArticleQuery.data).map((a, i) => [Number(a.id), i]))
+    const ordered = [...articles].sort((a, b) => (rank.get(Number(a.id)) ?? 1e9) - (rank.get(Number(b.id)) ?? 1e9))
+    return ordered.filter((a) => readFilter === 'all' || a.type === readFilter).slice(0, 3)
+  }, [articles, readFilter, recArticleQuery.data])
 
   /* The chart scales to the busiest day, so the tallest bar always fills it and
      the dashed average sits in proportion to the real bars. An earlier version
@@ -943,6 +1123,8 @@ export default function Dashboard() {
      totals the 2dp rounding is a large fraction of the value and would put the
      average line visibly off its true position. */
   const activityDays = activity?.days || []
+  // Replays the bar wave whenever a different range (or first data) lands.
+  useBarWave(plotRef, activityDays.length ? `${activityDays.length}:${activityDays[0]?.date}` : '')
   const streak = activity?.streak?.current ?? 0
   const longestStreak = activity?.streak?.longest ?? 0
   const maxSeconds = Math.max(0, ...activityDays.map((d) => d.seconds))
@@ -1222,6 +1404,9 @@ export default function Dashboard() {
                       className="db-teacher-cover"
                       tutor={t}
                       showIntro={false}
+                      /* Eager: Safari can leave a lazy image unloaded inside a
+                         sideways-scrolling row. Only three cards. */
+                      priority
                     />
                     <span className="db-teacher-name">
                       <span className="db-teacher-name-text">{t.user.name}</span>
@@ -1291,11 +1476,11 @@ export default function Dashboard() {
             <SectionHead title="Podcasts" to="/podcast" />
             {podcastQuery.loading ? (
               <SkeletonCards className="db-grid3" count={3} mediaHeight={112} />
-            ) : podcasts.length === 0 ? (
+            ) : recPodcasts.length === 0 ? (
               <p className="db-empty">No podcasts yet.</p>
             ) : (
               <div className="db-grid3">
-                {podcasts.slice(0, 3).map((p) => (
+                {recPodcasts.slice(0, 3).map((p) => (
                   <PodcastCard key={p.id} podcast={p} />
                 ))}
               </div>
@@ -1406,29 +1591,54 @@ export default function Dashboard() {
                 <Link to="/find-tutor">Explore tutors →</Link>
               </div>
             ) : (
-              learning.map((item) => (
-                <Link key={item.key} to={item.href} className="db-course">
-                  {/* The tutor's own photo — real data, and it answers "who am
-                      I learning with" at a glance. Falls back to the plain
-                      cover block only when that tutor has no photo. */}
-                  <span className="db-course-thumb">
-                    {item.image_url && <img src={item.image_url} alt="" />}
-                  </span>
-                  <span className="db-course-body">
-                    <span className="db-course-title">{item.title}</span>
-                    {/* Who and which kind, on one quiet line. */}
-                    <span className="db-course-who">
-                      {[item.tutor, item.kind === 'group' ? 'Group' : 'Private']
-                        .filter(Boolean)
-                        .join(' · ')}
+              learning.map((item) => {
+                const when = whenParts(item.starts_at, item.ends_at)
+                return (
+                  /* A ticket: the time tile on the left is what the card is
+                     for ("when do I turn up?"), the lesson and tutor sit
+                     beside it. aria-label keeps the full sentence. */
+                  <Link
+                    key={item.key}
+                    to={item.href}
+                    onClick={(e) => openLearningChat(e, item)}
+                    className={`db-course${when.live ? ' db-course-live' : when.today ? ' db-course-today' : ''}`}
+                    aria-label={`${item.title}, ${whenLabel(item.starts_at, item.ends_at)}`}
+                  >
+                    {/* A tear-off calendar page: month band, big date, weekday. */}
+                    <span className="db-course-when">
+                      <span className="db-course-month">{when.month}</span>
+                      <span className="db-course-date">{when.date}</span>
+                      <span className="db-course-weekday">{when.weekday}</span>
                     </span>
-                    <span className="db-course-time">
-                      {whenLabel(item.starts_at, item.ends_at)}
+                    <span className="db-course-body">
+                      <span className="db-course-time">
+                        <ClockIcon />
+                        {when.time}
+                      </span>
+                      <span className="db-course-title">{item.title}</span>
+                      <span className="db-course-who">
+                        <span className="db-course-face">
+                          {item.image_url
+                            ? <img src={item.image_url} alt="" />
+                            : (item.tutor || '?').charAt(0)}
+                        </span>
+                        <span className="db-course-name">{item.tutor}</span>
+                        <span className="db-course-kind">
+                          {item.kind === 'group' ? 'Group' : 'Private'}
+                        </span>
+                      </span>
                     </span>
-                  </span>
-                  <ChevronRight />
-                </Link>
-              ))
+                    <span className="db-course-go"><ChevronRight /></span>
+                  </Link>
+                )
+              })
+            )}
+            {/* Four are fetched and three shown: a fourth means more exist,
+                so say so rather than silently hiding them. */}
+            {learningMore && (
+              <Link to="/bookings" className="db-course-more">
+                See all in Bookings <ChevronRight />
+              </Link>
             )}
           </section>
 
@@ -1437,9 +1647,7 @@ export default function Dashboard() {
             <div className="db-activity">
               <div className="db-activity-head">
                 <span className="db-activity-label">Activity</span>
-                <span className="db-activity-range">
-                  <CalendarIcon /> last 7 days
-                </span>
+                <RangeMenu value={activityRange} onChange={chooseRange} />
               </div>
 
               <p className="db-activity-total">
@@ -1455,7 +1663,10 @@ export default function Dashboard() {
                 {/* The rule and the bars must share one box, or their
                     percentages resolve against different heights and the rule
                     lands off the bar it is meant to touch. */}
-                <div className="db-plot">
+                <div
+                  ref={plotRef}
+                  className={'db-plot' + (activityDays.length > 7 ? ` db-plot-${activityDays.length > 14 ? 'dense' : 'mid'}` : '')}
+                >
                   {/* Marks the weekly average, sitting below the tallest bar
                       as the design draws it. Known trade-off: on a lopsided
                       week — one busy day, six quiet ones — the average lands
@@ -1464,12 +1675,22 @@ export default function Dashboard() {
                       day now. */}
                   {hasActivity && (
                     <span className="db-chart-mark" style={{ bottom: `${pct(avgSeconds)}%` }}>
-                      <span className="db-chart-mark-chip">{readDuration(avgSeconds)}</span>
+                      <span className="db-chart-mark-chip">Avg {readDuration(avgSeconds)}</span>
                     </span>
                   )}
 
-                  {activityDays.map((d) => {
+                  {activityDays.map((d, i) => {
                     const height = pct(d.seconds)
+                    /* A week names its days; longer ranges name the date, and
+                       30 days only every 5th plus today, or they collide. */
+                    const long = activityDays.length > 7
+                    const dayNum = Number(d.date.slice(8, 10))
+                    const isLast = i === activityDays.length - 1
+                    const axis = !long ? d.label
+                      : activityDays.length <= 14 || isLast || (activityDays.length - 1 - i) % 5 === 0 ? dayNum : ''
+                    const tipName = long
+                      ? new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                      : d.label
                     return (
                       <span className="db-chart-col" key={d.date}>
                         {/* Sits just above its own bar, clamped so the peak's
@@ -1481,7 +1702,7 @@ export default function Dashboard() {
                           className="db-chart-tip"
                           style={{ bottom: `calc(min(${height}%, 100% - 30px) + 6px)` }}
                         >
-                          {d.label} · {readDuration(d.seconds)}
+                          {tipName} · {readDuration(d.seconds)}
                         </span>
                         <span
                           className={
@@ -1489,7 +1710,7 @@ export default function Dashboard() {
                           }
                           style={{ height: `${height}%` }}
                         />
-                        <span className="db-chart-day">{d.label}</span>
+                        <span className="db-chart-day">{axis}</span>
                       </span>
                     )
                   })}
@@ -1498,7 +1719,7 @@ export default function Dashboard() {
 
               {!hasActivity && (
                 <p className="db-activity-empty">
-                  No time logged yet this week — it starts counting as you use Verbo.
+                  No time logged in the last {activityRange} days. It starts counting as you use Verbo.
                 </p>
               )}
             </div>

@@ -20,6 +20,7 @@ class Article extends Model
         'hsk_level',
         'difficulty',
         'category',
+        'summary',
         'is_premium',
     ];
 

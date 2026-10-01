@@ -44,6 +44,34 @@ class NotificationController extends Controller
     }
 
     /**
+     * Rows newer than a watermark, for the on-screen toasts.
+     *
+     * Without `after` it returns only the current `latest_id`: a tab that just
+     * opened sets its watermark there, so history never replays as a burst of
+     * toasts. Scoped to the caller like everything here, so a toast can only
+     * ever be about the signed-in account. Capped at 5, the stack's own limit.
+     */
+    public function since(Request $request)
+    {
+        $latest = (int) $request->user()->notifications()->max('id');
+
+        if (! $request->filled('after')) {
+            return response()->json(['latest_id' => $latest, 'data' => []]);
+        }
+
+        $rows = $request->user()->notifications()
+            ->with(['actor:id,name,avatar_path', 'actor.tutorProfile:id,user_id,photo_path'])
+            ->where('id', '>', (int) $request->query('after'))
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get()
+            ->reverse()
+            ->values();
+
+        return response()->json(['latest_id' => $latest, 'data' => $rows]);
+    }
+
+    /**
      * Just the badge number. Its own endpoint so the bell can poll it without
      * pulling the whole list down every time.
      */

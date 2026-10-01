@@ -5,6 +5,7 @@ import { api } from '../api'
 /* The same artwork the Dashboard's streak badge uses. One flame in the app, so
    the mark means the same thing wherever a streak is shown. */
 import FlameMark from '../components/FlameMark'
+import PremiumBadge from '../components/PremiumBadge'
 /* The supplied export, kept separate from the quiz launcher's copy of the same
    figure: that one was cropped out of a screenshot and flood-filled, this is
    the clean original with a real alpha channel. */
@@ -271,6 +272,7 @@ export default function Profile() {
   const streak = activity?.streak?.current ?? 0
   const weekSeconds = (activity?.days || []).reduce((sum, d) => sum + d.seconds, 0)
   const level = overview?.level
+  const books = overview?.books || []
   const tutors = overview?.tutors || []
   const courses = overview?.courses || []
 
@@ -313,12 +315,14 @@ export default function Profile() {
               and against the banner a solid block competed with the name for
               the one thing the eye should land on first. */}
           <h2 className="pf-name">
-            {user?.name}
+            <span className="pf-name-text">{user?.name}</span>
+            {/* Pro members wear the same mark the app uses everywhere else. */}
+            {user?.is_pro && <PremiumBadge inline />}
             <Link className="pf-edit" to="/settings?s=profile">
               Edit
             </Link>
           </h2>
-          {/* Derived from the last unit opened — see ProfileController. */}
+          {/* Derived from the last HSK unit opened — see ProfileController. */}
           <p className="pf-sub">
             {level ? level.title : user?.email}
             {overview?.is_admin && <span className="pf-admin">Admin</span>}
@@ -359,13 +363,30 @@ export default function Profile() {
                     ? `${level.units_opened} of ${level.units_total} units opened`
                     : /* An empty state is an invitation to act, not a
                          statement of absence. */
-                      'Open a study unit to start one'}
+                      'Open an HSK lesson to start one'}
                 </span>
                 <span className="pf-band-time">
                   <ClockIcon />
                   {loading ? '—' : weekLabel} this week
                 </span>
               </div>
+
+              {/* The HSK books this learner has opened a unit in: one book for
+                  HSK 1 alone, two and three once they move on. Each opens its
+                  level. Derived server-side from recent_views. */}
+              {books.length > 0 && (
+                <div className="pf-books" aria-label="Your HSK books">
+                  {books.map((b) => (
+                    <Link key={b.id} to={`/study/${b.id}`} className="pf-book" title={`${b.title} · ${b.percent}% opened`}>
+                      <span className="pf-book-cover">
+                        {b.image_url ? <img src={b.image_url} alt="" /> : <span className="pf-book-blank">{b.title}</span>}
+                      </span>
+                      <span className="pf-book-title">{b.title}</span>
+                      <span className="pf-book-bar"><span style={{ width: `${b.percent}%` }} /></span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ROW TWO: the streak, full width and warm, with its own evidence

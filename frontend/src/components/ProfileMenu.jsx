@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import ConfirmDialog from './ConfirmDialog'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
@@ -111,8 +113,18 @@ export default function ProfileMenu() {
     }
   }, [open])
 
-  async function handleLogout() {
+  /* Log out asks first: one mis-click in a menu should not end the session.
+     The menu closes and the confirm takes over. */
+  const [confirmOut, setConfirmOut] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+
+  function handleLogout() {
     setOpen(false)
+    setConfirmOut(true)
+  }
+
+  async function doLogout() {
+    setSigningOut(true)
     await logout()
     navigate('/login')
   }
@@ -167,6 +179,23 @@ export default function ProfileMenu() {
             Log out
           </button>
         </div>
+      )}
+
+      {/* Portalled to #root: the menu sits in page headers that carry a
+          transform, which traps a fixed scrim inside the 48px button box.
+          #root (not body) keeps the app zoom. */}
+      {confirmOut && createPortal(
+        <ConfirmDialog
+          title="Log out of Verbo?"
+          message="You'll need to sign in again to keep learning."
+          confirmLabel="Log out"
+          busyLabel="Logging out…"
+          busy={signingOut}
+          danger={false}
+          onConfirm={doLogout}
+          onCancel={() => setConfirmOut(false)}
+        />,
+        document.getElementById('root') || document.body,
       )}
     </div>
   )

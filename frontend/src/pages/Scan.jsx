@@ -11,11 +11,9 @@ import {
   writeCache,
 } from "../dataCache";
 import Skeleton from "../components/Skeleton";
-import swooshSmall from "../assets/scan/swoosh-small.png";
-import swooshLarge from "../assets/scan/swoosh-large.png";
+import scanHero from "../assets/scan/document-scan-hero.png";
 import fileIcon from "../assets/scan/file-icon.png";
 import sortIcon from "../assets/scan/sort-icon.png";
-import notebookPencil from "../assets/scan/notebook-pencil.png";
 import PageTools from "../components/PageTools";
 import { UsageLimitState, formatUsageReset } from "../components/UsageAllowance";
 import "./Scan.css";
@@ -242,9 +240,11 @@ export default function Scan() {
       setError("You have used all of this month's scans.");
       return;
     }
-    const images = [...incoming].filter((f) => f.type.startsWith("image/"));
+    const images = [...incoming].filter(
+      (f) => f.type.startsWith("image/") || f.type === "application/pdf",
+    );
     if (images.length === 0) {
-      setError("That is not an image. Drop or paste a photo of Chinese text.");
+      setError("That is not a photo or PDF. Drop or paste a photo, or add a PDF, of Chinese text.");
       return;
     }
 
@@ -516,11 +516,7 @@ export default function Scan() {
       />
 
       <div className="sc-upload-card">
-        <div className="sc-upload-bg-clip">
-          <img className="sc-swoosh-large" src={swooshLarge} alt="" />
-          <img className="sc-swoosh-small" src={swooshSmall} alt="" />
-        </div>
-        <img className="sc-notebook" src={notebookPencil} alt="" />
+        <img className="sc-notebook" src={scanHero} alt="" aria-hidden="true" decoding="async" />
         <div className="sc-upload-content">
           <h2 className="sc-upload-title">Upload a Photo</h2>
           <p className="sc-upload-subtitle">
@@ -558,7 +554,7 @@ export default function Scan() {
                 Upload a photo
               </h2>
               <p className="sc-modal-sub">
-                Scan Chinese text from a photo or a screenshot.
+                Scan Chinese text from a photo, a screenshot or a PDF.
               </p>
               <button
                 type="button"
@@ -576,7 +572,7 @@ export default function Scan() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf"
                 multiple
                 onChange={handleFileChange}
                 style={{ display: "none" }}

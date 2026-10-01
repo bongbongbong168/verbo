@@ -1,3 +1,5 @@
+import { announceQuests } from './questArt'
+
 const BASE_URL = import.meta.env.VITE_API_URL
 
 async function parseResponse(res) {
@@ -33,6 +35,8 @@ async function parseResponse(res) {
     throw error
   }
 
+  // A daily quest this action just finished rides back as a header.
+  announceQuests(res)
   return data
 }
 
@@ -62,7 +66,7 @@ async function requestMultipart(path, formData, token) {
   return parseResponse(res)
 }
 
-function articleFormData({ title, type, category, hsk_level, body, body_en, image, is_premium }) {
+function articleFormData({ title, type, category, hsk_level, summary, body, body_en, image, is_premium, tags }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('type', type)
@@ -76,8 +80,19 @@ function articleFormData({ title, type, category, hsk_level, body, body_en, imag
      sends transcript_en. */
   if (category !== undefined) formData.append('category', category ?? '')
   if (hsk_level !== undefined) formData.append('hsk_level', hsk_level ?? '')
+  // Sent even when empty, so a description can be cleared.
+  if (summary !== undefined) formData.append('summary', summary ?? '')
   if (is_premium !== undefined) formData.append('is_premium', is_premium ? '1' : '0')
   if (image) formData.append('image', image)
+  /* Multipart cannot carry an empty array, so tags_present says the field was
+     sent at all; without it, clearing every tag would read as "leave alone". */
+  if (Array.isArray(tags)) {
+    formData.append('tags_present', '1')
+    tags.forEach((t, i) => {
+      formData.append(`tags[${i}][kind]`, t.kind)
+      formData.append(`tags[${i}][value]`, t.value)
+    })
+  }
   return formData
 }
 
@@ -145,6 +160,9 @@ export const api = {
      exactly the same way. */
   googleSignIn: (credential) =>
     request('/auth/google', { method: 'POST', body: { credential } }),
+  // The redirect flow's one-time code, swapped for {user, token}.
+  googleExchange: (code) =>
+    request('/auth/google/exchange', { method: 'POST', body: { code } }),
   logout: (token) => request('/logout', { method: 'POST', token }),
   me: (token) => request('/user', { token }),
   // Settings page.
@@ -169,6 +187,10 @@ export const api = {
     return request(`/notifications${q ? `?${q}` : ''}`, { token })
   },
   getUnreadNotifications: (token) => request('/notifications/unread', { token }),
+  // Rows newer than a watermark, for on-screen toasts. No `after` = just the
+  // current watermark, so opening a tab never replays history.
+  getNotificationsSince: (token, after) =>
+    request(`/notifications/since${after == null ? '' : `?after=${after}`}`, { token }),
   markNotificationRead: (token, id) =>
     request(`/notifications/${id}/read`, { method: 'POST', token }),
   markAllNotificationsRead: (token) =>
@@ -216,6 +238,11 @@ export const api = {
   getScans: (token) => request('/scans', { token }),
   getUsageAllowances: (token) => request('/usage/allowances', { token }),
   getScan: (token, id) => request(`/scans/${id}`, { token }),
+  // Optional article/podcast quiz: GET reads the saved one, POST makes it once.
+  getContentQuiz: (token, kind, id) => request(`/${kind}/${id}/quiz`, { token }),
+  makeContentQuiz: (token, kind, id) => request(`/${kind}/${id}/quiz`, { method: 'POST', token }),
+  // The learner's review of unsure OCR lines. Saves the text, clears the flags.
+  updateScanText: (token, id, raw_text) => request(`/scans/${id}/text`, { method: 'PUT', token, body: { raw_text } }),
   translateScan: (token, id) => request(`/scans/${id}/translation`, { method: 'POST', token }),
   deleteScan: (token, id) => request(`/scans/${id}`, { method: 'DELETE', token }),
   // Public-link sharing. shareScan is idempotent — it returns the existing
@@ -253,7 +280,11 @@ export const api = {
         } catch {
           body = null
         }
-        if (xhr.status >= 200 && xhr.status < 300) return resolve(body)
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Same quest header as fetch responses; XHR reads it differently.
+          announceQuests({ headers: { get: (h) => xhr.getResponseHeader(h) } })
+          return resolve(body)
+        }
 
         // Mirror parseResponse: keep the status on the error so a 429 or a
         // 5xx cannot be mistaken for an auth failure and end the session.
@@ -389,6 +420,10 @@ export const api = {
   saveLearningPreferences: (token, prefs) =>
     request('/learning-preferences', { method: 'POST', body: prefs, token }),
   getTutors: (token) => request('/tutors', { token }),
+  // The same list ordered by fit to the learner's saved preferences (Home).
+  // The learner's timezone, so "Evening" in their preferences means their evening.
+  getRecommendedTutors: (token) =>
+    request(`/tutors/recommended?tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || '')}`, { token }),
   toggleTutorSave: (token, id) => request(`/tutors/${id}/save`, { method: 'POST', token }),
   togglePodcastSave: (token, id) => request(`/podcasts/${id}/save`, { method: 'POST', token }),
   getSavedLibrary: (token) => request('/saved-library', { token }),
@@ -487,6 +522,8 @@ export const api = {
   getTutorCourses: (token, profileId) => request(`/tutors/${profileId}/courses`, { token }),
   addCourse: (token, profileId, course) =>
     request(`/tutors/${profileId}/courses`, { method: 'POST', body: course, token }),
+  updateCourse: (token, id, course) =>
+    request(`/courses/${id}`, { method: 'PUT', token, body: course }),
   deleteCourse: (token, id) => request(`/courses/${id}`, { method: 'DELETE', token }),
   // Creates a *held* enrolment; payment flips it, same seam as a booking.
   enrollInCourse: (token, id) => request(`/courses/${id}/enroll`, { method: 'POST', token }),
@@ -591,10 +628,14 @@ export const api = {
   paymentIntent: (token, kind, id) =>
     request('/payments/intent', { method: 'POST', token, body: { kind, id } }),
   getSubscriptionStatus: (token) => request('/subscription/status', { token }),
+  // Success page: the server asks Stripe about this checkout itself, so Pro
+  // does not wait on the webhook (which cannot reach a dev machine at all).
+  confirmSubscription: (token, sessionId) => request('/subscription/confirm', { method: 'POST', token, body: { session_id: sessionId } }),
   /* `ui` picks only how checkout is shown — 'hosted' (redirect) or 'elements'
      (Verbo's own page). The server decides the price; nothing else is sent. */
-  createSubscriptionCheckout: (token, ui = 'hosted') =>
-    request('/subscription/checkout', { method: 'POST', token, body: { ui } }),
+  // interval: 'month' | 'year'. The server picks the price for it.
+  createSubscriptionCheckout: (token, ui = 'hosted', interval = 'month') =>
+    request('/subscription/checkout', { method: 'POST', token, body: { ui, interval } }),
   createSubscriptionPortal: (token) => request('/subscription/portal', { method: 'POST', token }),
 
   /* The DEMO settle path, kept for when Stripe is switched off. It now 422s
@@ -618,6 +659,8 @@ export const api = {
     request('/bookings/clear-past', { method: 'POST', body: { role }, token }),
   addLesson: (token, profileId, lesson) =>
     request(`/tutors/${profileId}/lessons`, { method: 'POST', body: lesson, token }),
+  updateLesson: (token, id, lesson) =>
+    request(`/tutor-lessons/${id}`, { method: 'PUT', token, body: lesson }),
   deleteLesson: (token, id) => request(`/tutor-lessons/${id}`, { method: 'DELETE', token }),
   // Reviews. saveReview is an upsert — posting again edits the one you left.
   saveReview: (token, profileId, review) =>
@@ -625,8 +668,11 @@ export const api = {
   deleteReview: (token, id) => request(`/tutor-reviews/${id}`, { method: 'DELETE', token }),
   addResumeEntry: (token, profileId, entry) =>
     request(`/tutors/${profileId}/resume`, { method: 'POST', body: entry, token }),
+  updateResumeEntry: (token, id, entry) =>
+    request(`/tutor-resume/${id}`, { method: 'PUT', token, body: entry }),
   deleteResumeEntry: (token, id) => request(`/tutor-resume/${id}`, { method: 'DELETE', token }),
   getPodcasts: (token) => request('/podcasts', { token }),
+  getRecommendedPodcasts: (token) => request('/podcasts/recommended', { token }),
   getPodcast: (token, id) => request(`/podcasts/${id}`, { token }),
   translatePodcastTranscript: (token, text) => request('/podcasts/translate', { method: 'POST', body: { text }, token }),
   createPodcast: (token, podcast) => requestMultipart('/podcasts', podcastFormData(podcast), token),

@@ -66,9 +66,7 @@ class ChineseTranslationService
     {
         $model = config('services.gemini.model');
         try {
-            $response = Http::withHeaders(['x-goog-api-key' => config('services.gemini.key')])
-                ->asJson()->connectTimeout(10)->timeout(45)
-                ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
+            $response = GeminiHttp::generate($model, [
                     'contents' => [[
                         'parts' => [[
                             'text' => "Translate every Simplified Chinese entry into concise, natural English. Return only JSON in this exact shape: {\"translations\":[\"first\",\"second\"]}. Keep the same order and return exactly one English string per input.\n\nInput JSON:\n".json_encode($texts, JSON_UNESCAPED_UNICODE),
@@ -78,7 +76,7 @@ class ChineseTranslationService
                         'temperature' => 0,
                         'responseMimeType' => 'application/json',
                     ],
-                ]);
+                ], (int) config('services.gemini.translate_timeout', 45));
         } catch (\Throwable $e) {
             throw new RuntimeException('Translation could not connect. Please try again later.');
         }

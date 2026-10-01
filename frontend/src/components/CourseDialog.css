@@ -1,7 +1,7 @@
 /* Group-course popup. Prefix `cx-`.
 
    Deliberately the same card as BookingDialog (`bk-`): one 1px navy outline,
-   21px corners, 25px content padding, and three bands — white header, #fcfcff
+   21px corners, 25px content padding, and three bands — white header, #f9f8fe
    body, #f9f8fe footer. A course and a private lesson are two shapes of the
    same product and are chosen from the same tutor page, so they must not look
    like two different apps.
@@ -36,7 +36,7 @@
 
 .cx {
   --cx-card: #ffffff;
-  --cx-body: #fcfcff;
+  --cx-body: #f9f8fe;
   --cx-footer: #f9f8fe;
   --cx-border: #e7e3f6;
   --cx-accent: #6a6191;
@@ -103,7 +103,7 @@
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--cx-stroke);
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--cx-accent-soft);
   color: #fff;
   font-size: 1.05rem;
@@ -216,7 +216,8 @@
   flex: none;
   width: 17px;
   height: 17px;
-  margin-top: 1px;
+  /* Measured: centred on the title's cap band (was 0.73px high at 1px). */
+  margin-top: 1.73px;
   color: var(--cx-accent);
 }
 
@@ -450,7 +451,7 @@
 .cx-error {
   margin: 12px 0 0;
   padding: 0.6rem 0.8rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.84rem;

@@ -388,7 +388,7 @@
   box-sizing: border-box;
   background: var(--qp-card);
   border: 1px solid var(--qp-stroke);
-  border-radius: 14px;
+  border-radius: 16px;
   font-family: inherit;
   font-size: 1.02rem;
   font-weight: 700;
@@ -434,15 +434,16 @@
 
 /* Picked is FILLED, the reference's one loud row. Navy text, never white:
    white on this lavender measures ~1.9:1. The badge inverts to stay seen. */
+/* PICKED: a pale lavender row with a purple edge; the letter disc is left as it was -
+   the choice reads by its outline, not by flooding the row (the full
+   lavender block was asked away). The 2px edge is the 1px border plus an
+   inset ring, so the row does not grow. Static, never transitioned. */
 .qp-option.picked {
-  background: var(--qp-fill);
-  border-color: var(--qp-stroke);
-  box-shadow: 0 6px 16px rgba(106, 97, 145, 0.35);
-}
-
-.qp-option.picked .qp-letter {
-  background: #fff;
-  color: var(--qp-stroke);
+  background: var(--qp-well);
+  border-color: var(--qp-accent);
+  box-shadow:
+    inset 0 0 0 1px var(--qp-accent),
+    0 6px 16px rgba(106, 97, 145, 0.18);
 }
 
 /* ---- footer ---- */
@@ -493,7 +494,7 @@
      with no drop shadow — the outline is what defines it, and a glow under a
      already-solid lavender fill only muddied it. */
   border: 1px solid var(--qp-stroke);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--qp-fill);
   color: #fff;
   font-family: inherit;
@@ -580,7 +581,7 @@
 .qp-error {
   margin: 1rem 0 0;
   padding: 0.65rem 0.9rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--qp-no-bg, #fdecea);
   color: var(--qp-no, #b02a2a);
   font-size: 0.9rem;
@@ -619,7 +620,7 @@
      size and screen; this label is 600. The pair sums to the old padding. */
   padding: calc(0.85rem - 0.076em) 1.3rem calc(0.85rem + 0.076em);
   border: 1px solid var(--qp-stroke);
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   font-family: inherit;
   font-size: 1rem;
@@ -687,7 +688,7 @@
   padding: 0.8rem 1.2rem;
   box-sizing: border-box;
   border: 1px solid var(--qp-stroke);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--qp-card);
   font-family: inherit;
   font-size: 1rem;
@@ -826,22 +827,12 @@
   --res: var(--qp-ok);
   --res-bg: var(--qp-ok-bg);
   position: relative;
-  padding: 0.9rem 1.1rem 0.95rem 1.35rem;
+  padding: 0.95rem 1.1rem 1rem;
   border: 1px solid var(--qp-border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: var(--qp-sh-xs);
   overflow: hidden;
-}
-
-.qp-res::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 4px;
-  background: var(--res);
 }
 
 .qp-res-wrong {
@@ -854,29 +845,27 @@
   --res-bg: var(--qp-well);
 }
 
+/* Baseline, so the bare number sits on the question's first line of text. */
 .qp-res-head {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 0.7rem;
 }
 
 .qp-res-num {
-  display: grid;
-  place-items: center;
   flex: none;
   width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--qp-well);
+  text-align: center;
+  /* Bare number, no chip (asked for). */
   color: var(--qp-accent);
-  font-size: 0.75rem;
+  font-size: 1.05rem;
   font-weight: 700;
 }
 
 .qp-res-q {
   flex: 1;
   min-width: 0;
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-size: 0.97rem;
   font-weight: 700;
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
@@ -894,6 +883,43 @@
   color: var(--res);
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+/* Right / Wrong are said by the answer rows' own ticks and crosses, so
+   the word went and the tag is just a tinted tick or cross (asked for).
+   Skipped keeps a quiet word: its lone answer row would otherwise look
+   exactly like a right one. */
+.qp-res-right .qp-res-tag,
+.qp-res-wrong .qp-res-tag {
+  /* Icon only: font-size 0 hides the word, the svg keeps its own size.
+     Flex with no gap, NOT grid: the hidden word is still a node, and as a
+     grid item it took a second row plus the 4px gap, lifting the icon 3.5px. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  /* Solid, like the answer rows' own ticks and crosses. */
+  background: var(--res);
+  color: #fff;
+  font-size: 0;
+}
+
+.qp-res-right .qp-res-tag svg,
+.qp-res-wrong .qp-res-tag svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+  margin: 0;
+}
+
+.qp-res-skipped .qp-res-tag {
+  padding: 0;
+  background: none;
+  font-weight: 600;
 }
 
 .qp-res-tag svg {
@@ -918,6 +944,52 @@
   font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
 }
 
+/* ANSWER ROWS, after a supplied reference: your wrong pick in a pink box with
+   a red cross, the right answer in a green box with a tick - the verdict read
+   from the row itself, not from a rail down the card's edge (removed). */
+.qp-res-line:has(.qp-res-ans),
+.qp-res-line:has(.qp-res-yours) {
+  position: relative;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem 0.6rem 0.6rem;
+  border-radius: 12px;
+  background: var(--qp-ok-bg);
+}
+
+.qp-res-line:has(.qp-res-yours) {
+  background: var(--qp-no-bg);
+}
+
+/* The icon already says which is which, so the label column goes. */
+.qp-res-line:has(.qp-res-ans) .qp-res-key,
+.qp-res-line:has(.qp-res-yours) .qp-res-key {
+  display: none;
+}
+
+/* Leading icon: order -1 puts it before the text in the flex row. */
+.qp-res-line:has(.qp-res-ans)::after,
+.qp-res-line:has(.qp-res-yours)::after {
+  content: '✓';
+  order: -1;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--qp-ok);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.qp-res-line:has(.qp-res-yours)::after {
+  content: '✕';
+  background: var(--qp-no);
+}
+
 .qp-res-key {
   flex: none;
   width: 6.2rem;
@@ -926,16 +998,40 @@
   color: var(--qp-muted);
 }
 
-.qp-res-ans {
+.qp-res-ans,
+.qp-res-yours {
+  font-weight: 600;
+  color: var(--qp-text);
+}
+
+/* WHY: a light lavender note under the answers, in the page's own accent. */
+.qp-res-line.qp-res-muted:not(:has(.qp-res-ans)) {
+  display: block;
+  margin-top: 0.15rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 12px;
+  background: var(--qp-well);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--qp-muted);
+}
+
+.qp-res-line.qp-res-muted:not(:has(.qp-res-ans)) .qp-res-key {
+  display: inline;
+  width: auto;
+  margin-right: 0.4rem;
   font-weight: 700;
+  color: var(--qp-accent);
+}
+
+/* Matching rows keep their inline colours: they are words, not answer boxes. */
+.qp-res-pair .qp-res-ans {
   color: var(--qp-ok);
 }
 
-.qp-res-yours {
-  font-weight: 600;
+.qp-res-pair .qp-res-yours {
   color: var(--qp-no);
   text-decoration: line-through;
-  text-decoration-thickness: 1.5px;
 }
 
 .qp-res-muted {
@@ -986,4 +1082,25 @@
   .qp-foot-left {
     gap: 1rem;
   }
+}
+
+/* ---- results: measured optical nudges (1440 desktop) ----
+   Equal-and-opposite margins, so nothing around them moves. */
+/* The answer text sat 1.2px low beside its centred tick/cross. */
+.qp-res-line .qp-res-ans,
+.qp-res-line .qp-res-yours {
+  margin: -1.2px 0 1.2px;
+}
+
+/* The corner badge sat 1.5px high against the question's cap band. */
+.qp-res-head .qp-res-tag {
+  /* Top-aligned, then dropped onto the first line's cap band: in a
+     baseline row a margin does not move it. */
+  align-self: flex-start;
+  margin-top: 0;
+}
+
+/* "Back to ..." sat 1.3px low against the two buttons' labels beside it. */
+.qp-state-actions .qp-skip {
+  margin: -1.3px 0 1.3px;
 }

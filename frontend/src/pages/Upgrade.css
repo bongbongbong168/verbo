@@ -471,3 +471,159 @@
   }
 
   }
+
+/* ---- pricing-section polish (after the supplied Pricing Plans reference) ----
+   Taken: a soft glow behind the plans, an icon chip heading each card, the
+   featured plan lifted with a lavender ring and glow and a pill on its top
+   edge, a staggered rise on entry and a small hover lift. NOT taken: the
+   monthly/annual toggle (Verbo sells Pro monthly only), Tailwind and
+   framer-motion (this app is plain CSS; the motion below is CSS keyframes).
+
+   Motion follows the frozen-compositor rule: transform-only, resting at the
+   final position, so a tab that never composites shows the finished cards. */
+
+.up-plans {
+  position: relative;
+  isolation: isolate;
+}
+
+/* The glow behind the plans; decoration only. */
+.up-plans::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: -2.5rem;
+  width: min(900px, 100%);
+  height: 420px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(168, 156, 227, 0.28) 0%, rgba(168, 156, 227, 0) 70%);
+  pointer-events: none;
+}
+
+.up-card {
+  /* backwards, not both: a finished animation must hand transform back, or
+     it would pin the card and cancel the hover lift. */
+  animation: up-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.25s ease;
+}
+
+.up-card.up-pro {
+  animation-delay: 0.08s;
+}
+
+@keyframes up-rise {
+  /* 7px: the worst case (a tab that never composites) is a card 7px low,
+     never a hidden one; the onboarding entrance uses the same bound. */
+  from { transform: translateY(7px); }
+  to { transform: none; }
+}
+
+.up-free:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(43, 38, 67, 0.1);
+}
+
+/* The featured plan: a lavender ring and glow on the dark card. */
+.up-card.up-pro {
+  box-shadow:
+    0 0 0 1px rgba(168, 156, 227, 0.55),
+    0 18px 44px rgba(43, 38, 67, 0.22),
+    0 0 48px -8px rgba(168, 156, 227, 0.45);
+}
+
+.up-card.up-pro:hover {
+  transform: translateY(-3px);
+}
+
+/* The badge sits ON the card's top edge, centred, as in the reference.
+   Navy on lavender (white on #a89ce3 is ~2.5:1). Cap-band pad for 700. */
+.up-card .up-badge {
+  top: 0;
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: calc(0.32rem - 0.086em) 0.85rem calc(0.32rem + 0.086em);
+  background: #a89ce3;
+  color: #2b2643;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(43, 38, 67, 0.25);
+}
+
+/* Lift the featured card a touch on desktop, as in the reference. */
+@media (min-width: 768px) {
+  .up-plans {
+    align-items: stretch;
+  }
+
+  .up-card.up-pro {
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .up-card {
+    animation: none;
+    transition: none;
+  }
+
+  .up-free:hover,
+  .up-card.up-pro:hover {
+    transform: none;
+  }
+}
+
+/* ---- Monthly / Yearly switch ----
+   Only drawn when a yearly price exists. The chosen option is a static fill
+   (right on the first paint); dark on lavender for contrast. Cap-band pad 600. */
+.up-billing {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 1.4rem;
+  padding: 4px;
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.up-billing-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: calc(0.45rem - 0.076em) 1.1rem calc(0.45rem + 0.076em);
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #726c88;
+  cursor: pointer;
+}
+
+.up-billing-opt:hover:not(.on) {
+  color: #2b2643;
+}
+
+.up-billing-opt.on {
+  background: #a89ce3;
+  color: #fff;
+}
+
+/* Cap-band pad for 700. */
+.up-save {
+  padding: calc(0.12rem - 0.086em) 0.45rem calc(0.12rem + 0.086em);
+  border-radius: 999px;
+  background: #e6f4eb;
+  color: #1f7a45;
+  font-size: 0.66rem;
+  font-weight: 700;
+}

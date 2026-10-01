@@ -1,9 +1,84 @@
-.tff { display: grid; gap: 1rem; }
-.tff-field { display: grid; gap: .38rem; }
-.tff-label { color: #2b2644; font-weight: 700; font-size: .92rem; }
-.tff-label i { color: #c45b66; font-style: normal; margin-left: .18rem; }
-.tff-field small { color: #726c88; font-size: .8rem; line-height: 1.35; }
-.tff-chips { display: flex; flex-wrap: wrap; gap: .42rem; }
-.tff-chips button { border: 1px solid #ddd7f5; border-radius: 999px; background: #fff; color: #4f486b; cursor: pointer; font: inherit; font-size: .82rem; padding: .4rem .7rem; }
-.tff-chips button.on { border-color: #a89ce3; background: #f0ecff; color: #514879; font-weight: 700; }
-.tff-chips button:focus-visible { outline: 2px solid #6a6191; outline-offset: 2px; }
+/* Tutor fit chips, shared by the application form and the edit drawer.
+   Built to the ONBOARDING chip (`.ob-chip`), the app's established
+   multi-select: 12px-rounded chips, and a selected one fills lavender and
+   carries a ✕ saying it can be undone, with a white label like onboarding. */
+
+.tff { display: grid; gap: 1.35rem; }
+
+.tff-field { display: grid; gap: 0.4rem; }
+
+.tff-label {
+  color: #2b2643;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tff-label i {
+  color: #c45b66;
+  font-style: normal;
+  margin-left: 0.18rem;
+}
+
+.tff-field small {
+  margin-bottom: 0.2rem;
+  color: #726c88;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.tff-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Cap-band pad for a 600 label. */
+.tff-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: calc(0.45rem - 0.076em) 0.85rem calc(0.45rem + 0.076em);
+  border: 1px solid #e7e3f6;
+  border-radius: 12px;
+  background: #fff;
+  color: #2b2643;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* Only the lift eases; the fill IS the answer, so it lands instantly (the
+     onboarding rule: a stalled ease must never hide a selection). */
+  transition: transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.tff-chips button:hover {
+  border-color: #a89ce3;
+  transform: translateY(-1px);
+}
+
+.tff-chips button.on {
+  border-color: #a89ce3;
+  background: #a89ce3;
+  /* White, as on the onboarding chips (asked for, to match them). */
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(168, 156, 227, 0.4);
+}
+
+/* Hands the label's cap-band lift back so the ✕ stays centred. */
+.tff-chips button svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  margin: 0.076em 0 -0.076em;
+  opacity: 0.8;
+}
+
+.tff-chips button:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tff-chips button { transition: none; }
+  .tff-chips button:hover { transform: none; }
+}

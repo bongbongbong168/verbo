@@ -29,6 +29,16 @@
   background: #2b2643;
 }
 
+/* THE HOVER PREVIEW IS A MOVING PHOTO, NOT A PLAYER. On a small card cover
+   YouTube's own chrome (title bar, channel icon, the big pause button)
+   is drawn at player size and crowded the whole card. Zoomed in, the title
+   bar and controls fall outside the cover's clip; with no pointer events
+   YouTube never shows its hover UI. Clicking still reaches the card link. */
+.tm-player.tm-player-preview {
+  transform: scale(1.4);
+  pointer-events: none;
+}
+
 .tm-mark {
   grid-area: 1 / 1;
   font-size: 3.4em;

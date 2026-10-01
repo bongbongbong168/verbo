@@ -1,0 +1,67 @@
+/* ONE MAIN BUTTON. Lavender fill, white label: the style ~20 screens already
+   used (onboarding Continue, checkout Pay, booking, quiz Next, Settings
+   save, the Messages send button). These had drifted to deep purple, the old
+   Figma grey-purple or near-black. Collected here so they cannot drift again.
+
+   The leading "body" raises the specificity by one element so this wins over each page's
+   own rule whatever order the stylesheets load in.
+
+   Deliberately NOT here: red destructive buttons, dark buttons that sit on a
+   dark banner (lavender would vanish into it), and on/off toggles. */
+
+body .cfm-primary,
+body .ed-btn-primary,
+body .cr-btn.primary,
+body .bt-submit,
+body .gr-act-primary,
+body .db-study-cta,
+body .db-teacher-cta,
+body .ft-preview-book,
+body .ft-apply-btn,
+body .lg-login-btn,
+body .su-submit-btn,
+body .pc-new-btn,
+body .pe-btn-primary,
+body .rd-new-btn,
+body .rd-btn-primary,
+body .rd-cm-send,
+body .ss-btn,
+body .st-btn-primary,
+body .sl-btn-primary,
+body .td-btn-primary,
+body .sc-modal-btn.primary,
+body .ck-ok-cta,
+body .uc-cta {
+  border-color: #a89ce3;
+  background: #a89ce3;
+  color: #fff;
+}
+
+/* The fill is the feedback, so it lands instantly (no transition). */
+body .cfm-primary:hover:not(:disabled),
+body .ed-btn-primary:hover:not(:disabled),
+body .cr-btn.primary:hover:not(:disabled),
+body .bt-submit:hover:not(:disabled),
+body .gr-act-primary:hover:not(:disabled),
+body .db-study-cta:hover:not(:disabled),
+body .db-teacher-cta:hover:not(:disabled),
+body .ft-preview-book:hover:not(:disabled),
+body .ft-apply-btn:hover:not(:disabled),
+body .lg-login-btn:hover:not(:disabled),
+body .su-submit-btn:hover:not(:disabled),
+body .pc-new-btn:hover:not(:disabled),
+body .pe-btn-primary:hover:not(:disabled),
+body .rd-new-btn:hover:not(:disabled),
+body .rd-btn-primary:hover:not(:disabled),
+body .rd-cm-send:hover:not(:disabled),
+body .ss-btn:hover:not(:disabled),
+body .st-btn-primary:hover:not(:disabled),
+body .sl-btn-primary:hover:not(:disabled),
+body .td-btn-primary:hover:not(:disabled),
+body .sc-modal-btn.primary:hover:not(:disabled),
+body .ck-ok-cta:hover:not(:disabled),
+body .uc-cta:hover:not(:disabled) {
+  border-color: #9486d6;
+  background: #9486d6;
+  color: #fff;
+}

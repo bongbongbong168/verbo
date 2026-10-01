@@ -257,14 +257,14 @@
 .ms-avatar-lg {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 16px;
   font-size: 1.15rem;
 }
 
 .ms-avatar-sm {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.78rem;
 }
 
@@ -283,7 +283,7 @@
   border-bottom: 1px solid #ece9f7;
   /* A soft lavender wash rather than flat white, so the header reads as the
      panel's chrome and the message stream below it reads as the content. */
-  background: linear-gradient(180deg, #fbfaff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #f9f8fe 0%, #ffffff 100%);
   box-shadow: 0 6px 14px -6px rgba(28, 23, 48, 0.12);
 }
 
@@ -341,7 +341,8 @@
   align-items: center;
   gap: 0.35rem;
   flex: none;
-  padding: 0.48rem 0.55rem 0.48rem 0.95rem;
+  /* No arrow now, so even sides; cap-band pad for a 600 label. */
+  padding: calc(0.48rem - 0.076em) 1rem calc(0.48rem + 0.076em);
   border: 1px solid #ddd6f4;
   border-radius: 999px;
   background: #fff;
@@ -376,7 +377,7 @@
   margin: 1rem 1.5rem 0;
   padding: 0.7rem 0.9rem 0.7rem 1.1rem;
   border: 1px solid #e7e3f6;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   background: #fff;
   /* Lifted off the thread: this card is the answer to "why are we talking?",
@@ -422,7 +423,7 @@
   padding: calc(0.16rem - 0.935px) 0.55rem calc(0.16rem + 0.935px);
   margin-top: 1.306px;
   margin-bottom: -1.306px;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--ms-tone-soft, var(--ms-soft));
   color: var(--ms-tone, var(--ms-accent));
   font-size: 0.68rem;
@@ -470,7 +471,7 @@
 
 .ms-context-price {
   padding: 0.06rem 0.45rem;
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--ms-soft);
   color: var(--ms-accent);
   font-weight: 700;
@@ -516,7 +517,7 @@
   --ms-tone-soft: #fbe8e8;
 }
 .ms-context-off {
-  --ms-tone: #6b6780;
+  --ms-tone: #726c88;
   --ms-tone-soft: #eeedf3;
 }
 /* A course has no approval state to report, so it carries the brand tone
@@ -620,8 +621,12 @@
 
 .ms-bubble {
   margin: 0;
-  /* A floor so a two-letter message reads as a bubble rather than a square. */
-  min-width: 2.5rem;
+  /* The bubble hugs its text. The floor is about the bubble's own height, so
+     "ok" is a round pill rather than a sliver - and it counts the padding
+     (border-box): measured on the content box it made a one-letter bubble
+     69px wide. */
+  box-sizing: border-box;
+  min-width: 2.6rem;
   text-align: left;
   padding: 0.62rem 0.9rem;
   border-radius: 14px 14px 14px 4px;
@@ -708,7 +713,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ms-muted);
   cursor: pointer;
@@ -744,7 +749,7 @@
   width: 100%;
   padding: 0.38rem 0.55rem;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background: transparent;
   color: #b02a2a;
   font: inherit;
@@ -845,7 +850,7 @@
 .ms-error {
   margin: 0 1.4rem;
   padding: 0.6rem 0.85rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.86rem;
@@ -854,7 +859,7 @@
 .ms-list-error {
   margin: 1rem 1.4rem;
   padding: 0.75rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.86rem;
@@ -928,7 +933,7 @@
   gap: 0.5rem;
   margin: 0 1.4rem 0.5rem;
   padding: 0.5rem 0.8rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ms-soft);
   font-size: 0.84rem;
   font-weight: 600;

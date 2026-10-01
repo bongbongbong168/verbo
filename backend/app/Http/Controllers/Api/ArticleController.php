@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Article;
+use App\Models\LearningPreference;
 use App\Services\DictionaryService;
 use App\Services\RecommendationService;
 use App\Services\UsageAllowanceService;
@@ -241,22 +242,20 @@ class ArticleController extends Controller
             'body_en' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'max:10240'],
             // All optional: the five articles that predate this stay valid.
-            'hsk_level' => ['nullable', 'string', 'max:20'],
-            'difficulty' => ['nullable', 'string', 'max:20'],
+            'hsk_level' => ['nullable', 'string', 'in:'.implode(',', LearningPreference::HSK_LEVELS)],
             'category' => ['nullable', 'string', 'max:60'],
+            'summary' => ['nullable', 'string', 'max:400', self::wordCap()],
             'is_premium' => ['sometimes', 'boolean'],
-            'tags' => ['nullable', 'array'],
-            'tags.*.kind' => ['required_with:tags', 'string', 'in:goal,focus,interest,style,topic'],
-            'tags.*.value' => ['required_with:tags', 'string', 'max:60'],
-        ]);
+        ] + self::tagRules($request));
+        $data['difficulty'] = self::difficultyFor($data['hsk_level'] ?? null);
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('articles', 'public');
         }
 
         // Not a fillable column — the tags go to their own table below.
-        $tags = $data['tags'] ?? null;
-        unset($data['tags']);
+        $tags = self::tagsFrom($request, $data);
+        unset($data['tags'], $data['tags_present']);
 
         $article = $request->user()->articles()->create($data);
         $this->syncTags($article, $tags);
@@ -275,14 +274,12 @@ class ArticleController extends Controller
             'body_en' => ['nullable', 'string'],
             'image' => ['nullable', 'image', 'max:10240'],
             // All optional: the five articles that predate this stay valid.
-            'hsk_level' => ['nullable', 'string', 'max:20'],
-            'difficulty' => ['nullable', 'string', 'max:20'],
+            'hsk_level' => ['nullable', 'string', 'in:'.implode(',', LearningPreference::HSK_LEVELS)],
             'category' => ['nullable', 'string', 'max:60'],
+            'summary' => ['nullable', 'string', 'max:400', self::wordCap()],
             'is_premium' => ['sometimes', 'boolean'],
-            'tags' => ['nullable', 'array'],
-            'tags.*.kind' => ['required_with:tags', 'string', 'in:goal,focus,interest,style,topic'],
-            'tags.*.value' => ['required_with:tags', 'string', 'max:60'],
-        ]);
+        ] + self::tagRules($request));
+        $data['difficulty'] = self::difficultyFor($data['hsk_level'] ?? null);
 
         if ($request->hasFile('image')) {
             if ($article->image_path) {
@@ -291,13 +288,85 @@ class ArticleController extends Controller
             $data['image_path'] = $request->file('image')->store('articles', 'public');
         }
 
-        $tags = $data['tags'] ?? null;
-        unset($data['tags']);
+        $tags = self::tagsFrom($request, $data);
+        unset($data['tags'], $data['tags_present']);
 
         $article->update($data);
         $this->syncTags($article, $tags);
 
         return response()->json($article->fresh()->load('tags'));
+    }
+
+    /* Which preference list each hand-picked tag kind must come from. A tag
+       outside these lists matches no learner's answers, so it could never
+       score in RecommendationService. Style is not here: it is derived from
+       the format, see tagsFrom(). */
+    private const TAG_LISTS = [
+        'goal' => LearningPreference::GOALS,
+        'focus' => LearningPreference::FOCUS,
+        'interest' => LearningPreference::INTERESTS,
+    ];
+
+    /* The format's matching entry in LearningPreference::STYLES. A fun fact is
+       a short read, so it answers "I prefer articles". */
+    private const FORMAT_STYLES = ['article' => 'Articles', 'story' => 'Stories', 'funfact' => 'Articles'];
+
+    private static function tagRules(Request $request): array
+    {
+        return [
+            'tags_present' => ['sometimes', 'boolean'],
+            'tags' => ['nullable', 'array', 'max:20'],
+            'tags.*.kind' => ['required_with:tags', 'string', 'in:'.implode(',', array_keys(self::TAG_LISTS))],
+            'tags.*.value' => ['required_with:tags', 'string', function ($attr, $value, $fail) use ($request) {
+                $i = explode('.', $attr)[1];
+                $kind = $request->input("tags.$i.kind");
+                if (! in_array($value, self::TAG_LISTS[$kind] ?? [], true)) {
+                    $fail('That tag is not one of the preference options.');
+                }
+            }],
+        ];
+    }
+
+    /**
+     * The hand-picked tags plus the style tag the format implies.
+     *
+     * Multipart cannot send an empty array, so `tags_present` is what says
+     * "the caller sent the tag field" — without it, clearing every tag would
+     * look the same as not mentioning tags at all. Null still leaves them alone.
+     */
+    private static function tagsFrom(Request $request, array $data): ?array
+    {
+        if (! array_key_exists('tags', $data) && ! $request->boolean('tags_present')) {
+            return null;
+        }
+        $tags = $data['tags'] ?? [];
+        $tags[] = ['kind' => 'style', 'value' => self::FORMAT_STYLES[$data['type']]];
+
+        return $tags;
+    }
+
+    /* The description under the title. Capped in WORDS because that is how
+       the drawer counts it for the admin; chars alone would let Chinese run long. */
+    public const SUMMARY_MAX_WORDS = 50;
+
+    private static function wordCap(): \Closure
+    {
+        return function ($attr, $value, $fail) {
+            if (str_word_count((string) $value) > self::SUMMARY_MAX_WORDS) {
+                $fail('Keep the description to '.self::SUMMARY_MAX_WORDS.' words or fewer.');
+            }
+        };
+    }
+
+    /** Beginner / Intermediate / Advanced, read off HSK so the two cannot disagree. */
+    private static function difficultyFor(?string $hsk): ?string
+    {
+        if (! $hsk) {
+            return null;
+        }
+        $n = (int) substr($hsk, 4);
+
+        return $n <= 2 ? 'Beginner' : ($n <= 4 ? 'Intermediate' : 'Advanced');
     }
 
     /**

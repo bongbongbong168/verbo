@@ -124,7 +124,7 @@ class DailyQuests
         'listen_podcast' => ['focus' => ['Listening'], 'content' => ['Podcasts']],
         'review_words' => ['focus' => ['Vocabulary'], 'content' => ['Flashcards']],
         'learn_words' => ['focus' => ['Vocabulary'], 'content' => ['Flashcards']],
-        'finish_lesson' => ['focus' => ['Grammar'], 'content' => ['Quizzes']],
+        'finish_lesson' => ['focus' => ['Grammar'], 'content' => []],
         'scan_text' => ['focus' => ['Reading'], 'content' => []],
     ];
 
@@ -141,13 +141,57 @@ class DailyQuests
                 'day' => $day,
                 'area' => $area,
                 'quest_key' => $this->pick($user, $area),
-                'level' => 'normal',
+                'level' => $this->startingLevel($user),
             ]);
 
             $out[] = $this->describe($user, $row);
         }
 
         return $out;
+    }
+
+    /**
+     * Today's quests that are done but not yet celebrated, marked celebrated
+     * as they are returned, so each toast shows once. Only looks at quests
+     * that already exist today (never creates them): someone who has not
+     * opened the Dashboard has no quests to finish yet.
+     */
+    public function newlyCompleted($user): array
+    {
+        $rows = DailyQuest::where('user_id', $user->id)
+            ->where('day', Carbon::today()->toDateString())
+            ->whereNull('celebrated_at')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $quest = self::QUESTS[$row->quest_key] ?? null;
+            if (! $quest) {
+                continue;
+            }
+            $target = $quest['levels'][$row->level];
+            if ($this->progress($user, $row->quest_key) < $target) {
+                continue;
+            }
+            $row->forceFill(['celebrated_at' => now()])->save();
+            $out[] = ['label' => $this->label($row->quest_key, $target), 'mark' => $quest['mark']];
+        }
+
+        return $out;
+    }
+
+    /**
+     * The difficulty a new day's quests start at, from the learner's answer to
+     * "How much time can you realistically study each day?". Only the
+     * starting point: the learner can still change any quest's target.
+     */
+    public function startingLevel($user): string
+    {
+        return match ($user->learningPreference?->daily_goal) {
+            '15 minutes' => 'easy',
+            '45 minutes', '1 hour or more' => 'hard',
+            default => 'normal',
+        };
     }
 
     /** One quest, with its progress and everything the card renders. */

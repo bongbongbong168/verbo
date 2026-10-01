@@ -26,15 +26,62 @@ class OcrService
      */
     public function extractChineseText(string $imagePath): string
     {
-        $text = $this->gemini->extract($imagePath);
+        return $this->read($imagePath)['text'];
+    }
 
-        if ($text !== null) {
-            Log::info('Scan read by Gemini', ['chars' => mb_strlen($text)]);
-        } else {
-            $text = $this->tesseract($imagePath);
+    /**
+     * The text PLUS the lines the reader was not sure of.
+     *
+     * `uncertain` holds those lines exactly as they appear in `text` (after
+     * tidy), so the page can match them by content. Gemini flags its own with
+     * `[?]` (see its prompt); Tesseract has no opinion of its own, so a line
+     * whose words average under LOW_CONFIDENCE is flagged from its TSV output.
+     *
+     * @return array{text: string, uncertain: array<int, string>}
+     */
+    public function read(string $imagePath): array
+    {
+        $raw = $this->gemini->extract($imagePath);
+
+        if ($raw !== null) {
+            Log::info('Scan read by Gemini', ['chars' => mb_strlen($raw)]);
+            $uncertain = [];
+            $lines = [];
+            foreach (preg_split('/\r\n|\r|\n/u', $raw) as $line) {
+                $marker = '/^\s*'.preg_quote(GeminiOcrService::UNSURE, '/').'\s*/u';
+                if (preg_match($marker, $line)) {
+                    $line = preg_replace($marker, '', $line);
+                    $uncertain[] = self::tidy($line);
+                }
+                $lines[] = $line;
+            }
+
+            return $this->result(implode("\n", $lines), $uncertain);
         }
 
-        return self::tidy($text);
+        if (GeminiOcrService::isPdf($imagePath)) {
+            throw new \DomainException('Could not read that PDF right now. Try again in a moment, or upload a photo of the page.');
+        }
+
+        [$text, $uncertain] = $this->tesseract($imagePath);
+
+        return $this->result($text, $uncertain);
+    }
+
+    /** A Tesseract line averaging below this confidence (0-100) is flagged. */
+    public const LOW_CONFIDENCE = 60;
+
+    /** Keep only flags that still name a line of the final text. */
+    private function result(string $raw, array $uncertain): array
+    {
+        $text = self::tidy($raw);
+        $present = array_flip(preg_split('/\n/u', $text));
+        $uncertain = array_values(array_unique(array_filter(
+            $uncertain,
+            fn ($line) => $line !== '' && isset($present[$line])
+        )));
+
+        return ['text' => $text, 'uncertain' => $uncertain];
     }
 
     /**
@@ -98,22 +145,65 @@ class OcrService
         return trim(preg_replace('/\n{3,}/', "\n\n", implode("\n", $lines)));
     }
 
-    private function tesseract(string $imagePath): string
+    /**
+     * One Tesseract run writing BOTH the plain text (unchanged, what Scan
+     * always used) and a TSV with a confidence per word, used only to flag
+     * lines. Two outputs from one pass, so the fallback is no slower.
+     *
+     * @return array{0: string, 1: array<int, string>}
+     */
+    private function tesseract(string $imagePath): array
     {
+        $base = tempnam(sys_get_temp_dir(), 'ocr');
         $process = new Process([
             config('ocr.tesseract_path'),
             $imagePath,
-            'stdout',
+            $base,
             '--tessdata-dir', storage_path('tessdata'),
             '-l', 'chi_sim',
+            'txt', 'tsv',
         ]);
 
-        $process->run();
+        try {
+            $process->run();
 
-        if (! $process->isSuccessful()) {
-            throw new ProcessFailedException($process);
+            if (! $process->isSuccessful()) {
+                throw new ProcessFailedException($process);
+            }
+
+            $text = trim((string) @file_get_contents($base.'.txt'));
+            $tsv = (string) @file_get_contents($base.'.tsv');
+        } finally {
+            @unlink($base);
+            @unlink($base.'.txt');
+            @unlink($base.'.tsv');
         }
 
-        return trim($process->getOutput());
+        return [$text, self::lowConfidenceLines($tsv)];
+    }
+
+    /** Lines from Tesseract's TSV whose words average under LOW_CONFIDENCE. */
+    public static function lowConfidenceLines(string $tsv): array
+    {
+        $lines = [];
+        foreach (preg_split('/\r\n|\n/', trim($tsv)) as $i => $row) {
+            $c = explode("\t", $row);
+            // level 5 = a word; skip the header and rows with no text.
+            if ($i === 0 || count($c) < 12 || $c[0] !== '5' || trim($c[11]) === '' || (float) $c[10] < 0) {
+                continue;
+            }
+            $key = $c[2].'-'.$c[3].'-'.$c[4];
+            $lines[$key]['text'] = ($lines[$key]['text'] ?? '').' '.$c[11];
+            $lines[$key]['conf'][] = (float) $c[10];
+        }
+
+        $low = [];
+        foreach ($lines as $line) {
+            if (array_sum($line['conf']) / count($line['conf']) < self::LOW_CONFIDENCE) {
+                $low[] = self::tidy($line['text']);
+            }
+        }
+
+        return $low;
     }
 }

@@ -38,7 +38,8 @@ class TutorSpecialtyTest extends TestCase
             ->assertJsonPath('specialty_list.0.label', 'Conversation')
             ->assertJsonPath('teaches_levels.1', 'Advanced')
             ->assertJsonPath('teaching_languages.1', 'English')
-            ->assertJsonCount(3, 'specialty_list');
+            // speaking + conversational share one label, so they show once.
+            ->assertJsonCount(2, 'specialty_list');
     }
 
     public function test_the_main_falls_back_to_the_first_chosen_and_an_empty_list_clears_it(): void

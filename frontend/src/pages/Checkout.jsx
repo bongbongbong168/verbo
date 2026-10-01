@@ -6,7 +6,9 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { CARD_APPEARANCE, MastercardMark, VisaMark } from '../components/CardBrands'
 import './Checkout.css'
+import SuccessCheck from '../components/SuccessCheck'
 import './UpgradeCheckout.css'
+import { PageSkeleton } from '../components/Skeleton'
 
 /* Card payments only. The card form is rendered by the payment provider in
    iframes, so card numbers go straight from the browser to the provider and
@@ -47,22 +49,6 @@ function LockIcon() {
     >
       <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" />
       <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" />
-    </svg>
-  )
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m5 12.5 4.5 4.5L19 7.5" />
     </svg>
   )
 }
@@ -233,7 +219,7 @@ export default function Checkout() {
     }
   }, [token, id, isCourse])
 
-  if (loading) return <p className="ck-note">Loading your order…</p>
+  if (loading) return <PageSkeleton label="Loading your order" />
 
   if (!item) {
     return (
@@ -300,36 +286,66 @@ export default function Checkout() {
           : '',
       }
 
+  /* After paying, the main way on is the conversation with this tutor (or
+     the course group): the thread already exists or is opened here, the
+     same idempotent call the profile's "Message tutor" uses. */
+  async function openChat() {
+    try {
+      const conv = isCourse
+        ? await api.openCourseConversation(token, item.course?.id)
+        : await api.openTutorConversation(token, item.tutor?.tutor_profile?.id)
+      navigate(`/messages?c=${conv.id}`)
+    } catch {
+      navigate('/messages')
+    }
+  }
+
   if (paid) {
     return (
-      <div className="ck">
-        <section className="ck-card ck-done">
-          <span className="ck-done-mark">
-            <CheckIcon />
-          </span>
-          <h1 className="ck-done-title">{order.doneTitle}</h1>
+      /* A real success screen: a big tick, the title under it, what was
+         booked as label/value rows, the one thing still pending, then the
+         way on. Centred in the page column. */
+      <div className="ck ck-ok">
+        <section className="ck-ok-card">
+          {/* The supplied animated tick, played once (see SuccessCheck). */}
+          <div className="ck-ok-tick-anim">
+            <SuccessCheck />
+          </div>
+          <h1 className="ck-ok-title">{order.doneTitle}</h1>
+          <p className="ck-ok-sub">
+            {isCourse
+              ? 'You’re in. It’s on your lessons page now.'
+              : `${order.tutor || 'Your tutor'} will accept it, and then it’s booked.`}
+          </p>
+
+          <dl className="ck-ok-rows">
+            {order.lines.filter((l) => l.value).map((l) => (
+              <div key={l.label}>
+                <dt>{l.label}</dt>
+                <dd>{l.value}</dd>
+              </div>
+            ))}
+          </dl>
+
           {/* Paying does not lock a private lesson in — saying "booked" here is
               what made the tutor's approval invisible to the student. */}
           {!isCourse && (
-            <p className="ck-done-pending">
-              Your tutor has to accept it before the lesson is confirmed. It will sit under
-              <strong> Requests</strong> until they do.
-            </p>
+            <Link to="/bookings?tab=requests" className="ck-ok-note">
+              <span className="ck-ok-dot" aria-hidden="true" />
+              {/* One text node: in the inline-flex pill the gap also split
+                  'under' from 'Requests'. */}
+              <span>
+                Waiting for the tutor · under <strong>Requests</strong>
+              </span>
+            </Link>
           )}
-          <p className="ck-done-sub">
-            {order.title}
-            {order.tutor ? ` with ${order.tutor}` : ''}
-          </p>
-          <p className="ck-done-when">{order.doneWhen}</p>
 
-          <div className="ck-done-actions">
-            <Link to="/bookings" className="ck-cta">
-              View my lessons
-            </Link>
-            <Link to="/find-tutor" className="ck-ghost">
-              Back to Find Tutor
-            </Link>
-          </div>
+          <Link to={`/bookings?tab=${isCourse ? 'upcoming' : 'requests'}`} className="ck-ok-cta">
+            {isCourse ? 'View my bookings' : 'View my request'}
+          </Link>
+          <button type="button" className="ck-ok-back" onClick={openChat}>
+            {isCourse ? 'Open the course chat' : `Message ${(order.tutor || 'your tutor').split(' ')[0]}`}
+          </button>
         </section>
       </div>
     )

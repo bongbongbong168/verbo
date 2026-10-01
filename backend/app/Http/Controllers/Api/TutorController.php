@@ -15,6 +15,31 @@ use Illuminate\Validation\ValidationException;
 
 class TutorController extends Controller
 {
+    /**
+     * The short introduction is ONE sentence: no line break, and no sentence
+     * ending (. ! ? 。 ！ ？) followed by more text. A trailing full stop is fine,
+     and so is a decimal point ("3.5 years").
+     */
+    private static function oneSentence(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            if (is_string($value) && (preg_match('/\R/u', $value) || preg_match('/(?:[!?。！？]|(?<!\d)\.(?!\d))\s*\S/u', trim($value)))) {
+                $fail('Keep the short introduction to one sentence.');
+            }
+        };
+    }
+
+    /**
+     * The same list as index(), ordered by how well each tutor fits the
+     * learner's saved preferences, each with a short match_why. The Home
+     * page's "Recommend Teachers" row reads this.
+     */
+    public function recommended(Request $request, \App\Services\HomeRecommender $recommender)
+    {
+        // tz: the learner's own zone, sent by the page, so "Evening" means their evening.
+        return $recommender->tutors($this->index($request), $request->user()->learningPreference, $request->query('tz'));
+    }
+
     public function index(Request $request)
     {
         // The aggregates ride along in the same query. Cards on the Dashboard
@@ -26,7 +51,7 @@ class TutorController extends Controller
         $saved = SavedItem::where('user_id', $request->user()->id)->where('kind', 'tutor')->pluck('item_id')->all();
 
         return TutorProfile::approved()
-            ->with('user:id,name,email')
+            ->with(['user:id,name,email', 'availabilitySlots'])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
             ->withMin(['lessons as cheapest_lesson' => fn ($q) => $q->bookablePriced()], 'price')
@@ -47,6 +72,9 @@ class TutorController extends Controller
                    keys are already on the row. */
                 $profile->setAttribute('specialty_list', $profile->specialtyList());
                 $profile->setAttribute('saved', in_array($profile->id, $saved));
+                // Real weekly hours, summarised; the raw rows stay off the card.
+                $profile->setAttribute('hours', $profile->hoursSummary());
+                $profile->unsetRelation('availabilitySlots');
 
                 return $profile;
             });
@@ -204,6 +232,7 @@ class TutorController extends Controller
 
         $tutorProfile->load([
             'user:id,name,email',
+            'availabilitySlots',
             'lessons',
             'resumeEntries',
             /* Both columns on each side are required: `avatar_path` because
@@ -249,9 +278,12 @@ class TutorController extends Controller
         /* Resolved for display, main one first — on the model, because the
            Dashboard's cards resolve the same thing. */
         $specialtyList = $tutorProfile->specialtyList();
+        $hours = $tutorProfile->hoursSummary();
+        $tutorProfile->unsetRelation('availabilitySlots');
 
         return array_merge($tutorProfile->toArray(), [
             'specialty_list' => $specialtyList,
+            'hours' => $hours,
             // For the edit drawer, which may be opened by an admin editing
             // someone else and so cannot rely on GET /tutor-profile.
             'specialty_options' => TutorProfile::specialtyOptions(),
@@ -285,7 +317,7 @@ class TutorController extends Controller
     {
         $data = $request->validate([
             'bio' => ['required', 'string', 'min:40', 'max:800', new NoUnsafeLinks],
-            'short_bio' => ['nullable', 'string', 'max:180', new NoUnsafeLinks],
+            'short_bio' => ['nullable', 'string', 'max:120', new NoUnsafeLinks, self::oneSentence()],
             'subjects' => ['required', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
             'languages_spoken' => ['nullable', 'string', 'max:255'],
@@ -392,7 +424,7 @@ class TutorController extends Controller
 
         $data = $request->validate([
             'bio' => ['nullable', 'string', 'max:800', new NoUnsafeLinks],
-            'short_bio' => ['nullable', 'string', 'max:180', new NoUnsafeLinks],
+            'short_bio' => ['nullable', 'string', 'max:120', new NoUnsafeLinks, self::oneSentence()],
             'subjects' => ['nullable', 'string', 'max:255'],
             'hourly_rate' => ['nullable', 'integer', 'min:0'],
             'languages_spoken' => ['nullable', 'string', 'max:255'],

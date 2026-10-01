@@ -177,7 +177,7 @@
   gap: 0.5rem;
   margin: 1rem 0 0;
   padding: 0.7rem 0.85rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ck-soft);
   font-size: 0.82rem;
   line-height: 1.5;
@@ -220,7 +220,7 @@
   display: inline-block;
   padding: 0.85rem 1.5rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ck-fill);
   color: #fff;
   font-family: inherit;
@@ -248,7 +248,7 @@
   display: inline-block;
   padding: 0.85rem 1.3rem;
   border: 1px solid var(--ck-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   font-size: 0.95rem;
   font-weight: 600;
@@ -328,7 +328,7 @@
 .ck-error {
   margin: 1rem 0 0;
   padding: 0.65rem 0.9rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.9rem;
@@ -351,4 +351,165 @@
   font-size: 0.88rem;
   line-height: 1.55;
   color: var(--ck-muted);
+}
+
+
+/* ---- after paying: success screen ---- */
+.ck.ck-ok {
+  display: flex;
+  justify-content: center;
+  /* Top, not stretch: the card was pulled to the full page height. */
+  align-items: flex-start;
+  padding-top: 3rem;
+}
+
+.ck-ok-card {
+  width: 100%;
+  max-width: 440px;
+  box-sizing: border-box;
+  padding: 36px 28px 26px;
+  border: 1px solid #2b2643;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(43, 38, 67, 0.1);
+  text-align: center;
+}
+
+.ck-ok-title {
+  margin: 22px 0 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #1c1730;
+}
+
+.ck-ok-sub {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  color: #726c88;
+}
+
+.ck-ok-rows {
+  margin: 22px 0 0;
+  padding: 6px 16px;
+  border-radius: 16px;
+  background: #f9f8fe;
+  text-align: left;
+}
+
+.ck-ok-rows > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: 0.92rem;
+}
+
+.ck-ok-rows > div + div {
+  border-top: 1px solid #ece8f8;
+}
+
+.ck-ok-rows dt {
+  color: #726c88;
+}
+
+.ck-ok-rows dd {
+  margin: 0;
+  font-weight: 600;
+  color: #1c1730;
+  text-align: right;
+}
+
+.ck-ok-note {
+  display: inline-flex;
+  text-decoration: none;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1edfc;
+  font-size: 0.82rem;
+  color: #4a4460;
+}
+
+.ck-ok-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a89ce3;
+}
+
+.ck-ok-cta {
+  display: flex;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 22px;
+  border-radius: 16px;
+  background: #332f4b;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(51, 47, 75, 0.22);
+}
+
+.ck-ok-cta:hover {
+  background: #2b2643;
+}
+
+.ck-ok-back {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #6a6191;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ck-ok-back:hover {
+  text-decoration: underline;
+}
+
+.ck-ok-cta:focus-visible,
+.ck-ok-back:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+.ck-ok-note:hover {
+  background: #e7e3f6;
+}
+
+ /* Animated tick: the Lottie box, centred; its fallback is a solid disc. */
+.ck-ok-tick-anim {
+  display: flex;
+  justify-content: center;
+}
+
+.sc-anim {
+  display: block;
+}
+
+.sc-static {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #6dcc5b;
+  color: #fff;
+}
+
+.sc-static svg {
+  width: 50%;
+  height: 50%;
 }

@@ -190,7 +190,7 @@ function SyncTab({ podcast, onChange }) {
         {status === 'failed' && info?.error && <p className="ed-sync-error">{info.error}</p>}
       </div>
 
-      <p className="ed-hint">Generate the Chinese transcript from the audio. Verbo adds Pinyin, English, and word timing automatically.</p>
+      <p className="ed-hint">Generate the Chinese transcript from the audio. Verbo adds Pinyin and word timing automatically; the English is yours to add in Transcript.</p>
 
       {!podcast.audio_url && (
         <p className="ed-hint">This episode has no audio yet, so there is nothing to sync to.</p>
@@ -292,6 +292,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [flash, setFlash] = useState(null)
+  const [stage, setStage] = useState(null)
 
   function values() {
     return {
@@ -361,12 +362,24 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
     setError(null)
     setFlash(null)
     setBusy(true)
+    /* Two phases that look like one: uploading the audio (slow, the file is
+       big) and transcribing it. Named separately so a long upload does not
+       read as a slow transcript. */
+    setStage(audio ? 'upload' : 'transcribe')
     let saved = null
     try {
       saved = await onSave(values(), createdPodcast)
       if (!saved?.id) throw new Error('The episode was saved, but Sync could not load it. Close this drawer and open the episode again.')
+      setStage('transcribe')
 
-      const synced = await api.generateTimedTranscript(token, saved.id)
+      /* The server answers 202 "processing" at once and transcribes after the
+         response, so this has to WAIT for the job. Checking the first answer
+         for "completed" bailed out every time and left the Chinese box empty. */
+      let synced = await api.generateTimedTranscript(token, saved.id)
+      for (let i = 0; synced.status === 'processing' && i < 100; i++) {
+        await new Promise((r) => setTimeout(r, 3000))
+        synced = await api.getTimedTranscript(token, saved.id)
+      }
       if (synced.status !== 'completed') {
         /* SyncTab owns failed-state messaging. Mount it with the saved episode
            and avoid repeating the same error in EditDrawer's top banner. */
@@ -379,19 +392,18 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
       /* Generation writes these same lines onto the episode. Mirror the
          response into the still-open form so Transcript immediately shows
          the result without a second fetch or a stale blank draft. */
+      /* Chinese only - the English box is left for the admin to write. */
       const generatedChinese = (synced.segments || []).map((line) => line.text).filter(Boolean).join('\n')
-      const generatedEnglish = (synced.segments || []).map((line) => line.translation).filter(Boolean).join('\n')
       setCreatedPodcast({
         ...saved,
         transcript: generatedChinese,
-        transcript_en: generatedEnglish,
         timed_transcript_status: 'completed',
       })
       setTranscript(generatedChinese)
-      setTranscriptEn(generatedEnglish)
       setAudio(null)
       setImage(null)
-      setFlash('Transcript generated, translated, and synced')
+      setTab('Transcript')
+      setFlash('Chinese transcript generated and synced. Add the English when you are ready.')
     } catch (err) {
       /* Saving and generation are two server operations. If generation
          fails, keep the successfully-created episode in this drawer so retry
@@ -432,6 +444,9 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
         onClose={onClose}
         error={error}
         flash={flash}
+        busy={busy}
+        busyLabel={editing || createdPodcast ? 'Saving…' : 'Posting…'}
+        closeMessage={editing ? 'Saved' : 'Episode posted'}
       >
         <form
           className="ed-form"
@@ -602,8 +617,8 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                 <div className="ed-media-sync">
                   <strong>Generate and sync from audio</strong>
                   <p>
-                    Verbo transcribes the Chinese, translates it to English, and
-                    synchronizes every word in one job.
+                    Verbo transcribes the Chinese and synchronizes every word.
+                    The English is left for you to add.
                   </p>
                   {audio ? (
                     <>
@@ -614,7 +629,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
                         onClick={generateFromAudio}
                         disabled={busy}
                       >
-                        {busy ? 'Generating…' : 'Generate transcript'}
+                        {busy ? (stage === 'upload' ? 'Uploading audio…' : 'Transcribing…') : 'Generate transcript'}
                       </button>
                     </>
                   ) : (
@@ -643,7 +658,7 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
               </span>
             )}
             <button type="submit" className="ed-btn-primary" disabled={busy}>
-              {busy ? 'Saving…' : flash === 'Changes saved' ? 'Saved ✓' : editing ? 'Save changes' : 'Publish'}
+              {busy ? (editing ? 'Saving…' : 'Posting…') : flash === 'Changes saved' ? 'Saved ✓' : editing ? 'Save changes' : 'Publish'}
             </button>
           </div>
           )}

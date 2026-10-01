@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { readCache } from '../dataCache'
+import { api } from '../api'
+import { useAuth } from '../context/AuthContext'
 import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
 
@@ -82,7 +84,31 @@ const FORMATS = [
   { value: 'funfact', label: 'Fun fact' },
 ]
 
+/* Matches ArticleController::SUMMARY_MAX_WORDS, counted the way PHP's
+   str_word_count does (runs of letters), so the counter and the validator agree. */
+const SUMMARY_MAX_WORDS = 50
+const countWords = (text) => (text.match(/[A-Za-z'-]+/g) || []).length
+
 const LEVELS = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6']
+
+/* The hand-picked tag kinds and the preference list each one draws from. The
+   lists themselves come from GET /learning-preferences, the same options a
+   learner answers in Settings, so a tag can only ever be something a learner
+   can pick - which is what lets it score in the recommender. */
+const TAG_KINDS = [
+  { kind: 'goal', option: 'goals', label: 'Learning goals' },
+  { kind: 'focus', option: 'focus', label: 'Skill it practises' },
+  { kind: 'interest', option: 'interests', label: 'Interests' },
+]
+
+/* Mirrors ArticleController::FORMAT_STYLES and difficultyFor(). Shown only as
+   a preview of what the server will add; the server is what writes them. */
+const FORMAT_STYLE = { article: 'Articles', story: 'Stories', funfact: 'Articles' }
+function difficultyOf(hsk) {
+  const n = Number(String(hsk || '').slice(4))
+  if (!n) return null
+  return n <= 2 ? 'Beginner' : n <= 4 ? 'Intermediate' : 'Advanced'
+}
 
 /* The Read tile's cover is 16:9 (`.rd-tile-media` uses that aspect-ratio), so
    the crop is cut to the shape it will actually be shown in. Without a crop
@@ -93,6 +119,7 @@ const COVER_WIDTH = 960
 
 export default function ArticleEditDrawer({ article, onSave, onClose }) {
   const editing = Boolean(article)
+  const { token } = useAuth()
 
   const [tab, setTab] = useState('Article')
   const [title, setTitle] = useState(article?.title || '')
@@ -102,10 +129,35 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
      suggestion list under the cursor while someone is typing into it. */
   const topicOptions = useMemo(() => knownTopics(article?.category), [article?.category])
   const [hskLevel, setHskLevel] = useState(article?.hsk_level || '')
+  const [summary, setSummary] = useState(article?.summary || '')
   const [body, setBody] = useState(article?.body || '')
   const [bodyEn, setBodyEn] = useState(article?.body_en || '')
   const [isPremium, setIsPremium] = useState(Boolean(article?.is_premium))
   const [image, setImage] = useState(null)
+  // Style tags are derived from the format, so only the hand-picked kinds live here.
+  const [tags, setTags] = useState(() =>
+    (article?.tags || []).filter((t) => TAG_KINDS.some((k) => k.kind === t.kind)),
+  )
+  const [tagOptions, setTagOptions] = useState(null)
+
+  useEffect(() => {
+    let live = true
+    api
+      .getLearningPreferences(token)
+      .then((d) => live && setTagOptions(d.options))
+      .catch(() => live && setTagOptions({}))
+    return () => {
+      live = false
+    }
+  }, [token])
+
+  function toggleTag(kind, value) {
+    setTags((list) =>
+      list.some((t) => t.kind === kind && t.value === value)
+        ? list.filter((t) => !(t.kind === kind && t.value === value))
+        : [...list, { kind, value }],
+    )
+  }
 
   /* The cropper runs BEFORE the file becomes the upload, so the framing chosen
      here is what the card and the article header both show. */
@@ -142,10 +194,12 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
            un-snapped "culture" would quietly become a second shelf. */
         category: normaliseTopic(category, topicOptions) || null,
         hsk_level: hskLevel || null,
+        summary: summary.trim(),
         body,
         body_en: bodyEn,
         is_premium: isPremium,
         image,
+        tags,
       })
       // The caller closes on create; on edit it stays open, so say so.
       if (editing) setFlash('Saved')
@@ -161,12 +215,13 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
     <EditDrawer
       title={editing ? 'Edit article' : 'New article'}
       subtitle={editing ? article.title : 'Publish to the Read section'}
-      tabs={['Article', 'Translation', 'Cover']}
+      tabs={['Article', 'Tags', 'Translation', 'Cover']}
       tab={tab}
       onTabChange={setTab}
       onClose={onClose}
       error={error}
       flash={flash}
+      busy={busy}
     >
       <form className="ed-form" onSubmit={submit}>
         {tab === 'Article' && (
@@ -234,6 +289,23 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
               Read page shelves by topic, so an unfiled article only turns up in search.
             </p>
 
+            <label className="ed-field">
+              <span>Description</span>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                rows={3}
+                maxLength={400}
+                placeholder="One or two sentences under the title. Empty uses the start of the translation."
+              />
+              <small
+                className="ed-hint"
+                style={countWords(summary) > SUMMARY_MAX_WORDS ? { color: '#b3261e' } : undefined}
+              >
+                {countWords(summary)} / {SUMMARY_MAX_WORDS} words
+              </small>
+            </label>
+
             <label className="ed-check ed-premium-check">
               <input
                 type="checkbox"
@@ -255,6 +327,56 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
                 required
               />
             </label>
+          </>
+        )}
+
+        {tab === 'Tags' && (
+          <>
+            <p className="ed-hint">
+              Recommended for You matches these against what each learner picked in
+              Settings. Pick what the piece is really about; a few good tags beat many.
+            </p>
+
+            {!tagOptions && <p className="ed-hint">Loading options…</p>}
+
+            {tagOptions &&
+              TAG_KINDS.map((k) =>
+                (tagOptions[k.option] || []).length ? (
+                  <fieldset className="ed-tagset" key={k.kind}>
+                    <legend>{k.label}</legend>
+                    <div className="ed-tagchips">
+                      {tagOptions[k.option].map((v) => {
+                        const on = tags.some((t) => t.kind === k.kind && t.value === v)
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            className={`ed-tagchip${on ? ' on' : ''}`}
+                            aria-pressed={on}
+                            onClick={() => toggleTag(k.kind, v)}
+                          >
+                            {v}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </fieldset>
+                ) : null,
+              )}
+
+            <fieldset className="ed-tagset">
+              <legend>Added for you</legend>
+              <div className="ed-auto-tags">
+                <span className="ed-auto-tag">{FORMAT_STYLE[type]}</span>
+                {difficultyOf(hskLevel) && (
+                  <span className="ed-auto-tag">{difficultyOf(hskLevel)}</span>
+                )}
+              </div>
+              <p className="ed-hint">
+                The format tag comes from Format, and the difficulty from Level, so
+                neither can say something different from those fields.
+              </p>
+            </fieldset>
           </>
         )}
 

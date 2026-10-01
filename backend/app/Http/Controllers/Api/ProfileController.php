@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\CourseEnrollment;
 use App\Models\Podcast;
+use App\Models\StudyLevel;
 use App\Models\StudyUnit;
 use App\Models\User;
 use App\Services\ProfilePhotoService;
@@ -120,12 +121,15 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        /* "Current level" is DERIVED from the last study unit they opened, not
-           stored on the user — there is no level column and inventing one would
-           mean a second thing to keep in step with what they actually study. */
+        /* The profile's current level is the last HSK unit opened. Daily Use
+           is a situation, not a proficiency level. Filter before choosing the
+           latest view so a newer situation cannot hide earlier HSK progress. */
         $level = null;
         $lastUnitView = $user->recentViews()
             ->where('viewable_type', StudyUnit::class)
+            ->whereIn('viewable_id', StudyUnit::query()
+                ->select('id')
+                ->whereHas('level', fn ($q) => $q->where('category', 'hsk')))
             ->orderByDesc('last_viewed_at')
             ->first();
 
@@ -156,12 +160,37 @@ class ProfileController extends Controller
             }
         }
 
+        /* The HSK books this learner has actually opened a unit in, for the
+           shelf on the progress card. Derived from recent_views like the level
+           above; Daily Use situations are not books, so they are left out. */
+        $openedUnitIds = $user->recentViews()
+            ->where('viewable_type', StudyUnit::class)
+            ->pluck('viewable_id');
+        $books = $openedUnitIds->isEmpty() ? collect() : StudyLevel::query()
+            ->where('category', 'hsk')
+            ->whereHas('units', fn ($q) => $q->whereIn('id', $openedUnitIds))
+            ->withCount('units')
+            ->orderBy('title')
+            ->get()
+            ->map(function (StudyLevel $l) use ($openedUnitIds) {
+                $opened = $l->units()->whereIn('id', $openedUnitIds)->count();
+
+                return [
+                    'id' => $l->id,
+                    'title' => $l->title,
+                    'image_url' => $l->image_url,
+                    'percent' => $l->units_count ? (int) round($opened / $l->units_count * 100) : 0,
+                ];
+            })
+            ->values();
+
         return response()->json([
             'name' => $user->name,
             'email' => $user->email,
             'is_admin' => (bool) $user->is_admin,
             'member_since' => $user->created_at,
             'level' => $level,
+            'books' => $books,
             'stats' => [
                 'flashcards' => $user->flashcards()->count(),
                 'scans' => $user->scans()->count(),

@@ -37,7 +37,7 @@ class GeminiOcrService
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     private const PROMPT = <<<'TXT'
-    Transcribe the CHINESE text in this image.
+    Transcribe the CHINESE text in this image or document (every page, in order).
 
     Rules:
     - Output ONLY Chinese text. Leave out any line that is entirely English or
@@ -55,7 +55,18 @@ class GeminiOcrService
     - Output only the text: no introduction, no explanation, no markdown, no
       code fences.
     - If there is no Chinese text at all, output nothing.
+    - If you cannot read a line with confidence (blurred, cut off, partly
+      hidden), still give your best reading, but start that line with [?]
+      followed by a space. Mark only lines you are genuinely unsure of.
     TXT;
+
+    /** The mark the prompt asks for on a line Gemini could not read surely. */
+    public const UNSURE = '[?]';
+
+    public static function isPdf(string $path): bool
+    {
+        return is_readable($path) && mime_content_type($path) === 'application/pdf';
+    }
 
     public static function configured(): bool
     {
@@ -74,13 +85,11 @@ class GeminiOcrService
         }
 
         $mime = mime_content_type($imagePath) ?: 'image/jpeg';
+        $pdf = self::isPdf($imagePath);
         $model = config('services.gemini.ocr_model') ?: config('services.gemini.model');
 
         try {
-            $response = Http::timeout(config('services.gemini.ocr_timeout', 30))
-                ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
-                ->asJson()
-                ->post(self::ENDPOINT."/{$model}:generateContent", [
+            $response = GeminiHttp::generate($model, [
                     'contents' => [[
                         'role' => 'user',
                         'parts' => [
@@ -95,9 +104,12 @@ class GeminiOcrService
                         // Zero: this is transcription, where the only right
                         // answer is the one in the picture.
                         'temperature' => 0,
-                        'maxOutputTokens' => 4096,
+                        // A PDF can run many pages; a photo is one.
+                        'maxOutputTokens' => $pdf ? 16384 : 4096,
+                        // Thinking spends the same budget; transcription needs none.
+                        'thinkingConfig' => ['thinkingLevel' => 'minimal'],
                     ],
-                ]);
+                ], (int) config('services.gemini.ocr_timeout', 30) * ($pdf ? 3 : 1));
         } catch (\Throwable $e) {
             Log::warning('Gemini OCR request failed, falling back to Tesseract', [
                 'message' => preg_replace('/([?&]key=)[^&\s"\']+/i', '$1REDACTED', $e->getMessage()),
@@ -133,7 +145,20 @@ class GeminiOcrService
             ->filter()
             ->implode('');
 
-        return self::clean($text);
+        $text = self::clean($text);
+
+        /* Cut off by the token limit: the last line may be half a line, so it
+           is flagged for the learner to check rather than passed off as read. */
+        if (data_get($candidate, 'finishReason') === 'MAX_TOKENS' && $text !== '') {
+            $lines = explode("\n", $text);
+            $last = count($lines) - 1;
+            if (! str_starts_with(ltrim($lines[$last]), self::UNSURE)) {
+                $lines[$last] = self::UNSURE.' '.$lines[$last];
+            }
+            $text = implode("\n", $lines);
+        }
+
+        return $text;
     }
 
     /**

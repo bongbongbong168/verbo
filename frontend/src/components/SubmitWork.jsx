@@ -44,13 +44,21 @@ export default function SubmitWork({ item, submission, onDone }) {
       {submission?.submitted_at && (
         <div className="sw-current">
           <div className="sw-current-head">
-            <span className={`st-badge st-${submission.status}`}>
+            {/* Same pills as the teacher's grading table. (These were
+                st-badge, a class with no styles left, so they read as plain
+                text.) */}
+            <span className={`gr-badge gr-${graded ? "graded" : "submitted"}`}>
               {graded ? "Graded" : "Submitted"}
             </span>
-            {submission.is_late && <span className="st-late">Late</span>}
-            {graded && item.points != null && (
+            {submission.is_late && <span className="gr-late">Late</span>}
+            {/* The score shows whenever there is one. It used to need a
+                points total too, so an assignment without one was graded
+                with no visible grade. */}
+            {graded && submission.score != null && (
               <span className="sw-score">
-                {submission.score ?? "—"}/{item.points}
+                <span className="sw-score-label">Your score</span>
+                <strong>{submission.score}</strong>
+                {item.points ? <span className="sw-score-of">/ {item.points}</span> : null}
               </span>
             )}
           </div>

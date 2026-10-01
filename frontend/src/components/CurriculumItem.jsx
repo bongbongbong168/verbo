@@ -16,6 +16,26 @@ function formatWhen(value) {
   });
 }
 
+/* Short form for the collapsed row: no year when it is this year. The full
+   date and time stay in the tooltip. */
+function shortDate(value, withTime = false) {
+  if (!value) return null;
+  const d = new Date(value);
+  const opts = { month: "short", day: "numeric" };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+  if (withTime) Object.assign(opts, { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleString(undefined, opts);
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
 function DocIcon({ material }) {
   return (
     <svg
@@ -50,7 +70,6 @@ function DocIcon({ material }) {
  */
 export default function CurriculumItem({
   item,
-  classId,
   isTeacher,
   onChanged,
 }) {
@@ -99,14 +118,24 @@ export default function CurriculumItem({
             <span className={`cu-kind${isAssignment ? "" : " material"}`}>
               {isAssignment ? "Assignment" : "Material"}
             </span>
-            <span>Posted {formatWhen(item.created_at)}</span>
+            {/* Posted is secondary: a clock and a short date, the full
+                timestamp on hover. The due date stays words, since it is
+                the one a student acts on. */}
+            <span
+              className="cu-posted"
+              title={`Posted ${formatWhen(item.created_at)}`}
+              aria-label={`Posted ${formatWhen(item.created_at)}`}
+            >
+              <ClockIcon />
+              {shortDate(item.created_at)}
+            </span>
             {isAssignment && item.due_at && (
               <span className={item.is_overdue ? "cu-due-past" : ""}>
-                Due {formatWhen(item.due_at)}
+                Due {shortDate(item.due_at, true)}
               </span>
             )}
             {isAssignment && item.points ? (
-              <span>{item.points} points</span>
+              <span>{item.points} pts</span>
             ) : null}
           </span>
         </button>
@@ -122,11 +151,17 @@ export default function CurriculumItem({
         )}
 
         {isAssignment && !isTeacher && (
-          <span className={`cu-status cu-status-${mine?.status || "missing"}`}>
+          <span
+            className={`cu-status cu-status-${
+              mine?.status === "graded" || mine?.status === "submitted"
+                ? mine.status
+                : item.is_overdue ? "missing" : "todo"
+            }`}
+          >
+            {/* Just the state here; the score is shown inside, beside the
+                feedback. */}
             {mine?.status === "graded"
-              ? item.points
-                ? `${mine.score ?? "—"}/${item.points}`
-                : "Graded"
+              ? "Graded"
               : mine?.status === "submitted"
                 ? "Submitted"
                 : item.is_overdue

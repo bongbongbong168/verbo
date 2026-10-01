@@ -21,6 +21,8 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
+        <!-- Tests must never reach the real Pusher app. -->
+        <env name="BROADCAST_DRIVER" value="null"/>
         <!-- NEVER COMMENT THESE OUT. Without them the suite inherits DB_DATABASE
              from .env, which is database/database.sqlite — the real development
              database — and any test using RefreshDatabase runs `migrate:fresh`
@@ -33,6 +35,11 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
+        <!-- No real provider keys in tests: a test that forgets Http::fake must
+             fail, not quietly spend quota on a real Google/DeepL call. Tests
+             that need a key set a fake one with config(). -->
+        <env name="GEMINI_API_KEY" value=""/>
+        <env name="DEEPL_API_KEY" value=""/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

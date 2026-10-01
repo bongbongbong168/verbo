@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { toast } from '../toast'
 import './EditDrawer.css'
 
 function CloseIcon() {
@@ -33,8 +34,58 @@ export default function EditDrawer({
   onClose,
   error,
   flash,
+  busy,
+  busyLabel = 'Saving…',
+  closeMessage = 'Saved',
   children,
 }) {
+  /* Saving is a toast, not a banner inside the drawer (the banner pushed the
+     whole tab down and back up). While `busy` a "Saving…" toast spins; the
+     success message (flash) or the error then turns THAT toast into the
+     result. Effects run in declaration order, so a save that sets its flash
+     and clears busy in one render settles as success before the busy effect
+     would drop the spinner. */
+  const savingRef = useRef(null)
+
+  useEffect(() => {
+    if (!flash) return
+    if (savingRef.current) {
+      savingRef.current.success(flash)
+      savingRef.current = null
+    } else {
+      toast.show({ type: 'success', title: flash, duration: 3000 })
+    }
+  }, [flash])
+
+  useEffect(() => {
+    if (error && savingRef.current) {
+      savingRef.current.error("Couldn't save", error)
+      savingRef.current = null
+    }
+  }, [error])
+
+  /* A create closes the drawer the moment it succeeds, so the busy effect
+     never sees busy go false and the spinner would hang forever. Settle it
+     on unmount instead. */
+  const closeRef = useRef(closeMessage)
+  closeRef.current = closeMessage
+  useEffect(() => () => {
+    if (savingRef.current) {
+      savingRef.current.success(closeRef.current)
+      savingRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (busy && !savingRef.current) {
+      savingRef.current = toast.saving(busyLabel)
+    } else if (!busy && savingRef.current) {
+      // Finished without a message worth saying: just drop the spinner.
+      savingRef.current.done()
+      savingRef.current = null
+    }
+  }, [busy])
+
   // Esc closes, matching every other dismissible overlay in the app.
   useEffect(() => {
     function onKey(e) {
@@ -74,7 +125,6 @@ export default function EditDrawer({
 
         <div className="ed-body">
           {error && <p className="ed-error">{error}</p>}
-          {flash && <p className="ed-saved">{flash}</p>}
           {children}
         </div>
       </aside>

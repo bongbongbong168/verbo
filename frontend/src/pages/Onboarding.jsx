@@ -300,7 +300,7 @@ export default function Onboarding() {
 
       {/* ---- right: one question at a time ---- */}
       <main className="ob-main">
-        <div className="ob-card">
+        <div className={"ob-card" + (last ? " ob-card-done" : "")}>
           {/* The finish line. Only on the last step, and above the progress
               bar so the eye lands on the result before the meter that reports
               it. */}
@@ -346,7 +346,7 @@ export default function Onboarding() {
           )}
 
           <p className={"ob-count" + (last ? " ob-count-done" : "")}>
-            {last ? "Completed" : `Step ${step + 1} of ${STEPS.length}`}
+            {last ? "Your answers" : `Step ${step + 1} of ${STEPS.length}`}
           </p>
 
           {/* Keyed on the step so the content re-mounts and the entrance plays
@@ -409,12 +409,15 @@ export default function Onboarding() {
                       selected={values.styles}
                       onToggle={(v) => toggle("styles", v)}
                     />
+                    {/* Each part says what it changes, or the answers seem to vanish. */}
+                    <p className="ob-note">Shapes the daily quests Verbo picks for you.</p>
                     <Group label="Topics you enjoy" hint="Optional">
                       <Chips
                         options={options.interests}
                         selected={values.interests}
                         onToggle={(v) => toggle("interests", v)}
                       />
+                      <p className="ob-note">Shown first in Read, Podcasts and Study.</p>
                     </Group>
                   </>
                 )}
@@ -482,15 +485,12 @@ export default function Onboarding() {
               type="button"
               className="ob-next"
               onClick={() => (last ? finish() : setStep((s) => s + 1))}
-              disabled={busy}
+              /* Continue needs an answer on this step; with nothing picked it
+                 did exactly what Skip does, so two buttons meant one thing.
+                 Skip stays the way past a question you would rather not answer. */
+              disabled={busy || (!last && !answered)}
             >
-              {busy
-                ? "Saving…"
-                : last
-                  ? "Start learning"
-                  : answered
-                    ? "Continue"
-                    : "Continue"}
+              {busy ? "Saving…" : last ? "Start learning" : "Continue"}
             </button>
           </div>
         </div>
@@ -506,7 +506,7 @@ function Group({ label, hint, children }) {
     <div className="ob-group">
       <p className="ob-group-label">
         {label}
-        {hint && <span className="ob-group-hint">{hint}</span>}
+        {hint && <span className="ob-group-hint">({hint.toLowerCase()})</span>}
       </p>
       {children}
     </div>

@@ -14,12 +14,16 @@ export default function Login() {
      Without this the reset ends on a bare sign-in screen, which reads as
      "did that go through?" rather than as the success it was. Held in state
      so it survives the first keystroke but not a reload. */
-  const { state } = useLocation()
+  const { state, search } = useLocation()
+  // Set by the Google redirect sign-in when it comes back without a session.
+  const googleError = new URLSearchParams(search).get('google_error')
   const [notice] = useState(state?.notice || null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(
+    googleError ? "Google sign-in did not go through. Please try again." : null,
+  )
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(e) {

@@ -303,12 +303,22 @@ class ConversationController extends Controller
             ? '"'.\Illuminate\Support\Str::limit(trim($body), 80).'"'
             : ($hasFile ? 'Sent an attachment.' : '');
 
+        // For the on-screen toast: which thread, and the words without quotes.
+        $toast = [
+            'conversation_id' => $conversation->id,
+            'course' => $conversation->type === Conversation::TYPE_COURSE,
+            'preview' => trim($body) !== ''
+                ? \Illuminate\Support\Str::limit(trim($body), 80)
+                : ($hasFile ? 'Sent an attachment.' : ''),
+        ];
+
         if ($conversation->type === Conversation::TYPE_COURSE) {
             foreach ($this->recipientIds($conversation, $sender) as $id) {
                 Notification::raise($id, $sender->id, 'message', [
                     'title' => 'New message in '.(optional($conversation->course)->title ?? 'your course'),
                     'body' => trim($sender->name.': '.$preview),
                     'link' => '/messages?c='.$conversation->id,
+                    'data' => $toast,
                 ]);
             }
 
@@ -320,6 +330,7 @@ class ConversationController extends Controller
                 'title' => 'New message',
                 'body' => trim($sender->name.': '.$preview),
                 'link' => '/messages?c='.$conversation->id,
+                'data' => $toast,
             ]);
         }
     }

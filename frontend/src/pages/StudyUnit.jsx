@@ -437,6 +437,11 @@ export default function StudyUnit() {
   }
 
   async function handleSaveWord(word) {
+    /* Optimistic: the word reads as saved the instant the key is pressed.
+       The request can stall for seconds on the deployed API, and waiting on it
+       made saving feel slow. A failure below puts it back. */
+    setSavedWords((prev) => ({ ...prev, [word.text]: true }))
+    setLastSaved(word.text)
     try {
       await api.addFlashcard(token, {
         word: word.text,
@@ -452,9 +457,8 @@ export default function StudyUnit() {
         // From the ref, not the state — see the note where unitRef is declared.
         source_id: unitRef.current?.id,
       })
-      setLastSaved(word.text)
-      setSavedWords((prev) => ({ ...prev, [word.text]: true }))
     } catch (err) {
+      setSavedWords((prev) => ({ ...prev, [word.text]: false }))
       setError(err.message)
     }
   }

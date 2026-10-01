@@ -268,6 +268,33 @@ The sidebar (`components/Layout.jsx`) is **Home · Learn · Explore · Tutor · 
 - **`destroy` is a real delete**, unlike hiding a booking: a notification belongs to exactly one person, so there is no second party whose record would be destroyed with it.
 - **The bell is the Figma export (`assets/dashboard/icon-bell.png`), not a drawn icon** — it carries its own light chip and navy bell, so `.nm-trigger` is a transparent 42px hit area and the PNG is positioned inside it. The export pads its circle to **70% of the frame**, so the img is scaled to `143%` to make the visible chip exactly 42px; at 100% it renders ~29px and looks mismatched beside the account button. `pointer-events: none` on the img keeps clicks on the button. A baked raster cannot change colour, so hover/open is a `box-shadow` ring rather than a fill. **The bell and the account button both carry a deliberately slight lift** (`0 2px 6px` at 10-12%, rising to `0 4px 12px` on hover) so the pair reads as one raised control group — navy-tinted like every other shadow in the app rather than neutral black, which would grey the lavender under it. On the bell the ring and the lift must be **one shadow list**: a second `box-shadow` declaration replaces the first rather than adding to it, which would drop the ring the moment the lift was added. The file used is **`icon-bell-plain.png`**, a dot-free variant — the original export bakes in a lavender notification dot that could never turn off, so it claimed unread items at zero while the live red badge said none. Removing the dot alone was not enough: the artwork also **cuts 3-4px out of the bell's top-right to seat it**, which left the glyph looking bitten. The bell is provably symmetric everywhere else (from y=31 down its edges satisfy `L + R = 63` exactly), so the notched rows were rebuilt by mirroring its own left half about that axis — reconstruction, not guesswork, and all 17 rows now measure symmetric. `icon-bell.png` is untouched on disk. Replace `icon-bell-plain.png` if a clean dot-free export ever comes out of Figma.
 
+### Shared design standards — page titles and the main button
+
+Two global stylesheets, imported in `main.jsx` after `mobile.css`, hold the rules pages had drifted apart on. **A new page should use them instead of restyling its own.**
+
+- **`src/pageTitles.css`**: every top-level page title is 1.9rem / 700 with the LONG BAR, a 4px `#a89ce3` bar (radius 999, inset 4px top and bottom, 1rem gap). It runs down the title AND its subtitle where there is one (Study, Bookings, Find Tutor, Settings, Scan, Classes). Where the title sits alone in a row with its icons (Read, Podcast, Messages, Vocabulary, Notifications, Profile, Applications), it is title-height.
+  - Chosen by the user over a title-only tick. The title-plus-subtitle wrappers carry the bar and their h1 drops its own. Verified: exactly one bar per page.
+  - Selectors use an extra element or `:has()` so they beat each page's own rule. Scan keeps its 1.5rem phone size.
+- **`src/buttons.css`**: the main action button is `#a89ce3` fill + white label, with hover `#9486d6`. It was already the style of ~20 screens; 23 stragglers (deep purple `#6a6191`, the Figma `#7d76a0/#7d76a1`, near-black `#332f4b`) are listed there under a `body .x` selector.
+  - Deliberately excluded: red destructive buttons, dark buttons sitting on dark banners (Read hero, paywall, Scan meter), and on/off toggles.
+- **Still inconsistent, not yet fixed:** 306 distinct hex colours. Error red alone has three (`#b02a2a`, `#b3261e`, `#d93636`), success green five, the page ground six near-identical shades. Card corners use 10/12/14/16/18/20px. The next pass is a shared palette and three radii.
+
+### On-screen toasts — temporary, on every page
+
+`src/toast.js` (a plain module store: `toast.show({type, title, message, duration, actionLabel, onAction})` returns an id, `toast.dismiss(id)`), `components/ToastStack.jsx` (prefix `ts-`) and `hooks/useLiveToasts.js`, both mounted once in `Layout`. Toasts are visibility only; the Notifications page and Bookings stay the lasting record.
+
+- **Fed by notifications, not a second event system.** `Notification::raise()` stores an optional `data` json (booking `starts_at` in UTC, `conversation_id`, `preview`, `cancelled_by`) and dispatches `App\Events\NotificationCreated` on the owner's private `users.{id}` channel. The payload is an id only, same rule as `ConversationChanged`; the client fetches rows from `GET /notifications/since?after=ID` (owner-scoped, max 5). Without `after` it returns just the watermark, so opening a tab never replays history.
+- **The client formats times**, because only the browser knows the reader's timezone.
+- **Fallback when Pusher is down**: polls every 5s, but only while the tab is visible, and catches up on `visibilitychange`. A toast shown to a hidden tab would expire unseen.
+- **A message into the thread already open does not toast.**
+- **"Lesson starting soon" is computed client-side** from `/my-learning` (no scheduler exists). It skips unaccepted private requests, and each lesson is reminded once per browser (`localStorage` `ts-reminded`).
+- **Layout**: a `position: sticky; height: 0` anchor at the top of `.sb-main` holds an absolute stack. That keeps it contained in the page column (not fixed over the window) yet visible at any scroll.
+- **Motion obeys the frozen-compositor rule**:
+  - The entrance is transform-only (a 14px nudge).
+  - Removal is a `setTimeout`, never `animationend`.
+  - The progress strip rests FULL and is ornament; the JS timer is what dismisses, and hover pauses both.
+- Max 5, newest on top. Verified in the browser: confirm on an article page, message on the Dashboard, decline + message stacking, hover pause, close, both actions, the in-thread suppression and the reminder. `tests/Feature/NotificationToastTest.php` covers the channel scoping and the watermark.
+
 ### Profile — quick actions in a popover, the full page behind them
 
 `components/ProfileMenu.jsx` + `ProfileMenu.css` (prefix `pm-`) is the account button and the popover it opens; `pages/Profile.jsx` (prefix `pf-`) at `/profile` is the page behind "View profile".

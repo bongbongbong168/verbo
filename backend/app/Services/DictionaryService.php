@@ -38,7 +38,7 @@ class DictionaryService
     {
         $this->loadIndex();
 
-        return self::$index[$word] ?? null;
+        return self::tidy(self::$index[$word] ?? null);
     }
 
     /**
@@ -128,7 +128,7 @@ class DictionaryService
                     'type' => 'word',
                     'text' => $word,
                     'pinyin' => $this->pinyinFor($word),
-                    'translation' => self::$index[$word] ?? null,
+                    'translation' => self::tidy(self::$index[$word] ?? null),
                 ];
 
                 $i += $matchedLen;
@@ -281,6 +281,31 @@ class DictionaryService
         }
 
         return $this->stripAnnotations($definitions[0]) ?: $definitions[0];
+    }
+
+    /**
+     * CEDICT writes cross-references as trad|simp[pin1 yin1]: "used in
+     * 上聲|上声[shang3 sheng1]". Shown raw, that is dictionary markup, not a
+     * meaning. Keep the simplified form and drop the numbered pinyin.
+     */
+    public static function tidy(?string $sense): ?string
+    {
+        if ($sense === null) {
+            return null;
+        }
+        $out = preg_replace('/[^\s\[\]|,;():]+\|([^\s\[\]|,;():]+)/u', '$1', $sense);
+        $out = preg_replace('/\[[a-zA-Z:0-5 ]+\]/u', '', $out);
+        // "(Taiwan pr. )" / "(colloquial pr. )": a pronunciation note whose
+        // pinyin was just removed says nothing, so it goes too.
+        $out = preg_replace('/\s*\([^()]*\bpr\.\s*\)/u', '', $out);
+
+        return trim(preg_replace('/\s{2,}/', ' ', $out));
+    }
+
+    /** Public form of the weak-sense test, for refreshing saved cards. */
+    public function isWeak(string $sense): bool
+    {
+        return $this->isWeakSense($sense);
     }
 
     private function isWeakSense(string $sense): bool

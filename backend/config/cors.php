@@ -57,7 +57,8 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    // The page reads this to show a 'quest complete' toast (CelebrateQuests).
+    'exposed_headers' => ['X-Verbo-Quests'],
 
     'max_age' => 0,
 

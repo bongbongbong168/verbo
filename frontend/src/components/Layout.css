@@ -14,7 +14,9 @@
   color: var(--sb-text);
   border-top-right-radius: 32px;
   border-bottom-right-radius: 32px;
-  padding: 1.5rem 1.1rem 1.8rem;
+  /* Bottom matches the sides (1.1rem): the Pro card sits closer to the
+     rail's foot, as asked, instead of floating 1.8rem up. */
+  padding: 1.5rem 1.1rem 1.1rem;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -75,7 +77,7 @@
   margin-left: auto;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--sb-text);
   cursor: pointer;
@@ -262,15 +264,18 @@
   overflow: hidden;
 }
 
+/* NO TREE LINES (users disliked them). The sub-items sit in a soft inset
+   panel under their section, which groups them without drawing connectors,
+   and each carries a small dot that lights lavender on the current page. */
 .sb-sub {
   list-style: none;
-  margin: 0.15rem 0 0.35rem;
-  padding: 0 0 0 1.45rem;
+  margin: 0.25rem 0 0.4rem 0.9rem;
+  padding: 0.3rem;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
-  margin-left: 1.4rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
 }
 
 .sb-sub-link {
@@ -281,7 +286,7 @@
      centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
      BAND (cap top -> baseline), never the ink box. The pair sums to the original
      value, so the box height is unchanged and only the text moves. */
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--sb-text);
   text-decoration: none;
   font-size: 0.87rem;
@@ -298,15 +303,21 @@
   align-items: center;
 }
 
-/* The tick joining the item to the tree line. */
+/* The item's dot: dim at rest, lavender when it is the page you are on.
+   A static colour, so it is right on the first paint. */
 .sb-sub-link::before {
   content: '';
-  position: absolute;
-  left: -1.45rem;
-  top: 50%;
-  width: 0.85rem;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.14);
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.7rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.sb-sub-link.active::before {
+  background: var(--sb-accent);
+  box-shadow: 0 0 0 3px rgba(168, 156, 227, 0.22);
 }
 
 .sb-sub-link:hover {
@@ -369,7 +380,7 @@
      the one block here that is selling something, and at `--sb-card` flat it
      read as another nav surface. */
   background: linear-gradient(155deg, #4a4470 0%, var(--sb-card) 58%, #383354 100%);
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 1.05rem 1rem 1rem;
   box-shadow: 0 6px 18px rgba(12, 9, 26, 0.28);
 }
@@ -387,10 +398,14 @@
    than the owl, which is exactly why it would not sit where it was put. */
 .sb-promo-owl {
   position: absolute;
-  top: 0.55rem;
-  right: 0.75rem;
-  width: 66px;
-  height: auto;
+    /* Bigger (asked for): the FEET stay on the last text line's baseline
+     (101.8px down) and the extra height grows upward: top = 101.8 - height. */
+  /* Lowered 8px on request: the cap no longer crowds the card's top edge,
+     the feet dip just past the last text line. */
+  top: 11.8px;
+  right: 12px;
+  width: auto;
+  height: 98px;
   /* Anchored to the card, so it cannot stretch the row it sits in. */
   pointer-events: none;
   /* A soft ground shadow so the bird sits ON the card rather than floating
@@ -530,7 +545,7 @@
   content: '';
   position: absolute;
   inset: 2px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--sb-accent);
 }
 
@@ -539,6 +554,14 @@
 .sb-promo-btn-label {
   position: relative;
   z-index: 1;
+}
+
+/* Pinned dark in every state (active on /upgrade, hover, focus): white on
+   this lavender is ~1.9:1, and it was reported showing white. */
+.sb .sb-promo-btn .sb-promo-btn-label,
+.sb .sb-promo-btn:hover .sb-promo-btn-label,
+.sb .sb-promo-btn.active .sb-promo-btn-label {
+  color: #2b2643;
 }
 
 /* Instant colour, no transition — the fill IS the feedback, and a transition
@@ -783,7 +806,7 @@
   animation: sb-flyout-in 0.18s var(--sb-ease);
   min-width: 176px;
   padding: 8px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--sb-card);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 18px 40px rgba(12, 9, 24, 0.4);
@@ -840,7 +863,7 @@
   transform: translateY(-50%);
   z-index: 60;
   padding: 0.42rem 0.7rem 0.46rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--sb-card);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 10px 24px rgba(12, 9, 24, 0.4);

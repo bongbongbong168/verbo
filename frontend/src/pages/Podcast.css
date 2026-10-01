@@ -73,10 +73,10 @@
 }
 
 .pc-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -122,7 +122,7 @@
   color: var(--pc-text);
   background: var(--pc-card);
   border: 1px solid var(--pc-border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: calc(0.5rem - 1.069px) 1.1rem calc(0.5rem + 1.069px);
   cursor: pointer;
   transition:
@@ -357,7 +357,7 @@
   height: 380px;
   background: var(--pc-card);
   border: 1px solid var(--pc-outline);
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 4px 14px rgba(28, 23, 48, 0.08);
   overflow: hidden;
   /* Same 0.14s ease as the Dashboard and Classes cards, so a card lifts the
@@ -535,7 +535,7 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--pc-outline);
   color: #fff;
   flex-shrink: 0;

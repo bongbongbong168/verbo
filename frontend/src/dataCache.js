@@ -43,6 +43,10 @@ const cache = new Map()
 /** key -> in-flight promise, so N callers for one key share one request. */
 const inFlight = new Map()
 
+// A cleared cache belongs to a new session. Requests started in the old
+// session may still finish, but must never repopulate it.
+let generation = 0
+
 /** Subscribers, so a write reaches every mounted component reading that key. */
 const listeners = new Map()
 
@@ -94,13 +98,18 @@ export function fetchThrough(key, fetcher, { force = false } = {}) {
   if (!force && cache.has(key)) return Promise.resolve(readCache(key))
   if (inFlight.has(key)) return inFlight.get(key)
 
+  const startedIn = generation
   const promise = Promise.resolve()
     .then(fetcher)
     .then((data) => {
-      writeCache(key, data)
+      // Invalidation may have started a newer request for this key. Its result
+      // wins even if the older request completes last.
+      if (generation === startedIn && inFlight.get(key) === promise) writeCache(key, data)
       return data
     })
-    .finally(() => inFlight.delete(key))
+    .finally(() => {
+      if (inFlight.get(key) === promise) inFlight.delete(key)
+    })
 
   inFlight.set(key, promise)
   return promise
@@ -143,6 +152,7 @@ export function invalidate(...keys) {
 
 /** Empty everything. MUST run on any change of account — see the note above. */
 export function clearCache() {
+  generation += 1
   cache.clear()
   inFlight.clear()
 }

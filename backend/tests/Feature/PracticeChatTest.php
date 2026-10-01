@@ -227,7 +227,8 @@ class PracticeChatTest extends TestCase
             'used' => 0,
             'reserved' => 0,
         ]);
-        Http::assertSentCount(1);
+        // A 500 is transient: tried once more (GeminiHttp), never more.
+        Http::assertSentCount(2);
     }
 
     public function test_malformed_gemini_response_consumes_nothing(): void

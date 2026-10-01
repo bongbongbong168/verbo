@@ -20,6 +20,21 @@ class PinyinCorrectorTest extends TestCase
         return app(PinyinCorrector::class)->fix($s);
     }
 
+    public function test_it_fixes_the_pinyin_of_a_quoted_sentence_with_a_wrong_syllable()
+    {
+        $out = $this->fix("你可以说：“我想点一碗面。”\nNǐ xiǎng diǎn yì wǎn miàn.\n(I would like a bowl of noodles.)");
+        $lines = explode("\n", $out);
+
+        $this->assertStringStartsWith('wǒ xiǎng diǎn', $lines[1]);
+        $this->assertSame('(I would like a bowl of noodles.)', $lines[2]);
+    }
+
+    public function test_a_quoted_sentence_does_not_rewrite_an_unrelated_english_line()
+    {
+        $reply = "你可以说：“我想点一碗面。”\nI would like one bowl of noodles.";
+        $this->assertSame($reply, $this->fix($reply));
+    }
+
     public function test_it_corrects_a_wrong_tone()
     {
         $out = $this->fix("你好！\nNi hao!\nHello!");

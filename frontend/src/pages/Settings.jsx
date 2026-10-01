@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "../toast";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
@@ -8,6 +9,7 @@ import PaymentMethods from "../components/PaymentMethods";
 import PageTools from "../components/PageTools";
 import { SCALE_OPTIONS, getAppScale, setAppScale } from "../appScale";
 import "./Settings.css";
+import { confirmDelete } from '../components/ConfirmDelete'
 
 function CheckIcon() {
   return (
@@ -73,22 +75,6 @@ const SAVED_GROUPS = [
   },
 ];
 
-function SavedMark({ children }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
-}
-
 function formatDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-US", {
@@ -149,7 +135,6 @@ export default function Settings() {
   const [savedLibrary, setSavedLibrary] = useState(null);
   const [openSavedMenu, setOpenSavedMenu] = useState(null);
   const [error, setError] = useState(null);
-  const [flash, setFlash] = useState(null);
   const [busy, setBusy] = useState(null);
   /* The file waiting to be cropped. Null means the cropper is closed. */
   const [cropSource, setCropSource] = useState(null);
@@ -192,22 +177,38 @@ export default function Settings() {
     return () => document.removeEventListener("pointerdown", closeSavedMenu);
   }, []);
 
+  /* Success is a toast, not a banner above the panel: the banner pushed the
+     whole page down each time and back up when it went. */
+  // The in-flight save's toast, so say() turns "Saving…" into its result.
+  const savingRef = useRef(null);
+
   function say(message) {
-    setFlash(message);
-    setTimeout(() => setFlash(null), 2600);
+    if (savingRef.current) {
+      savingRef.current.success(message);
+      savingRef.current = null;
+    } else {
+      toast.show({ type: "success", title: message, duration: 3000 });
+    }
   }
 
   /* One wrapper for every mutation, as in the edit drawers: it owns the error
-     reset, the busy key and the flash so each handler states only its own work. */
+     reset, the busy key and the saving toast, so each handler states only its
+     own work. The toast shows "Saving…" while the request is out. */
   async function run(key, work, done) {
     setError(null);
     setBusy(key);
+    const saving = toast.saving();
+    savingRef.current = saving;
     try {
       const result = await work();
       if (done) done(result);
     } catch (err) {
+      saving.error("Couldn't save", err.message);
       setError(err.message);
     } finally {
+      // A mutation that said nothing just drops its spinner.
+      saving.done();
+      if (savingRef.current === saving) savingRef.current = null;
       setBusy(null);
     }
   }
@@ -270,7 +271,8 @@ export default function Settings() {
     );
   }
 
-  function removeAvatar() {
+  async function removeAvatar() {
+    if (!(await confirmDelete({ title: "Remove your picture?", action: "Remove" }))) return;
     run(
       "avatar",
       () => api.removeAvatar(token),
@@ -397,7 +399,6 @@ export default function Settings() {
       {/* Above the panel, not inside it: the message belongs to whatever you
           just did, and a section switch must not carry it away mid-read. */}
       {error && <p className="se-error" role="alert">{error}</p>}
-      {flash && <p className="se-flash">{flash}</p>}
 
       <div className="se-shell">
         <nav className="se-nav" aria-label="Settings sections">

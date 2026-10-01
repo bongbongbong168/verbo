@@ -11,7 +11,7 @@
   --bo-pill-bg: #f1edfc;
   --bo-text: #1c1730;
   --bo-muted: #726c88;
-  --bo-field: #f8f7fd;
+  --bo-field: #f9f8fe;
 
   padding: 2rem 90px 3rem; /* 90px side gutter, matching every other page */
   font-family: 'Hellix', system-ui, sans-serif;
@@ -133,6 +133,12 @@
      high on a phone, same CSS). 0.06em splits it - 0.46 / -0.44 - so
      neither is off by half a pixel. */
   padding: 0 5px 0.06em;
+  /* The tab centres its LINE box, and Hellix's cap band sits low in that, so
+     the label's ink sat ~1.4px below this bubble (measured at 375, 2026-09-27).
+     Moving the bubble down the same amount levels the two; the negative
+     bottom margin keeps the tab's height unchanged. */
+  margin-top: 0.12em;
+  margin-bottom: -0.12em;
   border-radius: 999px;
   background: var(--bo-pill-bg);
   color: var(--bo-accent);
@@ -183,7 +189,7 @@
   padding: 0.9rem 1.1rem;
   background: var(--bo-card);
   border: 1px solid var(--bo-border);
-  border-radius: 14px;
+  border-radius: 16px;
 }
 
 .bo-avatar {
@@ -283,7 +289,7 @@
 
 .bo-chip-off {
   background: #f1f0f5;
-  color: #6b6780;
+  color: #726c88;
 }
 
 .bo-chip-lapsed {
@@ -357,7 +363,7 @@
 .bo-error {
   margin: 0 0 1rem;
   padding: 0.6rem 0.85rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.87rem;
@@ -379,42 +385,6 @@
     flex-direction: row;
     justify-content: space-between;
   }
-}
-
-/* ---- role switch (only when the account is also a tutor) ---- */
-
-.bo-roles {
-  display: inline-flex;
-  gap: 4px;
-  margin-bottom: 1rem;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--bo-pill-bg);
-}
-
-.bo-role {
-  /* Measured cap-band correction: Hellix reserves more ascent than a short
-     label uses, so a symmetric pad centres the LINE BOX and leaves the glyphs
-     sitting low. Measured against a flat-capped `H` at 400px (canvas quantises
-     at real pill sizes). The pair sums to the original, so the box height is
-     unchanged and only the text moves. */
-
-  padding: calc(0.4rem - 1.033px) 0.95rem calc(0.4rem + 1.033px);
-  border: none;
-  border-radius: 999px;
-  background: none;
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--bo-accent);
-  cursor: pointer;
-}
-
-/* Static, not animated — the selected role must be right on the first paint. */
-.bo-role.active {
-  background: #fff;
-  color: var(--bo-text);
-  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.12);
 }
 
 .bo-title-h1 {
@@ -448,8 +418,8 @@
 .bo-note {
   margin: 0.45rem 0 0;
   padding: 0.5rem 0.7rem;
-  border-radius: 9px;
-  background: #f8f7fd;
+  border-radius: 8px;
+  background: #f9f8fe;
   font-size: 0.86rem;
   line-height: 1.5;
   color: var(--bo-text);
@@ -526,7 +496,7 @@
   padding: 1.5rem 1.6rem;
   background: #fff;
   border: 1px solid var(--bo-edge, #2b2643);
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 30px 70px rgba(28, 23, 48, 0.34);
 }
 
@@ -554,7 +524,7 @@
   gap: 0.6rem;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--bo-border);
-  border-radius: 11px;
+  border-radius: 12px;
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;

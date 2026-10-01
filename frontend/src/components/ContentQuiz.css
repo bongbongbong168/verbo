@@ -1,0 +1,118 @@
+/* The optional article / episode quiz.
+
+   Drawn as one of the page's own cards - the podcast card's 1px navy outline,
+   20px radius and soft shadow. The quiz itself is ContentQuizPage. */
+.cq {
+  margin: 2rem 0 0;
+  padding: 1.6rem 1.8rem;
+  border: 1px solid #2b2643;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(28, 23, 48, 0.06);
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  color: #1c1730;
+}
+
+/* ---- start card ---- */
+.cq-intro {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* The supplied question block, bobbing gently. Every keyframe starts and
+   ends at rest (frame 0 is the still picture), so a tab that never
+   composites shows it in place - the flame mark's rule. The card is white,
+   so the image's own white ground needs no cut-out. */
+.cq-mark {
+  flex: none;
+  width: 58px;
+  height: 58px;
+  animation: cq-bob 2.8s ease-in-out infinite;
+}
+
+.cq-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes cq-bob {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-5px) rotate(-4deg);
+  }
+  60% {
+    transform: translateY(-1px) rotate(2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cq-mark {
+    animation: none;
+  }
+}
+
+.cq-intro-text {
+  flex: 1;
+  min-width: 0;
+  /* Measured: the title-to-subtitle ink sat 1.9px below the block and the
+     button. Equal and opposite margins lift it without moving anything else. */
+  margin: -1.9px 0 1.9px;
+}
+
+.cq-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2b2643;
+}
+
+.cq-sub {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  color: #726c88;
+}
+
+/* ---- buttons ---- */
+.cq-go {
+  flex: none;
+  display: inline-block;
+  padding: calc(0.6rem - 0.076em) 1.2rem calc(0.6rem + 0.076em);
+  border-radius: 12px;
+  background: #2b2643;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cq-go:hover {
+  background: #6a6191;
+}
+
+.cq-go:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .cq {
+    padding: 1.1rem;
+    border-radius: 16px;
+  }
+
+  .cq-intro {
+    flex-wrap: wrap;
+  }
+
+  .cq-intro .cq-go {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+}

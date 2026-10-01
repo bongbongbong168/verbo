@@ -57,6 +57,7 @@ export default function StudyEditDrawer({ kind, levelTitle, onSave, onClose }) {
       onTabChange={setTab}
       onClose={onClose}
       error={error}
+      busy={busy}
     >
       <form className="ed-form" onSubmit={submit}>
         {tab === 'Module' && (

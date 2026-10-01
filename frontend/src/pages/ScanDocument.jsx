@@ -10,6 +10,7 @@ import swooshLarge from "../assets/scan/swoosh-large.png";
 import swooshSmall from "../assets/scan/swoosh-small.png";
 import fileIcon from "../assets/scan/file-icon.png";
 import PageTools from "../components/PageTools";
+import ScanReview from "../components/ScanReview";
 import ReaderSwitch from "../components/ReaderSwitch";
 import SentenceSavePopover from "../components/SentenceSavePopover";
 import { AllowanceIndicator, UsageLimitState } from "../components/UsageAllowance";
@@ -244,6 +245,11 @@ export default function ScanDocument() {
     const { text, pinyin, translation } = entry;
     // Off the ref, not the state — see the note on `scanRef`.
     const current = scanRef.current;
+    /* Optimistic: the word reads as saved the instant the key is pressed.
+       The request can stall for seconds on the deployed API, and waiting on it
+       made saving feel slow. A failure below puts it back. */
+    setSaved((prev) => ({ ...prev, [text]: true }));
+    setLastSaved(text);
     try {
       await api.addFlashcard(token, {
         word: text,
@@ -258,9 +264,8 @@ export default function ScanDocument() {
         source_id: current?.id,
         example: exampleFor(current?.tokens, entry),
       });
-      setSaved((prev) => ({ ...prev, [text]: true }));
-      setLastSaved(text);
     } catch (err) {
+      setSaved((prev) => ({ ...prev, [text]: false }));
       setError(err.message);
     }
   }
@@ -461,7 +466,7 @@ export default function ScanDocument() {
                 onChange={translation.toggle}
                 disabled={translation.busy || translationRequestBlocked} />
               {translationUsage && (
-                <AllowanceIndicator usage={translationUsage}>
+                <AllowanceIndicator usage={translationUsage} className="ua-indicator-reader">
                   {translationUsage.remaining == null
                     ? "Unlimited translations"
                     : `${translationUsage.remaining} translations left`}
@@ -488,6 +493,19 @@ export default function ScanDocument() {
             description="Pinyin, word meanings, and saving vocabulary still work. Your translations reset next month."
             actionLabel="Get more translations with Verbo Pro"
           />
+          {scan.uncertain_lines?.length > 0 && (
+            <ScanReview
+              key={scan.raw_text}
+              scan={scan}
+              token={token}
+              onSaved={(data) => {
+                /* The text changed, so every cached copy of it is stale. */
+                invalidate(`scan:${id}`, "scans");
+                scanRef.current = data;
+                setScan(data);
+              }}
+            />
+          )}
           {text && !translation.visible ? (
             <p className={"sd-text" + (showPinyin ? " sd-text-ruby" : "")} style={{ "--sd-reader-scale": readerScale / 100 }}>
               {tokens.map((tok, idx) => renderToken(tok, idx))}

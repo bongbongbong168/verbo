@@ -8,6 +8,8 @@ import './fonts.css'
 /* After fonts.css so it wins on equal specificity. Everything inside is scoped
    to `max-width: 767px` — the desktop layout is untouched by it. */
 import './mobile.css'
+import './pageTitles.css'
+import './buttons.css'
 
 // Before render, so the app never paints at the wrong size and then jump.
 applyAppScale()

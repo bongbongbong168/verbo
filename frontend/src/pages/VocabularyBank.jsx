@@ -7,6 +7,7 @@ import PageTools from "../components/PageTools";
 import VocabReview from "../components/VocabReview";
 import { SOURCE_MARKS, ManualMark } from "../components/SourceIcons";
 import "./VocabularyBank.css";
+import { SkeletonRows } from '../components/Skeleton'
 
 /* The filter strip. `key` is the `source_module` value the API filters on, so
    the strip and the query can never drift apart. Order runs from the modules a
@@ -56,6 +57,16 @@ function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M8 5.5v13l11-6.5z" />
+    </svg>
+  );
+}
+
+function SpeakerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+      <path d="M15 9a5 5 0 0 1 0 6" />
+      <path d="M18 6a9 9 0 0 1 0 12" />
     </svg>
   );
 }
@@ -167,6 +178,49 @@ export default function VocabularyBank() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [speakingId, setSpeakingId] = useState(null);
+  const speechRef = useRef(null);
+  const canSpeak = typeof window !== "undefined" && !!window.speechSynthesis && !!window.SpeechSynthesisUtterance;
+
+  useEffect(() => () => {
+    if (!speechRef.current) return;
+    speechRef.current.utterance.onend = null;
+    speechRef.current.utterance.onerror = null;
+    speechRef.current = null;
+    window.speechSynthesis?.cancel();
+  }, []);
+
+  function speakWord(card) {
+    if (!canSpeak) return;
+
+    const wasPlaying = speechRef.current?.id === card.id;
+    if (speechRef.current) {
+      speechRef.current.utterance.onend = null;
+      speechRef.current.utterance.onerror = null;
+      speechRef.current = null;
+    }
+    window.speechSynthesis.cancel();
+    setSpeakingId(null);
+    if (wasPlaying) return;
+
+    const utterance = new window.SpeechSynthesisUtterance(card.word);
+    utterance.lang = "zh-CN";
+    const finish = () => {
+      if (speechRef.current?.utterance !== utterance) return;
+      speechRef.current = null;
+      setSpeakingId(null);
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    speechRef.current = { id: card.id, utterance };
+    setSpeakingId(card.id);
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      finish();
+      setError("Audio couldn't play on this device.");
+    }
+  }
 
   const [source, setSource] = useState("");
   const [query, setQuery] = useState("");
@@ -413,16 +467,18 @@ export default function VocabularyBank() {
   return (
     <div className="vb">
       <div className="vb-top">
-        <h1 className="vb-title">Vocabulary Bank</h1>
+        {/* Title and lede in one block so the long title bar runs down both. */}
+        <div className="vb-head-text">
+          <h1 className="vb-title">Vocabulary Bank</h1>
+          <p className="vb-lede">
+            Every word and sentence you save in Verbo lands here, still pointing back at
+            where you found it.
+          </p>
+        </div>
         <div className="vb-tools">
           <PageTools />
         </div>
       </div>
-
-      <p className="vb-lede">
-        Every word and sentence you save in Verbo lands here, still pointing back at
-        where you found it.
-      </p>
 
       {/* ---- the four counters ---- */}
       <div className="vb-stats">
@@ -620,7 +676,7 @@ export default function VocabularyBank() {
       )}
 
       {loading ? (
-        <p className="vb-empty">Loading your words…</p>
+        <SkeletonRows count={5} />
       ) : cards.length === 0 ? (
         <p className="vb-empty">
           {source === "sentence"
@@ -638,9 +694,8 @@ export default function VocabularyBank() {
 
             return (
               <li className={"vb-row" + (isSentence ? " vb-row-sentence" : "") + (open ? " open" : "")} key={card.id}>
-                {/* The row button and the ⋮ are SIBLINGS, not nested: a button
-                    inside a button is invalid and the inner one never gets its
-                    own click. `.vb-row-top` is what keeps them on one line. */}
+                {/* The row, audio, and menu buttons are siblings: nested
+                    buttons would make audio clicks open the detail panel. */}
                 <div className="vb-row-top">
                 <button
                   type="button"
@@ -662,9 +717,9 @@ export default function VocabularyBank() {
                       </span>
                     )}
 
-                    {/* The source line is what makes this a history rather
-                        than a word list. */}
-                    <span className="vb-src">
+                    {/* Word cards show their source here. Sentence cards put
+                        their reading directly beneath the Chinese instead. */}
+                    {!isSentence && <span className="vb-src">
                       {(() => {
                         const Mark =
                           SOURCE_MARKS[card.source_module] || ManualMark;
@@ -676,7 +731,7 @@ export default function VocabularyBank() {
                       <span className="vb-src-date">
                         {formatDate(card.created_at)}
                       </span>
-                    </span>
+                    </span>}
                   </span>
 
                   <span className={"vb-state vb-state-" + st.key}>
@@ -685,6 +740,17 @@ export default function VocabularyBank() {
                 </button>
 
                 <div className="vb-row-actions">
+                  <button
+                    type="button"
+                    className={"vb-row-speak" + (speakingId === card.id ? " is-speaking" : "")}
+                    aria-label={`${speakingId === card.id ? "Stop" : "Play"} pronunciation for ${card.word}`}
+                    aria-pressed={speakingId === card.id}
+                    title={canSpeak ? `${speakingId === card.id ? "Stop" : "Play"} pronunciation` : "Audio is unavailable in this browser"}
+                    disabled={!canSpeak}
+                    onClick={() => speakWord(card)}
+                  >
+                    <SpeakerIcon />
+                  </button>
                   <button
                     type="button"
                     className="vb-row-menu"

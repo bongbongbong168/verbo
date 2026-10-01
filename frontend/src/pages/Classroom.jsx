@@ -7,6 +7,8 @@ import JoinCode from "../components/JoinCode";
 import CurriculumItem from "../components/CurriculumItem";
 import CreateItemDialog from "../components/CreateItemDialog";
 import "./Classes.css";
+import { confirmDelete } from '../components/ConfirmDelete'
+import { PageSkeleton } from '../components/Skeleton'
 
 /* ATTENDANCE WAS A TAB HERE AND IS GONE. It rendered a "Soon" chip over a
    panel explaining that marking students present per session needs a record
@@ -214,7 +216,7 @@ export default function Classroom() {
     }
   }
 
-  if (loading) return <p className="cl-empty cl-page-note">Loading class…</p>;
+  if (loading) return <PageSkeleton label="Loading class" />;
   if (!cls)
     return (
       <p className="cl-error cl-page-note">{error || "Class not found."}</p>
@@ -454,6 +456,7 @@ export default function Classroom() {
                         type="button"
                         className="cl-quiet"
                         onClick={async () => {
+                          if (!(await confirmDelete({ title: `Remove ${s.name} from this class?`, text: "Their submissions stay on record.", action: "Remove" }))) return;
                           await api.removeClassMember(token, id, s.id);
                           api.getClassStudents(token, id).then(setStudents);
                           load();
@@ -607,7 +610,7 @@ export default function Classroom() {
                   <ClockIcon />
                   <h2>Class activity</h2>
                 </div>
-                <ul className="cl-feed">
+                <ul className="cl-feed cl-feed-rich">
                   {cls.activity.map((a, i) => (
                     <li className="cl-feed-row" key={`${a.kind}-${a.at}-${i}`}>
                       {/* The dot is the KIND, so the three read apart at a

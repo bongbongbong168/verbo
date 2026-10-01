@@ -14,8 +14,10 @@ import PageTools from '../components/PageTools'
 import SyncedTranscript from '../components/SyncedTranscript'
 import SentenceSavePopover from '../components/SentenceSavePopover'
 import { englishSentences, sentencesOf, tokensBySentences } from '../sentences'
-import proOwl from '../assets/assistant/graduate-bot.png'
+import proOwl from '../assets/assistant/pixel-panda.png'
 import PremiumBadge from '../components/PremiumBadge'
+import ContentQuiz from '../components/ContentQuiz'
+import { confirmDelete } from '../components/ConfirmDelete'
 
 
 /* The cover ratio and the level list moved into PodcastEditDrawer along with
@@ -205,6 +207,23 @@ export default function PodcastEpisode() {
      episode lives in BOTH state and a ref (the Alt+1 listener reads the ref to
      dodge a stale closure), so priming the initial value is the surgical
      change. Reopening an episode then paints immediately. */
+  /* Queue the saved position. It is applied at `loadedmetadata` (a seek
+     before the element knows its duration is discarded) - or at once, if the
+     element already has its metadata by the time the data arrives. */
+  function queueResume(data) {
+    if (!data?.progress?.resume) return
+    const at = data.progress.position_seconds
+    sentPositionRef.current = at
+    const el = audioRef.current
+    if (el && el.readyState >= 1) {
+      el.currentTime = at
+      setCurrentTime(at)
+      setResumedFrom(at)
+    } else {
+      pendingResumeRef.current = at
+    }
+  }
+
   function loadPodcast() {
     const access = user?.is_admin ? 'admin' : user?.is_pro ? 'pro' : 'free'
     const key = `podcast:${id}:viewer:${user?.id || 'anonymous'}:${access}`
@@ -213,6 +232,10 @@ export default function PodcastEpisode() {
       setPodcast(cached)
       podcastRef.current = cached
       setLoading(false)
+      // The cached copy carries `progress` too. Without this a revisit inside
+      // the freshness window returned below before any resume was queued, and
+      // the episode opened at 0:00.
+      queueResume(cached)
       if (isFresh(key)) {
         // Still record the visit — opening it again is a real visit, and the
         // Dashboard's recency row is built from exactly this.
@@ -233,10 +256,10 @@ export default function PodcastEpisode() {
            knows its duration is silently discarded. The server decides whether
            there is anything worth resuming (it owns the floor and the
            finished-episode rule), so this only obeys `resume`. */
-        if (data.progress?.resume) {
-          pendingResumeRef.current = data.progress.position_seconds
-          sentPositionRef.current = data.progress.position_seconds
-        }
+        /* The server's position wins over a cached one: a cached copy may be
+           from before the last listen. Only while not playing, so a fresh
+           answer never yanks audio someone already started. */
+        if (!audioRef.current || audioRef.current.paused) queueResume(data)
         // Record the visit so the Dashboard's "Pick up where you left off"
         // row can point back here. Fire-and-forget: a failure must not stop
         // the page rendering, and there is nothing useful to tell the user.
@@ -250,6 +273,11 @@ export default function PodcastEpisode() {
   async function handleSaveWord(word) {
     // Off the ref, not the state — see the note on `podcastRef`.
     const current = podcastRef.current
+    /* Optimistic: the word reads as saved the instant the key is pressed.
+       The request can stall for seconds on the deployed API, and waiting on it
+       made saving feel slow. A failure below puts it back. */
+    setSaved((prev) => ({ ...prev, [word.text]: true }))
+    setLastSaved(word.text)
     try {
       await api.addFlashcard(token, {
         word: word.text,
@@ -264,9 +292,8 @@ export default function PodcastEpisode() {
         // word is looked up in the authored text as before.
         example: word.example ?? exampleFor(current?.tokens, word),
       })
-      setLastSaved(word.text)
-      setSaved((prev) => ({ ...prev, [word.text]: true }))
     } catch (err) {
+      setSaved((prev) => ({ ...prev, [word.text]: false }))
       setError(err.message)
     }
   }
@@ -304,15 +331,29 @@ export default function PodcastEpisode() {
      Fire-and-forget: this is a convenience, and a failed write must never
      interrupt playback or surface an error over the audio someone is
      listening to. */
+  /* The last position the element reported, kept OUTSIDE the element. On
+     leaving the page React has already detached audioRef by the time the
+     unmount cleanup runs, so reading the element there found nothing and the
+     "I stopped here" write silently never happened - the saved spot stayed
+     wherever the last 15s tick left it (often under the 15s resume floor,
+     so the episode never reached "Pick up where you left off"). */
+  const lastTimeRef = useRef({ at: null, duration: null })
+
   function reportProgress(force = false) {
     const el = audioRef.current
     const current = podcastRef.current
-    if (!el || !current || !Number.isFinite(el.currentTime)) return
-    const at = Math.round(el.currentTime)
+    const seconds = el && Number.isFinite(el.currentTime) ? el.currentTime : lastTimeRef.current.at
+    const total = el && Number.isFinite(el.duration) ? el.duration : lastTimeRef.current.duration
+    if (!current || seconds == null) return
+    const at = Math.round(seconds)
     if (!force && at === sentPositionRef.current) return
     sentPositionRef.current = at
     api
-      .savePodcastProgress(token, current.id, at, Number.isFinite(el.duration) ? el.duration : null)
+      .savePodcastProgress(token, current.id, at, total ?? null)
+      /* Again once the write has LANDED: the Podcast page can refetch its
+         continue row in the gap between the first drop and the save, and
+         would cache the old position for another 30s. */
+      .then(() => invalidate(`podcast:${current.id}:`, 'podcasts-continue'))
       .catch(() => {})
 
     /* Both cached copies are now wrong. The episode payload carries `progress`,
@@ -320,7 +361,7 @@ export default function PodcastEpisode() {
        listener was BEFORE this session; and the Podcast page's continue row
        would still show the old position, or not show the episode at all. This
        is a local map delete, not a request. */
-    invalidate(`podcast:${current.id}`, 'podcasts-continue')
+    invalidate(`podcast:${current.id}:`, 'podcasts-continue')
   }
 
   /* One write a quarter-minute while the audio is actually playing.
@@ -387,6 +428,10 @@ export default function PodcastEpisode() {
 
   /* Drop back to the beginning and forget the resume, so the banner's offer is
      genuinely reversible. */
+  /* Holds the URL that failed rather than a boolean, so opening another
+     episode (a different URL) is tried afresh with no reset effect. */
+  const [audioFailed, setAudioFailed] = useState(null)
+
   function startOver() {
     const el = audioRef.current
     if (el) el.currentTime = 0
@@ -436,13 +481,46 @@ export default function PodcastEpisode() {
   const handleRef = useRef(null)
   const draggingRef = useRef(false)
 
+  const miniFillRef = useRef(null)
+  const miniHandleRef = useRef(null)
+
+  /* Paints BOTH bars - the full player's and the mini player's - from the one
+     <audio>, so the two can never show different positions. */
   const paintProgress = useCallback((seconds) => {
     const el = audioRef.current
     const total = el && Number.isFinite(el.duration) ? el.duration : 0
     const pct = total > 0 ? Math.min(Math.max(seconds / total, 0), 1) * 100 : 0
-    if (fillRef.current) fillRef.current.style.width = `${pct}%`
-    if (handleRef.current) handleRef.current.style.left = `${pct}%`
+    for (const r of [fillRef, miniFillRef]) if (r.current) r.current.style.width = `${pct}%`
+    for (const r of [handleRef, miniHandleRef]) if (r.current) r.current.style.left = `${pct}%`
   }, [])
+
+  /* THE MINI PLAYER. It is a second set of CONTROLS, never a second audio:
+     every button calls the same handlers against the same audioRef. It shows
+     once the full player has scrolled out of view, and the close button hides
+     it for this visit to the episode without touching playback. */
+  const playerRef = useRef(null)
+  const [playerOffscreen, setPlayerOffscreen] = useState(false)
+  const [miniClosed, setMiniClosed] = useState(false)
+  // Read off `podcast` here: `premiumLocked` is declared after the early returns.
+  const hasPlayer = Boolean(podcast?.audio_url) && podcast?.premium_locked !== true
+
+  useEffect(() => {
+    setMiniClosed(false)
+  }, [id])
+
+  useEffect(() => {
+    const node = playerRef.current
+    if (!hasPlayer || !node || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([entry]) => {
+      // Only "scrolled PAST it" counts. Below the fold on a short screen is
+      // not the same thing, and the mini bar would duplicate a player in view.
+      setPlayerOffscreen(!entry.isIntersecting && entry.boundingClientRect.bottom < 0)
+    })
+    io.observe(node)
+    return () => io.disconnect()
+  }, [hasPlayer, podcast?.audio_url])
+
+  const showMini = hasPlayer && playerOffscreen && !miniClosed
 
   useEffect(() => {
     if (!playing) return undefined
@@ -502,14 +580,15 @@ export default function PodcastEpisode() {
     /* Drop the cached copies BEFORE reloading, or the freshness window would
        hand back the pre-edit episode. The library list carries the title and
        level, so it is stale too. */
-    invalidate(`podcast:${id}`, 'podcasts')
+    invalidate(`podcast:${id}:`, 'podcasts')
     loadPodcast()
   }
 
   async function handleDelete() {
+    if (!(await confirmDelete({ title: "Delete this episode?", text: "The audio, transcript and everyone’s listening progress go with it." }))) return
     try {
       await api.deletePodcast(token, id)
-      invalidate(`podcast:${id}`, 'podcasts', 'recent-views:3')
+      invalidate(`podcast:${id}:`, 'podcasts', 'recent-views:3')
       navigate('/podcast')
     } catch (err) {
       setError(err.message)
@@ -647,13 +726,21 @@ export default function PodcastEpisode() {
                   <p>Upgrade to play the complete audio and follow the transcript.</p>
                 </div>
               </div>
-            ) : podcast.audio_url ? (
-              <div className="pe-player">
+            ) : podcast.audio_url && audioFailed !== podcast.audio_url ? (
+              <div className="pe-player" ref={playerRef}>
                 <audio
                   ref={audioRef}
                   src={podcast.audio_url}
                   preload="metadata"
-                  onPlay={() => setPlaying(true)}
+                  /* The file is listed but cannot be fetched or decoded (deleted
+                     from disk, or a format the browser refuses). Without this the
+                     play button simply did nothing, with no word as to why. */
+                  onError={() => setAudioFailed(podcast.audio_url)}
+                  onPlay={() => {
+                    setPlaying(true)
+                    // Playing from the player answers the resume pop-up too.
+                    setResumedFrom(null)
+                  }}
                   /* Reporting here rather than in `togglePlay` on purpose: the
                      page's own button is not the only thing that pauses audio.
                      Media keys, the OS media controls and the browser's own UI
@@ -665,6 +752,10 @@ export default function PodcastEpisode() {
                     reportProgress(true)
                   }}
                   onTimeUpdate={(e) => {
+                    lastTimeRef.current = {
+                      at: e.currentTarget.currentTime,
+                      duration: Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : null,
+                    }
                     setCurrentTime(e.currentTarget.currentTime)
                     if (!draggingRef.current) paintProgress(e.currentTarget.currentTime)
                   }}
@@ -806,23 +897,15 @@ export default function PodcastEpisode() {
                     inside would render at the same 45% as the dead controls —
                     and this is the one line that has to be readable. */}
                 <p className="pe-player-note">
-                  Audio for this episode has not been uploaded yet.
+                  {podcast.audio_url
+                    ? "The audio for this episode could not be loaded. Try again later."
+                    : "Audio for this episode has not been uploaded yet."}
                 </p>
               </>
             )}
           </div>
         </div>
 
-        {/* Under the cover-and-player row, not inside it: in the info column
-            it added a line and pushed the player below the cover's edge. */}
-        {resumedFrom != null && (
-          <p className="pe-resumed">
-            Picked up from {formatTime(resumedFrom)}
-            <button type="button" className="pe-resumed-reset" onClick={startOver}>
-              Start over
-            </button>
-          </p>
-        )}
 
         {podcast.bio && (
           <>
@@ -980,6 +1063,11 @@ export default function PodcastEpisode() {
         </div>
       )}
 
+      {/* Optional; fetches nothing until pressed. Locked episodes stay locked. */}
+      {!premiumLocked && podcast.transcript && (
+        <ContentQuiz kind="podcasts" id={podcast.id} label="this episode" />
+      )}
+
       <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
       {!premiumLocked && (
         <SentenceSavePopover
@@ -1019,6 +1107,129 @@ export default function PodcastEpisode() {
         />
       )}
 
+      {/* A small pop-up, not a line of text: the player is already parked at
+          the saved spot, and this asks which the listener wants. Either
+          answer starts playback and closes it. Not modal - ignoring it and
+          pressing the player's own play button is also an answer. */}
+      {resumedFrom != null && (
+        <div className="pe-resume-pop" role="dialog" aria-label="Resume episode">
+          <p className="pe-resume-text">
+            <strong>Welcome back</strong>
+            You stopped at {formatTime(resumedFrom)}.
+          </p>
+          <div className="pe-resume-actions">
+            <button
+              type="button"
+              className="pe-resume-over"
+              onClick={() => {
+                startOver()
+                audioRef.current?.play().catch(() => {})
+              }}
+            >
+              Start over
+            </button>
+            <button
+              type="button"
+              className="pe-resume-go"
+              autoFocus
+              onClick={() => {
+                setResumedFrom(null)
+                audioRef.current?.play().catch(() => {})
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Sticky, not fixed: it rides the bottom of the viewport but stays in
+          the page's own column, so it can never cover the sidebar, and at the
+          end of the page it sits in flow under the last section instead of on
+          top of it. Always rendered while it could be needed, and hidden by a
+          class, so it holds its space and appearing never shifts the page. */}
+      {hasPlayer && !miniClosed && (
+        <div
+          className={'pe-mini' + (showMini ? ' is-on' : '')}
+          role="region"
+          aria-label="Now playing"
+          aria-hidden={!showMini}
+          inert={!showMini}
+        >
+          <div className="pe-mini-cover">
+            {podcast.image_url ? <img src={podcast.image_url} alt="" /> : <span />}
+          </div>
+          <div className="pe-mini-text">
+            <p className="pe-mini-title" title={podcast.title}>{podcast.title}</p>
+            <p className="pe-mini-sub">
+              {[podcast.level, 'Chinese (Mandarin)'].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+
+          <div className="pe-mini-controls">
+            <button type="button" className="pe-mini-skip" onClick={() => skip(-10)} aria-label="Back 10 seconds">
+              <Replay10Icon />
+            </button>
+            <button type="button" className="pe-mini-play" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
+              {playing ? <PauseIcon /> : <PlayIcon />}
+            </button>
+            <button type="button" className="pe-mini-skip" onClick={() => skip(10)} aria-label="Forward 10 seconds">
+              <Forward10Icon />
+            </button>
+          </div>
+
+          <div className="pe-mini-track">
+            <span className="pe-mini-time">{formatTime(currentTime)}</span>
+            <div
+              className="pe-progress pe-mini-progress"
+              onPointerDown={startScrub}
+              onPointerMove={moveScrub}
+              onPointerUp={endScrub}
+              onPointerCancel={endScrub}
+              onKeyDown={scrubKey}
+              tabIndex={0}
+              role="slider"
+              aria-label="Seek"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              aria-valuenow={Math.round(currentTime)}
+              aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
+            >
+              <span ref={miniFillRef} className="pe-progress-fill" />
+              <span ref={miniHandleRef} className="pe-progress-handle" />
+            </div>
+            <span className="pe-mini-time">{formatTime(duration)}</span>
+          </div>
+
+          {/* The full player's volume control, same classes: the slider folds
+              away and opens out of the speaker on hover or focus. */}
+          <div className="pe-volume pe-mini-vol">
+            <button
+              type="button"
+              className="pe-mini-icon"
+              onClick={() => setMuted((m) => !m)}
+              aria-label={muted ? 'Unmute' : 'Mute'}
+            >
+              <VolumeIcon level={volume} muted={muted} />
+            </button>
+            <input
+              className="pe-volume-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={muted ? 0 : volume}
+              onChange={(e) => changeVolume(Number(e.target.value))}
+              aria-label="Volume"
+            />
+          </div>
+          <span className="pe-mini-rule" aria-hidden="true" />
+          <button type="button" className="pe-mini-icon" onClick={() => setMiniClosed(true)} aria-label="Close mini player">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

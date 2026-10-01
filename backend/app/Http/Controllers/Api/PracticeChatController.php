@@ -48,7 +48,7 @@ class PracticeChatController extends Controller
         $reservation = $allowances->reserve($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES);
 
         try {
-            $result = $gemini->reply($data['messages'], $data['topic'] ?? null);
+            $result = $gemini->reply($data['messages'], $data['topic'] ?? null, $this->levelOf($request->user()));
         } catch (\Throwable $e) {
             $allowances->release($request->user(), UsageAllowanceService::AI_CHAT_MESSAGES, $reservation);
             throw $e;
@@ -68,6 +68,20 @@ class PracticeChatController extends Controller
         );
 
         return response()->json(['reply' => $result['reply'], 'usage' => $usage]);
+    }
+
+    /** "HSK 3", "Beginner" or null - a label, never anything identifying. */
+    private function levelOf($user): ?string
+    {
+        $pref = $user->learningPreference;
+        if (! $pref) {
+            return null;
+        }
+        if ($pref->hsk_level) {
+            return is_numeric($pref->hsk_level) ? 'HSK '.$pref->hsk_level : (string) $pref->hsk_level;
+        }
+
+        return $pref->chinese_level ? (string) $pref->chinese_level : null;
     }
 
     /**

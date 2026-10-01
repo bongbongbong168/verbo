@@ -1,49 +1,93 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
-import VocabularyBank from "./pages/VocabularyBank";
-import Scan from "./pages/Scan";
-import ScanDocument from "./pages/ScanDocument";
-import SharedScan from "./pages/SharedScan";
-import Read from "./pages/Read";
-import ReadArticle from "./pages/ReadArticle";
-import Practice from "./pages/Practice";
-import FindTutor from "./pages/FindTutor";
-import BecomeTutor from "./pages/BecomeTutor";
-import TutorApplications from "./pages/TutorApplications";
-import Bookings from "./pages/Bookings";
-import Messages from "./pages/Messages";
-import CourseDetail from "./pages/CourseDetail";
-import Checkout from "./pages/Checkout";
-import TutorProfileDetail from "./pages/TutorProfileDetail";
-import Podcast from "./pages/Podcast";
-import PodcastEpisode from "./pages/PodcastEpisode";
-import Study from "./pages/Study";
-import StudyLevel from "./pages/StudyLevel";
-import StudyUnit from "./pages/StudyUnit";
-import StudyQuizPage from "./pages/StudyQuizPage";
-import Notifications from "./pages/Notifications";
-import Classes from "./pages/Classes";
-import Classroom from "./pages/Classroom";
-import Profile from "./pages/Profile";
-import SavedArticles from "./pages/SavedArticles";
-import Settings from "./pages/Settings";
-import Upgrade from "./pages/Upgrade";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
-import UpgradeCheckout from "./pages/UpgradeCheckout";
+import { lazy, Suspense } from "react";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
+import { PageSkeleton } from './components/Skeleton'
+
+/* Pages are only needed after their route is opened. Keeping them out of the
+   first bundle means signing in does not download OCR, checkout, podcast and
+   classroom code all at once. Layout stays eager because it is the shell every
+   signed-in route immediately needs. */
+const Register = lazy(() => import("./pages/Register"));
+const Login = lazy(() => import("./pages/Login"));
+const GoogleCallback = lazy(() => import("./pages/GoogleCallback"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const VocabularyBank = lazy(() => import("./pages/VocabularyBank"));
+const Scan = lazy(() => import("./pages/Scan"));
+const ScanDocument = lazy(() => import("./pages/ScanDocument"));
+const SharedScan = lazy(() => import("./pages/SharedScan"));
+const Read = lazy(() => import("./pages/Read"));
+const ReadArticle = lazy(() => import("./pages/ReadArticle"));
+const Practice = lazy(() => import("./pages/Practice"));
+const FindTutor = lazy(() => import("./pages/FindTutor"));
+const BecomeTutor = lazy(() => import("./pages/BecomeTutor"));
+const TutorApplications = lazy(() => import("./pages/TutorApplications"));
+const Bookings = lazy(() => import("./pages/Bookings"));
+const Messages = lazy(() => import("./pages/Messages"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const TutorProfileDetail = lazy(() => import("./pages/TutorProfileDetail"));
+const Podcast = lazy(() => import("./pages/Podcast"));
+const PodcastEpisode = lazy(() => import("./pages/PodcastEpisode"));
+const Study = lazy(() => import("./pages/Study"));
+const StudyLevel = lazy(() => import("./pages/StudyLevel"));
+const StudyUnit = lazy(() => import("./pages/StudyUnit"));
+const StudyQuizPage = lazy(() => import("./pages/StudyQuizPage"));
+const ContentQuizPage = lazy(() => import("./pages/ContentQuizPage"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Classes = lazy(() => import("./pages/Classes"));
+const Classroom = lazy(() => import("./pages/Classroom"));
+const Profile = lazy(() => import("./pages/Profile"));
+const SavedArticles = lazy(() => import("./pages/SavedArticles"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Upgrade = lazy(() => import("./pages/Upgrade"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const UpgradeCheckout = lazy(() => import("./pages/UpgradeCheckout"));
+
+/* Warm only the most common learner destinations. Prefetching every route
+   downloaded admin, messaging and media code even when it was never opened,
+   competing with the current page on phones and slower connections. */
+const PREFETCH = [
+  () => import("./pages/Dashboard"),
+  () => import("./pages/Read"),
+  () => import("./pages/Study"),
+  () => import("./pages/VocabularyBank"),
+];
+
+function prefetchPages() {
+  if (navigator.connection?.saveData || /(^|\b)(slow-2g|2g|3g)(\b|$)/.test(navigator.connection?.effectiveType || '')) return;
+  const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200));
+  idle(async () => {
+    for (const load of PREFETCH) {
+      if (document.visibilityState === 'hidden') break;
+      try {
+        await load();
+      } catch {
+        // A failed prefetch just means that page loads on demand, as before.
+      }
+    }
+  });
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("load", prefetchPages, { once: true });
+}
+
+function RouteLoading() {
+  return <PageSkeleton />;
+}
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/auth/google" element={<GoogleCallback />} />
       {/* Public, and outside ProtectedRoute: someone who cannot sign in is by
           definition not signed in. Both halves — ask for the code, then spend
           it — live on this ONE route, because the code is typed back into the
@@ -95,6 +139,7 @@ function App() {
         <Route path="/scan/:id" element={<ScanDocument />} />
         <Route path="/read" element={<Read />} />
         <Route path="/read/:id" element={<ReadArticle />} />
+        <Route path="/read/:id/quiz" element={<ContentQuizPage kind="articles" />} />
         <Route path="/practice" element={<Practice />} />
         <Route path="/find-tutor" element={<FindTutor />} />
         <Route path="/find-tutor/:id" element={<TutorProfileDetail />} />
@@ -108,6 +153,7 @@ function App() {
         <Route path="/checkout/:kind/:id" element={<Checkout />} />
         <Route path="/podcast" element={<Podcast />} />
         <Route path="/podcast/:id" element={<PodcastEpisode />} />
+        <Route path="/podcast/:id/quiz" element={<ContentQuizPage kind="podcasts" />} />
         <Route path="/study" element={<Study />} />
         <Route path="/study/units/:id/quiz" element={<StudyQuizPage />} />
         <Route path="/study/units/:id" element={<StudyUnit />} />
@@ -126,7 +172,8 @@ function App() {
         <Route path="/upgrade/checkout" element={<UpgradeCheckout />} />
         <Route path="/upgrade/success" element={<SubscriptionSuccess />} />
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

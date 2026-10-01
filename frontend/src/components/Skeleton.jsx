@@ -47,3 +47,47 @@ export function SkeletonCards({ count = 3, className = '', cardClassName = '', m
     </div>
   )
 }
+
+/**
+ * A whole page that has not arrived: the title with its bar, the subtitle
+ * line, and a few content blocks. Used while a page's code or its first
+ * record loads, in place of a bare "Loading…" line on an empty screen.
+ */
+export function PageSkeleton({ label = 'Loading' }) {
+  return (
+    <div className="sk-page" role="status" aria-busy="true" aria-label={label}>
+      <div className="sk-page-head">
+        <div className="sk sk-page-title" />
+        <div className="sk sk-text" style={{ width: '38%' }} />
+      </div>
+      <div className="sk-page-grid">
+        <div className="sk sk-page-block" />
+        <div className="sk sk-page-block" />
+        <div className="sk sk-page-block" />
+      </div>
+      <div className="sk sk-page-wide" />
+    </div>
+  )
+}
+
+/**
+ * `count` list rows: a round mark, a title and a line, and a pill on the
+ * right. Stands in for a list (bookings, notifications, words…) so the page
+ * keeps its shape while the rows load.
+ */
+export function SkeletonRows({ count = 4 }) {
+  return (
+    <div className="sk-rows" aria-hidden="true">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="sk-row">
+          <div className="sk sk-row-mark" />
+          <div className="sk-row-lines">
+            <div className="sk sk-text" style={{ width: `${56 - (i % 3) * 9}%` }} />
+            <div className="sk sk-text" style={{ width: `${34 + (i % 2) * 12}%` }} />
+          </div>
+          <div className="sk sk-row-pill" />
+        </div>
+      ))}
+    </div>
+  )
+}

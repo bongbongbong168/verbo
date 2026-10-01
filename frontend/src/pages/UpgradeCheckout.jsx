@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from '@stripe/react-stripe-js/checkout'
 import { useAuth } from '../context/AuthContext'
@@ -40,7 +40,7 @@ function declinedMessage(declineCode) {
   return `${reasons[declineCode] || 'Your bank declined this payment.'} No charge was made — try another card or contact your bank.`
 }
 
-function PayForm({ fallbackPrice }) {
+function PayForm({ fallbackPrice, yearly }) {
   const navigate = useNavigate()
   const state = useCheckoutElements()
   const [busy, setBusy] = useState(false)
@@ -94,7 +94,7 @@ function PayForm({ fallbackPrice }) {
       {error && <p className="uc-alert" role="alert">{error}</p>}
 
       <button type="submit" className="uc-cta" disabled={busy}>
-        {busy ? 'Confirming…' : `Subscribe monthly · ${total}`}
+        {busy ? 'Confirming…' : `Subscribe ${yearly ? 'yearly' : 'monthly'} · ${total}`}
       </button>
       <p className="uc-fine">
         <LockIcon /> Payments are encrypted. Renews every month until you cancel — cancel any time from
@@ -126,6 +126,9 @@ export default function UpgradeCheckout() {
   const [publishableKey, setPublishableKey] = useState(null)
   const [clientSecret, setClientSecret] = useState(null)
   const [price, setPrice] = useState(null)
+  // Chosen on the Upgrade page; yearly only when a yearly price exists.
+  const [params] = useSearchParams()
+  const yearly = params.get('interval') === 'year'
 
   const start = useCallback(async () => {
     setPhase('loading')
@@ -133,12 +136,13 @@ export default function UpgradeCheckout() {
     try {
       const [cfg, status] = await Promise.all([api.paymentConfig(), api.getSubscriptionStatus(token)])
       if (status?.is_pro) return setPhase('already')
-      if (!cfg?.enabled || !cfg.publishable_key || !status?.price) return setPhase('unavailable')
-      setPrice(status.price)
-      const session = await api.createSubscriptionCheckout(token, 'elements')
+      const chosen = yearly ? status?.annual_price : status?.price
+      if (!cfg?.enabled || !cfg.publishable_key || !chosen) return setPhase('unavailable')
+      setPrice(chosen)
+      const session = await api.createSubscriptionCheckout(token, 'elements', yearly ? 'year' : 'month')
       setPublishableKey(cfg.publishable_key)
       setClientSecret(session.client_secret)
-      setPrice(session.price || status.price)
+      setPrice(session.price || chosen)
       setPhase('ready')
     } catch (err) {
       if (err?.status === 409) return setPhase('already')
@@ -148,7 +152,7 @@ export default function UpgradeCheckout() {
       )
       setPhase('error')
     }
-  }, [token])
+  }, [token, yearly])
 
   useEffect(() => {
     if (token) start()
@@ -160,7 +164,10 @@ export default function UpgradeCheckout() {
     [publishableKey],
   )
 
-  const monthly = price?.monthly_display?.replace(/\s*\/\s*month$/, '') || '—'
+  // What is charged each period: the monthly price, or the yearly total.
+  const monthly = (yearly
+    ? price?.display?.replace(/\s*\/\s*year$/, '')
+    : price?.monthly_display?.replace(/\s*\/\s*month$/, '')) || '—'
 
   return (
     <div className="uc">
@@ -200,14 +207,14 @@ export default function UpgradeCheckout() {
 
           <dl className="uc-order">
             <div>
-              <dt>Verbo Pro · monthly</dt>
+              <dt>Verbo Pro · {yearly ? 'yearly' : 'monthly'}</dt>
               <dd>{monthly}</dd>
             </div>
             <div className="uc-order-total">
               <dt>Due today</dt>
               <dd>{monthly}</dd>
             </div>
-            <p className="uc-order-note">Then {monthly} every month. Cancel any time.</p>
+            <p className="uc-order-note">Then {monthly} every {yearly ? 'year' : 'month'}. Cancel any time.</p>
           </dl>
         </aside>
 
@@ -224,7 +231,7 @@ export default function UpgradeCheckout() {
               stripe={providerPromise}
               options={{ clientSecret, elementsOptions: { appearance: CARD_APPEARANCE } }}
             >
-              <PayForm fallbackPrice={monthly} />
+              <PayForm fallbackPrice={monthly} yearly={yearly} />
             </CheckoutElementsProvider>
           )}
 

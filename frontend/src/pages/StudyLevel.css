@@ -46,10 +46,10 @@
 }
 
 .sl-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -230,7 +230,7 @@
   gap: 1.4rem;
   background: var(--sl-card);
   border: 1.5px solid var(--sl-outline);
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 5px 0 0 var(--sl-outline);
   padding: 1.4rem 1.6rem;
   text-decoration: none;
@@ -264,33 +264,40 @@
   color: #a4a1b3;
 }
 
+/* Finished is the GOOD outcome, so its badge is green and solid even though
+   the card around it steps back to grey: a check in a filled circle, the word
+   in the same green on a soft green pill. Cap-band pad for 700; the circle
+   hands the lift back so it stays centred on the word. */
 .sl-module-check {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
   align-self: center;
   flex: none;
   margin-left: auto;
-  /* Cap-band pair as on the app's other small pills: symmetric padding
-     leaves Hellix sitting low. */
-  /* Sideways too: the tick's viewBox carries ~3px of empty space on its
-     left, so equal padding left the ink 2.6px further from the left edge
-     than "Done" is from the right (measured 14.16 / 11.58). */
-  padding: calc(0.3rem - 0.9px) calc(0.7rem + 1.3px) calc(0.3rem + 0.9px) calc(0.7rem - 1.3px);
-  /* A rounded box like the card it sits in, not a pill. */
-  border-radius: 8px;
-  background: #e3e1ea;
-  color: #6f6b82;
+  padding: calc(0.28rem - 0.086em) 0.75rem calc(0.28rem + 0.086em) 0.3rem;
+  border-radius: 999px;
+  background: #e6f4eb;
+  color: #1f7a45;
   font-size: 0.78rem;
   font-weight: 700;
 }
 
-/* The tick's ink sat 1.1px above the label's cap band (measured); equal and
-   opposite margins move it down without changing the row's height. */
-.sl-module-check svg {
-  width: 14px;
-  height: 14px;
-  margin: 1.1px 0 -1.1px;
+.sl-module-tick {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0.086em 0 -0.086em;
+  border-radius: 50%;
+  background: #3a9a62;
+  color: #fff;
+}
+
+.sl-module-tick svg {
+  display: block;
+  width: 12px;
+  height: 12px;
 }
 
 .sl-module-label {

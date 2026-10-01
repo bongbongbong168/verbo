@@ -81,13 +81,26 @@ class SpeechService
             return null;
         }
 
-        $audio = $this->synthesize(self::STYLES[$kind].$text, $this->voiceName($voice));
-        if ($audio === null) {
+        /* One request per clip at a time. Two quick taps on the same word (or
+           two learners on the same line) would otherwise both miss the file
+           and pay for the same audio twice; the loser plays the browser voice
+           this once and gets the saved file next time. */
+        $path = $this->path($text, $kind, $voice);
+        $lock = Cache::lock('speech-make:'.$path, 60);
+        if (! $lock->get()) {
             return null;
         }
 
-        $path = $this->path($text, $kind, $voice);
-        Storage::disk('public')->put($path, $audio);
+        try {
+            $audio = $this->synthesize(self::STYLES[$kind].$text, $this->voiceName($voice));
+            if ($audio === null) {
+                return null;
+            }
+
+            Storage::disk('public')->put($path, $audio);
+        } finally {
+            $lock->release();
+        }
 
         return Storage::disk('public')->url($path);
     }
@@ -122,10 +135,7 @@ class SpeechService
     private function synthesize(string $prompt, string $voiceName): ?string
     {
         try {
-            $response = Http::timeout(config('services.gemini.tts_timeout'))
-                ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
-                ->asJson()
-                ->post(self::ENDPOINT.'/'.$this->model().':generateContent', [
+            $response = GeminiHttp::generate($this->model(), [
                     'contents' => [['parts' => [['text' => $prompt]]]],
                     'generationConfig' => [
                         'responseModalities' => ['AUDIO'],
@@ -135,7 +145,7 @@ class SpeechService
                             ],
                         ],
                     ],
-                ]);
+                ], (int) config('services.gemini.tts_timeout'));
         } catch (\Throwable $e) {
             Log::warning('Gemini TTS request failed', ['message' => GeminiService::redact($e->getMessage())]);
 

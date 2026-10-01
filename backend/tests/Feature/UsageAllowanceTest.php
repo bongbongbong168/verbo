@@ -117,7 +117,7 @@ class UsageAllowanceTest extends TestCase
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=');
 
         $ocr = $this->mock(OcrService::class);
-        $ocr->shouldReceive('extractChineseText')->once()->andReturn('你好。');
+        $ocr->shouldReceive('read')->once()->andReturn(['text' => '你好。', 'uncertain' => []]);
         $dictionary = $this->mock(DictionaryService::class);
         $dictionary->shouldReceive('segment')->once()->andReturn(['你好']);
         $dictionary->shouldReceive('pinyinFor')->once()->andReturn('nǐ hǎo');
@@ -129,7 +129,7 @@ class UsageAllowanceTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('usage.used', 1);
 
-        $ocr->shouldReceive('extractChineseText')->once()->andThrow(new \RuntimeException('OCR unavailable'));
+        $ocr->shouldReceive('read')->once()->andThrow(new \RuntimeException('OCR unavailable'));
         $this->post('/api/scans', [
             'image' => UploadedFile::fake()->createWithContent('failed.png', $png),
         ], ['Accept' => 'application/json'])->assertStatus(500);

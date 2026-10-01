@@ -71,10 +71,10 @@
 }
 
 .bt-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -87,7 +87,7 @@
 .bt-state {
   border: 1px solid var(--bt-border);
   border-left: 4px solid var(--bt-accent-light);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   padding: 1.1rem 1.3rem;
   margin: 0 0 1.8rem;
@@ -117,7 +117,7 @@
 .bt-note {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f6f4fd;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -145,7 +145,7 @@
 .bt-group {
   min-inline-size: 0;
   border: 1px solid var(--bt-border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   padding: 1.2rem 1.3rem 1.3rem;
   margin: 0 0 1.2rem;
@@ -225,7 +225,7 @@
   color: var(--bt-text);
   background: #fff;
   border: 1px solid var(--bt-border);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .bt-field textarea {
@@ -283,7 +283,7 @@
   display: inline-block;
   padding: 0.48rem 0.9rem;
   border: 1px solid var(--bt-border);
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: var(--bt-text);
   font-family: inherit;
@@ -374,7 +374,7 @@
   gap: 1rem;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--bt-border);
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.86rem;
 }
 

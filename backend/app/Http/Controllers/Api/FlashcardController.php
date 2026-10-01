@@ -8,9 +8,11 @@ use App\Models\Flashcard;
 use App\Models\Podcast;
 use App\Models\Scan;
 use App\Models\StudyUnit;
+use App\Services\DictionaryService;
 use App\Services\ExampleFinder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -46,7 +48,7 @@ class FlashcardController extends Controller
      * thousands. Returns Laravel's paginator shape: {data, current_page,
      * last_page, total, ...}. The frontend appends pages via "Load more".
      */
-    public function index(Request $request)
+    public function index(Request $request, DictionaryService $dictionary)
     {
         $request->validate([
             'source' => ['nullable', Rule::in(array_keys(Flashcard::MODULES))],
@@ -67,6 +69,16 @@ class FlashcardController extends Controller
             ->paginate((int) $request->query('limit', 50));
 
         $this->attachSources($page->getCollection());
+
+        // Older sentence cards may predate pinyin capture. Derive their reading
+        // locally and cache it, so opening the bank never spends an AI request.
+        foreach ($page->getCollection() as $card) {
+            if ($card->card_type !== 'sentence' || $card->pinyin || ! preg_match('/\p{Han}/u', $card->word)) {
+                continue;
+            }
+
+            $card->setAttribute('pinyin', $this->cachedSentencePinyin($card->word, $dictionary));
+        }
 
         return $page;
     }
@@ -121,7 +133,7 @@ class FlashcardController extends Controller
      * run and the newest words are the ones that make the cut when a bucket is
      * bigger than the run.
      */
-    public function review(Request $request)
+    public function review(Request $request, DictionaryService $dictionary)
     {
         $request->validate([
             'source' => ['nullable', Rule::in(array_keys(Flashcard::MODULES))],
@@ -140,7 +152,22 @@ class FlashcardController extends Controller
 
         $this->attachSources($cards);
 
+        foreach ($cards as $card) {
+            if ($card->example && preg_match('/\p{Han}/u', $card->example)) {
+                $card->setAttribute('example_pinyin', $this->cachedSentencePinyin($card->example, $dictionary));
+            }
+        }
+
         return response()->json($cards->shuffle()->values());
+    }
+
+    private function cachedSentencePinyin(string $text, DictionaryService $dictionary): string
+    {
+        return Cache::remember(
+            'flashcard:sentence-pinyin:' . hash('sha256', $text),
+            now()->addDays(30),
+            fn () => $dictionary->pinyinFor($text)
+        );
     }
 
     /**
@@ -196,6 +223,15 @@ class FlashcardController extends Controller
 
         $data['source_module'] = $data['source_module'] ?? 'manual';
         $data['card_type'] = $data['card_type'] ?? 'word';
+
+        if ($data['card_type'] === 'sentence' && empty($data['pinyin']) && preg_match('/\p{Han}/u', $data['word'])) {
+            $pinyin = app(DictionaryService::class)->pinyinFor($data['word']);
+            // The existing column is a varchar(255); longer readings are
+            // supplied on list reads without truncating syllables.
+            if (mb_strlen($pinyin) <= 255) {
+                $data['pinyin'] = $pinyin;
+            }
+        }
 
         // The short key becomes the class, exactly as `recent_views` stores it.
         // Both halves must be present or neither is — half a reference points

@@ -189,9 +189,11 @@ export default function StudyLevel() {
                   </span>
                   {unit.completed && (
                     <span className="sl-module-check">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M5 12.5l4.2 4.2L19 7" />
-                      </svg>
+                      <span className="sl-module-tick" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M6 12.5l3.8 3.8L18 8" />
+                        </svg>
+                      </span>
                       Done
                     </span>
                   )}

@@ -30,8 +30,15 @@ class GeminiService
 
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-    /** How much of the conversation is sent back each turn. */
+    /** The most turns a client may send (validation). */
     public const MAX_HISTORY = 12;
+
+    /**
+     * How many of those are actually forwarded to Gemini. Every turn is paid
+     * for again on every request, and eight (four exchanges) is enough to
+     * answer "what did that word mean?" about the last reply.
+     */
+    public const SEND_HISTORY = 8;
 
     /**
      * What the assistant is for, in its own words.
@@ -54,6 +61,7 @@ class GeminiService
     - English translation
     - Explaining vocabulary
     - Suggesting what a native speaker would more naturally say
+    - Be warm and encouraging, never scolding.
 
     How to answer:
     - Keep it SHORT. This is a small chat window, not an essay. Two or three
@@ -65,6 +73,8 @@ class GeminiService
     - Use simplified characters.
     - Match their level: if they write in English, they are probably a
       beginner, so keep the Chinese simple and explain more.
+    - When you explain a word or a grammar point, give ONE short example
+      sentence with its pinyin and English meaning.
     - Never invent a word or a usage you are unsure of. Say you are unsure.
     - No markdown headings, no tables, no code fences. Plain short lines.
     TXT;
@@ -85,7 +95,7 @@ class GeminiService
      * @param  string|null  $topic  The quick-topic chip, if one is chosen.
      * @return array{ok: bool, reply?: string, error?: string}
      */
-    public function reply(array $history, ?string $topic = null): array
+    public function reply(array $history, ?string $topic = null, ?string $level = null): array
     {
         if (! self::configured()) {
             return [
@@ -108,12 +118,9 @@ class GeminiService
              * than being scrubbed on the way out. `redact()` below stays as
              * the belt to this brace.
              */
-            $response = Http::timeout(config('services.gemini.timeout'))
-                ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
-                ->asJson()
-                ->post(self::ENDPOINT."/{$model}:generateContent", [
+            $response = GeminiHttp::generate($model, [
                     'systemInstruction' => [
-                        'parts' => [['text' => $this->brief($topic)]],
+                        'parts' => [['text' => $this->brief($topic, $level)]],
                     ],
                     'contents' => $this->contents($history),
                     'generationConfig' => [
@@ -122,11 +129,16 @@ class GeminiService
                         // like a conversation, but a language tutor inventing
                         // grammar is worse than a dull one.
                         'temperature' => 0.6,
-                        // The window is small and the brief says keep it short;
-                        // this is the backstop if the model ignores that.
-                        'maxOutputTokens' => 600,
+                        /* The brief keeps replies short; this is only the
+                           backstop. It was 600, and Gemini 3 spends its hidden
+                           THINKING out of the same budget, so a longer reply
+                           was cut mid-word ("wū gu" for wūguī) with the English
+                           line lost. More room, and minimal thinking - a
+                           practice chat needs no deliberation. */
+                        'maxOutputTokens' => 2048,
+                        'thinkingConfig' => ['thinkingLevel' => 'minimal'],
                     ],
-                ]);
+                ], (int) config('services.gemini.timeout'));
         } catch (\Throwable $e) {
             /*
              * REDACTED, and this was a real leak rather than a precaution.
@@ -192,13 +204,19 @@ class GeminiService
     }
 
     /** The system brief, plus the chosen topic if there is one. */
-    private function brief(?string $topic): string
+    private function brief(?string $topic, ?string $level = null): string
     {
-        if (! $topic) {
-            return self::SYSTEM_PROMPT;
+        $brief = self::SYSTEM_PROMPT;
+        /* The level the learner gave in onboarding - the ONLY account fact
+           sent, and only as a label like "HSK 3". No name, no email. */
+        if ($level) {
+            $brief .= "\n\nThe learner's own stated level: {$level}. Pitch the Chinese there.";
+        }
+        if ($topic) {
+            $brief .= "\n\nThe learner picked the topic: {$topic}. Steer the practice towards it without announcing that you are doing so.";
         }
 
-        return self::SYSTEM_PROMPT."\n\nThe learner picked the topic: {$topic}. Steer the practice towards it without announcing that you are doing so.";
+        return $brief;
     }
 
     /**
@@ -211,7 +229,7 @@ class GeminiService
     private function contents(array $history): array
     {
         return collect($history)
-            ->slice(-self::MAX_HISTORY)
+            ->slice(-self::SEND_HISTORY)
             ->map(fn ($turn) => [
                 'role' => $turn['role'] === 'model' ? 'model' : 'user',
                 'parts' => [['text' => $turn['text']]],

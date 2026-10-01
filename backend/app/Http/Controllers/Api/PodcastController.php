@@ -15,6 +15,12 @@ use Illuminate\Validation\Rule;
 
 class PodcastController extends Controller
 {
+    /** index(), ordered by fit to the learner's preferences (Home page). */
+    public function recommended(Request $request, \App\Services\HomeRecommender $recommender)
+    {
+        return $recommender->podcasts($this->index($request), $request->user()->learningPreference);
+    }
+
     public function index(Request $request)
     {
         /* image_path is selected so the image_url accessor resolves on list

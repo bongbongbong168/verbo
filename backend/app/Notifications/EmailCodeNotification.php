@@ -36,27 +36,12 @@ class EmailCodeNotification extends Notification
         $minutes = EmailCode::TTL_MINUTES;
         $reset = $this->purpose === EmailCode::RESET;
 
-        $mail = (new MailMessage)
+        return (new MailMessage)
             ->subject($this->code.' is your Verbo '.($reset ? 'password reset' : 'verification').' code')
-            ->greeting($reset ? 'Resetting your password' : 'Welcome to Verbo');
-
-        $mail->line($reset
-            ? 'Use this code to set a new password:'
-            : 'Use this code to confirm your email address:');
-
-        /* The code on its own line and nothing else on it. Mail clients
-           linkify and reflow aggressively, and a six-digit number buried in a
-           sentence is the thing people have to hunt for on a phone. */
-        $mail->line('**'.$this->code.'**');
-
-        $mail->line("The code expires in {$minutes} minutes and can only be used once.");
-
-        $mail->line($reset
-            // Said plainly, because this mail is the ONLY warning an account
-            // under attack gets — nobody but the attacker asked for it.
-            ? 'If you did not ask to reset your password, ignore this email. Your password has not changed, and nobody can change it without this code.'
-            : 'If you did not create a Verbo account, you can ignore this email.');
-
-        return $mail->salutation('— Verbo');
+            ->view(['html' => 'emails.code', 'text' => 'emails.code-text'], [
+                'code' => $this->code,
+                'minutes' => $minutes,
+                'reset' => $reset,
+            ]);
     }
 }

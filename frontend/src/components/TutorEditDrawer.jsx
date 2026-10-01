@@ -4,6 +4,7 @@ import EditDrawer from './EditDrawer'
 import ImageCropper from './ImageCropper'
 import TutorFitFields from './TutorFitFields'
 import { youtubeVideoId } from '../tutorVideo'
+import { confirmDelete } from '../components/ConfirmDelete'
 
 const TABS = ['Profile', 'Hours', 'Resume', 'Lessons', 'Courses']
 
@@ -144,6 +145,24 @@ function profileDraftSignature({
  * failure honestly. `onChange` hands the updated profile back so the page
  * behind the drawer stays in step without a refetch.
  */
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+      <path d="m13.5 6.5 4 4" />
+    </svg>
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+    </svg>
+  )
+}
+
 export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [tab, setTab] = useState('Profile')
   const [error, setError] = useState(null)
@@ -156,8 +175,9 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [teachesLevels, setTeachesLevels] = useState(tutor.teaches_levels || [])
   const [specialties, setSpecialties] = useState(tutor.specialties || [])
   const [teachingLanguages, setTeachingLanguages] = useState(tutor.teaching_languages || [])
-  const [availability, setAvailability] = useState(tutor.availability || '')
-  const [rate, setRate] = useState(tutor.hourly_rate ?? '')
+  // Kept only to resend unchanged: the field left the form (see Hours tab).
+  const availability = tutor.availability || ''
+  const [rate] = useState(tutor.hourly_rate ?? '')
   const [videoUrl, setVideoUrl] = useState(tutor.video_url || '')
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -228,6 +248,14 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
   const [lessonDuration, setLessonDuration] = useState('30')
   const [lessonIsTrial, setLessonIsTrial] = useState(false)
   const [savingLesson, setSavingLesson] = useState(false)
+
+  /* Which row the add form is currently EDITING (null = adding a new one).
+     The pencil loads a row into the same form rather than opening a second
+     editor, so there is one place per list to change things. */
+  const [editingEntryId, setEditingEntryId] = useState(null)
+  const [editingLessonId, setEditingLessonId] = useState(null)
+  const [editingCourseId, setEditingCourseId] = useState(null)
+
 
   // Object URLs are revoked on replacement so a long editing session does not
   // leak one per photo picked.
@@ -447,20 +475,23 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     setError(null)
     setSavingEntry(true)
     try {
-      const entry = await api.addResumeEntry(token, tutor.id, {
-        section,
-        years,
-        title: entryTitle,
-        detail,
-      })
+      const body = { section, years, title: entryTitle, detail }
+      // The same form adds and edits: a pencil press loads a row into it.
+      const entry = editingEntryId
+        ? await api.updateResumeEntry(token, editingEntryId, body)
+        : await api.addResumeEntry(token, tutor.id, body)
+      const list = tutor.resume_entries || []
       onChange({
         ...tutor,
-        resume_entries: [...(tutor.resume_entries || []), entry],
+        resume_entries: editingEntryId
+          ? list.map((x) => (x.id === editingEntryId ? entry : x))
+          : [...list, entry],
       })
       setYears('')
       setEntryTitle('')
       setDetail('')
-      flash('Entry added')
+      flash(editingEntryId ? 'Entry updated' : 'Entry added')
+      setEditingEntryId(null)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -468,7 +499,23 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     }
   }
 
+  function startEditEntry(x) {
+    setEditingEntryId(x.id)
+    setSection(x.section)
+    setYears(x.years || '')
+    setEntryTitle(x.title || '')
+    setDetail(x.detail || '')
+  }
+
+  function cancelEditEntry() {
+    setEditingEntryId(null)
+    setYears('')
+    setEntryTitle('')
+    setDetail('')
+  }
+
   async function handleDeleteEntry(id) {
+    if (!(await confirmDelete({ title: "Delete this resume entry?" }))) return
     setError(null)
     try {
       await api.deleteResumeEntry(token, id)
@@ -523,7 +570,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
 
     setSavingCourse(true)
     try {
-      const created = await api.addCourse(token, tutor.id, {
+      const body = {
         ...course,
         price: Number(course.price),
         weeks: Number(course.weeks),
@@ -532,8 +579,13 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
         minutes_per_class: Number(course.minutes_per_class),
         capacity: Number(course.capacity),
         days_of_week: courseDays,
-      })
-      setCourses((prev) => [...prev, created])
+      }
+      const saved = editingCourseId
+        ? await api.updateCourse(token, editingCourseId, body)
+        : await api.addCourse(token, tutor.id, body)
+      setCourses((prev) =>
+        editingCourseId ? prev.map((c) => (c.id === editingCourseId ? saved : c)) : [...prev, saved],
+      )
       setCourse((prev) => ({
         ...prev,
         title: '',
@@ -545,7 +597,8 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
         ends_on: '',
       }))
       setCourseDays([])
-      flash('Course added')
+      flash(editingCourseId ? 'Course updated' : 'Course added')
+      setEditingCourseId(null)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -553,7 +606,38 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     }
   }
 
+  // Times come back from Postgres as "19:00:00"; the pick-lists hold "19:00".
+  const hm = (v) => (v ? String(v).slice(0, 5) : '')
+
+  function startEditCourse(c) {
+    setEditingCourseId(c.id)
+    setCourse({
+      title: c.title || '',
+      level: c.level || '',
+      description: c.description || '',
+      outcomes: c.outcomes || '',
+      price: String(c.price ?? ''),
+      weeks: String(c.weeks ?? ''),
+      total_classes: String(c.total_classes ?? ''),
+      classes_per_week: String(c.classes_per_week ?? ''),
+      minutes_per_class: String(c.minutes_per_class ?? ''),
+      capacity: String(c.capacity ?? ''),
+      starts_on: (c.starts_on || '').slice(0, 10),
+      ends_on: (c.ends_on || '').slice(0, 10),
+      start_time: hm(c.start_time),
+      end_time: hm(c.end_time),
+    })
+    setCourseDays([...(c.days_of_week || [])].map(Number).sort((a, b) => a - b))
+  }
+
+  function cancelEditCourse() {
+    setEditingCourseId(null)
+    setCourse((prev) => ({ ...prev, title: '', level: '', description: '', outcomes: '', price: '', starts_on: '', ends_on: '' }))
+    setCourseDays([])
+  }
+
   async function handleDeleteCourse(id) {
+    if (!(await confirmDelete({ title: "Delete this course?", text: "Students already enrolled keep their place in it." }))) return
     setError(null)
     try {
       await api.deleteCourse(token, id)
@@ -568,25 +652,32 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     setError(null)
     setSavingLesson(true)
     try {
-      const lesson = await api.addLesson(token, tutor.id, {
+      const body = {
         name: lessonName,
         description: lessonDescription,
         price: Number(lessonPrice),
         duration_minutes: Number(lessonDuration),
         is_trial: lessonIsTrial,
-      })
+      }
+      const lesson = editingLessonId
+        ? await api.updateLesson(token, editingLessonId, body)
+        : await api.addLesson(token, tutor.id, body)
       // Only one lesson can be the trial, and the server moves the flag rather
       // than refusing — mirror that here so the list cannot show two.
-      const existing = (tutor.lessons || []).map((l) =>
-        lesson.is_trial ? { ...l, is_trial: false } : l,
-      )
-      onChange({ ...tutor, lessons: [...existing, lesson] })
+      const others = (tutor.lessons || [])
+        .filter((l) => l.id !== lesson.id)
+        .map((l) => (lesson.is_trial ? { ...l, is_trial: false } : l))
+      const lessonsNext = editingLessonId
+        ? (tutor.lessons || []).map((l) => (l.id === lesson.id ? lesson : others.find((o) => o.id === l.id) || l))
+        : [...others, lesson]
+      onChange({ ...tutor, lessons: lessonsNext })
       setLessonName('')
       setLessonDescription('')
       setLessonPrice('')
       setLessonDuration('30')
       setLessonIsTrial(false)
-      flash('Lesson added')
+      flash(editingLessonId ? 'Lesson updated' : 'Lesson added')
+      setEditingLessonId(null)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -594,7 +685,26 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
     }
   }
 
+  function startEditLesson(l) {
+    setEditingLessonId(l.id)
+    setLessonName(l.name || '')
+    setLessonDescription(l.description || '')
+    setLessonPrice(String(l.price ?? ''))
+    setLessonDuration(String(l.duration_minutes || 30))
+    setLessonIsTrial(Boolean(l.is_trial))
+  }
+
+  function cancelEditLesson() {
+    setEditingLessonId(null)
+    setLessonName('')
+    setLessonDescription('')
+    setLessonPrice('')
+    setLessonDuration('30')
+    setLessonIsTrial(false)
+  }
+
   async function handleDeleteLesson(id) {
+    if (!(await confirmDelete({ title: "Delete this lesson?", text: "Lessons already booked are not affected." }))) return
     setError(null)
     try {
       await api.deleteLesson(token, id)
@@ -652,6 +762,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
       onClose={requestClose}
       error={error}
       flash={saved}
+      busy={savingProfile || savingHours || savingCourse || savingEntry || savingLesson}
     >
       {tab === 'Profile' && (
         <form className="ed-form" onSubmit={handleSaveProfile}>
@@ -687,14 +798,16 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
 
           <label className="ed-field">
             <span>Short introduction</span>
-            <textarea
-              rows={2}
-              maxLength={180}
+            {/* ONE sentence: a single-line box, 120 characters. The server
+                refuses a second sentence too. */}
+            <input
+              type="text"
+              maxLength={120}
               value={shortBio}
               onChange={(e) => setShortBio(e.target.value)}
             />
             <small className="ed-hint">
-              {shortBio.length}/180 characters. This appears at the top of your tutor card.
+              One sentence · {shortBio.length}/120. This appears at the top of your tutor card.
             </small>
           </label>
 
@@ -739,21 +852,11 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             }}
           />
 
-          <div className="ed-row">
-            <label className="ed-field">
-              <span>Availability</span>
-              <input
-                type="text"
-                placeholder="e.g. 9am-12pm, 1pm-7pm"
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-              />
-            </label>
-            <label className="ed-field ed-narrow">
-              <span>Rate ($/hr)</span>
-              <input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} />
-            </label>
-          </div>
+          {/* The free-text availability line is gone: it made no bookable
+              time. What students see now comes from the Hours tab. */}
+          {/* No Rate field: students pay each lesson's own price (Lessons tab),
+              and a typed hourly rate only drifted from those prices. The
+              stored value is still sent back unchanged on save. */}
 
           <label className="ed-field">
             <span>Introduction video (YouTube)</span>
@@ -976,14 +1079,26 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                             {[x.years, x.detail].filter(Boolean).join(' · ')}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          className="ed-remove"
-                          onClick={() => handleDeleteEntry(x.id)}
-                          aria-label={`Delete ${x.title}`}
-                        >
-                          &times;
-                        </button>
+<div className="ed-item-actions">
+                      <button
+                        type="button"
+                        className="ed-item-btn"
+                        onClick={() => startEditEntry(x)}
+                        aria-label={`Edit ${x.title}`}
+                        title="Edit"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        type="button"
+                        className="ed-item-btn ed-item-btn-del"
+                        onClick={() => handleDeleteEntry(x.id)}
+                        aria-label={`Delete ${x.title}`}
+                        title="Delete"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                       </li>
                     ))}
                   </ul>
@@ -992,8 +1107,11 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             )
           })}
 
-          <form className="ed-form ed-add" onSubmit={handleAddEntry}>
-            <p className="ed-group-title">Add an entry</p>
+          <form
+            className={`ed-form ed-add${editingEntryId ? ' ed-editing' : ''}`}
+            onSubmit={handleAddEntry}
+          >
+            <p className="ed-group-title">{editingEntryId ? 'Edit entry' : 'Add an entry'}</p>
             <div className="ed-row">
               <label className="ed-field">
                 <span>Section</span>
@@ -1033,8 +1151,13 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
               />
             </label>
             <button type="submit" className="ed-btn-primary" disabled={savingEntry}>
-              {savingEntry ? 'Adding…' : 'Add entry'}
+              {savingEntry ? 'Saving…' : editingEntryId ? 'Save changes' : 'Add entry'}
             </button>
+            {editingEntryId && (
+              <button type="button" className="ed-btn-ghost" onClick={cancelEditEntry}>
+                Cancel
+              </button>
+            )}
           </form>
         </>
       )}
@@ -1064,22 +1187,37 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                         }/${c.capacity} enrolled`}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      className="ed-remove"
-                      onClick={() => handleDeleteCourse(c.id)}
-                      aria-label={`Delete ${c.title}`}
-                    >
-                      &times;
-                    </button>
+<div className="ed-item-actions">
+                      <button
+                        type="button"
+                        className="ed-item-btn"
+                        onClick={() => startEditCourse(c)}
+                        aria-label={`Edit ${c.title}`}
+                        title="Edit"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        type="button"
+                        className="ed-item-btn ed-item-btn-del"
+                        onClick={() => handleDeleteCourse(c.id)}
+                        aria-label={`Delete ${c.title}`}
+                        title="Delete"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <form className="ed-form ed-add" onSubmit={handleAddCourse}>
-            <p className="ed-group-title">Add a course</p>
+          <form
+            className={`ed-form ed-add${editingCourseId ? ' ed-editing' : ''}`}
+            onSubmit={handleAddCourse}
+          >
+            <p className="ed-group-title">{editingCourseId ? 'Edit course' : 'Add a course'}</p>
 
             <label className="ed-field">
               <span>Title</span>
@@ -1253,8 +1391,13 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
             </div>
 
             <button type="submit" className="ed-btn-primary" disabled={savingCourse}>
-              {savingCourse ? 'Adding…' : 'Add course'}
+              {savingCourse ? 'Saving…' : editingCourseId ? 'Save changes' : 'Add course'}
             </button>
+            {editingCourseId && (
+              <button type="button" className="ed-btn-ghost" onClick={cancelEditCourse}>
+                Cancel
+              </button>
+            )}
           </form>
         </>
       )}
@@ -1275,22 +1418,37 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
                         {[l.description, `$${l.price} USD`].filter(Boolean).join(' · ')}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      className="ed-remove"
-                      onClick={() => handleDeleteLesson(l.id)}
-                      aria-label={`Delete ${l.name}`}
-                    >
-                      &times;
-                    </button>
+<div className="ed-item-actions">
+                      <button
+                        type="button"
+                        className="ed-item-btn"
+                        onClick={() => startEditLesson(l)}
+                        aria-label={`Edit ${l.name}`}
+                        title="Edit"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        type="button"
+                        className="ed-item-btn ed-item-btn-del"
+                        onClick={() => handleDeleteLesson(l.id)}
+                        aria-label={`Delete ${l.name}`}
+                        title="Delete"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <form className="ed-form ed-add" onSubmit={handleAddLesson}>
-            <p className="ed-group-title">Add a lesson</p>
+          <form
+            className={`ed-form ed-add${editingLessonId ? ' ed-editing' : ''}`}
+            onSubmit={handleAddLesson}
+          >
+            <p className="ed-group-title">{editingLessonId ? 'Edit lesson' : 'Add a lesson'}</p>
             <label className="ed-field">
               <span>Name</span>
               <input
@@ -1305,7 +1463,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
               <span>Description</span>
               <input
                 type="text"
-                placeholder="e.g. Includes 4 lessons"
+                placeholder="e.g. Meet and set your goals"
                 value={lessonDescription}
                 onChange={(e) => setLessonDescription(e.target.value)}
               />
@@ -1324,10 +1482,7 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
               <span>Length</span>
               <select value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)}>
                 <option value="30">30 minutes</option>
-                <option value="45">45 minutes</option>
                 <option value="60">60 minutes</option>
-                <option value="90">90 minutes</option>
-                <option value="120">120 minutes</option>
               </select>
             </label>
             <label className="ed-check">
@@ -1344,8 +1499,13 @@ export default function TutorEditDrawer({ token, tutor, onChange, onClose }) {
               </span>
             </label>
             <button type="submit" className="ed-btn-primary" disabled={savingLesson}>
-              {savingLesson ? 'Adding…' : 'Add lesson'}
+              {savingLesson ? 'Saving…' : editingLessonId ? 'Save changes' : 'Add lesson'}
             </button>
+            {editingLessonId && (
+              <button type="button" className="ed-btn-ghost" onClick={cancelEditLesson}>
+                Cancel
+              </button>
+            )}
           </form>
         </>
       )}

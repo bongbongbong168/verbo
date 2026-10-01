@@ -70,6 +70,11 @@ export default function usePusherConversationUpdates(token, userId) {
     }
     client.connection.bind('state_change', onState)
     channel.bind('conversation.changed', announce)
+    // Content-free too: just "you have a new notification". The toast layer
+    // fetches the row itself (useLiveToasts).
+    channel.bind('notification.created', (detail) => {
+      window.dispatchEvent(new CustomEvent('verbo:notification-created', { detail }))
+    })
 
     return () => {
       channel.unbind_all()

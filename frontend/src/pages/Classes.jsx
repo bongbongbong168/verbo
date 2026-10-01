@@ -5,6 +5,7 @@ import { api } from "../api";
 import PageTools from "../components/PageTools";
 import JoinCode from "../components/JoinCode";
 import "./Classes.css";
+import { SkeletonRows } from '../components/Skeleton'
 
 function CapIcon() {
   return (
@@ -136,9 +137,10 @@ const ACTIVITY_TEXT = {
  * unfinished, and the honest way to answer that is with facts the app already
  * holds rather than two permanently empty cards that only fill the column.
  */
-function ClassRail({ activity, upcoming }) {
+function ClassRail({ activity, upcoming, lead }) {
   return (
     <aside className="cl-rail">
+      {lead}
       <section className="cl-panel">
         <h2 className="cl-panel-title">
           <span className="cl-panel-mark" aria-hidden="true">
@@ -371,64 +373,10 @@ export default function Classes() {
         : data.joined;
   const shown = pool;
 
-  return (
-    <div className="cl">
-      <div className="cl-top">
-        {/* "Classes" alone is generic — it names the noun and not the job.
-            The line under it says what can be done here, which is the same
-            treatment the Read and Vocabulary Bank headings get. */}
-        <div className="cl-heading">
-          <h1 className="cl-title">Classes</h1>
-          {/* The page does not promise something this account cannot do. */}
-          <p className="cl-subtitle">
-            {canTeach
-              ? 'Teach, join, and manage your Chinese classes.'
-              : 'Join and keep track of your Chinese classes.'}
-          </p>
-        </div>
-        <div className="cl-tools">
-          <PageTools />
-        </div>
-      </div>
-
-      {error && <p className="cl-error">{error}</p>}
-
-      {/* The two ways in, side by side — creating and joining are the only
-          things you can do from here, so neither is buried in a menu.
-
-          Each card leads with its own mark and a heading naming the ACTION
-          rather than the role. "Teaching" and "Studying" are what the lists
-          below are called; up here the question is what you came to do, and
-          the two cards were otherwise identical slabs of the same weight. */}
-      <div className={'cl-entry' + (canTeach ? '' : ' cl-entry-solo')}>
-        {/* ONLY FOR SOMEONE WHO CAN ACTUALLY TEACH. A student was being
-            offered "Create class", which is not something their account may
-            do — `ClassroomController::store` refuses it, so the button was an
-            invitation to a 403. `can_teach` comes off the payload this page
-            already loads; the server re-checks, and that check is the gate. */}
-        {canTeach && (
-          <div className="cl-entry-card">
-            <span className="cl-entry-mark" aria-hidden="true">
-              <CapIcon />
-            </span>
-            <div className="cl-entry-body">
-              <h2 className="cl-entry-title">Teach a class</h2>
-              <p className="cl-entry-text">
-                Create one, then read the join code out to your students.
-              </p>
-            </div>
-            {/* Always "Create class" now — the dialog carries its own Cancel,
-                so this button no longer has to double as the way out. */}
-            <button
-              type="button"
-              className="cl-btn cl-entry-action"
-              onClick={() => setCreating(true)}
-            >
-              + Create class
-            </button>
-          </div>
-        )}
-
+  /* Join a class. A teacher sees it beside Create in the top row; a student
+     has only this card, so it heads the right column instead of sitting
+     alone above a half-empty page. */
+  const joinCard = (
         <div className="cl-entry-card">
           <span className="cl-entry-mark" aria-hidden="true">
             <JoinIcon />
@@ -461,7 +409,70 @@ export default function Classes() {
             </p>
           )}
         </div>
+  )
+
+  return (
+    <div className="cl">
+      <div className="cl-top">
+        {/* "Classes" alone is generic — it names the noun and not the job.
+            The line under it says what can be done here, which is the same
+            treatment the Read and Vocabulary Bank headings get. */}
+        <div className="cl-heading">
+          <h1 className="cl-title">Classes</h1>
+          {/* The page does not promise something this account cannot do. */}
+          <p className="cl-subtitle">
+            {canTeach
+              ? 'Teach, join, and manage your Chinese classes.'
+              : 'Join and keep track of your Chinese classes.'}
+          </p>
+        </div>
+        <div className="cl-tools">
+          <PageTools />
+        </div>
       </div>
+
+      {error && <p className="cl-error">{error}</p>}
+
+      {/* The two ways in, side by side — creating and joining are the only
+          things you can do from here, so neither is buried in a menu.
+
+          Each card leads with its own mark and a heading naming the ACTION
+          rather than the role. "Teaching" and "Studying" are what the lists
+          below are called; up here the question is what you came to do, and
+          the two cards were otherwise identical slabs of the same weight. */}
+      {(canTeach || loading) && (
+      <div className={'cl-entry' + (canTeach ? '' : ' cl-entry-solo')}>
+        {/* ONLY FOR SOMEONE WHO CAN ACTUALLY TEACH. A student was being
+            offered "Create class", which is not something their account may
+            do — `ClassroomController::store` refuses it, so the button was an
+            invitation to a 403. `can_teach` comes off the payload this page
+            already loads; the server re-checks, and that check is the gate. */}
+        {canTeach && (
+          <div className="cl-entry-card">
+            <span className="cl-entry-mark" aria-hidden="true">
+              <CapIcon />
+            </span>
+            <div className="cl-entry-body">
+              <h2 className="cl-entry-title">Teach a class</h2>
+              <p className="cl-entry-text">
+                Create one, then read the join code out to your students.
+              </p>
+            </div>
+            {/* Always "Create class" now — the dialog carries its own Cancel,
+                so this button no longer has to double as the way out. */}
+            <button
+              type="button"
+              className="cl-btn cl-entry-action"
+              onClick={() => setCreating(true)}
+            >
+              + Create class
+            </button>
+          </div>
+        )}
+
+        {canTeach ? joinCard : loading && joinCard}
+      </div>
+      )}
 
       {/* A dialog, not an inline panel. Creating a class is a short, committed
           task with its own fields, and unfolding it in the middle of the page
@@ -585,7 +596,7 @@ export default function Classes() {
         </div>
       )}
 
-      {loading && <p className="cl-empty">Loading your classes…</p>}
+      {loading && <SkeletonRows count={3} />}
 
       {/* Body splits once there is anything to show: the classes on the left,
           what is happening on the right. Before this, one class sat alone in
@@ -646,7 +657,11 @@ export default function Classes() {
             )}
           </div>
 
-          <ClassRail activity={data.activity || []} upcoming={data.upcoming || []} />
+          <ClassRail
+            activity={data.activity || []}
+            upcoming={data.upcoming || []}
+            lead={canTeach ? null : joinCard}
+          />
         </div>
       )}
     </div>

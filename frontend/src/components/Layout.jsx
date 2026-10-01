@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigationType } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import useActivityHeartbeat from "../hooks/useActivityHeartbeat";
 import useUnreadMessages from "../hooks/useUnreadMessages";
 import usePusherConversationUpdates from "../hooks/usePusherConversationUpdates";
 import PracticeAssistant from "./PracticeAssistant";
 import VerifyEmailBanner from "./VerifyEmailBanner";
+import ToastStack from "./ToastStack";
+import useLiveToasts from "../hooks/useLiveToasts";
+import { useApiData } from "../useApiData";
+import { api } from "../api";
 import logo from "../assets/sidebar/logo.svg";
 import logoMark from "../assets/sidebar/logo-mark.svg";
-import owlPro from "../assets/sidebar/owl-pro.png";
+// The Pro mascot: a panda in the brand's softened purple (owl-pro.png is
+// kept on disk as the earlier art).
+import owlPro from "../assets/sidebar/panda-pro.png";
 import "./Layout.css";
 
 /* The Pro button's travelling light, as [length, colour] in percent of the
@@ -294,9 +300,17 @@ function entryHolds(pathname, entry) {
 }
 
 export default function Layout() {
-  const { user, logout, token } = useAuth();
-  const navigate = useNavigate();
+  const { user, token } = useAuth();
   const { pathname } = useLocation();
+  const navType = useNavigationType();
+
+  /* A new page starts at the top. Without this the window kept the previous
+     page's scroll, so opening Study from a scrolled page landed halfway down
+     instead of at "Select your level". Back/forward (POP) is left alone so
+     returning to a list keeps your place. */
+  useEffect(() => {
+    if (navType !== "POP") window.scrollTo(0, 0);
+  }, [pathname, navType]);
 
   // Counts time spent, for the Dashboard's activity chart. Mounted here so it
   // covers every authenticated page rather than being wired up per page.
@@ -312,8 +326,78 @@ export default function Layout() {
      me?", and those are different questions. */
   const { unread: unreadMessages } = useUnreadMessages(token);
   usePusherConversationUpdates(token, user?.id);
+  // On-screen toasts for new notifications and lessons about to start.
+  useLiveToasts(token, user?.id);
 
-  const itemUnread = (item) => (item.to === "/messages" ? unreadMessages : 0);
+  /* Bookings carries a count bubble like Messages, and like Messages it
+     CLEARS once seen. It counts:
+       - requests waiting on YOUR answer as a tutor (they stay until answered,
+         since they need an action), and
+       - your own bookings the other side changed since you last opened
+         Bookings: confirmed, declined, or cancelled by the tutor.
+     "Last opened" is per browser (localStorage), which is enough for a
+     reminder; the Bookings page itself is the lasting record. */
+  const seenKey = user ? `bk-seen-${user.id}` : null;
+  const readSeen = () => {
+    try {
+      return Number(localStorage.getItem(seenKey)) || 0;
+    } catch {
+      return 0;
+    }
+  };
+  const [bookingsSeenAt, setBookingsSeenAt] = useState(readSeen);
+  useEffect(() => {
+    if (!seenKey) return;
+    if (pathname.startsWith("/bookings")) {
+      const now = Date.now();
+      try {
+        localStorage.setItem(seenKey, String(now));
+      } catch {
+        // Private mode: the bubble just clears for this visit only.
+      }
+      setBookingsSeenAt(now);
+    } else {
+      setBookingsSeenAt(readSeen());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, seenKey]);
+
+  const bookingsQuery = useApiData("bookings", () => api.getBookings(token), { enabled: Boolean(token) });
+  const bookingAlerts = useMemo(() => {
+    const d = bookingsQuery.data;
+    if (!d) return 0;
+    const now = Date.now();
+    const changed = (d.sent || []).filter((b) => {
+      const answered =
+        b.status === "confirmed" ||
+        b.status === "declined" ||
+        (b.status === "cancelled" && b.cancelled_by === "tutor");
+      return answered && b.updated_at && new Date(b.updated_at).getTime() > bookingsSeenAt;
+    }).length;
+    const toAnswer = (d.received || []).filter(
+      (b) => b.status === "pending" && (!b.starts_at || new Date(b.starts_at).getTime() > now),
+    ).length;
+    return changed + toAnswer;
+  }, [bookingsQuery.data, bookingsSeenAt]);
+
+  /* Coming back from checkout or the Bookings page means a booking may have
+     been made, paid, confirmed or cancelled there, so the count refetches.
+     Other navigations cost no request. */
+  const prevPathRef = useRef(pathname);
+  const lastBookingsFetchRef = useRef(Date.now());
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    const stale = Date.now() - lastBookingsFetchRef.current > 60000;
+    if (prev !== pathname && (/^\/(checkout|bookings)/.test(prev) || stale)) {
+      lastBookingsFetchRef.current = Date.now();
+      bookingsQuery.refresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const itemUnread = (item) =>
+    item.to === "/messages" ? unreadMessages : item.to === "/bookings" ? bookingAlerts : 0;
   const sectionUnread = (entry) =>
     entry.items.reduce((n, item) => n + itemUnread(item), 0);
 
@@ -361,11 +445,6 @@ export default function Layout() {
   useEffect(() => {
     if (here) setOpenKey(here);
   }, [here]);
-
-  async function handleLogout() {
-    await logout();
-    navigate("/login");
-  }
 
   function openSection(key) {
     // In the rail there is nowhere to draw the sub-list, so opening a section
@@ -548,14 +627,8 @@ export default function Layout() {
         </NavLink>
 
         {user && <p className="sb-user">{user.name}</p>}
-        <button
-          type="button"
-          className="sb-logout"
-          onClick={handleLogout}
-          title={collapsed ? "Log out" : undefined}
-        >
-          <span className="sb-logout-label">Log out</span>
-        </button>
+        {/* No Log out here: it lives in the account menu (top-right avatar),
+            and a second copy in the rail was removed at the user's request. */}
 
         <div className="sb-promo">
           {/* The owl sits INSIDE the card, never bleeding past its top edge:
@@ -589,6 +662,9 @@ export default function Layout() {
         </div>
       </nav>
       <main className="sb-main">
+        {/* Toasts sit inside the page column (not fixed over the window);
+            see ToastStack for why the anchor is sticky. */}
+        <ToastStack />
         {/* Above the page rather than inside it, so the prompt follows the
             reader everywhere instead of being something they can walk away
             from by clicking a link. Renders nothing for a verified account. */}

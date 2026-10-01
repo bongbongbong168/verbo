@@ -27,7 +27,7 @@
   box-sizing: border-box;
   background: #fff;
   border: 1px solid #2b2643;
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
   font-family: 'Hellix', system-ui, sans-serif;
   color: #1c1730;
@@ -90,7 +90,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: #726c88;
   cursor: pointer;
@@ -152,10 +152,10 @@
 .wx-error {
   margin: 0 0 1rem;
   padding: 0.6rem 0.8rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  color: #b3261e;
+  color: #b02a2a;
   font-size: 0.86rem;
 }
 

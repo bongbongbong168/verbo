@@ -1,5 +1,5 @@
 .sc {
-  --sc-bg: #f6f5fc;
+  --sc-bg: #f9f8fe;
   --sc-card: #ffffff;
   --sc-card-dark: #2b2643;
   --sc-accent2: #7d76a1;
@@ -8,8 +8,6 @@
   --sc-text-muted: #726c88;
   --sc-pill-bg: #f1edfc;
   --sc-link: #997ee2;
-  /* One value for the banner: the card and the clip that masks the swoosh
-     artwork must round identically or the art clips to the wrong shape. */
   --sc-banner-radius: 11px;
 
   background: var(--sc-bg);
@@ -42,9 +40,11 @@
   max-width: 420px;
   background: #fff;
   border: 1px solid var(--sc-border);
-  border-radius: 999px;
-  padding: 0.6rem 1.1rem;
+  /* Same box as Find Tutor's search: 10px corners, not a pill. */
+  border-radius: 12px;
+  padding: 0.65rem 1.1rem;
   color: var(--sc-text-muted);
+  box-shadow: 0 1px 2px rgba(28, 23, 48, 0.04);
 }
 
 .sc-search svg {
@@ -114,10 +114,10 @@
 }
 
 .sc-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 1rem 0;
@@ -131,7 +131,7 @@
   padding: 1rem 1.15rem;
   border: 1px solid #ddd6f4;
   border-radius: 16px;
-  background: #fbfaff;
+  background: #f9f8fe;
   color: #2b2643;
 }
 
@@ -177,7 +177,7 @@
 .sc-allowance-cta {
   flex: 0 0 auto;
   padding: 0.7rem 0.9rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #2b2643;
   color: #fff;
   font-size: 0.8rem;
@@ -194,10 +194,8 @@
   .sc-allowance-cta { width: 100%; text-align: center; }
 }
 
-/* Vertical padding sets the banner's height, which in turn caps how large the
-   notebook art can be: the art is near-square and rotated, so it stands ~1.13x
-   its own width on screen. At 2.2rem the banner was 222px and a 235px-wide
-   notebook (266px tall) had nowhere to go but over the bottom edge. */
+/* The document illustration fills the right side without changing the
+   banner's height or covering its upload controls. */
 .sc-upload-card {
   position: relative;
   background: var(--sc-card-dark);
@@ -207,64 +205,26 @@
   margin: 1.6rem 0 2.4rem;
 }
 
-.sc-upload-bg-clip {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: var(--sc-banner-radius);
-  z-index: 0;
-}
-
-.sc-swoosh-large,
-.sc-swoosh-small {
-  position: absolute;
-  bottom: -20px;
-  right: 8%;
-  height: auto;
-  pointer-events: none;
-}
-
-/* Placement measured off the design: as a share of the banner the large shape
-   spans 69%–99% across and the small one 61%–78%, so they overlap and read as
-   one cluster with the large anchoring the right edge.
-
-   Both sit *inside* the banner, their tails ending ~5% above its bottom edge.
-   They previously hung past it on a negative offset and were cut off by the
-   clip, which is what flattened them into a single blob. */
-.sc-swoosh-large {
-  width: 30%;
-  max-width: 296px;
-  right: 1%;
-  bottom: 5%;
-  opacity: 0.9;
-}
-
-.sc-swoosh-small {
-  width: 16.5%;
-  max-width: 164px;
-  right: 15%;
-  bottom: 6%;
-  opacity: 0.9;
-}
-
-/* Breaks the top edge as it does in the design, and lands flush with the
-   bottom one. Its on-screen height is ~1.13x its width once rotated, so this
-   and the banner's padding above have to move together. */
 .sc-notebook {
   position: absolute;
-  top: -14px;
-  right: 5%;
-  width: 222px;
+  top: 50%;
+  right: 3%;
+  width: min(330px, 32%);
   height: auto;
-  transform: rotate(6deg);
+  transform: translateY(-50%);
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
 }
 
 .sc-upload-content {
   position: relative;
   z-index: 1;
-  max-width: 540px;
+  max-width: min(540px, calc(100% - 270px));
+}
+
+@media (max-width: 1100px) {
+  .sc-notebook { display: none; }
+  .sc-upload-content { max-width: 540px; }
 }
 
 /* Deliberately the same declaration as .sc-heading ("Scan Anything") — the two
@@ -363,7 +323,7 @@
   width: 34px;
   height: 34px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--sc-pill-bg);
   color: var(--sc-card-dark);
   cursor: pointer;
@@ -375,10 +335,10 @@
 }
 
 .sc-modal-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.55rem 0.8rem;
   font-size: 0.85rem;
   margin: 0 0 1rem;
@@ -442,7 +402,7 @@
   text-align: center;
   background: var(--sc-bg);
   border: 1.5px dashed #d8d2ee;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 2.1rem 1.2rem;
   cursor: pointer;
   transition:
@@ -461,7 +421,7 @@
   place-items: center;
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   color: var(--sc-card-dark);
   box-shadow: 0 2px 8px rgba(28, 23, 48, 0.1);
@@ -500,7 +460,7 @@
   gap: 0.9rem;
   background: #fff;
   border: 1px solid var(--sc-border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 0.7rem 0.9rem;
 }
 
@@ -515,7 +475,7 @@
   flex-shrink: 0;
   width: 46px;
   height: 46px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--sc-pill-bg);
   color: var(--sc-accent2);
   font-size: 0.68rem;
@@ -545,7 +505,7 @@
 }
 
 .sc-queue-item.failed .sc-queue-meta {
-  color: #b3261e;
+  color: #b02a2a;
   /* Server errors can be long; keep one row from swallowing the dialog */
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -592,7 +552,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   background: transparent;
   color: var(--sc-text-muted);
@@ -609,7 +569,7 @@
 
 .sc-queue-remove:hover:not(:disabled) {
   background: #fdecea;
-  color: #b3261e;
+  color: #b02a2a;
 }
 
 .sc-queue-remove:disabled {
@@ -651,7 +611,7 @@
   width: 250px;
   padding: 0.6rem 0.85rem 0.65rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
   font-family: 'Hellix', sans-serif;
@@ -863,7 +823,7 @@
 .sc-table-wrap {
   background: var(--sc-card);
   border: 1px solid var(--sc-border);
-  border-radius: 18px;
+  border-radius: 16px;
   /* Not `hidden`: the row menu is an absolutely positioned popover and would be
      clipped on the last rows. Only this wrapper paints a background — the rows
      and cells are transparent — so there is nothing for the radius to clip. */
@@ -910,7 +870,7 @@
 }
 
 .sc-menu-danger {
-  color: #b3261e;
+  color: #b02a2a;
 }
 
 .sc-menu-danger:hover {
@@ -984,7 +944,7 @@
 .sc-row-icon {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1068,9 +1028,9 @@
   font-family: inherit;
   font-size: 0.84rem;
   color: #1c1730;
-  background: #f8f7fd;
+  background: #f9f8fe;
   border: 1px solid #e7e3f6;
-  border-radius: 9px;
+  border-radius: 8px;
 }
 
 .sc-share-copy {
@@ -1079,7 +1039,7 @@
      400px against a flat-capped H). The pair sums to the old padding. */
   padding: calc(0.6rem - 0.076em) 1.1rem calc(0.6rem + 0.076em);
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #6a6191;
   color: #fff;
   font-family: inherit;
@@ -1100,7 +1060,7 @@
      400px against a flat-capped H). The pair sums to the old padding. */
   padding: calc(0.55rem - 0.076em) 1rem calc(0.55rem + 0.076em);
   border: 1px solid #f0c9c5;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-family: inherit;
@@ -1114,7 +1074,7 @@
      400px against a flat-capped H). The pair sums to the old padding. */
   padding: calc(0.55rem - 0.076em) 1.1rem calc(0.55rem + 0.076em);
   border: 1px solid #e7e3f6;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   font-family: inherit;
   font-size: 0.85rem;

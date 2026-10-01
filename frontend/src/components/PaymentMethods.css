@@ -13,9 +13,9 @@
   margin: 0;
   padding: 0.6rem 0.9rem;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fdecea;
-  color: #b3261e;
+  color: #b02a2a;
   font-size: 0.88rem;
 }
 
@@ -66,7 +66,7 @@
   flex: none;
   width: 44px;
   height: 30px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #f1edfc;
   color: #6a6191;
   font-size: 0.62rem;
@@ -166,7 +166,7 @@
 
 .pmx-remove:hover:not(:disabled),
 .pmx-remove.armed {
-  color: #b3261e;
+  color: #b02a2a;
 }
 
 .pmx-form {
@@ -175,8 +175,8 @@
   gap: 0.7rem;
   padding: 1rem;
   border: 1px solid #e7e3f6;
-  border-radius: 14px;
-  background: #fbfaff;
+  border-radius: 16px;
+  background: #f9f8fe;
 }
 
 .pmx-pair {
@@ -203,7 +203,7 @@
   width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid #e7e3f6;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   font-family: inherit;
   font-size: 0.92rem;
@@ -226,7 +226,7 @@
   /* Cap-band correction, measured: 1.021px low under a symmetric 0.55rem. */
   padding: calc(0.55rem - 1.021px) 1.2rem calc(0.55rem + 1.021px);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #6a6191;
   color: #fff;
   font-family: inherit;

@@ -10,6 +10,16 @@
       "autoPort": false
     },
     {
+      "name": "frontend-attach",
+      "url": "http://localhost:5173",
+      "port": 5173
+    },
+    {
+      "name": "backend-attach",
+      "url": "http://localhost:8000",
+      "port": 8000
+    },
+    {
       "name": "backend",
       "runtimeExecutable": "php",
       "runtimeArgs": ["artisan", "serve"],

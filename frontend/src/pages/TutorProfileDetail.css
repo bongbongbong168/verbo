@@ -38,10 +38,10 @@
 }
 
 .td-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -170,11 +170,12 @@
 
 .td-spec {
   display: flex;
-  align-items: flex-start;
+  /* Icon centred on the card's height, not pinned to the title (asked for). */
+  align-items: center;
   gap: 0.8rem;
   padding: 0.95rem 1rem;
   border: 1px solid var(--td-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
 }
 
@@ -186,17 +187,16 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: #f1edfc;
+  width: 28px;
+  height: 28px;
+  /* Bare icon, no chip (asked for). */
   font-size: 1.2rem;
   line-height: 1;
 }
 
 .td-spec-mark svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: var(--td-accent);
 }
 
@@ -218,13 +218,18 @@
 }
 
 .td-spec-tag {
-  padding: calc(0.1rem - 0.7px) 0.45rem calc(0.1rem + 0.7px);
+  /* The left pad carries the letter-spacing the last letter adds on the right,
+     so the word sits dead centre sideways. */
+  padding: calc(0.1rem - 0.7px) 0.45rem calc(0.1rem + 0.7px) calc(0.45rem + 0.02em);
+  text-align: center;
   border-radius: 999px;
   background: #6a6191;
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  /* Measured: sat 1.31px high against the specialty name's cap band. */
+  margin: 1.31px 0 -1.31px;
 }
 
 .td-spec-blurb {
@@ -287,7 +292,7 @@
   width: 58px;
   height: 58px;
   border: 2px solid #928fa1;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--td-pill);
   color: var(--td-accent);
@@ -409,7 +414,7 @@
      size and screen; this label is 600. The pair sums to the old padding. */
   padding: calc(0.45rem - 0.076em) 0.85rem calc(0.45rem + 0.076em);
   border: 1px solid var(--td-edge-soft);
-  border-radius: 10px;
+  border-radius: 12px;
   background: none;
   color: var(--td-accent);
   font-family: inherit;
@@ -486,22 +491,40 @@
   -webkit-line-clamp: 3;
 }
 
+/* A quiet text link with a chevron, not a pill: it is a way to read more of
+   the paragraph above, not an action of its own. The chevron flips when open. */
 .td-about-more {
-  margin-top: 0.9rem;
-  padding: 0.46rem 0.95rem;
-  border: 1px solid var(--td-border);
-  border-radius: 999px;
-  background: #fff;
-  color: var(--td-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: none;
+  color: var(--td-accent, #6a6191);
   font: inherit;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
 }
 
+.td-about-more svg {
+  width: 16px;
+  height: 16px;
+  margin: 0.076em 0 -0.076em;
+}
+
+.td-about-more[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
 .td-about-more:hover {
-  border-color: var(--td-edge-soft);
-  background: var(--td-pill);
+  color: var(--td-text);
+}
+
+.td-about-more:hover span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .td-meta {
@@ -904,7 +927,7 @@
   padding: 12px;
   background: var(--td-card);
   border: 1px solid var(--td-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: inherit;
   transition: transform 0.14s ease;
@@ -935,7 +958,7 @@
   width: 84px;
   aspect-ratio: 13 / 15;
   flex: none;
-  border-radius: 10px;
+  border-radius: 12px;
   /* The generated initial is `3.4em`, so this sets it to ~39px — sized to the
      84px box rather than to the Dashboard's much wider cover. */
   font-size: 0.72rem;
@@ -1012,7 +1035,7 @@
   line-height: 1.45;
   color: var(--td-text-muted);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1038,7 +1061,7 @@
   width: 100%;
   height: clamp(150px, 16vw, 190px);
   flex: none;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: #2b2643;
   margin-bottom: 0.9rem;
@@ -1239,7 +1262,7 @@
 .td-lesson {
   position: relative;
   background: var(--td-book);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.85rem 1rem;
   color: #fff;
 }
@@ -1280,7 +1303,7 @@
 .td-lesson-price {
   display: inline-block;
   background: #8f86bb;
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.2rem 0.55rem;
   font-size: 0.88rem;
   font-weight: 600;
@@ -1408,7 +1431,7 @@
      size and screen; this label is 600. The pair sums to the old padding. */
   padding: calc(0.5rem - 0.076em) 1rem calc(0.5rem + 0.076em);
   border: 1px solid var(--td-edge-soft);
-  border-radius: 10px;
+  border-radius: 12px;
   background: none;
   color: var(--td-accent);
   font-family: inherit;
@@ -1429,7 +1452,7 @@
   padding: 1rem 1.1rem 1.1rem;
   margin-bottom: 1.1rem;
   border: 1px solid var(--td-edge-soft);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--td-card);
 }
 
@@ -1471,9 +1494,9 @@
   font-size: 0.92rem;
   line-height: 1.5;
   color: var(--td-text);
-  background: #f8f7fd;
+  background: #f9f8fe;
   border: 1px solid var(--td-border);
-  border-radius: 10px;
+  border-radius: 12px;
   resize: none;
 }
 
@@ -1551,7 +1574,7 @@
   padding: 5px;
   background: #fff;
   border: 1px solid var(--td-border, #e7e3f6);
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 10px 26px rgba(28, 23, 48, 0.14);
 }
 
@@ -1561,7 +1584,7 @@
   box-sizing: border-box;
   padding: 0.5rem 0.65rem;
   border: none;
-  border-radius: 7px;
+  border-radius: 8px;
   background: none;
   font-family: inherit;
   font-size: 0.86rem;
@@ -1581,4 +1604,124 @@
 
 .td-review-menu-danger:hover {
   background: #fdecea;
+}
+
+/* Specialty cards, compact: they read as a tall stack of boxes at two lines
+   of blurb each. Tighter padding and a one-line blurb that ends in an
+   ellipsis; the full sentence is in the tooltip (title) on each card. */
+.td-spec {
+  padding: 0.6rem 0.85rem;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.td-spec-body {
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.td-spec-title {
+  font-size: 0.92rem;
+}
+
+.td-spec-blurb {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.8rem;
+}
+
+/* Icons: still bare (a chip was asked off earlier), but 20px in the deeper
+   purple and centred on the title + blurb pair. At 24px in the pale accent
+   they floated, loose and faint, beside two lines of text. */
+.td-spec-mark {
+  width: 22px;
+  height: 22px;
+}
+
+.td-spec-mark svg {
+  width: 20px;
+  height: 20px;
+  color: #6a6191;
+  stroke-width: 1.8;
+}
+
+/* ---- Teacher you may like: header with paging arrows ---- */
+.td-similar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.td-similar-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.td-similar-arrow {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #e2dcf5;
+  border-radius: 50%;
+  background: #fff;
+  color: #2b2643;
+  cursor: pointer;
+}
+
+.td-similar-arrow:hover:not(:disabled) {
+  background: #f1edfc;
+}
+
+.td-similar-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.td-similar-count {
+  min-width: 2.6rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--td-text-muted);
+}
+
+/* Rating and price, one line under the languages. */
+.td-similar-facts {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #2b2643;
+}
+
+.td-similar-rating span {
+  color: #e8b52e;
+}
+
+.td-similar-rating em,
+.td-similar-price em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--td-text-muted);
+}
+
+.td-similar-new {
+  font-weight: 500;
+  color: var(--td-text-muted);
+}
+
+/* One column (the ≤1000px layout): the profile card no longer sits beside
+   the hire card, so its 340px floor only left a blank band under the facts.
+   It takes its content's height instead. */
+@media (max-width: 1000px) {
+  .td-profile {
+    min-height: 0;
+  }
 }

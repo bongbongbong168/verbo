@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../api";
 import PageTools from "../components/PageTools";
 import "./Read.css";
+import { SkeletonRows } from '../components/Skeleton'
 
 function formatDate(value) {
   if (!value) return "";
@@ -68,7 +69,7 @@ export default function SavedArticles() {
       {error && <p className="rd-error">{error}</p>}
 
       <div className="rd-panel">
-        {loading && <p className="rd-empty">Loading your saved articles…</p>}
+        {loading && <SkeletonRows count={4} />}
 
         {!loading && items.length === 0 && (
           <div className="rd-saved-empty">

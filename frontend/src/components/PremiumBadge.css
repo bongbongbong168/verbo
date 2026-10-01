@@ -1,31 +1,35 @@
-/* The one Pro mark for the whole app. Change it here, never per page.
-
-   Built like the app's other small labels (the ARTICLE / STORY badge on
-   covers): a single line of text sized by padding, no fixed height and no
-   transforms. The vertical pads are measured, not borrowed: rendered at
-   1.1 (desktop) and 1 (phone), each at three sub-pixel positions, 0.04em
-   more on top than below lands PRO dead centre or within one device pixel.
-   (The usual 0.086em lift for Hellix 700 assumes line-height: normal; at
-   1.2 it put the caps 1.5px high.) */
+/* The one Pro mark for the whole app. A fixed pill and a dedicated label give
+   the word its own centre, instead of relying on a font line box plus padding.
+   That keeps PRO visually centred wherever the badge is used. */
 .pb-premium {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 2;
-  display: inline-block;
-  /* Nudged up and right by eye at the user's request, on top of the
-     measured centre: symmetric vertical pad, 1px more on the left. */
-  padding: 4px 8.5px 4px 9.5px;
-  border-radius: 6px;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 42px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 8px;
   background: #332f4b;
   color: #fff;
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  line-height: 1.2;
-  /* No letter-spacing: it adds a gap after the last letter too, which is
-     what pushed PRO off-centre sideways. */
+  line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Hellix's cap shapes paint a fraction low within a mathematically centred
+   line box. This is intentionally tiny: it corrects the ink, not the pill.
+   -1.1px splits two readings: the Browser pane measured the label 0.05px low
+   at -0.5px, while a real desktop screenshot showed it ~0.8px low (8px of
+   pill above the ink, 10px below at 1.2x). Both now land within ~0.55px. */
+.pb-premium-label {
+  display: block;
+  transform: translateY(-1.1px);
 }
 
 /* In a row of tags (the article page) rather than on a cover. */

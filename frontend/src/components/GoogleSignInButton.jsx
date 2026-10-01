@@ -62,6 +62,20 @@ function loadGis() {
  * touches only colour, radius and type — never structure — and the button stays
  * usable if Google changes what it emits.
  */
+/* In-app browsers (Telegram, Instagram, Facebook, LINE, WeChat, TikTok) cannot
+   run Google's popup: the popup opens but can never message this page back, so
+   it sits on a blank accounts.google.com. There we use the FULL-PAGE redirect
+   instead, which needs no second window. An iOS web view is caught by the
+   missing "Safari" token, since Telegram's iOS browser does not name itself.
+   Everywhere else keeps the popup, which leaves the page in place. */
+function inAppBrowser() {
+  const ua = navigator.userAgent || ''
+  if (/Telegram|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|TikTok|musical_ly|Snapchat/i.test(ua)) return true
+  return /iPhone|iPad|iPod/.test(ua) && !/Safari/.test(ua)
+}
+
+const REDIRECT_URI = `${import.meta.env.VITE_API_URL}/auth/google/redirect`
+
 export default function GoogleSignInButton({ onError, onSuccess }) {
   const { loginWithGoogle } = useAuth()
   const holder = useRef(null)
@@ -171,6 +185,7 @@ export default function GoogleSignInButton({ onError, onSuccess }) {
         google.accounts.id.initialize({
           client_id: CLIENT_ID,
           callback: (response) => handle.current?.(response),
+          ...(inAppBrowser() ? { ux_mode: 'redirect', login_uri: REDIRECT_URI } : {}),
         })
 
         draw(google)

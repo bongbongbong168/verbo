@@ -58,103 +58,204 @@
   background: #e7e0fa;
 }
 
-/* Static, not animated — the selected tab must be right on the first paint. */
+/* The active fill is a PILL inside the active tab: static at rest (right on
+   the first paint), and the thing the slide moves. The label sits above it. */
+.tl-tab {
+  position: relative;
+  isolation: isolate;
+}
+
 .tl-tab.active {
-  background: var(--tl-row);
   color: #fff;
 }
 
-/* ---- rows ---- */
+.tl-tab-pill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--tl-row);
+  transform-origin: left center;
+}
+
+.tl-tab-label {
+  position: relative;
+}
+
+/* The list eases in on a switch: transform-only, a 6px rise resting at 0, so
+   a frozen tab shows it in place. */
+.tl-list {
+  animation: tl-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes tl-in {
+  from { transform: translateY(6px); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-list { animation: none; }
+}
+
+/* ---- rows ----
+   The My Learning card's shape: a white row in the navy outline with a tile on
+   the left (the calendar tile, see .tl-tile), then the name, one short line
+   and the price. The old
+   deep-purple rows carried the description too and read as a wall of text. */
 
 .tl-list {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.6rem;
 }
 
 .tl-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.9rem;
   width: 100%;
   box-sizing: border-box;
-  padding: 0.95rem 1.05rem;
-  border: none;
-  border-radius: 13px;
-  background: var(--tl-row);
+  padding: 0.7rem 0.85rem 0.7rem 0.7rem;
+  border: 1px solid var(--tl-edge);
+  border-radius: 16px;
+  background: #fff;
   font-family: inherit;
-  color: #fff;
+  color: var(--tl-text);
   text-align: left;
   cursor: pointer;
+  /* Ornament only: the resting row is complete. */
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .tl-row:hover {
-  background: #5c5480;
+  border-color: var(--tl-pill);
+  box-shadow: 0 8px 20px rgba(43, 38, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+/* THE TILE is the My Learning calendar page (Dashboard .db-course-when):
+   navy outline, lavender band on top with binder rings, a big number, a small
+   unit. Here the band is the kind (1-on-1 / Group) and the number the length,
+   since a lesson on a price list has no date. One colour for every row. */
+.tl-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  width: 60px;
+  border: 1px solid var(--tl-edge);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--tl-border);
+  color: var(--tl-edge);
+  text-align: center;
+}
+
+.tl-tile::before,
+.tl-tile::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--tl-edge);
+}
+
+/* Near the edges, clear of the band label ("1-ON-1" spans the middle). */
+.tl-tile::before { left: 9px; }
+.tl-tile::after { right: 9px; }
+
+/* Cap-band pad for 700. */
+.tl-tile-band {
+  align-self: stretch;
+  padding: calc(4px - 0.086em) 0 calc(4px + 0.086em);
+  border-radius: 9px 9px 0 0;
+  background: var(--tl-pill);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tl-edge);
+}
+
+.tl-tile-num {
+  margin-top: 3px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-tile-unit {
+  margin: 2px 0 5px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--tl-row);
 }
 
 .tl-row-main {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
+  flex: 1;
   min-width: 0;
 }
 
 .tl-row-name {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.45rem;
-  font-size: 0.98rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
+/* Trial is just a small bubble beside the name, in the card's own purple.
+   Cap-band pad for 700. */
 .tl-row-tag {
-  /* All the vertical padding below: lifts the label 0.8px of the 0.086em
-     (Hellix 700) it sits low. The pair cannot be calc()d here - the top pad
-     is smaller than the lift - and 0.08px off is within tolerance. */
-  padding: 0 0.45rem 0.1rem;
+  /* Uppercase at this size measured 0.85px HIGH with the 0.086em pair;
+     symmetric padding lands it. */
+  padding: 0.14rem 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 0.64rem;
+  background: var(--tl-soft);
+  color: var(--tl-row);
+  font-size: 0.62rem;
   font-style: normal;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
-/* Italic, as in the reference — it reads as a caption under the name rather
-   than a second title. */
+/* One line, cut with an ellipsis: enough to say what the lesson is. */
 .tl-row-note {
-  font-size: 0.83rem;
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.82);
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--tl-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.tl-row-meta {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.66);
-}
-
-/* Symmetric padding, and it is correct — verified, not assumed.
-
-   An asymmetric "optical correction" was tried here and REVERTED. It came from
-   centring the full ink box, which includes the tail of the `$`; that pushed
-   the text 1px high. Measured against the CAP BAND (cap top -> baseline), which
-   is what the eye actually reads and what this codebase's other corrections
-   use, an even 0.4rem lands the cap-band centre at 14.4 in a 28.8 pill —
-   exactly on centre, off by 0.00.
-
-   The reason the ink box is the wrong reference: a price with a descender in it
-   would demand a different correction from one without, so labels that should
-   look identical would not. */
+/* Price: the one strong figure on the right. Cap-band pad for 700. */
 .tl-row-price {
   flex: none;
-  padding: 0.4rem 0.85rem;
+  padding: calc(0.4rem - 0.086em) 0.8rem calc(0.4rem + 0.086em);
   border-radius: 999px;
-  background: var(--tl-pill);
-  font-size: 0.85rem;
+  background: var(--tl-soft);
+  color: var(--tl-edge);
+  font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-row { transition: none; }
+  .tl-row:hover { transform: none; }
 }
 
 /* ---- dot strip ---- */

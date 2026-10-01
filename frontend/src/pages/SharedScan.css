@@ -4,7 +4,7 @@
    values match ScanDocument so a shared scan looks like the real thing. */
 
 .ss {
-  --ss-bg: #f6f5fc;
+  --ss-bg: #f9f8fe;
   --ss-card: #ffffff;
   --ss-border: #e7e3f6;
   --ss-edge: #2b2643;
@@ -58,7 +58,7 @@
   padding: 26px 30px 22px;
   background: var(--ss-card);
   border: 1px solid var(--ss-border);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .ss-card-center {
@@ -176,7 +176,7 @@
   padding: 0.5rem 0.7rem;
   background: var(--ss-bg);
   border: 1px solid var(--ss-border);
-  border-radius: 9px;
+  border-radius: 8px;
 }
 
 .ss-word-hanzi {
@@ -205,7 +205,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.55rem 1.1rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ss-accent);
   color: #fff;
   font-size: 0.86rem;

@@ -34,7 +34,7 @@
 
 .sk-title {
   height: 1em;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 .sk-media {
@@ -47,7 +47,7 @@
    row keeps the same rhythm as the row it becomes. */
 .sk-card {
   border: 1px solid #e7e3f6;
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
   padding: 0.9rem;
   box-sizing: border-box;
@@ -67,4 +67,92 @@
 .sk-circle {
   border-radius: 50%;
   flex: none;
+}
+
+/* ---- whole page ---- */
+.sk-page {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 2.6rem clamp(16px, 6vw, 90px);
+}
+
+.sk-page-head {
+  position: relative;
+  padding-left: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* The page-title bar, drawn as the real one is (pageTitles.css). */
+.sk-page-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: #e2ddf5;
+}
+
+.sk-page-title {
+  width: min(260px, 60%);
+  height: 1.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.sk-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sk-page-block {
+  height: 150px;
+  border-radius: 16px;
+}
+
+.sk-page-wide {
+  height: 220px;
+  border-radius: 16px;
+}
+
+/* ---- list rows ---- */
+.sk-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #f0edf8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.sk-row-mark {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.sk-row-lines {
+  flex: 1;
+  min-width: 0;
+}
+
+.sk-row-lines .sk-text:last-child {
+  height: 0.6em;
+}
+
+.sk-row-pill {
+  flex: none;
+  width: 72px;
+  height: 26px;
+  border-radius: 999px;
 }

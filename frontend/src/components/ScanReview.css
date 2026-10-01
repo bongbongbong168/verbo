@@ -1,0 +1,112 @@
+/* Unsure OCR lines. The dashed lavender edge and the "Unsure" chip are what
+   set doubtful text apart from confirmed text - the palette's own colours,
+   no warning hue. */
+.srv {
+  margin: 0 0 1.2rem;
+  padding: 1rem 1.1rem;
+  border: 1px dashed #a89ce3;
+  border-radius: 16px;
+  background: #f9f8fe;
+}
+
+.srv-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2b2643;
+}
+
+.srv-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #726c88;
+}
+
+.srv-list {
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.srv-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.srv-chip {
+  flex: none;
+  padding: calc(0.2rem - 0.076em) 0.55rem calc(0.2rem + 0.076em);
+  border-radius: 999px;
+  background: #f1edfc;
+  color: #6a6191;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.srv-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-family: 'Hellix', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 1rem;
+  color: #1c1730;
+}
+
+.srv-input:focus-visible {
+  outline: 2px solid #a89ce3;
+  outline-offset: 1px;
+}
+
+.srv-error {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #b02a2a;
+}
+
+.srv-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.srv-ghost,
+.srv-go {
+  padding: calc(0.5rem - 0.076em) 1rem calc(0.5rem + 0.076em);
+  border: none;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.srv-ghost {
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.srv-go {
+  background: #6a6191;
+  color: #fff;
+}
+
+.srv-ghost:disabled,
+.srv-go:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.srv-ghost:focus-visible,
+.srv-go:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}

@@ -5,6 +5,7 @@ import { api } from '../api'
 import { invalidate } from '../dataCache'
 import PageTools from '../components/PageTools'
 import './TutorApplications.css'
+import { SkeletonRows } from '../components/Skeleton'
 
 /**
  * The admin review queue for tutor applications.
@@ -130,7 +131,7 @@ export default function TutorApplications() {
       <div className="ta-body">
         <div className="ta-list">
           {loading ? (
-            <p className="ta-empty">Loading…</p>
+            <SkeletonRows count={4} />
           ) : rows.length === 0 ? (
             <p className="ta-empty">
               {tab === 'awaiting' ? 'Nothing waiting. The queue is clear.' : 'Nothing here yet.'}
@@ -182,7 +183,6 @@ export default function TutorApplications() {
                 <div><dt>Subjects</dt><dd>{detail.subjects || '—'}</dd></div>
                 <div><dt>Languages</dt><dd>{detail.languages_spoken || '—'}</dd></div>
                 <div><dt>Availability</dt><dd>{detail.availability || '—'}</dd></div>
-                <div><dt>Indicative rate</dt><dd>{detail.hourly_rate ? `$${detail.hourly_rate}/hr` : '—'}</dd></div>
               </dl>
 
               <h3 className="ta-h3">About</h3>

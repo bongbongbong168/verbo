@@ -8,6 +8,8 @@ import PageTools from '../components/PageTools'
 import './BecomeTutor.css'
 import TutorFitFields from '../components/TutorFitFields'
 import { youtubeVideoId } from '../tutorVideo'
+import { confirmDelete } from '../components/ConfirmDelete'
+import { PageSkeleton } from '../components/Skeleton'
 
 /**
  * Apply to teach on Verbo — and, after submitting, the status of that
@@ -144,6 +146,7 @@ export default function BecomeTutor() {
   }
 
   async function removeCredential(id) {
+    if (!(await confirmDelete({ title: "Remove this document?" }))) return
     try {
       await api.deleteTutorCredential(token, id)
       setCredentials((c) => c.filter((x) => x.id !== id))
@@ -174,7 +177,7 @@ export default function BecomeTutor() {
     }
   }
 
-  if (loading) return <div className="bt"><p className="bt-loading">Loading…</p></div>
+  if (loading) return <PageSkeleton />
 
   const status = profile?.status || null
   const state = status ? STATE[status] : null
@@ -293,9 +296,9 @@ export default function BecomeTutor() {
             </div>
             <Field
               label="Short introduction"
-              hint={`${form.short_bio.length}/180 characters. This appears at the top of your tutor card.`}
+              hint={`One sentence · ${form.short_bio.length}/120. This appears at the top of your tutor card.`}
             >
-              <textarea rows={2} maxLength={180} value={form.short_bio} onChange={set('short_bio')} />
+              <input type="text" maxLength={120} value={form.short_bio} onChange={set('short_bio')} />
             </Field>
             <Field
               label="About you"
@@ -310,13 +313,10 @@ export default function BecomeTutor() {
           </fieldset>
 
           <fieldset className="bt-group">
-            <legend>Availability and rate</legend>
+            <legend>Availability</legend>
             <div className="bt-row">
               <Field label="When you are usually free" hint="A rough description. You set real bookable hours after approval.">
                 <input value={form.availability} onChange={set('availability')} placeholder="Weekday evenings, weekends" />
-              </Field>
-              <Field label="Indicative rate per hour" hint="In dollars. Your real prices come from your lesson list.">
-                <input type="number" min="0" value={form.hourly_rate} onChange={set('hourly_rate')} />
               </Field>
             </div>
             <Field label="Introduction video (YouTube)" hint="Paste a public or unlisted YouTube video link to introduce yourself to students.">

@@ -72,10 +72,10 @@
 }
 
 .pe-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -228,12 +228,15 @@
   height: 36px;
   box-sizing: border-box;
   border: 1px solid var(--pe-outline);
-  border-radius: 9px;
+  border-radius: 8px;
   flex-shrink: 0;
   background: linear-gradient(135deg, var(--pe-accent-light), var(--pe-accent));
   color: #fff;
   font-weight: 700;
   font-size: 0.95rem;
+  /* The initial measured 1.66px LOW in a flex-centred box; a bottom pad of
+     2 x the 700 lift centres its cap band (border-box keeps it 36px). */
+  padding-bottom: 0.172em;
 }
 
 .pe-author-name {
@@ -449,7 +452,7 @@
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--pe-border);
   border-radius: 12px;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 .pe-premium-lock {
@@ -457,7 +460,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--pe-pill);
   color: var(--pe-accent);
 }
@@ -483,7 +486,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--pe-outline);
   color: #fff;
   font-size: 0.78rem;
@@ -509,7 +512,7 @@
   padding: 1.35rem 1.5rem;
   border: 1px solid var(--pe-outline);
   border-radius: 20px;
-  background: linear-gradient(110deg, #fff 0%, #f7f4ff 100%);
+  background: linear-gradient(110deg, #fff 0%, #f9f8fe 100%);
 }
 
 .pe-premium-transcript img {
@@ -561,7 +564,7 @@
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--pe-border);
   border-radius: 12px;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 
@@ -681,7 +684,7 @@
    driven by the same state and can never disagree. */
 .pe-word {
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 8px;
   transition:
     background 0.12s ease,
     color 0.12s ease;
@@ -794,14 +797,14 @@
   padding: 1rem 1.1rem;
   border-left: 3px solid var(--pe-accent-light);
   border-radius: 0 12px 12px 0;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 .pe-translation-label {
   display: inline-block;
   margin-bottom: 0.4rem;
   padding: 0.12rem 0.5rem;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #f1edfc;
   color: var(--pe-accent);
   font-size: 0.68rem;
@@ -855,7 +858,7 @@
   font-family: 'Hellix', sans-serif;
   font-weight: 600;
   font-size: 0.85rem;
-  color: #b3261e;
+  color: #b02a2a;
   background: var(--pe-card);
   border: 1px solid #f6c6c1;
   border-radius: 999px;
@@ -1081,4 +1084,365 @@
   border-radius: 50%;
   background: var(--pe-outline);
   cursor: pointer;
+}
+
+/* ---- mini player -------------------------------------------------------
+   A compact second set of controls for the one <audio>, shown once the full
+   player has scrolled away. Sticky rather than fixed: it rides the viewport's
+   bottom edge but lives in this page's column, so it never covers the sidebar,
+   and at the end of the page it sits in flow below the last section.
+
+   STATE IS A CLASS, NOT A TRANSITION. Hidden is `visibility: hidden` (it keeps
+   its space, so showing it never shifts the page); shown is `.is-on`. The
+   arrival is a LANDING that starts and ends at rest - same construction as the
+   Read banner's rh-land - because a slide or fade that begins off its mark is
+   stranded there in a tab that is not compositing frames. */
+.pe-mini {
+  position: sticky;
+  bottom: 16px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-top: 1.2rem;
+  padding: 0.7rem 1rem 0.7rem 0.7rem;
+  /* NO OUTLINE, AND FROSTED. A navy border drew a second frame over the
+     transcript card's own side rules, which ran into the bar's edges. The
+     translucent white plus a blur softens whatever passes behind, and the
+     shadow alone lifts it off the page. Static, never transitioned. */
+  /* Glass: a white-to-clear wash, a strong blur, a thin white rim and a top
+     highlight. Static, never transitioned. */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.4));
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 22px;
+  box-shadow:
+    0 8px 32px rgba(43, 38, 67, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(18px);
+  /* Going away: glide down and fade, THEN drop visibility, so it is not cut
+     off mid-glide. */
+  transition:
+    transform 380ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 280ms ease,
+    visibility 0s linear 380ms;
+}
+
+/* Coming back: the same glide in reverse, both directions eased, so scrolling
+   past the player and back reads as one continuous motion. Asked for as
+   "smooth like butter". The known trade: a tab that never composites frames
+   would hold it at its hidden values, and the next scroll retargets it. */
+.pe-mini.is-on {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+  transition:
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 360ms ease,
+    visibility 0s;
+}
+
+
+
+.pe-mini-cover {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--pe-pill);
+}
+
+.pe-mini-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Title over "level · language". Both truncate rather than wrap: the bar
+   must stay one row tall. */
+/* The seek bar outranks the title for width: a title can truncate, a bar
+   squeezed to 100px cannot be aimed at. */
+.pe-mini-text {
+  flex: 1 1 150px;
+  max-width: 320px;
+  min-width: 0;
+}
+
+.pe-mini-sub {
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.76rem;
+  color: var(--pe-text-muted);
+}
+
+.pe-mini-title {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--pe-outline);
+}
+
+.pe-mini-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pe-mini-skip,
+.pe-mini-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pe-text-muted);
+  cursor: pointer;
+}
+
+.pe-mini-skip:hover,
+.pe-mini-icon:hover {
+  background: var(--pe-pill);
+  color: var(--pe-outline);
+}
+
+.pe-mini-skip svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pe-mini-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* The strongest control, as on the full player - same navy disc, smaller. */
+.pe-mini-play {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--pe-outline);
+  color: #fff;
+  cursor: pointer;
+}
+
+.pe-mini-play:hover {
+  background: var(--pe-accent);
+}
+
+.pe-mini-play svg {
+  width: 17px;
+  height: 17px;
+}
+
+.pe-mini-track {
+  flex: 2 1 220px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pe-mini-progress {
+  flex: 1 1 auto;
+  min-width: 40px;
+}
+
+.pe-mini-progress .pe-progress-handle {
+  width: 13px;
+  height: 13px;
+}
+
+/* A hairline between the playback controls and the X, so closing the bar does
+   not read as one more playback control. */
+.pe-mini-rule {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 0.35rem 0;
+  background: var(--pe-border);
+}
+
+.pe-mini-time {
+  flex: none;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--pe-text-muted);
+}
+
+.pe-mini-play:focus-visible,
+.pe-mini-skip:focus-visible,
+.pe-mini-icon:focus-visible {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pe-mini,
+  .pe-mini.is-on {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Phone: clear the fixed tab bar (64px + the home indicator), and keep only
+   what fits one row - the times and mute go, the bar stays. */
+@media (max-width: 767px) {
+  .pe-mini {
+    bottom: calc(64px + 10px + env(safe-area-inset-bottom));
+    gap: 0.5rem;
+    /* Room underneath for the seek bar, which drops to its own line. */
+    padding: 0.5rem 0.5rem 1.05rem;
+  }
+
+  .pe-mini-cover {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pe-mini-text {
+    flex: 1 1 auto;
+  }
+
+  .pe-mini-title {
+    font-size: 0.82rem;
+  }
+
+  .pe-mini-track {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 3px;
+  }
+
+  .pe-mini-time,
+  .pe-mini-sub,
+  .pe-mini-rule,
+  .pe-mini-vol {
+    display: none;
+  }
+
+  .pe-mini-skip {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* ---- resume pop-up ------------------------------------------------------
+   Asked on arrival when there is a saved spot: the player is already parked
+   there, so Continue just plays, Start over rewinds first. Fixed at the bottom
+   centre of the screen, clear of the player it refers to. Static - no entrance
+   animation, so it can never be stranded off its mark. */
+/* STICKY in the page column, not fixed to the window: centred on the
+   window it straddled the sidebar and sat on the transcript text. */
+.pe-resume-pop {
+  position: sticky;
+  bottom: 28px;
+  z-index: 60;
+  margin: 1rem auto 0;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 0.85rem 0.9rem 0.85rem 1.2rem;
+  border-radius: 16px;
+  background: var(--pe-outline);
+  color: #fff;
+  box-shadow: 0 14px 40px rgba(43, 38, 67, 0.28);
+}
+
+.pe-resume-text {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.pe-resume-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.pe-resume-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex: none;
+}
+
+.pe-resume-over,
+.pe-resume-go {
+  padding: calc(0.55rem - 0.076em) 1rem calc(0.55rem + 0.076em);
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pe-resume-over {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.pe-resume-over:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark text on lavender: white on #a89ce3 is ~1.9:1. */
+.pe-resume-go {
+  background: var(--pe-accent-light);
+  color: var(--pe-outline);
+}
+
+.pe-resume-go:hover {
+  background: #fff;
+}
+
+.pe-resume-over:focus-visible,
+.pe-resume-go:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .pe-resume-pop {
+    bottom: calc(64px + 14px + env(safe-area-inset-bottom));
+    margin-left: 0;
+    margin-right: 0;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    width: calc(100vw - 32px);
+  }
+
+  .pe-resume-actions {
+    width: 100%;
+  }
+
+  .pe-resume-actions button {
+    flex: 1;
+  }
 }

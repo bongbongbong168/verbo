@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api'
 import WordPopover from '../components/WordPopover'
 import './SharedScan.css'
+import { PageSkeleton } from '../components/Skeleton'
 
 /**
  * The page someone sees when they open a shared scan link.
@@ -36,7 +37,7 @@ export default function SharedScan() {
       .finally(() => setLoading(false))
   }, [shareToken])
 
-  if (loading) return <p className="ss-state">Loading…</p>
+  if (loading) return <PageSkeleton />
 
   if (error) {
     return (

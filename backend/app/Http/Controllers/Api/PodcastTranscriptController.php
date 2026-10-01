@@ -52,8 +52,9 @@ class PodcastTranscriptController extends Controller
             }
 
             try {
+                /* Chinese only. The English is the admin's to write, asked for
+                   explicitly: generating no longer translates. */
                 $timed = $builder->build($deepgram->transcribe($episode));
-                $timed = $this->translateSegments($timed);
                 $episode->saveTimedTranscript($timed);
                 $this->syncPlainTranscripts($episode, $timed);
             } catch (\Throwable $e) {
@@ -95,17 +96,9 @@ class PodcastTranscriptController extends Controller
         $status = $podcast->timed_transcript_status ?? 'not_processed';
         $completed = $status === 'completed' && is_array($podcast->timed_transcript);
 
-        /* Older JSON imports predate line-level English. Upgrade them when an
-           admin opens the episode: five English paragraphs must never be
-           guessed against forty timed Chinese lines. */
-        if ($completed && $request->user()->is_admin && ! array_filter(array_column($podcast->timed_transcript['segments'] ?? [], 'translation'))) {
-            $timed = $this->translateSegments($podcast->timed_transcript);
-            if (array_filter(array_column($timed['segments'] ?? [], 'translation'))) {
-                $podcast->saveTimedTranscript($timed);
-                $this->syncPlainTranscripts($podcast, $timed);
-                $podcast->refresh();
-            }
-        }
+        /* No auto-translate on open any more: an admin opening an episode
+           whose lines had no English used to machine-translate and overwrite
+           the English box. The English is now left for the admin to write. */
 
         $body = [
             'podcast_id' => $podcast->id,
@@ -130,7 +123,9 @@ class PodcastTranscriptController extends Controller
     {
         $segments = $timed['segments'] ?? [];
         $podcast->transcript = implode("\n", array_column($segments, 'text'));
-        $podcast->transcript_en = implode("\n", array_filter(array_column($segments, 'translation')));
+        // Only when the lines carry English - never blank the admin's own.
+        $english = array_filter(array_column($segments, 'translation'));
+        if ($english) $podcast->transcript_en = implode("\n", $english);
         $podcast->save();
     }
 

@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { NotificationFace, relativeTime } from '../components/notifications'
 import './Notifications.css'
+import { confirmDelete } from '../components/ConfirmDelete'
+import { SkeletonRows } from '../components/Skeleton'
 
 const TABS = [
   { key: 'all', label: 'All' },
@@ -82,6 +84,7 @@ export default function Notifications() {
   async function remove(e, n) {
     // The row is a button; without this the click would also open it.
     e.stopPropagation()
+    if (!(await confirmDelete({ title: "Delete this notification?" }))) return
     setResult((r) => (r ? { ...r, data: r.data.filter((x) => x.id !== n.id) } : r))
     try {
       await api.deleteNotification(token, n.id)
@@ -124,7 +127,7 @@ export default function Notifications() {
       </div>
 
       <div className="nt-panel">
-        {loading && <p className="nt-empty">Loading…</p>}
+        {loading && <SkeletonRows count={5} />}
 
         {!loading && items.length === 0 && (
           <p className="nt-empty">

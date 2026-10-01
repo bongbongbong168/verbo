@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
-import graduateBot from '../assets/assistant/graduate-bot.png'
+// The mascot: the pixel panda, used everywhere the owl used to be.
+import graduateBot from '../assets/assistant/pixel-panda.png'
 import { AllowanceIndicator, UsageLimitState } from './UsageAllowance'
 import './PracticeAssistant.css'
 
@@ -28,18 +29,6 @@ const GREETING = {
   text: '你好！I can practise Chinese with you, fix your grammar, or explain a word.\nNǐ hǎo! Type anything — Chinese or English.',
 }
 
-function AiIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 3v2.2" />
-      <rect x="4" y="5.2" width="16" height="13" rx="4" />
-      <path d="M9.2 10.5v1.6M14.8 10.5v1.6" />
-      <path d="M9.5 14.6c1.6 1 3.4 1 5 0" />
-      <path d="M2.6 11v2.4M21.4 11v2.4" />
-    </svg>
-  )
-}
-
 function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -62,6 +51,47 @@ export default function PracticeAssistant() {
 
   const [available, setAvailable] = useState(false)
   const [topics, setTopics] = useState(FALLBACK_TOPICS)
+  /* The topic row scrolls sideways; arrows appear (on hover) only on a side
+     that actually has more chips, measured from the row itself. */
+  const topicsRef = useRef(null)
+  const [topicEdge, setTopicEdge] = useState({ left: false, right: false })
+  const measureTopics = useCallback(() => {
+    const el = topicsRef.current
+    if (!el) return
+    setTopicEdge({
+      left: el.scrollLeft > 2,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2,
+    })
+  }, [])
+  /* A ResizeObserver, not a one-off measure: the row mounts while the panel
+     is still opening (and in a background tab rAF never fires), so a single
+     early reading said "fits" for a row that overflows. It re-measures on
+     every size change, including the first real layout. */
+  const topicsObserver = useRef(null)
+  const attachTopics = useCallback((el) => {
+    topicsObserver.current?.disconnect()
+    topicsRef.current = el
+    if (!el) return
+    topicsObserver.current = new ResizeObserver(measureTopics)
+    topicsObserver.current.observe(el)
+    for (const chip of el.children) topicsObserver.current.observe(chip)
+    // Timers run even in a tab that is not drawing, where the observer is quiet.
+    setTimeout(measureTopics, 60)
+    setTimeout(measureTopics, 450)
+  }, [measureTopics])
+
+  useEffect(() => {
+    measureTopics()
+    window.addEventListener('resize', measureTopics)
+    return () => window.removeEventListener('resize', measureTopics)
+  }, [topics, measureTopics])
+  // Instant, not smooth: a smooth scroll is an animation and a tab that is
+  // not drawing would leave the row half-moved.
+  const nudgeTopics = (dir) => {
+    const el = topicsRef.current
+    if (el) el.scrollLeft += dir * Math.max(120, el.clientWidth * 0.6)
+    measureTopics()
+  }
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([GREETING])
   const [draft, setDraft] = useState('')
@@ -200,18 +230,29 @@ export default function PracticeAssistant() {
       try {
         /* The greeting is ours, not the model's — sending it back would have
            the assistant answering a line it never wrote. */
-        const history = next.filter((m) => m !== GREETING).slice(-12)
+        // Failed-reply bubbles are ours too, and must never reach the model as
+        // something it said.
+        const history = next.filter((m) => m !== GREETING && !m.failed).slice(-12)
         const res = await api.sendPracticeChat(token, { messages: history, topic })
         setMessages((prev) => [...prev, { role: 'model', text: res.reply }])
         if (res.usage) setUsage(res.usage)
       } catch (err) {
         if (err.data?.usage) setUsage(err.data.usage)
+        /* NOTHING TYPED IS LOST. The unanswered turn comes back out of the
+           thread and its text goes back in the box, so trying again is one
+           press of Send - and a resend never stacks the same question twice. */
+        setMessages((prev) => prev.filter((m) => m !== next[next.length - 1]))
+        setDraft((d) => d || body)
         if (err.data?.code === 'usage_limit_reached') return
         /* Shown as a bubble rather than a banner: it is a reply to what was
            just asked, and it belongs in the thread beside it. */
         setMessages((prev) => [
           ...prev,
-          { role: 'model', text: err.message || 'Something went wrong. Try again.', failed: true },
+          {
+            role: 'model',
+            text: `${err.message || 'Something went wrong.'} Your message is still in the box - press Send to try again.`,
+            failed: true,
+          },
         ])
       } finally {
         setSending(false)
@@ -268,8 +309,9 @@ export default function PracticeAssistant() {
         onPointerUp={onDragEnd}
         onPointerCancel={onDragEnd}
       >
+        {/* The same owl as the button that opened it, so the two read as one thing. */}
         <span className="pa-head-mark" aria-hidden="true">
-          <AiIcon />
+          <img className="pa-head-owl" src={graduateBot} alt="" />
         </span>
         <span className="pa-head-text">
           <strong>AI Chinese Practice</strong>
@@ -310,7 +352,13 @@ export default function PracticeAssistant() {
 
       {/* Topics steer the practice; picking the active one again clears it,
           so there is no separate "off" chip to explain. */}
-      <div className="pa-topics" role="group" aria-label="Practice topic">
+      <div className={`pa-topics-wrap${topicEdge.left ? " pa-more-left" : ""}${topicEdge.right ? " pa-more-right" : ""}`}>
+      {topicEdge.left && (
+        <button type="button" className="pa-topics-arrow pa-topics-prev" aria-label="Earlier topics" onClick={() => nudgeTopics(-1)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m14.5 6-6 6 6 6" /></svg>
+        </button>
+      )}
+      <div className="pa-topics" role="group" aria-label="Practice topic" ref={attachTopics} onScroll={measureTopics}>
         {topics.map((t) => (
           <button
             key={t}
@@ -322,6 +370,12 @@ export default function PracticeAssistant() {
             {t}
           </button>
         ))}
+      </div>
+      {topicEdge.right && (
+        <button type="button" className="pa-topics-arrow pa-topics-next" aria-label="More topics" onClick={() => nudgeTopics(1)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg>
+        </button>
+      )}
       </div>
 
       <div className="pa-list" ref={listRef}>

@@ -1,0 +1,128 @@
+/* ONE PAGE-TITLE STYLE, shared so pages cannot drift apart again.
+
+   Every top-level title is 1.9rem / 700. The accent is the LONG BAR (Study's
+   original, chosen over a title-only tick): a 4px lavender bar running down
+   the side of the title AND the line under it. Where a page has no line under
+   its title (the title sits in a row with its icons: Read, Podcast, Messages,
+   Vocabulary, Notifications, Profile), the same bar simply spans the title.
+
+   Selectors carry an extra element or :has() so they outrank each page's own
+   single-class rule whatever order the stylesheets load in. */
+
+h1.bo-title-h1,
+h1.ft-title,
+h1.se-title,
+h1.sc-heading,
+h1.st-heading,
+h1.rd-page-title,
+h1.ms-title,
+h1.cl-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* ---- title + a line under it: the bar runs down both ---- */
+
+.st-heading-block,
+.bo-head-text,
+.sc-header-text,
+.cl-heading,
+.vb-head-text,
+div:has(> h1.se-title),
+div:has(> h1.ft-title) {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.st-heading-block::before,
+.bo-head-text::before,
+.sc-header-text::before,
+.cl-heading::before,
+.vb-head-text::before,
+div:has(> h1.se-title)::before,
+div:has(> h1.ft-title)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 999px;
+  background: #a89ce3;
+}
+
+/* The subtitle starts where the title starts; the block's 1rem is the only
+   indent (Classes' subtitle added its own 0.7rem on top). */
+.cl-heading .cl-subtitle,
+.st-heading-block .st-subtitle,
+.bo-head-text .bo-sub,
+.sc-header-text .sc-subtitle,
+.vb-head-text .vb-lede {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* Those titles drop their own short bar and indent: the block carries both. */
+div h1.st-heading,
+div h1.bo-title-h1,
+div h1.sc-heading,
+div h1.cl-title,
+div h1.vb-title,
+div h1.se-title,
+div h1.ft-title {
+  position: static;
+  padding-left: 0;
+}
+
+div h1.st-heading::before,
+div h1.bo-title-h1::before,
+div h1.sc-heading::before,
+div h1.cl-title::before,
+div h1.vb-title::before,
+div h1.se-title::before,
+div h1.ft-title::before {
+  content: none;
+}
+
+/* ---- title alone in its row: the same bar, as tall as the title ---- */
+
+body h1.rd-title,
+body h1.pc-title,
+body h1.nt-title,
+body h1.pf-title,
+body h1.ta-title,
+h1.ms-title,
+h1.rd-page-title {
+  position: relative;
+  display: block;
+  padding-left: 1rem;
+}
+
+body h1.rd-title::before,
+body h1.pc-title::before,
+body h1.nt-title::before,
+body h1.pf-title::before,
+body h1.ta-title::before,
+h1.ms-title::before,
+h1.rd-page-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* Centred on the LETTERS, not the line box: with 4px each end the bar sat
+     2.8px above the cap band's middle (measured). */
+  top: 0.26em;
+  bottom: 0.07em;
+  width: 4px;
+  height: auto;
+  border-radius: 999px;
+  background: #a89ce3;
+}
+
+/* Scan's title shares its phone row with the tools, which is why it steps
+   down there (mobile.css); keep that. */
+@media (max-width: 767px) {
+  h1.sc-heading {
+    font-size: 1.5rem;
+  }
+}

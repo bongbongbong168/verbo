@@ -68,10 +68,10 @@
 }
 
 .ta-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin: 0 0 1rem;
@@ -330,7 +330,7 @@
 .ta-file {
   padding: 0.45rem 0.8rem;
   border: 1px solid var(--ta-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   font-family: inherit;
   font-size: 0.86rem;
@@ -364,7 +364,7 @@
   margin-top: 0.35rem;
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--ta-border);
-  border-radius: 10px;
+  border-radius: 12px;
   font-family: inherit;
   font-size: 0.9rem;
   resize: none;

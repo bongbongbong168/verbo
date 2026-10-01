@@ -2,7 +2,19 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #f6f5fc;
+  background: #f9f8fe;
+}
+
+/* Route chunks load only when a learner opens that area of Verbo. Keep the
+   transition quiet and in the app palette instead of flashing an unstyled page
+   while the requested chunk arrives. */
+.app-route-loading {
+  display: grid;
+  min-height: var(--app-vh, 100vh);
+  place-items: center;
+  background: #f9f8fe;
+  color: #6a6191;
+  font: 600 0.9rem 'Hellix', system-ui, sans-serif;
 }
 
 /* Always reserve the scrollbar's width, even on pages short enough not to

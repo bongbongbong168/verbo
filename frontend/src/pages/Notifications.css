@@ -59,7 +59,7 @@
   flex: none;
   padding: calc(0.5rem - 1.021px) 1rem calc(0.5rem + 1.021px);
   border: 1px solid var(--nt-line);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--nt-card);
   color: var(--nt-accent);
   font-family: inherit;
@@ -79,9 +79,9 @@
   margin: 0 0 1rem;
   padding: 0.6rem 0.9rem;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fdecea;
-  color: #b3261e;
+  color: #b02a2a;
   font-size: 0.88rem;
 }
 
@@ -92,7 +92,7 @@
   gap: 4px;
   padding: 4px;
   margin-bottom: 1rem;
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--nt-well);
 }
 
@@ -147,7 +147,7 @@
 /* Unread carries a tint AND a dot — two signals, so the state survives being
    glanced at rather than read. */
 .nt-row.unread {
-  background: #f7f4ff;
+  background: #f9f8fe;
 }
 
 .nt-row.unread:hover {
@@ -280,7 +280,7 @@
 .nt-page {
   padding: 0.45rem 1rem;
   border: 1px solid var(--nt-line);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--nt-card);
   color: var(--nt-accent);
   font-family: inherit;

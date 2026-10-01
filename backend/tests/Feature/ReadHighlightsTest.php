@@ -60,7 +60,9 @@ class ReadHighlightsTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->markRead($user, $this->article($user, 'A'), now());
-        $this->markRead($user, $this->article($user, 'B'), now()->subDay());
+        // The start of this week, not "yesterday": on a Monday yesterday is
+        // last week, and the test failed one day in seven.
+        $this->markRead($user, $this->article($user, 'B'), now()->startOfWeek());
         // Before the week started, so it must not be counted.
         $this->markRead($user, $this->article($user, 'C'), now()->startOfWeek()->subDays(2));
 

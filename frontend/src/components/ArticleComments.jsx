@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
+import { confirmDelete } from '../components/ConfirmDelete'
 
 /* Always relative, however old - "3 months ago", "1 year ago" - as the
    review cards this list is built to do. The exact date sits in the hover
@@ -169,9 +170,10 @@ function Row({
                 <button
                   type="button"
                   className="rd-cm-danger"
-                  onClick={() =>
+                  onClick={async () => {
+                    if (!(await confirmDelete({ title: "Delete this comment?", text: "Its replies go with it." }))) return
                     run(() => api.deleteArticleComment(token, c.id))
-                  }
+                  }}
                 >
                   Delete
                 </button>

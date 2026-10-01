@@ -30,6 +30,23 @@ class TutorResumeEntryController extends Controller
         return response()->json($tutorProfile->resumeEntries()->create($data), 201);
     }
 
+    /** Edit an entry in place; it keeps its position within its section. */
+    public function update(Request $request, TutorResumeEntry $tutorResumeEntry)
+    {
+        TutorController::authorizeProfile($request, $tutorResumeEntry->tutorProfile);
+
+        $data = $request->validate([
+            'section' => ['required', Rule::in(TutorResumeEntry::SECTIONS)],
+            'years' => ['nullable', 'string', 'max:60'],
+            'title' => ['required', 'string', 'max:255'],
+            'detail' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $tutorResumeEntry->update($data);
+
+        return response()->json($tutorResumeEntry->fresh());
+    }
+
     public function destroy(Request $request, TutorResumeEntry $tutorResumeEntry)
     {
         TutorController::authorizeProfile($request, $tutorResumeEntry->tutorProfile);

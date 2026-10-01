@@ -37,17 +37,6 @@ function teachingLanguages(tutor) {
     .filter(Boolean)
 }
 
-function displayAvailability(value) {
-  return (value || '')
-    .replace(/[()|]/g, '')
-    .replace(/\s*-\s*/g, '–')
-    // Legacy daytime strings sometimes called noon "12am". Preserve a real
-    // late-night 11pm–12am window while correcting an am-to-noon range.
-    .replace(/(\bam)\s*–\s*12am\b/gi, '$1–12pm')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-}
-
 function TutorPreview({ tutor, isSelf, alreadySent, onBook }) {
   if (!tutor) {
     return (
@@ -158,15 +147,17 @@ function TutorSummary({ tutor }) {
       Icon: LangIcon,
       value: `Teaches in: ${teachingLanguages(tutor).join(' · ')}`,
     },
-    tutor.availability && {
+    // From the tutor's real weekly hours, not the old free-text line.
+    tutor.hours?.summary && {
       key: "availability",
       Icon: ClockIcon,
-      value: `Available: ${displayAvailability(tutor.availability)}`,
+      value: `Available: ${tutor.hours.summary}`,
     },
-    tutor.hourly_rate != null && {
+    // The cheapest bookable lesson, the price a student actually pays.
+    tutor.cheapest_lesson != null && {
       key: "rate",
       Icon: TagIcon,
-      value: `$${tutor.hourly_rate} / hour`,
+      value: `Lessons from $${tutor.cheapest_lesson}`,
     },
   ].filter(Boolean);
 
@@ -396,15 +387,17 @@ export default function FindTutor() {
         return false;
       if (focus && !fitFocuses(t).some((item) => item.toLowerCase() === focus))
         return false;
-      if (avail && !(t.availability || "").toLowerCase().includes(avail))
+      // Morning / afternoon / evening, from the hours a student can book.
+      if (avail && !(t.hours?.bands || []).includes(avail))
         return false;
       if (priceFilter) {
         /* A tutor who has not set a rate is excluded while a price filter is
            active. They are not "cheap" — their price is simply unknown, and
            putting them inside a band would state something the data does not.
            Number() again: SQLite hands the rate over as a string. */
-        if (t.hourly_rate == null) return false;
-        const rate = Number(t.hourly_rate);
+        // Filters on the real lesson price, the one shown on every card.
+        if (t.cheapest_lesson == null) return false;
+        const rate = Number(t.cheapest_lesson);
         if (rate < priceFilter.min || rate > priceFilter.max) return false;
       }
       return true;
@@ -423,7 +416,9 @@ export default function FindTutor() {
   );
   const availabilityOptions = useMemo(
     () =>
-      [...new Set(tutors.map((t) => t.availability).filter(Boolean))].sort(),
+      ["morning", "afternoon", "evening"]
+        .filter((band) => tutors.some((t) => t.hours?.bands?.includes(band)))
+        .map((band) => band.charAt(0).toUpperCase() + band.slice(1)),
     [tutors],
   );
 
@@ -439,7 +434,7 @@ export default function FindTutor() {
      rather than rendered as a slider with both ends in the same place. */
   const priceBounds = useMemo(() => {
     const rates = tutors
-      .map((t) => (t.hourly_rate == null ? null : Number(t.hourly_rate)))
+      .map((t) => (t.cheapest_lesson == null ? null : Number(t.cheapest_lesson)))
       .filter((r) => r != null && Number.isFinite(r));
 
     if (!rates.length) return null;
@@ -604,12 +599,8 @@ export default function FindTutor() {
                       {/* Same number the profile card shows — both come from
                           the catalogue via TutorLesson::scopeBookablePriced, so
                           a tutor cannot read one price here and another there. */}
-                      {t.cheapest_lesson != null ? (
+                      {t.cheapest_lesson != null && (
                         <span className="ft-card-rate">from ${t.cheapest_lesson}</span>
-                      ) : (
-                        t.hourly_rate != null && (
-                          <span className="ft-card-rate">${t.hourly_rate}/hr</span>
-                        )
                       )}
                     </div>
                     {(t.short_bio?.trim() || t.bio) && (
@@ -624,9 +615,9 @@ export default function FindTutor() {
                           <FocusIcon /> Focus: {fitFocuses(t).join(' · ')}
                         </span>
                       )}
-                      {t.availability && (
+                      {t.hours?.summary && (
                         <span className="ft-meta-row">
-                          <ClockIcon /> Available: {displayAvailability(t.availability)}
+                          <ClockIcon /> Available: {t.hours.summary}
                         </span>
                       )}
                     </div>

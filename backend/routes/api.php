@@ -66,6 +66,10 @@ Route::middleware('throttle:auth')->group(function () {
        endpoint that creates accounts, and the cheap limit costs a real user
        nothing — nobody signs in with Google ten times a minute. */
     Route::post('/auth/google', [AuthController::class, 'google']);
+    /* The redirect flow: Google POSTs a form here (in-app browsers cannot
+       run the popup), then the site swaps the one-time code for a token. */
+    Route::post('/auth/google/redirect', [AuthController::class, 'googleRedirect']);
+    Route::post('/auth/google/exchange', [AuthController::class, 'googleExchange']);
 
     /* Forgotten passwords. In the auth bucket because both are
        unauthenticated and both are guessable surfaces: the first would
@@ -145,16 +149,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // `notifications/read-all` and `articles/recommended` hit.
     Route::get('/flashcards/stats', [FlashcardController::class, 'stats']);
     Route::get('/flashcards/review', [FlashcardController::class, 'review']);
-    Route::post('/flashcards', [FlashcardController::class, 'store']);
+    Route::post('/flashcards', [FlashcardController::class, 'store'])->middleware('quests');
     Route::post('/sentences/translate', [SentenceTranslationController::class, 'store'])->middleware('throttle:20,1');
-    Route::post('/flashcards/{flashcard}/grade', [FlashcardController::class, 'grade']);
+    Route::post('/flashcards/{flashcard}/grade', [FlashcardController::class, 'grade'])->middleware('quests');
     Route::get('/flashcards/{flashcard}/examples', [FlashcardController::class, 'examples']);
     Route::delete('/flashcards', [FlashcardController::class, 'destroyAll']);
     Route::delete('/flashcards/{flashcard}', [FlashcardController::class, 'destroy']);
 
     Route::get('/scans', [ScanController::class, 'index']);
-    Route::post('/scans', [ScanController::class, 'store']);
+    Route::post('/scans', [ScanController::class, 'store'])->middleware('quests');
     Route::get('/scans/{scan}', [ScanController::class, 'show']);
+    Route::put('/scans/{scan}/text', [ScanController::class, 'updateText']);
     Route::post('/scans/{scan}/translation', [\App\Http\Controllers\Api\ScanTranslationController::class, 'store'])->middleware('throttle:10,1');
     Route::delete('/scans/{scan}', [ScanController::class, 'destroy']);
     Route::post('/scans/{scan}/share', [ScanController::class, 'share']);
@@ -174,7 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/articles/{article}/like', [ArticleInteractionController::class, 'toggleLike']);
     Route::post('/articles/{article}/bookmark', [ArticleInteractionController::class, 'toggleBookmark']);
     Route::post('/articles/{article}/share', [ArticleInteractionController::class, 'share']);
-    Route::post('/articles/{article}/view', [ArticleInteractionController::class, 'view']);
+    Route::post('/articles/{article}/view', [ArticleInteractionController::class, 'view'])->middleware('quests');
     Route::get('/bookmarks', [ArticleInteractionController::class, 'bookmarks']);
 
     // Comments, one level of replies. See ArticleCommentController.
@@ -191,6 +196,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 
     Route::get('/tutors', [TutorController::class, 'index']);
+    // Before /tutors/{tutorProfile}, or "recommended" binds as an id.
+    Route::get('/tutors/recommended', [TutorController::class, 'recommended']);
     Route::post('/tutors/{tutorProfile}/save', [\App\Http\Controllers\Api\SavedLibraryController::class, 'toggleTutor']);
     Route::get('/tutor-profile', [TutorController::class, 'show']);
     Route::post('/tutor-profile', [TutorController::class, 'store']);
@@ -215,10 +222,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tutors/{tutorProfile}/profile', [TutorController::class, 'updateProfile']);
     Route::put('/tutors/{tutorProfile}/specialties', [TutorController::class, 'updateSpecialties']);
     Route::post('/tutors/{tutorProfile}/lessons', [TutorLessonController::class, 'store']);
+    Route::put('/tutor-lessons/{lesson}', [TutorLessonController::class, 'update']);
     Route::delete('/tutor-lessons/{lesson}', [TutorLessonController::class, 'destroy']);
     Route::post('/tutors/{tutorProfile}/reviews', [TutorReviewController::class, 'store']);
     Route::delete('/tutor-reviews/{tutorReview}', [TutorReviewController::class, 'destroy']);
     Route::post('/tutors/{tutorProfile}/resume', [TutorResumeEntryController::class, 'store']);
+    Route::put('/tutor-resume/{tutorResumeEntry}', [TutorResumeEntryController::class, 'update']);
     Route::delete('/tutor-resume/{tutorResumeEntry}', [TutorResumeEntryController::class, 'destroy']);
 
     Route::get('/bookings', [BookingController::class, 'index']);
@@ -231,6 +240,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subscription/status', [SubscriptionController::class, 'status']);
     Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout']);
     Route::post('/subscription/portal', [SubscriptionController::class, 'portal']);
+    Route::post('/subscription/confirm', [SubscriptionController::class, 'confirm'])->middleware('throttle:20,1');
 
     /* The dashboard's "My Learning": upcoming private lessons and group
        classes merged into one list. Read-only, owns no table. */
@@ -264,6 +274,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/courses/{course}', [CourseController::class, 'show']);
     Route::get('/tutors/{tutorProfile}/courses', [CourseController::class, 'forTutor']);
     Route::post('/tutors/{tutorProfile}/courses', [CourseController::class, 'store']);
+    Route::put('/courses/{course}', [CourseController::class, 'update']);
     Route::delete('/courses/{course}', [CourseController::class, 'destroy']);
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll']);
     Route::get('/enrollments', [CourseController::class, 'myEnrollments']);
@@ -276,6 +287,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutors/{tutorProfile}/slots', [TutorAvailabilityController::class, 'slots']);
 
     Route::get('/podcasts', [PodcastController::class, 'index']);
+    Route::get('/podcasts/recommended', [PodcastController::class, 'recommended']);
     Route::post('/podcasts/{podcast}/save', [\App\Http\Controllers\Api\SavedLibraryController::class, 'togglePodcast']);
     Route::get('/saved-library', [\App\Http\Controllers\Api\SavedLibraryController::class, 'index']);
     /* BEFORE `/podcasts/{podcast}`, or "continue" binds as an id — the same
@@ -284,7 +296,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/podcasts/continue', [PodcastController::class, 'continueListening']);
     Route::post('/podcasts/translate', [\App\Http\Controllers\Api\PodcastTranslationController::class, 'store'])->middleware('throttle:10,1');
     Route::get('/podcasts/{podcast}', [PodcastController::class, 'show']);
-    Route::put('/podcasts/{podcast}/progress', [PodcastController::class, 'saveProgress']);
+    Route::put('/podcasts/{podcast}/progress', [PodcastController::class, 'saveProgress'])->middleware('quests');
     // The synced, word-timed transcript. Reading is for every listener;
     // importing and clearing check is_admin inside the controller.
     Route::get('/podcasts/{podcast}/timed-transcript', [PodcastTranscriptController::class, 'show']);
@@ -309,7 +321,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/study-levels/{studyLevel}/units', [StudyUnitController::class, 'store']);
     Route::get('/study-units/{studyUnit}', [StudyUnitController::class, 'show']);
     // The viewer's own "finished this lesson" mark.
-    Route::post('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'store']);
+    Route::post('/study-units/{studyUnit}/complete', [StudyUnitCompletionController::class, 'store'])->middleware('quests');
     Route::put('/study-units/{studyUnit}', [StudyUnitController::class, 'update']);
     Route::delete('/study-units/{studyUnit}', [StudyUnitController::class, 'destroy']);
     Route::post('/study-units/{studyUnit}/culture-images', [StudyUnitController::class, 'storeCultureImage']);
@@ -373,6 +385,7 @@ Route::middleware('auth:sanctum')->group(function () {
        events — there is no queue or scheduler here, so nothing time-based. */
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread', [NotificationController::class, 'unreadCount']);
+    Route::get('/notifications/since', [NotificationController::class, 'since']);
     // Declared BEFORE the {notification} routes, or "read-all" binds as an id.
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
@@ -437,6 +450,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/practice-chat/status', [PracticeChatController::class, 'status']);
     Route::post('/practice-chat', [PracticeChatController::class, 'store'])->middleware('throttle:ai');
+
+    // Optional practice quiz under a piece. GET only reads the saved one; POST
+    // makes it once (ai bucket + the learner's AI allowance).
+    Route::get('/articles/{article}/quiz', [\App\Http\Controllers\Api\ContentQuizController::class, 'showArticle']);
+    Route::post('/articles/{article}/quiz', [\App\Http\Controllers\Api\ContentQuizController::class, 'storeArticle'])->middleware('throttle:ai');
+    Route::get('/podcasts/{podcast}/quiz', [\App\Http\Controllers\Api\ContentQuizController::class, 'showPodcast']);
+    Route::post('/podcasts/{podcast}/quiz', [\App\Http\Controllers\Api\ContentQuizController::class, 'storePodcast'])->middleware('throttle:ai');
 
     // Study's spoken audio. Made once per word or line, then a static file.
     Route::post('/study-speech', [\App\Http\Controllers\Api\StudySpeechController::class, 'store'])->middleware('throttle:speech');

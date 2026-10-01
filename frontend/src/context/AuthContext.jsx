@@ -58,6 +58,11 @@ export function AuthProvider({ children }) {
     startSession(await api.googleSignIn(credential))
   }
 
+  /** Finish the redirect sign-in: swap Google's one-time code for a session. */
+  async function loginWithGoogleCode(code) {
+    startSession(await api.googleExchange(code))
+  }
+
   async function logout() {
     if (token) await api.logout(token).catch(() => {})
     clearCache()
@@ -70,7 +75,7 @@ export function AuthProvider({ children }) {
   // refetch — the sidebar reads the same object.
   return (
     <AuthContext.Provider
-      value={{ token, user, setUser, loading, register, login, loginWithGoogle, logout }}
+      value={{ token, user, setUser, loading, register, login, loginWithGoogle, loginWithGoogleCode, logout }}
     >
       {children}
     </AuthContext.Provider>

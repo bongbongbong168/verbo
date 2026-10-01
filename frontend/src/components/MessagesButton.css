@@ -76,3 +76,28 @@
   border-radius: 50%;
   background: #a89ce3;
 }
+
+/* A soft ring breathes out from the unread dot, gently. The ring rests
+   INVISIBLE at frame 0 and 100%, which is the right rest for an ornament: the
+   dot itself (static) carries the state, so a tab that never composites just
+   shows the plain dot. Off under reduced motion. */
+.mg-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: #a89ce3;
+  opacity: 0;
+  pointer-events: none;
+  animation: mg-dot-pulse 2.4s ease-out infinite;
+}
+
+@keyframes mg-dot-pulse {
+  0% { transform: scale(1); opacity: 0; }
+  12% { opacity: 0.45; }
+  70%, 100% { transform: scale(2.3); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-dot::after { animation: none; }
+}

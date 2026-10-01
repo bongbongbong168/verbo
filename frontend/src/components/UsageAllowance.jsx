@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import graduateBot from '../assets/assistant/graduate-bot.png'
+import graduateBot from '../assets/assistant/pixel-panda.png'
 import './UsageAllowance.css'
 
 export function formatUsageReset(usage, { includeTime = false, monthStyle = 'long' } = {}) {

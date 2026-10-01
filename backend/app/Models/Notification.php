@@ -45,10 +45,12 @@ class Notification extends Model
         'body',
         'link',
         'read_at',
+        'data',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'data' => 'array',
     ];
 
     protected $appends = ['category', 'actor_photo_url'];
@@ -107,12 +109,25 @@ class Notification extends Model
             throw new \InvalidArgumentException("Unknown notification type [{$type}].");
         }
 
-        User::find($userId)?->notifications()->create([
+        $row = User::find($userId)?->notifications()->create([
             'actor_id' => $actorId,
             'type' => $type,
             'title' => $data['title'],
             'body' => $data['body'] ?? null,
             'link' => $data['link'] ?? null,
+            // Facts a toast formats itself (a UTC start, a thread id, a preview).
+            'data' => $data['data'] ?? null,
         ]);
+
+        /* Tell the owner's open tabs at once, for the on-screen toast. Realtime
+           is an acceleration: a Pusher outage must never fail the action that
+           raised this, and the client polls as a fallback. */
+        if ($row) {
+            try {
+                \App\Events\NotificationCreated::dispatch($userId, $row->id);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
     }
 }

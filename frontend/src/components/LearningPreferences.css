@@ -87,7 +87,7 @@
      size and screen; this label is 600. The pair sums to the old padding. */
   padding: calc(0.55rem - 0.076em) 1.2rem calc(0.55rem + 0.076em);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #a89ce3;
   color: #fff;
   font-family: inherit;
@@ -119,7 +119,7 @@
 .lp-flash {
   margin: 0;
   padding: 0.5rem 0.8rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #ecf8f0;
   color: #1f7a45;
   font-size: 0.85rem;
@@ -129,7 +129,7 @@
 .lp-error {
   margin: 0;
   padding: 0.5rem 0.8rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.85rem;

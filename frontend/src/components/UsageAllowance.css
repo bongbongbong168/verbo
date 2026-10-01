@@ -76,7 +76,7 @@
 .ua-limit-action {
   flex: 0 0 auto;
   padding: 0.68rem 0.85rem;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #2b2643;
   color: #fff;
   font-size: 0.76rem;
@@ -92,7 +92,7 @@
 .ua-limit.compact {
   align-items: flex-start;
   padding: 0.75rem;
-  border-radius: 14px;
+  border-radius: 16px;
 }
 
 .ua-limit.compact > img {
@@ -107,4 +107,20 @@
 @media (max-width: 680px) {
   .ua-limit { align-items: flex-start; flex-wrap: wrap; }
   .ua-limit-action { width: 100%; }
+}
+
+/* Beside the Pinyin / Translation switches: the same box as .rs-switch
+   (0.85rem, 600, 1px border, 0.35rem block pad with the 600 cap-band pair),
+   and stretched to the row so all three stand exactly the same height. */
+.ua-indicator.ua-indicator-reader {
+  /* The switch's own height (18px track + 0.35rem pad each side + 1px
+     borders), not a stretch: the Aa size control in the same row is taller
+     and would drag the pill past the switches. */
+  align-self: center;
+  height: calc(18px + 0.7rem + 2px);
+  min-height: 0;
+  padding: 0 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
 }

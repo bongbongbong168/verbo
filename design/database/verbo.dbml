@@ -1,0 +1,937 @@
+// Verbo - relational data model (PostgreSQL)
+// Generated from the LIVE production schema, so every table, type, key and
+// constraint is the real one. Paste into https://dbdiagram.io
+//
+// Cardinality:  >  many-to-one (the child column points at the parent)
+//               -  one-to-one  (the child column is also unique)
+// Many-to-many relationships are join tables (noted on the table).
+// Administration / verification lives on existing tables: users.is_admin,
+// tutor_profiles.status / reviewed_by / review_note, tutor_credentials.
+
+Table activity_days {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  day date [not null]
+  seconds integer [not null]
+  last_beat_at timestamp
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, day) [unique]
+  }
+}
+
+Table article_bookmarks [note: 'Join table: users <-> articles (many-to-many bookmarks)'] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  article_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, article_id) [unique]
+  }
+}
+
+Table article_comments {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  article_id bigint [not null]
+  parent_id bigint
+  content text [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table article_likes [note: 'Join table: users <-> articles (many-to-many likes)'] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  article_id bigint [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, article_id) [unique]
+  }
+}
+
+Table article_shares {
+  id bigint [pk, increment]
+  user_id bigint
+  article_id bigint [not null]
+  platform varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table article_tags {
+  id bigint [pk, increment]
+  article_id bigint [not null]
+  kind varchar(255) [not null]
+  value varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (article_id, kind, value) [unique]
+  }
+}
+
+Table article_views [note: 'Join table: users <-> articles, one row per pair with a view count'] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  article_id bigint [not null]
+  views integer [not null]
+  last_viewed_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, article_id) [unique]
+  }
+}
+
+Table articles {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  title varchar(255) [not null]
+  type varchar(255) [not null]
+  body text [not null]
+  image_path varchar(255)
+  created_at timestamp
+  updated_at timestamp
+  body_en text
+  hsk_level varchar(255)
+  difficulty varchar(255)
+  category varchar(255)
+  is_premium boolean [not null]
+}
+
+Table bookings {
+  id bigint [pk, increment]
+  student_id bigint [not null]
+  tutor_id bigint [not null]
+  message text
+  status varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  starts_at timestamp
+  duration_minutes smallint
+  hold_expires_at timestamp
+  tutor_lesson_id bigint
+  decline_reason varchar(255)
+  cancelled_by varchar(255)
+  hidden_for_student_at timestamp
+  hidden_for_tutor_at timestamp
+
+  indexes {
+    (tutor_id, starts_at) [unique, note: 'Partial: only while status is held / pending / confirmed']
+  }
+}
+
+Table classroom_item_files {
+  id bigint [pk, increment]
+  classroom_item_id bigint [not null]
+  path varchar(255) [not null]
+  name varchar(255) [not null]
+  mime varchar(255)
+  size bigint
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table classroom_items {
+  id bigint [pk, increment]
+  classroom_id bigint [not null]
+  type varchar(255) [not null]
+  title varchar(255) [not null]
+  description text
+  due_at timestamp
+  allow_late boolean [not null]
+  points integer
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table classroom_members [note: 'Join table: users <-> classrooms (many-to-many)'] {
+  id bigint [pk, increment]
+  classroom_id bigint [not null]
+  user_id bigint [not null]
+  joined_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (classroom_id, user_id) [unique]
+  }
+}
+
+Table classrooms {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  name varchar(255) [not null]
+  subject varchar(255)
+  level varchar(255)
+  room varchar(255)
+  term varchar(255)
+  description text
+  join_code varchar(12) [not null, unique]
+  join_open boolean [not null]
+  archived_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  focus varchar(255)
+}
+
+Table content_quizzes {
+  id bigint [pk, increment]
+  quizzable_type varchar(255) [not null, note: 'Polymorphic: Scan | Article | Podcast']
+  quizzable_id bigint [not null, note: 'id in the table named by quizzable_type']
+  questions json [not null]
+  source_hash varchar(64) [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (quizzable_type, quizzable_id) [unique]
+  }
+}
+
+Table conversations {
+  id bigint [pk, increment]
+  type varchar(255) [not null]
+  tutor_id bigint
+  student_id bigint
+  course_id bigint [unique]
+  last_message_at timestamp
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (tutor_id, student_id) [unique]
+  }
+}
+
+Table course_enrollments [note: 'Join table: users <-> courses (many-to-many, with status)'] {
+  id bigint [pk, increment]
+  course_id bigint [not null]
+  user_id bigint [not null]
+  status varchar(255) [not null]
+  hold_expires_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  hidden_at timestamp
+
+  indexes {
+    (course_id, user_id) [unique]
+  }
+}
+
+Table courses {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  title varchar(255) [not null]
+  description text
+  level varchar(255)
+  outcomes text
+  price integer [not null]
+  weeks smallint [not null]
+  total_classes smallint [not null]
+  classes_per_week smallint [not null]
+  minutes_per_class smallint [not null]
+  capacity smallint [not null]
+  starts_on date [not null]
+  ends_on date [not null]
+  days_of_week json [not null]
+  start_time time [not null]
+  end_time time [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table daily_quests {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  day varchar(10) [not null]
+  area varchar(20) [not null]
+  quest_key varchar(40) [not null]
+  level varchar(10) [not null]
+  changes_used smallint [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, day, area) [unique]
+  }
+}
+
+Table email_codes {
+  id bigint [pk, increment]
+  email varchar(255) [not null]
+  purpose varchar(20) [not null]
+  code_hash varchar(255) [not null]
+  attempts smallint [not null]
+  expires_at timestamp [not null]
+  consumed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table flashcards {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  word varchar(255) [not null]
+  pinyin varchar(255)
+  translation varchar(255)
+  source_module varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+  source_type varchar(255) [note: 'Polymorphic: article | podcast | study_unit | scan (whitelist)']
+  source_id bigint [note: 'id in the table named by source_type']
+  example text
+  review_count integer [not null]
+  correct_streak integer [not null]
+  lapses integer [not null]
+  last_reviewed_at timestamp
+  first_correct_at timestamp
+  card_type varchar(20) [not null]
+}
+
+Table learning_preferences {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  chinese_level varchar(255)
+  hsk_level varchar(255)
+  goals json
+  focus json
+  interests json
+  styles json
+  created_at timestamp
+  updated_at timestamp
+  daily_goal varchar(255)
+  study_time varchar(255)
+}
+
+Table messages {
+  id bigint [pk, increment]
+  conversation_id bigint [not null]
+  sender_id bigint [not null]
+  body text [not null]
+  read_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  attachment_path varchar(255)
+  attachment_name varchar(255)
+  attachment_mime varchar(255)
+  attachment_size integer
+  kind varchar(20) [not null]
+  client_id varchar(64)
+
+  indexes {
+    (conversation_id, sender_id, client_id) [unique]
+  }
+}
+
+Table monthly_feature_usages {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  feature varchar(48) [not null]
+  period_start date [not null]
+  used integer [not null]
+  reserved integer [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, feature, period_start) [unique]
+  }
+}
+
+Table notifications {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  actor_id bigint
+  type varchar(255) [not null]
+  title varchar(255) [not null]
+  body text
+  link varchar(255)
+  read_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  data json
+}
+
+Table payment_methods {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  brand varchar(20) [not null]
+  last4 varchar(4) [not null]
+  exp_month smallint [not null]
+  exp_year smallint [not null]
+  label varchar(40)
+  provider_ref varchar(255)
+  is_default boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table payments {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  payable_type varchar(255) [not null, note: 'Polymorphic: Booking | CourseEnrollment']
+  payable_id bigint [not null, note: 'id in the table named by payable_type']
+  stripe_payment_intent_id varchar(255) [not null, unique]
+  stripe_refund_id varchar(255)
+  amount integer [not null]
+  currency varchar(3) [not null]
+  status varchar(255) [not null]
+  paid_at timestamp
+  refunded_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table personal_access_tokens {
+  id bigint [pk, increment]
+  tokenable_type varchar(255) [not null, note: 'Laravel Sanctum: the User model']
+  tokenable_id bigint [not null]
+  name varchar(255) [not null]
+  token varchar(64) [not null, unique]
+  abilities text
+  last_used_at timestamp
+  expires_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table podcast_listen_days {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  day varchar(10) [not null]
+  seconds integer [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, day) [unique]
+  }
+}
+
+Table podcast_progress {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  podcast_id bigint [not null]
+  position_seconds integer [not null]
+  duration_seconds integer
+  completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, podcast_id) [unique]
+  }
+}
+
+Table podcasts {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  title varchar(255) [not null]
+  audio_path varchar(255)
+  transcript text [not null]
+  created_at timestamp
+  updated_at timestamp
+  level varchar(255)
+  bio text
+  image_path varchar(255)
+  transcript_en text
+  category varchar(255)
+  host varchar(255)
+  timed_transcript json
+  timed_transcript_status varchar(20) [not null]
+  timed_transcript_error text
+  timed_transcript_at timestamp
+  is_premium boolean [not null]
+}
+
+Table quotes {
+  id bigint [pk, increment]
+  chinese varchar(255)
+  pinyin varchar(255)
+  english varchar(255)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table recent_views {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  viewable_type varchar(255) [not null, note: 'Polymorphic: StudyUnit | Podcast | Article (whitelisted)']
+  viewable_id bigint [not null, note: 'id in the table named by viewable_type']
+  last_viewed_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, viewable_type, viewable_id) [unique]
+  }
+}
+
+Table saved_items [note: 'Join table: users <-> saved tutors / podcasts'] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  kind varchar(20) [not null]
+  item_id bigint [not null, note: 'id of the saved tutor / podcast (see item type)']
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (user_id, kind, item_id) [unique]
+  }
+}
+
+Table scans {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  original_filename varchar(255)
+  raw_text text [not null]
+  words json [not null]
+  created_at timestamp
+  updated_at timestamp
+  size_bytes bigint
+  share_token varchar(64) [unique]
+  uncertain_lines json
+}
+
+Table stripe_events {
+  id bigint [pk, increment]
+  stripe_event_id varchar(255) [not null, unique]
+  type varchar(255) [not null]
+  processed_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table study_culture_images {
+  id bigint [pk, increment]
+  study_unit_id bigint [not null]
+  path varchar(255) [not null]
+  position integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table study_grammar_examples {
+  id bigint [pk, increment]
+  study_grammar_point_id bigint [not null]
+  chinese text [not null]
+  pinyin text
+  english text
+  position integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table study_grammar_points {
+  id bigint [pk, increment]
+  study_unit_id bigint [not null]
+  title varchar(255) [not null]
+  structure text
+  created_at timestamp
+  updated_at timestamp
+  description text
+}
+
+Table study_levels {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  title varchar(255) [not null]
+  description text
+  created_at timestamp
+  updated_at timestamp
+  image_path varchar(255)
+  category varchar(255) [not null]
+  level_label varchar(255)
+  banner_path varchar(255)
+  accent_color varchar(255)
+  topic_group varchar(255)
+  emoji varchar(16)
+}
+
+Table study_quiz_questions {
+  id bigint [pk, increment]
+  study_unit_id bigint [not null]
+  question varchar(255) [not null]
+  option_a varchar(255) [not null]
+  option_b varchar(255) [not null]
+  option_c varchar(255) [not null]
+  option_d varchar(255) [not null]
+  correct_option varchar(255) [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table study_text_lines {
+  id bigint [pk, increment]
+  study_text_id bigint [not null]
+  speaker varchar(255)
+  chinese text [not null]
+  pinyin text
+  position integer [not null]
+  created_at timestamp
+  updated_at timestamp
+  english text
+}
+
+Table study_texts {
+  id bigint [pk, increment]
+  study_unit_id bigint [not null]
+  title varchar(255) [not null]
+  position integer [not null]
+  created_at timestamp
+  updated_at timestamp
+  speaker_voices json
+}
+
+Table study_unit_completions [note: 'Join table: users <-> study_units (many-to-many)'] {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  study_unit_id bigint [not null]
+  completed_at timestamp [not null]
+
+  indexes {
+    (user_id, study_unit_id) [unique]
+  }
+}
+
+Table study_units {
+  id bigint [pk, increment]
+  study_level_id bigint [not null]
+  title varchar(255) [not null]
+  description text
+  created_at timestamp
+  updated_at timestamp
+  reading text
+  culture_title varchar(255)
+  culture_body text
+  lesson_label varchar(255)
+  culture_term varchar(255)
+  culture_term_pinyin varchar(255)
+}
+
+Table study_vocabularies {
+  id bigint [pk, increment]
+  study_unit_id bigint [not null]
+  hanzi varchar(255) [not null]
+  pinyin varchar(255)
+  translation varchar(255)
+  created_at timestamp
+  updated_at timestamp
+  explanation text
+}
+
+Table submission_files {
+  id bigint [pk, increment]
+  submission_id bigint [not null]
+  path varchar(255) [not null]
+  name varchar(255) [not null]
+  mime varchar(255)
+  size bigint
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table submissions [note: 'One per (student, assignment): users <-> classroom_items'] {
+  id bigint [pk, increment]
+  classroom_item_id bigint [not null]
+  user_id bigint [not null]
+  note text
+  submitted_at timestamp
+  is_late boolean [not null]
+  score integer
+  feedback text
+  graded_at timestamp
+  graded_by bigint
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (classroom_item_id, user_id) [unique]
+  }
+}
+
+Table subscriptions {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  stripe_customer_id varchar(255) [not null, unique]
+  stripe_subscription_id varchar(255) [not null, unique, note: 'Stripe reference (external)']
+  stripe_price_id varchar(255) [not null]
+  status varchar(255) [not null]
+  current_period_start timestamp
+  current_period_end timestamp
+  cancel_at_period_end boolean [not null]
+  cancel_at timestamp
+  canceled_at timestamp
+  trial_end timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tutor_availability {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  day_of_week smallint [not null]
+  start_time time [not null]
+  end_time time [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tutor_credentials {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  path varchar(255) [not null]
+  name varchar(255) [not null]
+  mime varchar(255)
+  size integer
+  label varchar(120)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tutor_lessons {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  name varchar(255) [not null]
+  description varchar(255)
+  price integer [not null]
+  created_at timestamp
+  updated_at timestamp
+  duration_minutes smallint [not null]
+  is_trial boolean [not null]
+}
+
+Table tutor_profiles {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  bio text
+  subjects varchar(255)
+  hourly_rate integer
+  created_at timestamp
+  updated_at timestamp
+  photo_path varchar(255)
+  languages_spoken varchar(255)
+  availability varchar(255)
+  video_url varchar(255)
+  timezone varchar(255)
+  allows_pre_booking_questions boolean [not null]
+  status varchar(20)
+  submitted_at timestamp
+  reviewed_at timestamp
+  reviewed_by bigint
+  review_note text
+  country varchar(80)
+  chinese_level varchar(40)
+  teaches_levels json
+  years_experience smallint
+  teaching_style text
+  specialties json
+  main_specialty varchar(40)
+  teaching_languages json
+  short_bio varchar(180)
+  video_id varchar(11)
+}
+
+Table tutor_resume_entries {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  section varchar(255) [not null]
+  years varchar(255)
+  title varchar(255) [not null]
+  detail varchar(255)
+  position integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table tutor_reviews {
+  id bigint [pk, increment]
+  tutor_profile_id bigint [not null]
+  user_id bigint [not null]
+  rating smallint [not null]
+  body text [not null]
+  created_at timestamp
+  updated_at timestamp
+
+  indexes {
+    (tutor_profile_id, user_id) [unique]
+  }
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  email varchar(255) [not null, unique]
+  email_verified_at timestamp
+  password varchar(255) [not null, note: 'bcrypt hash, never plain text']
+  remember_token varchar(100)
+  created_at timestamp
+  updated_at timestamp
+  is_admin boolean [not null]
+  avatar_path varchar(255)
+  onboarded_at timestamp
+  google_id varchar(255) [unique, note: 'Google account link (external)']
+  is_pro boolean [not null]
+  stripe_customer_id varchar(255) [unique, note: 'Stripe reference (external)']
+}
+
+Ref: flashcards.user_id > users.id [delete: cascade]
+Ref: scans.user_id > users.id [delete: cascade]
+Ref: articles.user_id > users.id [delete: cascade]
+Ref: tutor_profiles.user_id - users.id [delete: cascade]
+Ref: bookings.student_id > users.id [delete: cascade]
+Ref: bookings.tutor_id > users.id [delete: cascade]
+Ref: tutor_lessons.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: podcasts.user_id > users.id [delete: cascade]
+Ref: study_levels.user_id > users.id [delete: cascade]
+Ref: study_units.study_level_id > study_levels.id [delete: cascade]
+Ref: study_vocabularies.study_unit_id > study_units.id [delete: cascade]
+Ref: study_grammar_points.study_unit_id > study_units.id [delete: cascade]
+Ref: study_quiz_questions.study_unit_id > study_units.id [delete: cascade]
+Ref: study_texts.study_unit_id > study_units.id [delete: cascade]
+Ref: study_text_lines.study_text_id > study_texts.id [delete: cascade]
+Ref: study_grammar_examples.study_grammar_point_id > study_grammar_points.id [delete: cascade]
+Ref: study_culture_images.study_unit_id > study_units.id [delete: cascade]
+Ref: tutor_resume_entries.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: activity_days.user_id > users.id [delete: cascade]
+Ref: tutor_reviews.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: tutor_reviews.user_id > users.id [delete: cascade]
+Ref: tutor_availability.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: bookings.tutor_lesson_id > tutor_lessons.id [delete: set null]
+Ref: courses.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: course_enrollments.course_id > courses.id [delete: cascade]
+Ref: course_enrollments.user_id > users.id [delete: cascade]
+Ref: conversations.tutor_id > users.id [delete: cascade]
+Ref: conversations.student_id > users.id [delete: cascade]
+Ref: conversations.course_id - courses.id [delete: cascade]
+Ref: messages.conversation_id > conversations.id [delete: cascade]
+Ref: messages.sender_id > users.id [delete: cascade]
+Ref: recent_views.user_id > users.id [delete: cascade]
+Ref: notifications.user_id > users.id [delete: cascade]
+Ref: notifications.actor_id > users.id [delete: set null]
+Ref: article_tags.article_id > articles.id [delete: cascade]
+Ref: article_likes.user_id > users.id [delete: cascade]
+Ref: article_likes.article_id > articles.id [delete: cascade]
+Ref: article_bookmarks.user_id > users.id [delete: cascade]
+Ref: article_bookmarks.article_id > articles.id [delete: cascade]
+Ref: article_comments.user_id > users.id [delete: cascade]
+Ref: article_comments.article_id > articles.id [delete: cascade]
+Ref: article_comments.parent_id > article_comments.id [delete: cascade]
+Ref: article_views.user_id > users.id [delete: cascade]
+Ref: article_views.article_id > articles.id [delete: cascade]
+Ref: article_shares.user_id > users.id [delete: set null]
+Ref: article_shares.article_id > articles.id [delete: cascade]
+Ref: learning_preferences.user_id - users.id [delete: cascade]
+Ref: classrooms.user_id > users.id [delete: cascade]
+Ref: classroom_members.classroom_id > classrooms.id [delete: cascade]
+Ref: classroom_members.user_id > users.id [delete: cascade]
+Ref: classroom_items.classroom_id > classrooms.id [delete: cascade]
+Ref: classroom_item_files.classroom_item_id > classroom_items.id [delete: cascade]
+Ref: submissions.classroom_item_id > classroom_items.id [delete: cascade]
+Ref: submissions.user_id > users.id [delete: cascade]
+Ref: submissions.graded_by > users.id [delete: set null]
+Ref: submission_files.submission_id > submissions.id [delete: cascade]
+Ref: payments.user_id > users.id [delete: cascade]
+Ref: podcast_progress.user_id > users.id [delete: cascade]
+Ref: podcast_progress.podcast_id > podcasts.id [delete: cascade]
+Ref: tutor_profiles.reviewed_by > users.id [delete: set null]
+Ref: tutor_credentials.tutor_profile_id > tutor_profiles.id [delete: cascade]
+Ref: payment_methods.user_id > users.id [delete: cascade]
+Ref: study_unit_completions.user_id > users.id [delete: cascade]
+Ref: study_unit_completions.study_unit_id > study_units.id [delete: cascade]
+Ref: saved_items.user_id > users.id [delete: cascade]
+Ref: daily_quests.user_id > users.id [delete: cascade]
+Ref: podcast_listen_days.user_id > users.id [delete: cascade]
+Ref: monthly_feature_usages.user_id > users.id [delete: cascade]
+Ref: subscriptions.user_id > users.id [delete: cascade]
+
+// ---- groups (the sections of the write-up) ----
+TableGroup "User identity and profiles" {
+  users
+  learning_preferences
+  personal_access_tokens
+  email_codes
+}
+
+TableGroup "Tutors and bookings" {
+  tutor_profiles
+  tutor_lessons
+  tutor_availability
+  tutor_resume_entries
+  tutor_reviews
+  tutor_credentials
+  bookings
+  courses
+  course_enrollments
+}
+
+TableGroup "Learning content" {
+  articles
+  article_tags
+  article_likes
+  article_bookmarks
+  article_comments
+  article_shares
+  article_views
+  podcasts
+  quotes
+  study_levels
+  study_units
+  study_vocabularies
+  study_texts
+  study_text_lines
+  study_grammar_points
+  study_grammar_examples
+  study_quiz_questions
+  study_culture_images
+  content_quizzes
+}
+
+TableGroup "Vocabulary and learning activity" {
+  flashcards
+  scans
+  recent_views
+  activity_days
+  podcast_progress
+  podcast_listen_days
+  study_unit_completions
+  daily_quests
+  saved_items
+}
+
+TableGroup "Classes and assignments" {
+  classrooms
+  classroom_members
+  classroom_items
+  classroom_item_files
+  submissions
+  submission_files
+}
+
+TableGroup "Messaging and notifications" {
+  conversations
+  messages
+  notifications
+}
+
+TableGroup "Subscriptions and payments" {
+  payments
+  payment_methods
+  subscriptions
+  stripe_events
+}
+
+TableGroup "Usage allowances" {
+  monthly_feature_usages
+}
+

@@ -92,9 +92,9 @@
   margin: 0 0 1rem;
   padding: 0.6rem 0.9rem;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fdecea;
-  color: #b3261e;
+  color: #b02a2a;
   font-size: 0.88rem;
 }
 
@@ -216,8 +216,8 @@ form.cl-entry-action {
   min-width: 0;
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--cl-line);
-  border-radius: 10px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
   font-family: ui-monospace, "SFMono-Regular", "Consolas", monospace;
   font-size: 0.95rem;
   font-weight: 600;
@@ -253,7 +253,7 @@ form.cl-entry-action {
 
   padding: calc(0.55rem - 1.069px) 1.1rem calc(0.55rem + 1.069px);
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--cl-fill);
   color: #fff;
   font-family: inherit;
@@ -379,7 +379,7 @@ form.cl-entry-action {
   gap: 0.5rem;
   padding: 2.8rem 1.5rem 2.4rem;
   border: 1px dashed #cfc9e6;
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--cl-card);
   text-align: center;
 }
@@ -443,7 +443,7 @@ form.cl-entry-action {
      "HSK 3", whose digits measure 0.1px shorter — one shared rule cannot land
      both on zero, so it lands both within 0.05px. */
   padding: 1.905px 0.6rem 3.855px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--cl-well);
   color: var(--cl-accent);
   font-size: 0.74rem;
@@ -776,7 +776,7 @@ form.cl-entry-action {
   flex: none;
   width: 52px;
   height: 52px;
-  border-radius: 15px;
+  border-radius: 16px;
   background: var(--cl-fill);
   color: #fff;
 }
@@ -917,8 +917,8 @@ form.cl-entry-action {
   box-sizing: border-box;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--cl-line);
-  border-radius: 10px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
   font-family: inherit;
   font-size: 0.9rem;
   color: var(--cl-text);
@@ -1069,9 +1069,9 @@ form.cl-entry-action {
 .cl-danger-btn {
   flex: none;
   padding: calc(0.55rem - 0.076em) 1.15rem calc(0.55rem + 0.076em);
-  border: 1px solid #d93636;
-  border-radius: 9px;
-  background: #d93636;
+  border: 1px solid #b02a2a;
+  border-radius: 8px;
+  background: #b02a2a;
   color: #fff;
   font-family: inherit;
   font-size: 0.85rem;
@@ -1122,8 +1122,8 @@ form.cl-entry-action {
   flex: none;
   padding: 0.4rem 0.4rem 0.4rem 0.7rem;
   border: 1px dashed #c9c2ea;
-  border-radius: 11px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
 }
 
 .jc-label {
@@ -1165,9 +1165,9 @@ form.cl-entry-action {
 
 .jc-closed {
   padding: 0.1rem 0.45rem;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #eeedf3;
-  color: #6b6780;
+  color: #726c88;
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1183,7 +1183,7 @@ form.cl-entry-action {
 
 .cu {
   border: 1px solid var(--cl-line);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--cl-card);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.06);
   overflow: hidden;
@@ -1206,7 +1206,7 @@ form.cl-entry-action {
   flex: none;
   width: 40px;
   height: 40px;
-  border-radius: 11px;
+  border-radius: 12px;
   background: var(--cl-well);
   color: var(--cl-accent);
 }
@@ -1267,7 +1267,13 @@ form.cl-entry-action {
      up below the box's middle. Half the error off each side lifts it.
      Written in px because it is a measurement, not a design step. */
   padding: 0.43px 0.45rem 2.13px;
-  border-radius: 6px;
+  /* The pill centres on the meta LINE BOX, but the plain text beside it sits
+     0.063em low in that box (Hellix 400), so the pill read 0.97px high next to
+     "Posted …". Equal-and-opposite margins drop it to the text without
+     moving anything else. */
+  margin-top: 0.055rem;
+  margin-bottom: -0.055rem;
+  border-radius: 8px;
   background: var(--cl-well);
   color: var(--cl-accent);
   font-size: 0.68rem;
@@ -1283,6 +1289,16 @@ form.cl-entry-action {
 
 .cu-kind::before {
   content: none !important;
+}
+
+/* The pill already separates itself; a "·" straight after it read as a stray
+   mark. Dots only between the plain-text facts. And no fact breaks mid-date. */
+.cu-meta > .cu-kind + span::before {
+  content: none;
+}
+
+.cu-meta > span {
+  white-space: nowrap;
 }
 
 .cu-due-past {
@@ -1312,30 +1328,37 @@ form.cl-entry-action {
   color: var(--cl-muted);
 }
 
+/* The same soft filled pills as the grading table (.gr-badge), so a status
+   reads the same to the student as to the teacher. Cap-band pad for 700. */
 .cu-status {
   flex: none;
-  padding: 0.25rem 0.65rem;
+  padding: calc(0.28rem - 0.086em) 0.7rem calc(0.28rem + 0.086em);
+  border: 0;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .cu-status-missing {
-  background: transparent;
-  border: 1px solid #e8cfd3;
-  color: #95606a;
+  background: #fdecef;
+  color: #a3485a;
+}
+
+/* Not yet due: nothing is wrong, so not rose. */
+.cu-status-todo {
+  background: #f1edfc;
+  color: #5a5184;
 }
 
 .cu-status-submitted {
-  background: transparent;
-  border: 1px solid #cbd9e9;
-  color: #5d7694;
+  background: #f1edfc;
+  color: #5a5184;
 }
 
 .cu-status-graded {
-  background: transparent;
-  border: 1px solid #cfe3d7;
-  color: #5f806c;
+  background: #e6f4eb;
+  color: #1f7a45;
 }
 
 .cu-del,
@@ -1347,7 +1370,7 @@ form.cl-entry-action {
   height: 32px;
   padding: 0;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: var(--cl-muted);
   font-family: inherit;
@@ -1409,8 +1432,8 @@ form.cl-entry-action {
 .cu-file {
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--cl-line);
-  border-radius: 9px;
-  background: #fbfaff;
+  border-radius: 8px;
+  background: #f9f8fe;
   color: var(--cl-accent);
   font-family: inherit;
   font-size: 0.8rem;
@@ -1446,7 +1469,7 @@ form.cl-entry-action {
   min-height: 22px;
   padding: 0 0.5rem;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -1463,7 +1486,7 @@ form.cl-entry-action {
 
 .gr-graded {
   border-color: #cfe3d7;
-  color: #5f806c;
+  color: #1f7a45;
 }
 
 .gr-late {
@@ -1475,7 +1498,7 @@ form.cl-entry-action {
   min-height: 22px;
   margin-left: 0.35rem;
   padding: 0 0.45rem;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #ead9c9;
   background: transparent;
   color: #9b7651;
@@ -1594,7 +1617,7 @@ form.cl-entry-action {
   margin-bottom: 0.9rem;
   border: 1px solid var(--cl-line);
   border-radius: 12px;
-  background: #fbfaff;
+  background: #f9f8fe;
 }
 
 .sw-current-head {
@@ -1605,10 +1628,30 @@ form.cl-entry-action {
 }
 
 .sw-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
   margin-left: auto;
-  font-size: 1.05rem;
+  color: var(--cl-text);
+}
+
+.sw-score-label {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--cl-accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.sw-score strong {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sw-score-of {
+  font-size: 0.85rem;
+  color: var(--cl-muted);
 }
 
 .sw-feedback {
@@ -1677,7 +1720,7 @@ form.cl-entry-action {
   box-sizing: border-box;
   padding: 1.4rem;
   border: 1px solid #2b2643;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #fff;
   box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
   font-family: "Hellix", system-ui, sans-serif;
@@ -1726,7 +1769,7 @@ form.cl-entry-action {
   flex: none;
   width: 44px;
   height: 44px;
-  border-radius: 13px;
+  border-radius: 12px;
   background: var(--cl-fill, #a89ce3);
   color: #fff;
 }
@@ -1802,7 +1845,7 @@ form.cl-entry-action {
   width: 30px;
   height: 30px;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   background: none;
   color: #726c88;
   font-size: 1.3rem;
@@ -1820,7 +1863,7 @@ form.cl-entry-action {
   gap: 4px;
   padding: 4px;
   margin-bottom: 0.9rem;
-  border-radius: 11px;
+  border-radius: 12px;
   background: #f1edfc;
 }
 
@@ -1854,8 +1897,8 @@ form.cl-entry-action {
   box-sizing: border-box;
   padding: 0.65rem 0.85rem;
   border: 1px solid #e7e3f6;
-  border-radius: 11px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
   font-family: inherit;
   font-size: 0.92rem;
   color: #1c1730;
@@ -1912,8 +1955,8 @@ form.cl-entry-action {
   line-height: normal;
   padding: 0.55rem 0.7rem;
   border: 1px solid #e7e3f6;
-  border-radius: 10px;
-  background: #fbfaff;
+  border-radius: 12px;
+  background: #f9f8fe;
   font-family: inherit;
   font-size: 0.86rem;
   color: #1c1730;
@@ -1929,7 +1972,7 @@ form.cl-entry-action {
   height: 42px;
   padding: 0 0.85rem;
   border: 1px solid #e7e3f6;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
   color: #726c88;
   font-family: inherit;
@@ -1952,7 +1995,7 @@ form.cl-entry-action {
   padding: 1.1rem;
   border: 1.5px dashed #c9c2ea;
   border-radius: 12px;
-  background: #fbfaff;
+  background: #f9f8fe;
   color: #726c88;
   font-family: inherit;
   font-size: 0.82rem;
@@ -2010,7 +2053,7 @@ form.cl-entry-action {
 .ci-error {
   margin: 0;
   padding: 0.5rem 0.7rem;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fdecea;
   color: #b02a2a;
   font-size: 0.84rem;
@@ -2133,7 +2176,7 @@ form.cl-entry-action {
 
 .cl-status.archived {
   background: #eeedf3;
-  color: #6b6780;
+  color: #726c88;
 }
 
 /* ---- body: the panel and its rail ---- */
@@ -2204,15 +2247,30 @@ form.cl-entry-action {
   flex-direction: column;
 }
 
-.cl-feed-row,
+/* The class page's feed (.cl-feed-rich): dot BESIDE the text, one hairline
+   between rows. Scoped, because the hub's simpler .cl-feed-row (earlier in
+   this file) is a column with a top border; sharing the bare class stacked
+   the dot on its own line and drew every divider twice. */
+.cl-feed-rich {
+  gap: 0;
+}
+
+.cl-feed-rich > .cl-feed-row,
 .cl-due-row {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 0.7rem;
   padding: 0.75rem 0;
+  border-top: 0;
   border-bottom: 1px solid var(--cl-line);
 }
 
-.cl-feed-row:last-child,
+.cl-feed-rich > .cl-feed-row:first-child {
+  padding-top: 0.25rem;
+}
+
+.cl-feed-rich > .cl-feed-row:last-child,
 .cl-due-row:last-child {
   padding-bottom: 0;
   border-bottom: none;
@@ -2230,7 +2288,7 @@ form.cl-entry-action {
 }
 
 .cl-feed-submitted {
-  background: #5aa87d;
+  background: #3a9a62;
 }
 
 .cl-feed-material_posted {
@@ -2269,7 +2327,7 @@ form.cl-entry-action {
   flex: none;
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--cl-well);
 }
 
@@ -2309,4 +2367,131 @@ form.cl-entry-action {
   padding: 0.5rem 0.9rem 0.2rem;
   border-radius: 12px;
   background: var(--cl-bg);
+  /* On a narrow card (a laptop with the rail beside it, or a phone) the six
+     columns need ~560px; scroll inside the well rather than spill past the
+     card edge. */
+  overflow-x: auto;
+}
+
+/* ---- grading table polish ----
+   Every cell centres on the row now. The old `top` rule was written when the
+   score form grew inside the last cell; it opens in its own row
+   (.gr-editor-row) now, so `top` only pushed dates and scores above the
+   names beside them. */
+.gr-table td,
+.gr-table td:nth-child(2) {
+  vertical-align: middle;
+}
+
+/* Graded + Late stay side by side rather than stacking. */
+.gr-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.gr-table tbody tr:not(.gr-editor-row):hover td,
+.gr-table tr.gr-row-open td {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Status as soft filled pills with the state's own tint, so the column is
+   readable at a glance instead of four grey outlines. Cap-band pad for 700. */
+.gr-badge,
+.gr-late {
+  min-height: 0;
+  padding: calc(0.22rem - 0.086em) 0.6rem calc(0.22rem + 0.086em);
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.gr-missing {
+  background: #fdecef;
+  color: #a3485a;
+}
+
+.gr-submitted {
+  background: #f1edfc;
+  color: #5a5184;
+}
+
+.gr-graded {
+  background: #e6f4eb;
+  color: #1f7a45;
+}
+
+.gr-late {
+  background: #fdf1dc;
+  color: #94590a;
+}
+
+.gr-none {
+  color: #b5b0c8;
+}
+
+.gr-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.gr-score strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cl-text);
+}
+
+.gr-score span {
+  font-size: 0.78rem;
+  color: var(--cl-muted);
+}
+
+/* Cap-band pad for a 600 label. */
+.gr-act {
+  padding: calc(0.4rem - 0.076em) 0.85rem calc(0.4rem + 0.076em);
+  border: 1px solid #d9d3f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #4d4670;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  /* Grade and Edit grade are one column of the same button. */
+  min-width: 96px;
+  text-align: center;
+}
+
+.gr-act:hover {
+  border-color: #a89ce3;
+  color: #2b2643;
+}
+
+/* The deeper purple, so the label can be WHITE (~6:1; white on the pale
+   #a89ce3 was ~1.9:1). */
+.gr-act-primary {
+  border-color: #6a6191;
+  background: #6a6191;
+  color: #fff;
+}
+
+.gr-act-primary:hover {
+  border-color: #5a5184;
+  background: #5a5184;
+  color: #fff;
+}
+
+/* Posted: a clock and a short date, no word. The icon sits on the text's
+   cap band (Hellix 400, 0.063em). */
+.cu-posted {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cu-posted svg {
+  flex: none;
+  margin-top: 0.063em;
+  margin-bottom: -0.063em;
 }

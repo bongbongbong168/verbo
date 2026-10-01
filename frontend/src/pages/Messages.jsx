@@ -7,6 +7,7 @@ import PageTools from '../components/PageTools'
 import { invalidateUnreadMessages } from '../hooks/useUnreadMessages'
 import { isRealtimeConnected } from '../hooks/usePusherConversationUpdates'
 import './Messages.css'
+import { PageSkeleton } from '../components/Skeleton'
 
 /* Laid out from design/message.png: a "Chat" title with an accent rule, then a
    374px thread panel beside a wide conversation panel. Colours are this app's
@@ -578,7 +579,7 @@ export default function Messages() {
     return out
   }, [active])
 
-  if (loading) return <p className="ms-note">Loading messages…</p>
+  if (loading) return <PageSkeleton label="Loading messages" />
 
   return (
     <div className="ms-page">
@@ -685,7 +686,6 @@ export default function Messages() {
                 {active.profile_id && (
                   <Link to={`/find-tutor/${active.profile_id}`} className="ms-profile-btn">
                     View profile
-                    <ArrowIcon />
                   </Link>
                 )}
               </header>
@@ -847,7 +847,7 @@ export default function Messages() {
                             {m.mine && m.delivery_state === 'failed' && (
                               <span className="ms-message-state ms-message-state-failed">Failed</span>
                             )}
-                            {m.mine && m.read_at && <span className="ms-message-read">Read</span>}
+                            {m.mine && m.read_at && <span className="ms-message-read">Seen</span>}
                             {m.mine && m.delivery_state === 'failed' && (
                               <button
                                 type="button"
@@ -863,7 +863,7 @@ export default function Messages() {
                         {/* Beside the bubble, not in the footer: the row is
                             row-reverse for your own messages, so coming after
                             the bubble in the DOM puts it on the bubble's left,
-                            and the time and "Read" line up under its edge. */}
+                            and the time and "Seen" line up under its edge. */}
                         {m.mine && !String(m.id).startsWith('local:') && (
                           <span className="ms-message-actions">
                             <button

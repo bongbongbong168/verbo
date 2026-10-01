@@ -79,7 +79,7 @@ export default function TutorMedia({
     >
       {playing && videoId ? (
         <iframe
-          className="tm-player"
+          className={`tm-player${previewOnHover ? " tm-player-preview" : ""}`}
           src={youtubeEmbedUrl(videoId, { preview: previewOnHover, autoplay: true })}
           title={`${name} introduction`}
           allow="autoplay; fullscreen; picture-in-picture"

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import PageTools from '../components/PageTools'
 import './Bookings.css'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { SkeletonRows } from '../components/Skeleton'
 
 /* Tabs are STATES, not directions — "where does this booking stand" is the
    question someone opens this page with. The order flips by role because the
@@ -150,12 +151,19 @@ function StatusChip({ status }) {
 
 export default function Bookings() {
   const { token } = useAuth()
+  const [searchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
 
   const [bookings, setBookings] = useState({ sent: [], received: [] })
   const [enrollments, setEnrollments] = useState([])
   const [isTutor, setIsTutor] = useState(false)
-  const [role, setRole] = useState('student')
-  const [tab, setTab] = useState('upcoming')
+  const [tab, setTab] = useState(() =>
+    TAB_LABELS[requestedTab] ? requestedTab : 'upcoming',
+  )
+
+  useEffect(() => {
+    if (TAB_LABELS[requestedTab]) setTab(requestedTab)
+  }, [requestedTab])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -199,7 +207,9 @@ export default function Bookings() {
     setError(null)
     setClearing(true)
     try {
-      await api.clearPastBookings(token, role)
+      // One list now holds both sides, so a tutor clears both.
+      await api.clearPastBookings(token, 'student')
+      if (isTutor) await api.clearPastBookings(token, 'teacher')
       setConfirmClear(false)
       load()
     } catch (err) {
@@ -240,9 +250,11 @@ export default function Bookings() {
   /* Everything becomes one row shape first, so the tab logic below does not
      have to know whether it is looking at a lesson or a course enrolment. */
   const rows = useMemo(() => {
-    if (role === 'teacher') {
-      return (bookings.received || []).map((b) => ({
+    /* ONE list, no student/teacher switch: a tutor sees the lessons they
+       teach beside the ones they booked, each row tagged with its side. */
+    const teaching = !isTutor ? [] : (bookings.received || []).map((b) => ({
         uid: `r-${b.id}`,
+        side: 'teacher',
         type: 'lesson',
         raw: b,
         status: statusOf(b),
@@ -256,10 +268,10 @@ export default function Bookings() {
         reason: b.decline_reason,
         sortKey: b.starts_at,
       }))
-    }
 
     const lessons = (bookings.sent || []).map((b) => ({
       uid: `s-${b.id}`,
+      side: 'student',
       type: 'lesson',
       raw: b,
       status: statusOf(b),
@@ -279,6 +291,7 @@ export default function Bookings() {
        or Past. */
     const courses = (enrollments || []).map((e) => ({
       uid: `c-${e.id}`,
+      side: 'student',
       type: 'course',
       raw: e,
       status: statusOf({ ...e, starts_at: null }),
@@ -290,8 +303,8 @@ export default function Bookings() {
       endsOn: e.course?.ends_on,
     }))
 
-    return [...lessons, ...courses]
-  }, [role, bookings, enrollments])
+    return [...teaching, ...lessons, ...courses]
+  }, [isTutor, bookings, enrollments])
 
   const buckets = useMemo(() => {
     const now = Date.now()
@@ -316,19 +329,10 @@ export default function Bookings() {
     return out
   }, [rows])
 
-  const tabs = TABS[role]
-
-  /* Switching role lands on that role's FIRST tab, not wherever you happened to
-     be. The order flips precisely because each side opens this page with a
-     different question — a tutor wants the requests waiting on them — so
-     keeping the old tab would throw away the whole point of reordering. */
-  function switchRole(next) {
-    setRole(next)
-    setTab(TABS[next][0])
-    setArmedClear(false)
-  }
+  const tabs = TABS[isTutor ? 'teacher' : 'student']
 
   function renderRow(row) {
+    const role = row.side
     const busy = busyId === row.uid
     const isCourse = row.type === 'course'
     const pending = row.status === 'pending'
@@ -341,7 +345,10 @@ export default function Bookings() {
         <div className="bo-main">
           <p className="bo-who">
             {row.who}
-            <em className="bo-kind">{isCourse ? 'Group course' : 'Private lesson'}</em>
+            <em className="bo-kind">
+              {isTutor ? (role === 'teacher' ? 'Teaching · ' : 'Learning · ') : ''}
+              {isCourse ? 'Group course' : 'Private lesson'}
+            </em>
           </p>
           <p className="bo-title">{row.title}</p>
 
@@ -504,11 +511,11 @@ export default function Bookings() {
 
   const emptyCopy = {
     upcoming:
-      role === 'teacher'
+      isTutor
         ? 'No confirmed lessons coming up.'
         : 'Nothing coming up — book a lesson or join a course to get started.',
     requests:
-      role === 'teacher'
+      isTutor
         ? 'No new booking requests. Students can only request times you have opened.'
         : 'No pending requests. Anything you book waits here until the tutor confirms.',
     past: 'Nothing here yet.',
@@ -524,8 +531,8 @@ export default function Bookings() {
         <div className="bo-head-text">
           <h1 className="bo-title-h1">Bookings</h1>
           <p className="bo-sub">
-            {role === 'teacher'
-              ? 'Requests waiting on you, and the lessons you have agreed to teach.'
+            {isTutor
+              ? 'Requests waiting on you, lessons you teach and lessons you have booked.'
               : 'Lessons you have booked and courses you have joined.'}
           </p>
         </div>
@@ -533,24 +540,6 @@ export default function Bookings() {
           <PageTools />
         </div>
       </header>
-
-      {/* Only an account with a tutor profile has a teacher side to look at. */}
-      {isTutor && (
-        <div className="bo-roles" role="tablist" aria-label="View as">
-          {['student', 'teacher'].map((r) => (
-            <button
-              key={r}
-              type="button"
-              role="tab"
-              aria-selected={role === r}
-              className={`bo-role${role === r ? ' active' : ''}`}
-              onClick={() => switchRole(r)}
-            >
-              {r === 'student' ? 'As a student' : 'As a teacher'}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Tabs and the Clear-all control share one line, since one sits left and
           the other right. Wrapped in a flex row rather than pulled up with a
@@ -569,7 +558,6 @@ export default function Bookings() {
               className={`bo-tab${tab === key ? ' active' : ''}`}
               onClick={() => {
                 setTab(key)
-                setArmedClear(false)
               }}
             >
               {TAB_LABELS[key]}
@@ -597,7 +585,7 @@ export default function Bookings() {
         <ConfirmDialog
           title={`Clear ${list.length} past ${list.length === 1 ? 'booking' : 'bookings'}?`}
           message={`They will be removed from your list. ${
-            role === 'teacher' ? 'Your students' : 'Your tutors'
+            isTutor ? 'Your students and tutors' : 'Your tutors'
           } keep their own records, and this can't be undone.`}
           confirmLabel="Clear all"
           busyLabel="Clearing…"
@@ -613,7 +601,7 @@ export default function Bookings() {
       {error && <p className="bo-error">{error}</p>}
 
       {loading ? (
-        <p className="bo-empty">Loading…</p>
+        <SkeletonRows count={3} />
       ) : list.length === 0 ? (
         <p className="bo-empty">{emptyCopy[tab]}</p>
       ) : (

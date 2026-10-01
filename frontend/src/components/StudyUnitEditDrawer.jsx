@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import EditDrawer from './EditDrawer'
+import { confirmDelete } from '../components/ConfirmDelete'
 
 const TABS = ['Vocabulary', 'Reading', 'Grammar', 'Culture', 'Quiz']
 const OPTIONS = ['a', 'b', 'c', 'd']
@@ -90,7 +91,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deleteWord = (id) =>
+  const deleteWord = async (id) =>
+    (await confirmDelete({ title: "Delete this word?" })) &&
     run(
       `word-${id}`,
       () => api.deleteStudyVocabulary(token, id),
@@ -112,7 +114,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deleteText = (id) =>
+  const deleteText = async (id) =>
+    (await confirmDelete({ title: "Delete this conversation?" })) &&
     run(
       `text-${id}`,
       () => api.deleteStudyText(token, id),
@@ -174,7 +177,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deleteLine = (id) =>
+  const deleteLine = async (id) =>
+    (await confirmDelete({ title: "Delete this line?" })) &&
     run(
       `line-${id}`,
       () => api.deleteStudyTextLine(token, id),
@@ -213,7 +217,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deletePoint = (id) =>
+  const deletePoint = async (id) =>
+    (await confirmDelete({ title: "Delete this grammar point?" })) &&
     run(
       `point-${id}`,
       () => api.deleteStudyGrammarPoint(token, id),
@@ -238,7 +243,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deleteExample = (pointId, id) =>
+  const deleteExample = async (pointId, id) =>
+    (await confirmDelete({ title: "Delete this example?" })) &&
     run(
       `example-${id}`,
       () => api.deleteStudyGrammarExample(token, id),
@@ -285,7 +291,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     })
   }
 
-  const deleteImage = (id) =>
+  const deleteImage = async (id) =>
+    (await confirmDelete({ title: "Delete this photo?" })) &&
     run(
       `image-${id}`,
       () => api.deleteCultureImage(token, id),
@@ -306,7 +313,8 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
     )
   }
 
-  const deleteQuestion = (id) =>
+  const deleteQuestion = async (id) =>
+    (await confirmDelete({ title: "Delete this question?" })) &&
     run(
       `quiz-${id}`,
       () => api.deleteStudyQuizQuestion(token, id),
@@ -334,6 +342,7 @@ export default function StudyUnitEditDrawer({ token, unit, initialTab, onChange,
       onClose={onClose}
       error={error}
       flash={flash}
+      busy={busy}
     >
       {tab === 'Vocabulary' && (
         <>

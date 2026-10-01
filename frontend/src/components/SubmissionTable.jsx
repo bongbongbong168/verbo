@@ -85,7 +85,7 @@ export default function SubmissionTable({ itemId, points }) {
 
             return (
               <Fragment key={user.id}>
-              <tr>
+              <tr className={isOpen ? "gr-row-open" : undefined}>
                 <td>
                   <span className="cl-student">
                     {user.avatar_url ? (
@@ -110,7 +110,9 @@ export default function SubmissionTable({ itemId, points }) {
                   {submission?.is_late && <span className="gr-late">Late</span>}
                 </td>
 
-                <td className="cl-muted">{when(submission?.submitted_at)}</td>
+                <td className="cl-muted">
+                  {submission?.submitted_at ? when(submission.submitted_at) : <span className="gr-none">—</span>}
+                </td>
 
                 <td>
                   {submission?.files?.length ? (
@@ -137,21 +139,28 @@ export default function SubmissionTable({ itemId, points }) {
                       </button>
                     ))
                   ) : (
-                    <span className="cl-muted">—</span>
+                    <span className="gr-none">No file</span>
                   )}
                 </td>
 
                 <td>
-                  {submission?.score != null
-                    ? `${submission.score}${points ? `/${points}` : ""}`
-                    : "—"}
+                  {submission?.score != null ? (
+                    <span className="gr-score">
+                      <strong>{submission.score}</strong>
+                      {points ? <span>/ {points}</span> : null}
+                    </span>
+                  ) : (
+                    <span className="gr-none">—</span>
+                  )}
                 </td>
 
                 <td className="cl-row-end">
                   {submission?.submitted_at && (
                     <button
                       type="button"
-                      className="cl-quiet"
+                      /* Ungraded work is the thing to do next, so its button
+                         is filled; an existing grade is a quiet outline. */
+                      className={`gr-act${submission.score == null && !isOpen ? " gr-act-primary" : ""}`}
                       onClick={() => {
                         setGrading(isOpen ? null : submission.id);
                         setScore(submission.score ?? "");

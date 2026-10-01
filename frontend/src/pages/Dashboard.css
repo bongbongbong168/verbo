@@ -9,7 +9,7 @@
   --db-pill-bg: #f1edfc;
 
   /* Sampled off design/Dashboard.jpg */
-  --db-edge: #2b2644; /* card outline — the same navy Find Tutor uses */
+  --db-edge: #2b2643; /* card outline — the same navy Find Tutor uses */
   --db-panel-edge: #c8c8c8; /* the two big panels' 1px outline */
   --db-hero: #7d76a0; /* hero fill, also the podcast duration badge */
   --db-tag-unit: #bcb3e8; /* "Unit 1" tag */
@@ -44,10 +44,10 @@
 }
 
 .db-error {
-  color: #b3261e;
+  color: #b02a2a;
   background: #fdecea;
   border: 1px solid #f6c6c1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.6rem 0.9rem;
   font-size: 0.88rem;
   margin-bottom: 1rem;
@@ -130,7 +130,7 @@
   font-family: 'Hellix', sans-serif;
   font-weight: 700;
   font-size: 0.85rem;
-  border-radius: 14px;
+  border-radius: 16px;
   /* Vertically symmetric — the optical correction lives on .db-streak-text
      alone, and the flame sits where flexbox puts it because its artwork is
      centred in its own box.
@@ -205,7 +205,10 @@
   font-family: 'Hellix', 'Douyin Sans', sans-serif;
   font-weight: 700;
   font-size: clamp(1.8rem, 4vw, 2.6rem);
-  margin: 0 0 0.9rem;
+  /* The big line box reserves room above the letters, so the block read low:
+     ~48px of ground above the cap line against ~37px under the button.
+     -0.2em (in the title's own size) hands that back. */
+  margin: -0.2em 0 0.9rem;
   letter-spacing: -0.01em;
 }
 
@@ -305,7 +308,7 @@
   font-size: 0.9rem;
   color: var(--db-text);
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.5rem 0.7rem;
   box-sizing: border-box;
   outline: none;
@@ -605,7 +608,7 @@
   padding: 14px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
@@ -626,7 +629,7 @@
   width: 135px;
   flex: none;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--db-cover);
 }
 
@@ -881,7 +884,7 @@
   padding: 10px 10px 12px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
@@ -899,7 +902,7 @@
   height: 112px;
   margin-bottom: 6px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--db-cover);
 }
 
@@ -935,7 +938,7 @@
      HALF its value - the correction is 2 x 0.649 off the 3. */
   padding: 0 0 1.702px;
   border: 1px solid var(--db-duration-edge);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--db-hero);
   color: #fff;
   font-size: 0.7rem;
@@ -1016,7 +1019,7 @@
   padding: 10px 10px 12px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
@@ -1091,7 +1094,7 @@
   padding: 10px;
   background: var(--db-card);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   box-shadow: 0 3px 10px rgba(28, 23, 48, 0.08);
@@ -1121,7 +1124,7 @@
      teacher details begin. */
   height: 112px;
   margin-bottom: 8px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1.22rem;
 }
 
@@ -1243,8 +1246,9 @@
   box-sizing: border-box;
   height: 20px;
   max-width: 100%;
-  padding: 0 7px 0.152em;
-  line-height: calc(20px - 0.152em);
+  /* 0.152em measured 0.6px high here; 0.08em lands it. */
+  padding: 0 7px 0.08em;
+  line-height: calc(20px - 0.08em);
   border-radius: 999px;
   background: var(--db-pill-bg);
   color: var(--db-accent);
@@ -1324,7 +1328,7 @@
      Same correction as `.db-pod-duration`; don't "tidy" it to one value. */
   padding: 5.72px 1.05rem 7.72px;
   border: 1px solid var(--db-filter-edge);
-  border-radius: 9px;
+  border-radius: 8px;
   background: transparent;
   font-family: inherit;
   font-size: 0.84rem;
@@ -1453,7 +1457,7 @@
   padding: 10px 52px 10px 10px;
   background: var(--db-bg);
   border: 1px solid var(--db-edge);
-  border-radius: 14px;
+  border-radius: 16px;
   text-decoration: none;
   color: var(--db-text);
   transition:
@@ -1476,7 +1480,7 @@
   height: 76px;
   flex: none;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--db-cover);
 }
 
@@ -1542,76 +1546,287 @@
 
 /* ---- right rail: My Course ---- */
 
+/* A ticket: a time tile on the left, the lesson on the right. The time is
+   what this card answers ("when do I turn up?"), so it is the biggest thing
+   on it. Tile and hover are static (no transitions). */
 .db-course {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
+  align-items: stretch;
+  gap: 14px;
+  /* Top room for the binder rings; the arrow's hover circle already carries
+     its own air, so the right side is trimmed to balance the calendar side. */
+  padding: 13px 6px 13px 12px;
   border: 1px solid var(--db-edge);
-  border-radius: 12px;
-  cursor: default;
+  border-radius: 16px;
+  background: #fff;
   color: inherit;
   text-decoration: none;
+  cursor: default;
 }
 
-/* More than one enrolment stacks. Two or three is the realistic case — this is
-   "what's next", not a full schedule. */
 .db-course + .db-course {
   margin-top: 10px;
 }
 
+/* Hover eases in. Safe under the frozen-compositor rule: nothing here is
+   state, so a transition that never advances just leaves the resting card,
+   which is complete and clickable. */
 a.db-course {
   cursor: pointer;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
 }
 
 a.db-course:hover {
-  border-color: var(--db-accent-soft, #a89ce3);
+  border-color: #a89ce3;
+  box-shadow: 0 8px 20px rgba(43, 38, 68, 0.1);
+  transform: translateY(-2px);
 }
 
-/* Narrowed from the placeholder's 63x47. The right rail is ~420px wide and the
-   card also carries a chevron, so the old thumb left the title wrapping across
-   three lines — "HSK 3 Speaking Course" broke mid-phrase. 46px square gives the
-   text back enough room to sit on two. */
-.db-course-thumb {
-  width: 46px;
-  height: 46px;
+a.db-course:active {
+  transform: translateY(0);
+  transition-duration: 0.08s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.db-course,
+  a.db-course .db-course-go,
+  a.db-course .db-course-go svg {
+    transition: none;
+  }
+
+  a.db-course:hover {
+    transform: none;
+  }
+}
+
+/* A tear-off calendar page: purple month band with two binder rings, white
+   page with the big date, weekday under it. Static, no animation. */
+.db-course-when {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: center;
+  width: 64px;
   flex: none;
-  overflow: hidden;
-  border-radius: 8px;
-  background: var(--db-cover);
+  border: 1px solid #2b2643;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 0 #e7e3f6;
+  color: #2b2643;
+  text-align: center;
 }
 
-.db-course-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* Binder rings, poking above the band. */
+.db-course-when::before,
+.db-course-when::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 10px;
+  border-radius: 2px;
+  background: #2b2643;
+}
+
+.db-course-when::before { left: 17px; }
+.db-course-when::after { right: 17px; }
+
+.db-course-month {
+  align-self: stretch;
+  padding: calc(4px - 0.086em) 0 calc(4px + 0.086em);
+  border-radius: 9px 9px 0 0;
+  background: #a89ce3;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2b2643;
+}
+
+.db-course-date {
+  margin-top: 3px;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.db-course-weekday {
+  margin: 2px 0 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #6a6191;
+}
+
+/* Today stands out in a deeper purple; later days stay lavender. */
+.db-course-today .db-course-month {
+  background: #6a6191;
+  color: #fff;
+}
+
+/* A session under way: the band goes navy. */
+.db-course-live .db-course-month {
+  background: #2b2643;
+  color: #fff;
+}
+
+.db-course-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2b2643;
+}
+
+/* The clock's circle starts 3.5 units into its 24 box (~0.6px at 13px), so
+   its ink sat right of the title's "W"; pulled back to share one left edge. */
+.db-course-time svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  margin-left: -0.6px;
+  color: #6a6191;
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
+}
+
+.db-course-live .db-course-time {
+  color: #2b2643;
 }
 
 .db-course-body {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  justify-content: center;
+  gap: 5px;
   min-width: 0;
   flex: 1;
 }
 
 .db-course-title {
-  font-size: 0.92rem;
-  font-weight: 700;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
-/* "Chen Wei · Private" — who, and which kind. One quiet line rather than a
-   badge: Private and Group are a distinction the student barely needs to act
-   on, so it should not shout. */
 .db-course-who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
   font-size: 0.8rem;
   color: var(--db-muted, #726c88);
 }
 
-.db-course-time {
-  font-size: 0.84rem;
-  font-style: italic;
-  color: var(--db-text);
+.db-course-face {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #bcb3e8;
+  color: #2b2643;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.db-course-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.db-course-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cap-band pad for a 600 label, plus extra lift: "Group"/"Private" both hang
+   a descender (p), so a cap-band-centred label still reads low by eye. */
+.db-course-kind {
+  flex: none;
+  line-height: 1.2;
+  /* Measured 0.88px high at 0.14em; 0.076em (the 600 rule) lands it. */
+  padding: calc(3px - 0.076em) 8px calc(3px + 0.076em);
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #6a6191;
+}
+
+.db-course-go {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  color: #2b2643;
+}
+
+.db-course-go {
+  transition: background-color 0.22s ease;
+}
+
+/* display:block drops the inline baseline gap that sat it low; the chevron's
+   ink spans x 9..16 of 24 (centre 12.5), 1/3px right at 16px. A centred grid
+   item moves by HALF its margin, so the margin is double that. */
+.db-course-go svg {
+  display: block;
+  margin-left: -0.67px;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+a.db-course:hover .db-course-go {
+  background: #f1edfc;
+}
+
+a.db-course:hover .db-course-go svg {
+  transform: translateX(2px);
+}
+
+/* More lessons than the three shown. Cap-band pad for a 600 label. */
+.db-course-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: calc(8px - 0.076em) 0 calc(8px + 0.076em);
+  border-radius: 12px;
+  background: #f1edfc;
+  color: #4d4670;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.db-course-more:hover {
+  background: #e7e3f6;
+}
+
+.db-course-more svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
 }
 
 /* Nothing joined yet. Deliberately small — a large illustrated empty state
@@ -1637,13 +1852,6 @@ a.db-course:hover {
 
 .db-course-empty a:hover {
   text-decoration: underline;
-}
-
-.db-course svg {
-  width: 20px;
-  height: 20px;
-  flex: none;
-  color: var(--db-text);
 }
 
 /* ---- right rail: Activity ---- */
@@ -1687,6 +1895,61 @@ a.db-course:hover {
 .db-activity-range svg {
   width: 14px;
   height: 14px;
+}
+
+/* The range chip is a real button now: it opens Last 7 / 14 / 30 days. */
+.db-range {
+  position: relative;
+}
+
+button.db-activity-range {
+  background: #fff;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.db-activity-range:hover,
+button.db-activity-range[aria-expanded='true'] {
+  border-color: #a89ce3;
+  color: var(--db-text);
+}
+
+.db-range-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 5px;
+  border: 1px solid #2b2643;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(43, 38, 68, 0.14);
+}
+
+/* Cap-band pad for a 500 label. */
+.db-range-opt {
+  padding: calc(7px - 0.071em) 10px calc(7px + 0.071em);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--db-text);
+  cursor: pointer;
+}
+
+.db-range-opt:hover {
+  background: #f9f8fe;
+}
+
+.db-range-opt.on {
+  background: #f1edfc;
+  font-weight: 600;
 }
 
 .db-activity-total {
@@ -1740,11 +2003,38 @@ a.db-course:hover {
   height: 100%;
 }
 
+/* Longer ranges pack more bars into the same width. */
+.db-plot-mid {
+  gap: 5px;
+}
+
+.db-plot-dense {
+  gap: 3px;
+}
+
+.db-plot-dense .db-chart-bar {
+  border-radius: 3px;
+}
+
+/* transform-origin bottom: the grow-in wave (useBarWave) rises from the
+   floor. Hovering the chart dims the other bars so the one you point at
+   stands out; opacity eases, and a stalled ease just leaves every bar at
+   full strength, which is the resting look. */
 .db-chart-bar {
   display: block;
   width: 100%;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--db-bar);
+  transform-origin: 50% 100%;
+  transition: opacity 0.2s ease;
+}
+
+.db-plot:hover .db-chart-bar {
+  opacity: 0.45;
+}
+
+.db-plot .db-chart-col:hover .db-chart-bar {
+  opacity: 1;
 }
 
 .db-chart-bar.peak {
@@ -1767,7 +2057,7 @@ a.db-course:hover {
      centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
      BAND (cap top -> baseline), never the ink box. The pair sums to the original
      value, so the box height is unchanged and only the text moves. */
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--db-text);
   color: #fff;
   font-size: 0.7rem;
@@ -1823,7 +2113,7 @@ a.db-course:hover {
      centres the LINE BOX and leaves the glyphs sitting low. Measured on the CAP
      BAND (cap top -> baseline), never the ink box. The pair sums to the original
      value, so the box height is unchanged and only the text moves. */
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--db-text);
   color: #fff;
   font-size: 0.7rem;
@@ -1890,9 +2180,12 @@ a.db-course:hover {
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    /* The cards carry a hover lift; scrolling clips to this box, so the row
-       needs the room back or the shadow is shaved off the bottom. */
-    padding-bottom: 6px;
+    /* The cards carry a hover lift (-2px) and a shadow reaching ~12px above
+       and ~28px below; a scrolling row clips to its own box, so the top edge
+       and the lift were being cut off. Room on both sides, handed back by the
+       negative margins so nothing on the page moves. */
+    padding: 14px 0 28px;
+    margin: -14px 0 -28px;
   }
 
   .db-grid3::-webkit-scrollbar {
@@ -2438,7 +2731,7 @@ a.db-course:hover {
   /* 700 weight, 0.086em low. */
   padding: calc(0.35rem - 0.086em) 0.2rem calc(0.35rem + 0.086em);
   border: 1px solid var(--db-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--db-card);
   font: inherit;
   font-size: 0.74rem;
@@ -2492,5 +2785,150 @@ a.db-course:hover {
   margin: 0;
   font-size: 0.66rem;
   line-height: 1.35;
-  color: #b3261e;
+  color: #b02a2a;
+}
+
+/* ==== Daily Quest, redesign (from an approved mockup) ====
+   - What is left comes first and stands out (lavender edge, lifted); done
+     quests step back under "Done today" (faded, soft full bar, lavender tick).
+   - The count sits beside the name, dark, instead of inside the bar.
+   - A ring round the calendar mark fills with the day's progress.
+   Every state is a static class; nothing here is transitioned. */
+.db-plan .db-goal {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.4rem 0.6rem;
+  padding: 0.7rem 0.7rem 0.7rem;
+  border: 1px solid var(--db-border);
+  background: #fff;
+}
+
+.db-plan .db-goal.live {
+  border-color: #a89ce3;
+  box-shadow: 0 6px 18px rgba(106, 97, 145, 0.14);
+}
+
+.db-plan .db-goal.done {
+  border-color: var(--db-border);
+  background: #fff;
+}
+
+.db-goal-num {
+  grid-column: 3;
+  grid-row: 2;
+  width: 32px; /* fixed, so every bar is the same length */
+  text-align: right;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--db-text);
+}
+
+.db-plan .db-goal-track {
+  grid-column: 2;
+  height: 7px;
+  background: #ece8f8;
+}
+
+.db-plan .db-goal.done .db-goal-tick {
+  grid-column: 3;
+  grid-row: 2;
+  width: 22px;
+  height: 22px;
+  justify-self: end;
+  border: none;
+  background: #a89ce3;
+  color: #fff;
+}
+
+.db-plan .db-goal.done .db-goal-label,
+.db-plan .db-goal.done .db-goal-num {
+  color: #9892ad;
+}
+
+.db-plan .db-goal.done .db-goal-fill {
+  background: #c9c0ef;
+}
+
+.db-plan .db-goal.done .db-goal-mark img {
+  opacity: 0.55;
+}
+
+.db-goals-sep {
+  margin: 0.55rem 0.1rem -0.1rem;
+  list-style: none;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a09bb3;
+}
+
+/* Header: count as a figure over "done", not a tiny pill. */
+.db-plan .db-goals-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0;
+  background: none;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--db-text-muted);
+}
+
+.db-plan .db-goals-count b {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--db-text);
+}
+
+.db-plan .db-goals-count.all {
+  background: none;
+}
+
+.db-quest-ring {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+
+.db-quest-ring svg.db-quest-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.db-quest-ring-track {
+  fill: #f1edfc;
+  stroke: #ece8f8;
+  stroke-width: 4;
+}
+
+.db-quest-ring-fill {
+  fill: none;
+  stroke: #6a6191;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.db-quest-ring > svg:not(.db-quest-ring-svg) {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+
+
+/* 3D art in the "Choose another quest" list, sized up from the old 15px glyph. */
+.db-quest-option-mark:has(img) {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  align-self: center;
+}
+
+.db-quest-option-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }

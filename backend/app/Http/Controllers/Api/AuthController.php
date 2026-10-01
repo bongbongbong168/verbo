@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\EmailCodeService;
 use App\Services\GoogleAuthService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -44,7 +45,23 @@ class AuthController extends Controller
             return response()->json(['message' => 'Could not verify that Google sign-in.'], 401);
         }
 
-        $user = DB::transaction(function () use ($claims) {
+        $user = $this->userFromGoogle($claims);
+
+        $token = $user->createToken('verbo')->plainTextToken;
+
+        /* 201 when this created the account, 200 when it signed one in. The
+           client uses it for nothing today — both land on the same place, and
+           onboarding is gated on `onboarded_at`, not on this — but a caller
+           should still be told which of the two things happened. */
+        $created = $user->wasRecentlyCreated;
+
+        return response()->json(['user' => $user, 'token' => $token], $created ? 201 : 200);
+    }
+
+    /** Find, link or create the account a verified Google identity belongs to. */
+    private function userFromGoogle(array $claims): User
+    {
+        return DB::transaction(function () use ($claims) {
             // Match on google_id FIRST. It is the stable identifier — a Google
             // account can change its email address, and following the id keeps
             // the person attached to the same Verbo account when it does.
@@ -93,16 +110,55 @@ class AuthController extends Controller
 
             return $user;
         });
+    }
 
-        $token = $user->createToken('verbo')->plainTextToken;
+    /**
+     * Google sign-in by FULL-PAGE REDIRECT (GIS ux_mode "redirect").
+     *
+     * The popup flow needs a second window that can message the page back,
+     * and in-app browsers (Telegram, Instagram, Facebook) cannot, so the popup
+     * sat on a blank accounts.google.com. Here Google POSTs the credential to
+     * this URL instead and the browser is sent back to the site.
+     *
+     * The Sanctum token never goes in a URL: the site gets a one-time code
+     * that lives 2 minutes and is swapped for the token by googleExchange().
+     * A failure also returns to the site, as ?google_error, never as a 500
+     * page on the API's domain.
+     */
+    public function googleRedirect(Request $request, GoogleAuthService $google)
+    {
+        $front = rtrim(config('services.google.frontend_url'), '/');
+        $fail = fn (string $why) => redirect()->away($front.'/login?google_error='.$why);
 
-        /* 201 when this created the account, 200 when it signed one in. The
-           client uses it for nothing today — both land on the same place, and
-           onboarding is gated on `onboarded_at`, not on this — but a caller
-           should still be told which of the two things happened. */
-        $created = $user->wasRecentlyCreated;
+        if (! GoogleAuthService::configured() || ! is_string($request->input('credential'))) {
+            return $fail('unavailable');
+        }
 
-        return response()->json(['user' => $user, 'token' => $token], $created ? 201 : 200);
+        $claims = $google->verify($request->input('credential'));
+        if (! $claims) {
+            return $fail('unverified');
+        }
+
+        $user = $this->userFromGoogle($claims);
+        $code = Str::random(48);
+        Cache::put('google-login:'.$code, $user->id, now()->addMinutes(2));
+
+        return redirect()->away($front.'/auth/google#code='.$code);
+    }
+
+    /** Swap the one-time code from googleRedirect() for a session. */
+    public function googleExchange(Request $request)
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:100']]);
+
+        // pull(): the code works once, even if the URL leaks afterwards.
+        $userId = Cache::pull('google-login:'.$data['code']);
+        $user = $userId ? User::find($userId) : null;
+        if (! $user) {
+            return response()->json(['message' => 'That sign-in link has expired. Try again.'], 401);
+        }
+
+        return response()->json(['user' => $user, 'token' => $user->createToken('verbo')->plainTextToken]);
     }
 
     public function register(Request $request)

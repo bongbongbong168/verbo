@@ -1,0 +1,103 @@
+/* The delete confirmation, copied from the Classes page's delete-class dialog
+   (.ci-scrim / .ci.cl-confirm) so every delete in the app asks the same way.
+   Portalled to #root's end, so a transformed drawer cannot trap it. */
+.dc-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(28, 23, 48, 0.42);
+  /* Static, never transitioned - same reason as the class dialog's. */
+  backdrop-filter: blur(6px);
+}
+
+.dc {
+  width: min(400px, 100%);
+  box-sizing: border-box;
+  padding: 1.4rem;
+  border: 1px solid #2b2643;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(28, 23, 48, 0.28);
+  font-family: 'Hellix', system-ui, sans-serif;
+  color: #1c1730;
+  /* Transform-only nudge that ends at rest, like ci-in. */
+  animation: dc-in 0.15s ease-out;
+}
+
+@keyframes dc-in {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.dc-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dc-text {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #726c88;
+}
+
+.dc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+
+.dc-cancel,
+.dc-go {
+  padding: calc(0.55rem - 0.076em) 1.15rem calc(0.55rem + 0.076em);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dc-cancel {
+  border: none;
+  background: #f1edfc;
+  color: #6a6191;
+}
+
+.dc-cancel:hover {
+  background: #a89ce3;
+  color: #fff;
+}
+
+.dc-go {
+  border: 1px solid #b02a2a;
+  background: #b02a2a;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(217, 54, 54, 0.28);
+}
+
+.dc-go:hover {
+  background: #b02a2a;
+  border-color: #b02a2a;
+}
+
+.dc-cancel:focus-visible,
+.dc-go:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dc {
+    animation: none;
+  }
+}

@@ -19,6 +19,8 @@
 .vr {
   width: 100%;
   max-width: 560px;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   box-sizing: border-box;
   padding: 1.4rem 1.6rem 1.6rem;
   border: 1px solid #2b2643;
@@ -42,7 +44,12 @@
 }
 
 .vr-close {
-  padding: 0.3rem 0.7rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 0.55rem;
   border: none;
   border-radius: 8px;
   background: none;
@@ -50,6 +57,7 @@
   font-family: inherit;
   font-size: 0.83rem;
   font-weight: 600;
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -84,23 +92,109 @@
 }
 
 .vr-card {
+  margin: 0.8rem 0 1.2rem;
+  perspective: 1200px;
+  touch-action: pan-y;
+  animation: vr-card-arrive 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.vr-card:not(.vr-card--revealed) {
+  cursor: pointer;
+}
+
+.vr-card:focus-visible {
+  outline: 3px solid #6a6191;
+  outline-offset: 4px;
+}
+
+.vr-card-inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.21, 0.75, 0.2, 1);
+}
+
+.vr-card--revealed .vr-card-inner {
+  transform: rotateY(180deg);
+}
+
+.vr-card--revealed:not(.vr-card--grading) {
+  animation: vr-card-lift 520ms cubic-bezier(0.21, 0.75, 0.2, 1) both;
+}
+
+.vr-card--grading {
+  animation: vr-card-grade 220ms ease-out forwards;
+}
+
+.vr-face {
+  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  margin: 0.8rem 0 1.2rem;
   padding: 2rem 1.4rem;
   border: 1px solid #2b2643;
   border-radius: 16px;
   background: #f9f8fe;
   text-align: center;
   box-shadow: 0 2px 8px rgba(28, 23, 48, 0.06);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.vr-face--back {
+  position: relative;
+  overflow: hidden;
+  justify-content: center;
+  /* The mixed Chinese/Latin lines sit slightly low inside their line boxes. */
+  padding-top: calc(2rem - 0.25rem);
+  padding-bottom: calc(2rem + 0.25rem);
+  transform: rotateY(180deg);
+  background: #f6f3ff;
+  box-shadow: 0 8px 24px rgba(75, 62, 119, 0.12);
+}
+
+.vr-face--back::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 39%, rgba(255, 255, 255, 0.32) 50%, transparent 61%);
+  transform: translateX(-110%);
+}
+
+.vr-card--revealed .vr-face--back::after {
+  animation: vr-card-light 390ms ease-out 130ms both;
+}
+
+.vr-face--front {
+  justify-content: center;
+}
+
+@keyframes vr-card-arrive {
+  from { opacity: 0; transform: translateY(13px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes vr-card-lift {
+  0%, 100% { transform: translateY(0) scale(1); }
+  48% { transform: translateY(-5px) scale(1.01); }
+}
+
+@keyframes vr-card-light {
+  to { transform: translateX(110%); }
+}
+
+@keyframes vr-card-grade {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0.78; transform: translateY(-6px) scale(0.985); }
 }
 
 /* Hellix carries no CJK glyphs, so the Chinese has to fall through to a real
    Chinese face rather than whatever the system picks first. */
 .vr-word {
   margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
     system-ui, sans-serif;
   font-size: 2.6rem;
@@ -121,10 +215,17 @@
   font-weight: 600;
 }
 
-.vr-example {
-  margin: 0.7rem 0 0;
-  padding-top: 0.7rem;
+.vr-example-block {
+  width: 100%;
+  max-width: 28rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
   border-top: 1px solid #e7e3f6;
+  text-align: center;
+}
+
+.vr-example {
+  margin: 0;
   font-family: "Hellix", "PingFang SC", "Microsoft YaHei", "Noto Sans SC",
     system-ui, sans-serif;
   font-size: 0.95rem;
@@ -132,11 +233,11 @@
   color: #1c1730;
 }
 
-.vr-source {
-  margin: 0.35rem 0 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #726c88;
+.vr-example-pinyin {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6a6191;
 }
 
 .vr-prompt {
@@ -145,13 +246,32 @@
   color: #726c88;
 }
 
+.vr-prompt-touch {
+  display: none;
+}
+
 .vr-answers {
   display: flex;
   gap: 0.6rem;
 }
 
+.vr-answers--waiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vr-answers--ready {
+  animation: vr-answers-arrive 220ms ease-out both;
+}
+
+@keyframes vr-answers-arrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .vr-btn {
   flex: 1;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -170,6 +290,10 @@
 .vr-btn:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.vr-btn--chosen:disabled {
+  opacity: 1;
 }
 
 /* Instant on hover — the fill IS the feedback. */
@@ -194,6 +318,10 @@
   color: #fff;
 }
 
+.vr-yes.vr-btn--chosen:disabled {
+  background: #d8ece1;
+}
+
 .vr-no {
   background: #fdeee6;
   color: #b45b30;
@@ -204,17 +332,26 @@
   color: #fff;
 }
 
+.vr-no.vr-btn--chosen:disabled {
+  background: #f9e1d4;
+}
+
 .vr-btn kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(1px);
   padding: 0.05rem 0.35rem;
-  border-radius: 5px;
+  border-radius: 8px;
   background: rgba(28, 23, 48, 0.1);
   font-family: inherit;
   font-size: 0.75rem;
+  line-height: 1;
 }
 
 .vr-prompt kbd {
   padding: 0.05rem 0.35rem;
-  border-radius: 5px;
+  border-radius: 8px;
   background: #f1edfc;
   color: #6a6191;
   font-family: inherit;
@@ -255,4 +392,110 @@
 
 .vr-cta:hover {
   background: #6a6191;
+}
+
+.vr-btn:focus-visible,
+.vr-close:focus-visible,
+.vr-cta:focus-visible {
+  outline: 3px solid #6a6191;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .vr-scrim {
+    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .vr {
+    max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)) - max(0.75rem, env(safe-area-inset-bottom)));
+    padding: 1.15rem;
+  }
+
+  .vr-face {
+    padding: 1.7rem 1rem;
+  }
+
+  .vr-face--back {
+    padding-top: calc(1.7rem - 0.25rem);
+    padding-bottom: calc(1.7rem + 0.25rem);
+  }
+
+  .vr-word {
+    font-size: clamp(2rem, 9vw, 2.6rem);
+  }
+
+  .vr-btn {
+    padding-inline: 0.55rem;
+  }
+
+  .vr-close::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .vr-prompt-keys,
+  .vr-btn kbd {
+    display: none;
+  }
+
+  .vr-prompt-touch {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vr-card,
+  .vr-card--revealed:not(.vr-card--grading),
+  .vr-card--grading,
+  .vr-card--revealed .vr-face--back::after,
+  .vr-answers--ready {
+    animation: none;
+  }
+
+  .vr-card-inner {
+    transition: none;
+  }
+}
+
+/* ---- play the word ----
+   A sibling of the card, placed over its top-right corner. The card has a
+   0.8rem top margin, which the offset repeats. z-index lifts it above the
+   card's 3D faces (their transforms make their own stacking layer). */
+.vr-card-wrap {
+  position: relative;
+}
+
+.vr-speak {
+  position: absolute;
+  top: calc(0.8rem + 10px);
+  right: 10px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #e2dcf5;
+  border-radius: 50%;
+  background: #fff;
+  color: #6a6191;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(43, 38, 67, 0.1);
+}
+
+.vr-speak:hover {
+  background: #f1edfc;
+}
+
+/* Static state, no transition: it says "playing" while the voice speaks. */
+.vr-speak.on {
+  border-color: #a89ce3;
+  background: #a89ce3;
+  color: #2b2643;
+}
+
+.vr-speak:focus-visible {
+  outline: 2px solid #6a6191;
+  outline-offset: 2px;
 }

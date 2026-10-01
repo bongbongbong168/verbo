@@ -95,6 +95,8 @@ class LearningController extends Controller
                 // No lesson-detail page exists, so this points at the place the
                 // booking actually lives, with its status and its actions.
                 'href' => '/bookings',
+                // The card opens the chat with this tutor (the lesson runs there).
+                'chat' => ['type' => 'tutor', 'id' => optional(optional($b->tutor)->tutorProfile)->id],
                 'status' => $b->status,
             ]);
     }
@@ -137,6 +139,8 @@ class LearningController extends Controller
                     'duration_minutes' => $course->minutes_per_class,
                     'image_url' => optional($course->tutorProfile)->photo_url,
                     'href' => '/courses/'.$course->id,
+                    // The card opens the course's group chat.
+                    'chat' => ['type' => 'course', 'id' => $course->id],
                     'status' => $e->status,
                 ];
             })

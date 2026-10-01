@@ -88,6 +88,10 @@ class TutorProfile extends Model
             ->filter(fn ($key) => isset(self::SPECIALTIES[$key]))
             ->sortBy(fn ($key) => $key === $this->main_specialty ? 0 : 1)
             ->map(fn ($key) => ['key' => $key, 'main' => $key === $this->main_specialty] + self::SPECIALTIES[$key])
+            /* `conversational` and `speaking` share the label "Conversation",
+               so a tutor with both showed it twice. One card per label; the
+               sort above keeps the main one. */
+            ->unique('label')
             ->values()
             ->all();
     }
@@ -177,6 +181,71 @@ class TutorProfile extends Model
     public function lessons()
     {
         return $this->hasMany(TutorLesson::class);
+    }
+
+    /**
+     * What the tutor's REAL weekly hours say, for cards and the filter.
+     *
+     * Replaces the free-text `availability` line, which created no bookable
+     * time and could say anything. Built from `availabilitySlots` (load it
+     * first), wall-clock in the tutor's own timezone like the rows themselves.
+     *
+     * @return array{summary: ?string, bands: array<int, string>}
+     *   summary: "Mon–Fri · 9am–7pm", or null with no hours set.
+     *   bands: which of morning (<12) / afternoon (12–17) / evening (17+) any
+     *   opening touches - what Find Tutor filters on.
+     */
+    public function hoursSummary(): array
+    {
+        $rows = $this->availabilitySlots;
+        if ($rows->isEmpty()) {
+            return ['summary' => null, 'bands' => []];
+        }
+
+        $mins = fn ($t) => ((int) substr($t, 0, 2)) * 60 + (int) substr($t, 3, 2);
+        $start = $rows->min(fn ($r) => $mins($r->start_time));
+        $end = $rows->max(fn ($r) => $mins($r->end_time));
+
+        $bands = [];
+        foreach (['morning' => [0, 720], 'afternoon' => [720, 1020], 'evening' => [1020, 1440]] as $band => [$from, $to]) {
+            if ($rows->contains(fn ($r) => $mins($r->start_time) < $to && $mins($r->end_time) > $from)) {
+                $bands[] = $band;
+            }
+        }
+
+        // Monday-first week, runs of 3+ days collapsed: "Mon–Fri", "Sat, Sun".
+        $names = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 0 => 'Sun'];
+        $order = array_keys($names);
+        $days = $rows->pluck('day_of_week')->map(fn ($d) => (int) $d)->unique()
+            ->sortBy(fn ($d) => array_search($d, $order))->values()->all();
+        $groups = [];
+        foreach ($days as $d) {
+            $pos = array_search($d, $order);
+            if ($groups && end($groups)[1] === $pos - 1) {
+                $groups[count($groups) - 1][1] = $pos;
+            } else {
+                $groups[] = [$pos, $pos];
+            }
+        }
+        $dayText = collect($groups)->map(function ($g) use ($order, $names) {
+            [$a, $b] = $g;
+            if ($b - $a >= 2) {
+                return $names[$order[$a]].'–'.$names[$order[$b]];
+            }
+
+            return collect(range($a, $b))->map(fn ($p) => $names[$order[$p]])->implode(', ');
+        })->implode(', ');
+
+        $clock = function (int $m) {
+            $m %= 1440;
+            $h = intdiv($m, 60);
+            $suffix = $h < 12 ? 'am' : 'pm';
+            $h12 = $h % 12 ?: 12;
+
+            return $h12.($m % 60 ? ':'.str_pad($m % 60, 2, '0', STR_PAD_LEFT) : '').$suffix;
+        };
+
+        return ['summary' => $dayText.' · '.$clock($start).'–'.$clock($end), 'bands' => $bands];
     }
 
     public function availabilitySlots()

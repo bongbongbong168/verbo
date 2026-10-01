@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import "./LearningPreferences.css";
+import { toast } from "../toast";
+import { invalidate } from "../dataCache";
 
 /* Which fields take one value and which take several. The option LISTS come
    from the server so this file never carries its own copy — a hard-coded list
@@ -46,7 +48,6 @@ export default function LearningPreferences() {
   const [values, setValues] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [flash, setFlash] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -82,11 +83,14 @@ export default function LearningPreferences() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const saving = toast.saving("Saving preferences…");
     try {
       await api.saveLearningPreferences(token, values);
-      setFlash("Preferences saved — your recommendations will use them.");
-      setTimeout(() => setFlash(null), 4000);
+      // Home's teachers, podcasts and reads are ranked from these answers.
+      invalidate("rec:");
+      saving.success("Preferences saved", "Your recommendations will use them.");
     } catch (err) {
+      saving.error("Couldn't save preferences", err.message);
       setError(err.message);
     } finally {
       setSaving(false);
@@ -159,7 +163,6 @@ export default function LearningPreferences() {
       ))}
 
       {error && <p className="lp-error">{error}</p>}
-      {flash && <p className="lp-flash">{flash}</p>}
 
       <div className="lp-foot">
         <button type="submit" className="lp-save" disabled={saving}>

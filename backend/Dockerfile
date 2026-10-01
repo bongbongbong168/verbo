@@ -44,8 +44,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libsqlite3-dev \
         libpq-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j"$(nproc)" pdo_sqlite pdo_pgsql zip intl gd \
+    && docker-php-ext-install -j"$(nproc)" pdo_sqlite pdo_pgsql zip intl gd opcache \
     && rm -rf /var/lib/apt/lists/*
+
+# OPcache keeps compiled PHP in memory. Without it every API request re-parsed
+# the whole framework, and the Dashboard fires ~15 requests per visit.
+# validate_timestamps=0 is safe HERE because the code never changes inside a
+# running container: every deploy is a new image.
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.interned_strings_buffer=16'; \
+        echo 'opcache.max_accelerated_files=20000'; \
+        echo 'opcache.validate_timestamps=0'; \
+    } > /usr/local/etc/php/conf.d/opcache-verbo.ini
 
 ENV TESSERACT_PATH=/usr/bin/tesseract
 

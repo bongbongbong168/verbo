@@ -43,7 +43,29 @@ class CourseController extends Controller
     {
         TutorController::authorizeProfile($request, $tutorProfile);
 
-        $data = $request->validate([
+        $data = $request->validate(self::RULES);
+
+        return response()->json($tutorProfile->courses()->create($data), 201);
+    }
+
+    /**
+     * Edit a course in place. Capacity may not drop below the seats already
+     * taken, or students who paid would be over the limit.
+     */
+    public function update(Request $request, Course $course)
+    {
+        TutorController::authorizeProfile($request, $course->tutorProfile);
+
+        $data = $request->validate(self::RULES);
+        $taken = $course->liveEnrollments()->count();
+        abort_if($data['capacity'] < $taken, 422, "Capacity can't be lower than the {$taken} seats already taken.");
+
+        $course->update($data);
+
+        return response()->json($course->fresh());
+    }
+
+    private const RULES = [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'level' => ['nullable', 'string', 'max:60'],
@@ -60,10 +82,7 @@ class CourseController extends Controller
             'days_of_week.*' => ['integer', 'min:0', 'max:6'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-        ]);
-
-        return response()->json($tutorProfile->courses()->create($data), 201);
-    }
+    ];
 
     public function destroy(Request $request, Course $course)
     {
