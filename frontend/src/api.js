@@ -331,6 +331,18 @@ export const api = {
     request(`/article-comments/${commentId}`, { method: 'PUT', body: { content }, token }),
   deleteArticleComment: (token, commentId) =>
     request(`/article-comments/${commentId}`, { method: 'DELETE', token }),
+  // Podcast episode comments: the same contract as article comments.
+  getPodcastComments: (token, id) => request(`/podcasts/${id}/comments`, { token }),
+  addPodcastComment: (token, id, content, parentId = null) =>
+    request(`/podcasts/${id}/comments`, {
+      method: 'POST',
+      body: { content, parent_id: parentId },
+      token,
+    }),
+  updatePodcastComment: (token, commentId, content) =>
+    request(`/podcast-comments/${commentId}`, { method: 'PUT', body: { content }, token }),
+  deletePodcastComment: (token, commentId) =>
+    request(`/podcast-comments/${commentId}`, { method: 'DELETE', token }),
   // `exclude` keeps the article you are reading out of its own list.
   /* The Read banner's four slides in one request — a recommendation, the
      last article opened, this week's reading counts. One call rather than
@@ -385,6 +397,7 @@ export const api = {
   // Files are private; these need the bearer token, so they are fetched as
   // blobs rather than linked directly.
   classFileUrl: (id) => `${BASE_URL}/class-files/${id}`,
+  attachmentUrl: (messageId) => `${BASE_URL}/messages/${messageId}/attachment`,
   submissionFileUrl: (id) => `${BASE_URL}/submission-files/${id}`,
   /* Fetches a private file and hands back an object URL to RENDER rather than
      save. The route needs a bearer token, so an <img src> or <iframe src>

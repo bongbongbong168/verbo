@@ -1111,3 +1111,19 @@
 .ms-back {
   display: none;
 }
+
+/* Attachments are buttons now (they open the viewer), so drop the browser's
+   button chrome and keep the look the links had. */
+button.ms-attach,
+button.ms-attach-image {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button.ms-attach-image {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+}

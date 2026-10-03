@@ -5,7 +5,7 @@ import ArticleCover from './ArticleCover'
    rather than newly sourced so the banner carries the same cast as the rest of
    Verbo — the reference banners all lean on one illustration each, and a
    character the learner has already met on sign-up does that job here. */
-import graduateArt from '../assets/profile/graduate.png'
+import graduateArt from '../assets/read/graduate-panda.webp'
 import scholarArt from '../assets/login/graduate-illustration.png'
 import './ReadHero.css'
 

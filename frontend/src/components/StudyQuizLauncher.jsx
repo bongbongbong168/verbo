@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { buildVocabQuestions } from '../studyQuiz'
-import illustration from '../assets/study/quiz-illustration.png'
+import illustration from '../assets/read/graduate-panda.webp'
 import './StudyQuizLauncher.css'
 
 /**

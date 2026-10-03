@@ -17,6 +17,9 @@ import { englishSentences, sentencesOf, tokensBySentences } from '../sentences'
 import proOwl from '../assets/assistant/pixel-panda.png'
 import PremiumBadge from '../components/PremiumBadge'
 import ContentQuiz from '../components/ContentQuiz'
+import ArticleComments from '../components/ArticleComments'
+import RecommendedEpisodes from '../components/RecommendedEpisodes'
+import './Read.css'
 import { confirmDelete } from '../components/ConfirmDelete'
 
 
@@ -1067,6 +1070,10 @@ export default function PodcastEpisode() {
       {!premiumLocked && podcast.transcript && (
         <ContentQuiz kind="podcasts" id={podcast.id} label="this episode" />
       )}
+
+      {/* Same thread and same recommendation look as an article. */}
+      <ArticleComments kind="podcast" articleId={podcast.id} />
+      <RecommendedEpisodes current={podcast} limit={3} />
 
       <WordPopover word={hovered?.tok} rect={hovered?.rect} saved={!!saved[hovered?.tok?.text]} />
       {!premiumLocked && (

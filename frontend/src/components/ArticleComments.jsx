@@ -75,6 +75,7 @@ function Face({ name, src }) {
    state that changes as you type. */
 function Row({
   c,
+  calls,
   isReply,
   token,
   articleId,
@@ -111,7 +112,7 @@ function Row({
             onSubmit={(e) => {
               e.preventDefault();
               run(async () => {
-                await api.updateArticleComment(token, c.id, editDraft);
+                await calls.update(token, c.id, editDraft);
                 setEditing(null);
               });
             }}
@@ -172,7 +173,7 @@ function Row({
                   className="rd-cm-danger"
                   onClick={async () => {
                     if (!(await confirmDelete({ title: "Delete this comment?", text: "Its replies go with it." }))) return
-                    run(() => api.deleteArticleComment(token, c.id))
+                    run(() => calls.remove(token, c.id))
                   }}
                 >
                   Delete
@@ -188,7 +189,7 @@ function Row({
             onSubmit={(e) => {
               e.preventDefault();
               run(async () => {
-                await api.addArticleComment(
+                await calls.add(
                   token,
                   articleId,
                   replyDraft,
@@ -229,7 +230,26 @@ function Row({
   );
 }
 
-export default function ArticleComments({ articleId, onCountChange }) {
+/* One comments box for every kind of content. Each kind names its four
+   server calls; the thread, the reply rule and the look are shared, so the
+   article and podcast threads cannot drift apart. */
+const CALLS = {
+  article: {
+    list: api.getArticleComments,
+    add: api.addArticleComment,
+    update: api.updateArticleComment,
+    remove: api.deleteArticleComment,
+  },
+  podcast: {
+    list: api.getPodcastComments,
+    add: api.addPodcastComment,
+    update: api.updatePodcastComment,
+    remove: api.deletePodcastComment,
+  },
+};
+
+export default function ArticleComments({ articleId, onCountChange, kind = "article" }) {
+  const calls = CALLS[kind] || CALLS.article;
   const { token, user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -262,8 +282,8 @@ export default function ArticleComments({ articleId, onCountChange }) {
 
   const load = useCallback(() => {
     setLoading(true);
-    api
-      .getArticleComments(token, articleId)
+    calls
+      .list(token, articleId)
       .then((data) => {
         setItems(data);
         const report = onCountChangeRef.current;
@@ -273,7 +293,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [token, articleId]);
+  }, [token, articleId, calls]);
 
   useEffect(() => {
     load();
@@ -299,7 +319,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
   function post() {
     if (busy || !draft.trim()) return;
     run(async () => {
-      await api.addArticleComment(token, articleId, draft);
+      await calls.add(token, articleId, draft);
       setDraft("");
       setComposing(false);
     });
@@ -385,6 +405,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
           <li key={c.id} className="rd-cm-thread">
             <Row
               c={c}
+              calls={calls}
               token={token}
               articleId={articleId}
               busy={busy}
@@ -404,6 +425,7 @@ export default function ArticleComments({ articleId, onCountChange }) {
                   <li key={r.id}>
                   <Row
                     c={r}
+                    calls={calls}
                     isReply
                     token={token}
                     articleId={articleId}

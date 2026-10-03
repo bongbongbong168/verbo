@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
+import FilePreview from './FilePreview'
 
 /** "1.4 MB" / "812 KB" — a byte count means nothing to a reader. */
 function readableSize(bytes) {
@@ -45,6 +46,7 @@ const CACHE = new Map();
 export default function MessageAttachment({ messageId, attachment, token, mine }) {
   const [url, setUrl] = useState(null)
   const [failed, setFailed] = useState(false)
+  const [open, setOpen] = useState(false)
   /* Bumping this re-runs the effect, which is how "Try again" works without a
      second code path for the same fetch. */
   const [tries, setTries] = useState(0)
@@ -97,30 +99,49 @@ export default function MessageAttachment({ messageId, attachment, token, mine }
     );
   }
 
+  /* Clicking OPENS the file in the shared viewer, the way class files do;
+     Download stays one click away inside it. It used to download straight
+     to disk, so looking at a photo meant saving it first. */
+  const viewer = open && (
+    <FilePreview
+      url={api.attachmentUrl(messageId)}
+      name={attachment.name}
+      mime={attachment.mime}
+      size={attachment.size}
+      onClose={() => setOpen(false)}
+    />
+  )
+
   if (attachment.is_image) {
     return (
-      <a
-        className="ms-attach-image"
-        href={url || undefined}
-        download={attachment.name}
-        title={attachment.name}
-      >
-        {url ? <img src={url} alt={attachment.name} /> : <span className="ms-attach-loading" />}
-      </a>
+      <>
+        <button
+          type="button"
+          className="ms-attach-image"
+          title={attachment.name}
+          onClick={() => url && setOpen(true)}
+        >
+          {url ? <img src={url} alt={attachment.name} /> : <span className="ms-attach-loading" />}
+        </button>
+        {viewer}
+      </>
     )
   }
 
   return (
-    <a
-      className={`ms-attach${mine ? ' mine' : ''}`}
-      href={url || undefined}
-      download={attachment.name}
-    >
-      <FileIcon />
-      <span className="ms-attach-meta">
-        <strong>{attachment.name}</strong>
-        <em>{url ? readableSize(attachment.size) : 'Loading…'}</em>
-      </span>
-    </a>
+    <>
+      <button
+        type="button"
+        className={`ms-attach${mine ? ' mine' : ''}`}
+        onClick={() => url && setOpen(true)}
+      >
+        <FileIcon />
+        <span className="ms-attach-meta">
+          <strong>{attachment.name}</strong>
+          <em>{url ? readableSize(attachment.size) : 'Loading…'}</em>
+        </span>
+      </button>
+      {viewer}
+    </>
   )
 }

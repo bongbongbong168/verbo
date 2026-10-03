@@ -48,8 +48,11 @@ class RouteServiceProvider extends ServiceProvider
         // General API traffic. A single page view fans out to several requests
         // (and React StrictMode doubles them in dev), so 60/min trips far too
         // easily during normal browsing.
+        // user('sanctum'), not user(): throttle runs in the api group BEFORE
+        // auth:sanctum, so the default guard is still empty here and every
+        // call fell back to the IP - one shared bucket behind Railway's proxy.
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(300)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(300)->by($request->user('sanctum')?->id ?: $request->ip());
         });
 
         // Login/register stay tight — these are the brute-force surface, and
@@ -73,14 +76,14 @@ class RouteServiceProvider extends ServiceProvider
          * allowance.
          */
         RateLimiter::for('ai', function (Request $request) {
-            return Limit::perMinute(15)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(15)->by($request->user('sanctum')?->id ?: $request->ip());
         });
 
         // Study audio: a first play of a whole conversation asks for every
         // line at once, so this is looser than 'ai' - but it still spends the
         // same shared Gemini quota, so it is its own bucket, per user.
         RateLimiter::for('speech', function (Request $request) {
-            return Limit::perMinute(40)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(40)->by($request->user('sanctum')?->id ?: $request->ip());
         });
     }
 }

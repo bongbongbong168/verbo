@@ -188,6 +188,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/article-comments/{comment}', [ArticleCommentController::class, 'update']);
     Route::delete('/article-comments/{comment}', [ArticleCommentController::class, 'destroy']);
 
+    // Podcast episode comments: the same contract as article comments.
+    Route::get('/podcasts/{podcast}/comments', [\App\Http\Controllers\Api\PodcastCommentController::class, 'index']);
+    Route::post('/podcasts/{podcast}/comments', [\App\Http\Controllers\Api\PodcastCommentController::class, 'store']);
+    Route::put('/podcast-comments/{comment}', [\App\Http\Controllers\Api\PodcastCommentController::class, 'update']);
+    Route::delete('/podcast-comments/{comment}', [\App\Http\Controllers\Api\PodcastCommentController::class, 'destroy']);
+
     // Learning preferences — the first input to the recommender.
     Route::get('/learning-preferences', [LearningPreferenceController::class, 'show']);
     Route::post('/learning-preferences', [LearningPreferenceController::class, 'store']);

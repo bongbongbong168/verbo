@@ -10,9 +10,13 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * Railway's edge proxy sits in front of the app, so without trusting it
+     * every request appears to come from the proxy's own address - and the
+     * per-IP rate limit becomes one bucket shared by every visitor.
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.

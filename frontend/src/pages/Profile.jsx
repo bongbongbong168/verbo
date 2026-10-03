@@ -9,7 +9,7 @@ import PremiumBadge from '../components/PremiumBadge'
 /* The supplied export, kept separate from the quiz launcher's copy of the same
    figure: that one was cropped out of a screenshot and flood-filled, this is
    the clean original with a real alpha channel. */
-import heroArt from '../assets/profile/graduate.png'
+import heroArt from '../assets/read/graduate-panda.webp'
 import './Profile.css'
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
