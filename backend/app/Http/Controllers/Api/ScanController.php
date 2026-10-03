@@ -41,6 +41,7 @@ class ScanController extends Controller
         return array_merge(
             $scan->toArray(),
             [
+                'words' => self::cleanWords($scan->words ?? []),
                 'tokens' => $scan->raw_text ? $dictionary->annotate($scan->raw_text) : [],
                 'translation_cached' => Cache::has($translationKey),
                 'translation_usage' => $allowances->summary($request->user(), UsageAllowanceService::TRANSLATIONS),
@@ -73,13 +74,7 @@ class ScanController extends Controller
         $scan->update([
             'raw_text' => $text,
             'uncertain_lines' => [],
-            'words' => collect($dictionary->segment($text))
-                ->map(fn (string $word) => [
-                    'word' => $word,
-                    'pinyin' => $dictionary->pinyinFor($word),
-                    'translation' => $dictionary->lookup($word),
-                ])
-                ->values(),
+            'words' => self::wordList($dictionary, $text),
         ]);
 
         return $this->show($request, $scan, $dictionary, $allowances);
@@ -137,7 +132,7 @@ class ScanController extends Controller
         return response()->json([
             'original_filename' => $scan->original_filename,
             'raw_text' => $scan->raw_text,
-            'words' => $scan->words,
+            'words' => self::cleanWords($scan->words ?? []),
             'created_at' => $scan->created_at,
             'tokens' => $scan->raw_text ? $dictionary->annotate($scan->raw_text) : [],
         ]);
@@ -213,13 +208,7 @@ class ScanController extends Controller
         }
 
         try {
-            $words = collect($dictionary->segment($text))
-                ->map(fn (string $word) => [
-                    'word' => $word,
-                    'pinyin' => $dictionary->pinyinFor($word),
-                    'translation' => $dictionary->lookup($word),
-                ])
-                ->values();
+            $words = self::wordList($dictionary, $text);
 
             $scan = $request->user()->scans()->create([
                 'original_filename' => $originalFilename,
@@ -239,4 +228,36 @@ class ScanController extends Controller
             }
         }
     }
+
+    /**
+     * The word list for a scan: each word ONCE, in the order first met, and
+     * only real Chinese words. A page repeats 的 and 了 constantly, and a list
+     * carrying 花 six times is noise to study from; punctuation is not a word.
+     */
+    private static function wordList(DictionaryService $dictionary, string $text): array
+    {
+        return self::cleanWords(collect($dictionary->segment($text))
+            ->map(fn (string $word) => [
+                'word' => $word,
+                'pinyin' => $dictionary->pinyinFor($word),
+                'translation' => $dictionary->lookup($word),
+            ])
+            ->all());
+    }
+
+    /** Also run on read, so scans saved before this rule are cleaned too. */
+    private static function cleanWords(array $words): array
+    {
+        return collect($words)
+            ->map(function ($w) {
+                // Strip punctuation and symbols; keep Han, letters and digits.
+                $w['word'] = preg_replace('/[^\p{Han}\p{L}\p{N}]+/u', '', (string) ($w['word'] ?? ''));
+                return $w;
+            })
+            ->filter(fn ($w) => preg_match('/\p{Han}/u', $w['word']))
+            ->unique('word')
+            ->values()
+            ->all();
+    }
 }
+
