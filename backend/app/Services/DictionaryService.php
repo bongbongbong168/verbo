@@ -7,6 +7,14 @@ use Overtrue\Pinyin\Pinyin;
 
 class DictionaryService
 {
+    /**
+     * A Chinese CHARACTER, never Chinese punctuation. Newer PCRE (as on the
+     * production server) matches \p{Han} through script extensions, which
+     * include 。，！ - so a bare \p{Han} made punctuation a hoverable,
+     * saveable "word" live while it behaved correctly on this machine.
+     */
+    private const HAN = '/(?![\p{P}\p{S}])\p{Han}/u';
+
     protected static ?array $index = null;
 
     /**
@@ -70,7 +78,7 @@ class DictionaryService
 
             $word = $matchedWord ?? $chars[$i];
 
-            if (preg_match('/[\p{Han}]/u', $word)) {
+            if (preg_match(self::HAN, $word)) {
                 $words[] = $word;
             }
 
@@ -109,7 +117,7 @@ class DictionaryService
         $i = 0;
 
         while ($i < $count) {
-            if (preg_match('/[\p{Han}]/u', $chars[$i])) {
+            if (preg_match(self::HAN, $chars[$i])) {
                 $matchedWord = null;
                 $matchedLen = 1;
 
@@ -134,7 +142,7 @@ class DictionaryService
                 $i += $matchedLen;
             } else {
                 $start = $i;
-                while ($i < $count && ! preg_match('/[\p{Han}]/u', $chars[$i])) {
+                while ($i < $count && ! preg_match(self::HAN, $chars[$i])) {
                     $i++;
                 }
 

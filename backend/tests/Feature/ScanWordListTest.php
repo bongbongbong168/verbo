@@ -21,6 +21,7 @@ class ScanWordListTest extends TestCase
             'words' => [
                 ['word' => '花', 'pinyin' => 'huā', 'translation' => 'flower'],
                 ['word' => '，', 'pinyin' => '', 'translation' => null],
+                ['word' => '。', 'pinyin' => '', 'translation' => null],
                 ['word' => '花', 'pinyin' => 'huā', 'translation' => 'flower'],
                 ['word' => '老爷爷。', 'pinyin' => 'lǎo yé ye', 'translation' => 'grandpa'],
             ],

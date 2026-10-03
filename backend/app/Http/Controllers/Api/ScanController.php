@@ -250,8 +250,11 @@ class ScanController extends Controller
     {
         return collect($words)
             ->map(function ($w) {
-                // Strip punctuation and symbols; keep Han, letters and digits.
-                $w['word'] = preg_replace('/[^\p{Han}\p{L}\p{N}]+/u', '', (string) ($w['word'] ?? ''));
+                /* Strip punctuation, symbols and spaces BY CATEGORY. Not by
+                   "not Han": newer PCRE (production) matches \p{Han} through
+                   script extensions, which include 。，！ - so a Han test
+                   alone passed 。 live while it failed on this machine. */
+                $w['word'] = preg_replace('/[\p{P}\p{S}\p{Z}\s]+/u', '', (string) ($w['word'] ?? ''));
                 return $w;
             })
             ->filter(fn ($w) => preg_match('/\p{Han}/u', $w['word']))
