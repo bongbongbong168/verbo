@@ -105,8 +105,12 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'name' => env('MAIL_FROM_NAME', 'Verbo'),
     ],
+
+    // A public PNG keeps the logo compatible with email clients. APP_URL must
+    // name this backend's public HTTPS origin in production.
+    'logo_url' => env('MAIL_LOGO_URL'),
 
     /*
     |--------------------------------------------------------------------------

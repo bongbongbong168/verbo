@@ -59,9 +59,9 @@ return [
     /*
      * NOTE: there is deliberately no `frontend_url` here any more. It existed
      * to build the password-reset LINK, and resets are a six-digit code now —
-     * no email in this app contains a URL, so nothing needs to know where the
-     * UI lives. The FRONTEND_URL env var is still read, but by `config/cors.php`
-     * and only as an allowed origin.
+     * emails link to no frontend page. The email logo uses this backend's
+     * public APP_URL unless MAIL_LOGO_URL supplies another public image.
+     * FRONTEND_URL is still read by `config/cors.php` as an allowed origin.
      */
 
     'asset_url' => env('ASSET_URL'),
