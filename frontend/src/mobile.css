@@ -1797,6 +1797,30 @@
     overflow: hidden;
     white-space: nowrap;
   }
+
+  /* The question card sat at the top with half a screen of nothing beneath.
+     The page is a column on a phone: the back link stays at the top and the
+     card is centred in the space left above the bottom nav. A card taller
+     than the screen (the results) simply starts at the top as before. */
+  html .qp-page {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(var(--app-vh) - 83px - env(safe-area-inset-bottom));
+    padding-bottom: 1.2rem;
+  }
+
+  html .qp-page > .qp-back {
+    align-self: flex-start;
+  }
+
+  /* width: 100% is required. The card centres itself with auto side
+     margins, which in a flex column stop it stretching - and since it sizes
+     its content off its own width, it collapsed to a thin strip. */
+  html .qp-page > .qp-card {
+    width: 100%;
+    box-sizing: border-box;
+    margin-block: auto;
+  }
   /* Daily Use: two small cards a row, not one screen-wide card with a 190px
      photo. DailyUseList.css's own narrow rule forces one column at (0,1,0);
      `.st .du-grid` outranks it whatever order the sheets load in. */

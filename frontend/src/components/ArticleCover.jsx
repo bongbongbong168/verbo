@@ -19,6 +19,7 @@ export const TOPIC_ART = {
   Culture: '文',
   Entertainment: '乐',
   Stories: '事',
+  Novel: '书',
   Travel: '行',
   Business: '商',
 }

@@ -257,6 +257,7 @@ export default function NotificationMenu() {
                   prefix="nm"
                   category={n.category}
                   photoUrl={n.actor_photo_url}
+                  name={n.actor?.name}
                 />
                 <span className="nm-body">
                   <span className="nm-item-title">{n.title}</span>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\CourseEnrollment;
+use App\Models\HiddenTutor;
 use App\Models\Podcast;
 use App\Models\StudyLevel;
 use App\Models\StudyUnit;
@@ -201,7 +202,8 @@ class ProfileController extends Controller
                     ->where('viewable_type', Podcast::class)
                     ->count(),
             ],
-            'tutors' => $this->tutorsFor($user),
+            'tutors' => ($mine = $this->tutorsFor($user))['tutors'],
+            'hidden_tutors' => $mine['hidden'],
             'courses' => $this->coursesFor($user),
             // Drives the "Tutor profile" link — absent for most accounts.
             'tutor_profile_id' => optional($user->tutorProfile)->id,
@@ -209,35 +211,108 @@ class ProfileController extends Controller
     }
 
     /**
-     * Tutors this student actually has a relationship with.
+     * Tutors this student actually has a relationship with, each with where
+     * things stand: a lesson coming up, a request waiting on the tutor, or the
+     * last lesson they had.
      *
-     * Cancelled, declined and expired bookings are excluded on purpose: a trial
-     * someone booked and called off does not make that person "my tutor".
+     * What counts: a confirmed lesson (past or future) or a PAID request whose
+     * time has not passed. An unpaid hold is not a relationship, and neither
+     * is a request that lapsed with no answer, or anything cancelled/declined.
+     * Bookings the student cleared from their Past list are left out too.
+     *
+     * A tutor is `done` when nothing is coming up; only then may the student
+     * hide them. A hidden tutor reappears on its own once a new lesson is
+     * booked, because hiding a done tutor never hides a live one.
      */
     private function tutorsFor($user): array
     {
-        $tutorIds = Booking::where('student_id', $user->id)
-            ->whereIn('status', ['held', 'pending', 'confirmed'])
-            ->pluck('tutor_id')
-            ->unique()
-            ->values();
+        $now = now();
+        $bookings = Booking::where('student_id', $user->id)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereNull('hidden_for_student_at')
+            ->whereNotNull('starts_at')
+            ->get(['tutor_id', 'status', 'starts_at']);
 
-        if ($tutorIds->isEmpty()) {
-            return [];
+        $byTutor = [];
+        foreach ($bookings as $b) {
+            $future = $b->starts_at->gt($now);
+            // A pending request whose time has passed was never answered.
+            if ($b->status === 'pending' && ! $future) {
+                continue;
+            }
+            $t = &$byTutor[(int) $b->tutor_id];
+            $t ??= ['next' => null, 'waiting' => null, 'last' => null];
+            if ($future && $b->status === 'confirmed' && (! $t['next'] || $b->starts_at->lt($t['next']))) {
+                $t['next'] = $b->starts_at;
+            } elseif ($future && $b->status === 'pending' && (! $t['waiting'] || $b->starts_at->lt($t['waiting']))) {
+                $t['waiting'] = $b->starts_at;
+            } elseif (! $future && (! $t['last'] || $b->starts_at->gt($t['last']))) {
+                $t['last'] = $b->starts_at;
+            }
+            unset($t);
         }
 
-        return User::whereIn('id', $tutorIds)
-            ->with('tutorProfile:id,user_id,photo_path,subjects')
+        if (! $byTutor) {
+            return ['tutors' => [], 'hidden' => []];
+        }
+
+        $hiddenIds = HiddenTutor::where('user_id', $user->id)->pluck('tutor_id')->map(fn ($id) => (int) $id)->all();
+
+        $rows = User::whereIn('id', array_keys($byTutor))
+            ->with('tutorProfile:id,user_id,photo_path')
             ->get()
-            ->map(fn (User $t) => [
-                'id' => $t->id,
-                'name' => $t->name,
-                'profile_id' => optional($t->tutorProfile)->id,
-                'photo_url' => optional($t->tutorProfile)->photo_url,
-                'subjects' => optional($t->tutorProfile)->subjects,
-            ])
-            ->values()
-            ->all();
+            ->map(function (User $tu) use ($byTutor, $hiddenIds) {
+                $s = $byTutor[$tu->id];
+                $done = ! $s['next'] && ! $s['waiting'];
+
+                return [
+                    'id' => $tu->id,
+                    'name' => $tu->name,
+                    'profile_id' => optional($tu->tutorProfile)->id,
+                    'photo_url' => $tu->avatar_url ?: optional($tu->tutorProfile)->photo_url,
+                    // Sent as UTC; the browser words them in the reader's time.
+                    'next_lesson_at' => $s['next']?->toIso8601String(),
+                    'waiting_since' => $s['waiting']?->toIso8601String(),
+                    'last_lesson_at' => $s['last']?->toIso8601String(),
+                    'done' => $done,
+                    'hidden' => $done && in_array($tu->id, $hiddenIds, true),
+                ];
+            })
+            // Something coming up first (soonest first), then most recent past.
+            ->sortBy(fn ($r) => $r['next_lesson_at'] ?? $r['waiting_since']
+                ? '0'.($r['next_lesson_at'] ?? $r['waiting_since'])
+                : '1'.(9999999999 - strtotime($r['last_lesson_at'] ?? '1970-01-01')))
+            ->values();
+
+        return [
+            'tutors' => $rows->where('hidden', false)->values()->all(),
+            'hidden' => $rows->where('hidden', true)->values()->all(),
+        ];
+    }
+
+    /** Hide a finished tutor from the Profile list. Refused while anything is coming up. */
+    public function hideTutor(Request $request, User $tutor)
+    {
+        $user = $request->user();
+        $row = collect($this->tutorsFor($user)['tutors'])->firstWhere('id', $tutor->id);
+
+        if (! $row) {
+            return response()->json(['message' => 'That tutor is not on your list.'], 404);
+        }
+        if (! $row['done']) {
+            return response()->json(['message' => 'You have a lesson coming up with this tutor.'], 422);
+        }
+
+        HiddenTutor::firstOrCreate(['user_id' => $user->id, 'tutor_id' => $tutor->id]);
+
+        return response()->json($this->tutorsFor($user));
+    }
+
+    public function unhideTutor(Request $request, User $tutor)
+    {
+        HiddenTutor::where('user_id', $request->user()->id)->where('tutor_id', $tutor->id)->delete();
+
+        return response()->json($this->tutorsFor($request->user()));
     }
 
     /**

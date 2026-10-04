@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '../context/AuthContext'
@@ -70,6 +70,14 @@ function StripePayForm({ amountLabel, onPaid }) {
   const [error, setError] = useState(null)
   const [ready, setReady] = useState(false)
 
+  /* Backstop: if the card field never reports ready (a blocked script, a
+     slow network), lift the cover anyway so the form is never hidden for
+     good - Stripe shows its own message inside the field. */
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 12000)
+    return () => clearTimeout(t)
+  }, [])
+
   async function submit(e) {
     e.preventDefault()
     if (!stripe || !elements) return
@@ -107,6 +115,12 @@ function StripePayForm({ amountLabel, onPaid }) {
   }
 
   return (
+    /* The skeleton holds the space until Stripe's card field has drawn
+       (onReady). The form mounts at once - the field needs real layout to
+       load - but hidden and out of flow underneath, so it simply appears
+       where the skeleton was: no empty box and no jump in height. */
+    <div className={`ck-pay-wrap${ready ? '' : ' is-loading'}`}>
+      {!ready && <PaySkeleton />}
     <form className="uc-form" onSubmit={submit}>
       <div className="uc-cards">
         <span>Card</span>
@@ -117,6 +131,10 @@ function StripePayForm({ amountLabel, onPaid }) {
       </div>
       <PaymentElement
         onReady={() => setReady(true)}
+        onLoadError={() => {
+          setReady(true)
+          setError('The card form could not load. Check your connection and try again.')
+        }}
         options={{ wallets: { link: 'never', applePay: 'never', googlePay: 'never' } }}
       />
 
@@ -126,6 +144,7 @@ function StripePayForm({ amountLabel, onPaid }) {
         {busy ? 'Processing…' : `Pay ${amountLabel}`}
       </button>
     </form>
+    </div>
   )
 }
 
@@ -148,6 +167,12 @@ export default function Checkout() {
   // 'loading' until we know; 'off' when card payments are not set up.
   const [payState, setPayState] = useState('loading')
   const [paid, setPaid] = useState(false)
+  // ABA PayWay beside the card form, when the server has its keys.
+  const [paywayOn, setPaywayOn] = useState(false)
+  const [method, setMethod] = useState('card')
+  const [searchParams] = useSearchParams()
+  const returnedTran = searchParams.get('payway')
+  const [paywayCheck, setPaywayCheck] = useState(returnedTran ? 'checking' : null)
 
   const [stripeKey, setStripeKey] = useState(null)
   const [clientSecret, setClientSecret] = useState(null)
@@ -167,17 +192,30 @@ export default function Checkout() {
     [stripeKey],
   )
 
+  /* Whether payments are live does not depend on the order, so it is asked
+     straight away, IN PARALLEL with loading the order, instead of after it.
+     Three requests in a row was the slowest part of opening this page. */
+  const [configPromise] = useState(() => {
+    const p = api.paymentConfig()
+    // Handled below once the order is in; this only stops an "unhandled
+    // rejection" if the order itself never loads.
+    p.catch(() => {})
+    return p
+  })
+
   /* Ask whether payments are live, and if so mint the intent for THIS purchase. */
   useEffect(() => {
     let live = true
     if (!item) return undefined
 
-    api
-      .paymentConfig()
+    configPromise
       .then((cfg) => {
         if (!live) return null
+        setPaywayOn(Boolean(cfg.payway_enabled))
         if (!cfg.enabled) {
-          setPayState('off')
+          // Card payments off: ABA PayWay alone is still a way to pay.
+          if (cfg.payway_enabled) setMethod('payway')
+          setPayState(cfg.payway_enabled ? 'payway-only' : 'off')
           return null
         }
         setStripeKey(cfg.publishable_key)
@@ -198,7 +236,7 @@ export default function Checkout() {
     return () => {
       live = false
     }
-  }, [item, token, isCourse])
+  }, [item, token, isCourse, configPromise])
 
   useEffect(() => {
     let live = true
@@ -218,6 +256,41 @@ export default function Checkout() {
       live = false
     }
   }, [token, id, isCourse])
+
+  /* Back from ABA PayWay with ?payway=TRAN: ask the server, which asks ABA.
+     ABA can take a moment to settle a KHQR scan, so it asks a few times
+     (every 3s, about a minute) before saying it has not seen the money yet.
+     Never trusts the URL itself - the server checks with ABA every time. */
+  useEffect(() => {
+    if (!returnedTran) return undefined
+    let live = true
+    let tries = 0
+    let timer
+    const ask = () => {
+      api
+        .paywayStatus(token, returnedTran)
+        .then((r) => {
+          if (!live) return
+          if (r.status === 'paid') {
+            window.scrollTo(0, 0)
+            setPaywayCheck(null)
+            setPaid(true)
+          } else if (r.status === 'failed') {
+            setPaywayCheck('failed')
+          } else if (++tries < 20) {
+            timer = setTimeout(ask, 3000)
+          } else {
+            setPaywayCheck('waiting')
+          }
+        })
+        .catch(() => live && setPaywayCheck('waiting'))
+    }
+    ask()
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [returnedTran, token])
 
   if (loading) return <PageSkeleton label="Loading your order" />
 
@@ -420,9 +493,41 @@ export default function Checkout() {
             Payment details
           </h2>
 
-          {payState === 'loading' && <PaySkeleton />}
+          {paywayCheck === 'checking' && (
+            <div className="uc-state" role="status">
+              <h3>Checking your ABA payment…</h3>
+              <p>This takes a few seconds after you pay in the ABA app.</p>
+            </div>
+          )}
+          {paywayCheck === 'waiting' && (
+            <div className="uc-state">
+              <h3>We haven’t seen your ABA payment yet</h3>
+              <p>If you paid, it will show under Bookings in a minute. If not, try again below.</p>
+            </div>
+          )}
+          {paywayCheck === 'failed' && (
+            <p className="uc-alert" role="alert">ABA says that payment was declined or cancelled. No charge was made.</p>
+          )}
 
-          {payState === 'ready' && clientSecret && stripePromise && (
+          {/* Card or ABA. Only shown when both are available. */}
+          {paywayOn && payState !== 'payway-only' && (
+            <div className="ck-methods" role="tablist" aria-label="Payment method">
+              <button type="button" role="tab" aria-selected={method === 'card'} className={method === 'card' ? 'on' : ''} onClick={() => setMethod('card')}>
+                Card
+              </button>
+              <button type="button" role="tab" aria-selected={method === 'payway'} className={method === 'payway' ? 'on' : ''} onClick={() => setMethod('payway')}>
+                ABA KHQR
+              </button>
+            </div>
+          )}
+
+          {method === 'payway' && paywayOn && (
+            <PaywayPanel token={token} kind={isCourse ? 'course' : 'lesson'} id={item.id} amountLabel={amount} />
+          )}
+
+          {method === 'card' && payState === 'loading' && <PaySkeleton />}
+
+          {method === 'card' && payState === 'ready' && clientSecret && stripePromise && (
             <>
               {/* Keyed on the secret so a new intent remounts the provider —
                   Elements cannot be handed a different secret in place. */}
@@ -431,7 +536,15 @@ export default function Checkout() {
                 stripe={stripePromise}
                 options={{ clientSecret, appearance: CARD_APPEARANCE }}
               >
-                <StripePayForm amountLabel={amount} onPaid={() => setPaid(true)} />
+                <StripePayForm
+                  amountLabel={amount}
+                  onPaid={() => {
+                    // The success screen starts at the top, not wherever the
+                    // pay button was scrolled to. Instant, never smooth.
+                    window.scrollTo(0, 0)
+                    setPaid(true)
+                  }}
+                />
               </Elements>
               <p className="uc-fine uc-fine-gap">
                 <LockIcon /> Card details go straight to the payment provider and never reach Verbo.
@@ -460,6 +573,55 @@ export default function Checkout() {
           )}
         </section>
       </div>
+    </div>
+  )
+}
+
+/**
+ * ABA PayWay: one button that sends the student to ABA's own checkout page
+ * (scan the KHQR with any Cambodian bank app, or pay by card there). The
+ * signed fields come from our server; the browser just posts them on, the
+ * same way ABA's own plugin does. ABA sends the student back here with
+ * ?payway=TRAN, where the page checks the payment with the server.
+ */
+function PaywayPanel({ token, kind, id, amountLabel }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function go() {
+    setBusy(true)
+    setError(null)
+    try {
+      const { action, fields } = await api.paywayCheckout(token, kind, id)
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = action
+      form.enctype = 'multipart/form-data'
+      for (const [name, value] of Object.entries(fields)) {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = name
+        input.value = value ?? ''
+        form.appendChild(input)
+      }
+      document.body.appendChild(form)
+      form.submit()
+    } catch (err) {
+      setError(err.message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="ck-payway">
+      <p className="ck-payway-text">
+        Pay with <strong>ABA KHQR</strong>: scan the code with ABA or any Cambodian bank app. You will come
+        back here once it is paid.
+      </p>
+      {error && <p className="uc-alert" role="alert">{error}</p>}
+      <button type="button" className="uc-cta" onClick={go} disabled={busy}>
+        {busy ? 'Opening ABA…' : `Pay ${amountLabel} with ABA`}
+      </button>
     </div>
   )
 }

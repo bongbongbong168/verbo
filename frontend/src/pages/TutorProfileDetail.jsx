@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api'
 import { hasLiveBookingWith, isBookingLive } from '../bookings'
@@ -472,6 +472,15 @@ export default function TutorProfileDetail() {
       setError(err.message)
     }
   }
+
+  /* `?book=1` (Profile's "Book again") opens the booking dialog once the
+     tutor is loaded, then drops the flag so a refresh does not reopen it. */
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (!tutor || searchParams.get('book') !== '1') return
+    if (!(user && Number(tutor.user?.id) === Number(user.id))) setShowBooking(true)
+    setSearchParams({}, { replace: true })
+  }, [tutor, searchParams, setSearchParams, user])
 
   if (loading)
     return (

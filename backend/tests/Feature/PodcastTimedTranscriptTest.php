@@ -288,4 +288,29 @@ class PodcastTimedTranscriptTest extends TestCase
 
         $this->assertSame('not_processed', $podcast->fresh()->timed_transcript_status);
     }
+
+    public function test_a_second_generate_is_refused_while_one_is_running(): void
+    {
+        $podcast = $this->podcast();
+        $podcast->update(['audio_path' => 'podcasts/example.mp3']);
+        $podcast->markTimedTranscript('processing');
+        \Illuminate\Support\Facades\Cache::put('podcast-transcribe-started:'.$podcast->id, now()->timestamp, now()->addDay());
+        Http::fake();
+        Sanctum::actingAs(User::where('is_admin', true)->first());
+
+        $this->postJson("/api/podcasts/{$podcast->id}/timed-transcript/generate")->assertStatus(409);
+        Http::assertNothingSent();
+    }
+
+    public function test_a_run_that_never_reported_back_turns_into_a_retryable_failure(): void
+    {
+        $podcast = $this->podcast();
+        $podcast->markTimedTranscript('processing');
+        // No start time on record: the run died (restart, deploy, crash).
+        Sanctum::actingAs(User::where('is_admin', true)->first());
+
+        $this->getJson("/api/podcasts/{$podcast->id}/timed-transcript")
+            ->assertOk()
+            ->assertJsonPath('status', 'failed');
+    }
 }

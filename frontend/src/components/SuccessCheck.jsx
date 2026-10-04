@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import './SuccessCheck.css'
 
 /**
  * The animated success tick (the supplied Lottie file), played ONCE and then
- * held on its last frame - the finished green tick.
+ * held on its last frame - the finished lavender tick.
  *
  * Lottie steps on requestAnimationFrame, which a backgrounded or
  * non-compositing tab never runs, and its frame 0 is EMPTY (the circle draws

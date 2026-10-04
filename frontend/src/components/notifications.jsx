@@ -3,6 +3,7 @@
  * cannot drift apart on what an icon means or how a time is worded.
  */
 import { useState } from 'react'
+import './notifications.css'
 
 function TutorIcon() {
   return (
@@ -83,9 +84,27 @@ export function CategoryIcon({ category }) {
  *   same markup under different class names, and this is the one place that
  *   knows it.
  */
-export function NotificationFace({ prefix, category, photoUrl }) {
+export function NotificationFace({ prefix, category, photoUrl, name }) {
   const [failed, setFailed] = useState(false)
   const showPhoto = photoUrl && !failed
+  /* No picture but a real person: their initial in a soft tint, keyed on the
+     name so the same sender always wears the same colour. A face-shaped
+     circle reads as "someone" where a bare glyph read as "the system". */
+  const initial = !showPhoto && name ? name.trim().charAt(0).toUpperCase() : ''
+
+  if (initial) {
+    let h = 0
+    for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0
+    return (
+      <span className={`nf-face nf-tone-${h % 5}`} style={{ '--nf-size': prefix === 'nt' ? '38px' : '34px' }}>
+        <span className="nf-initial">{initial}</span>
+        {/* What KIND of thing happened, as a small badge on the face. */}
+        <span className={`nf-badge nf-badge-${category}`}>
+          <CategoryIcon category={category} />
+        </span>
+      </span>
+    )
+  }
 
   return (
     <span

@@ -125,6 +125,7 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
   const [title, setTitle] = useState(article?.title || '')
   const [type, setType] = useState(article?.type || 'article')
   const [category, setCategory] = useState(article?.category || '')
+  const [episode, setEpisode] = useState(article?.episode ? String(article.episode) : '')
   /* Computed once per open. Recomputing per keystroke would re-sort the
      suggestion list under the cursor while someone is typing into it. */
   const topicOptions = useMemo(() => knownTopics(article?.category), [article?.category])
@@ -193,6 +194,7 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
            field ever losing focus (Enter, or clicking straight through), and an
            un-snapped "culture" would quietly become a second shelf. */
         category: normaliseTopic(category, topicOptions) || null,
+        episode: episode.trim() ? Number(episode) : null,
         hsk_level: hskLevel || null,
         summary: summary.trim(),
         body,
@@ -268,6 +270,22 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
                 <small className="ed-hint">
                   A new topic gets its own shelf and filter on Read as soon as
                   this is published.
+                </small>
+              </label>
+
+              <label className="ed-field ed-narrow">
+                <span>Episode</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="999"
+                  inputMode="numeric"
+                  value={episode}
+                  placeholder="None"
+                  onChange={(e) => setEpisode(e.target.value)}
+                />
+                <small className="ed-hint">
+                  For a serial such as a novel: its shelf is ordered 1, 2, 3.
                 </small>
               </label>
 

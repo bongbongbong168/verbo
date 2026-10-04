@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\CourseEnrollment;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use App\Services\PaywayService;
 use App\Models\StripeEvent;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
@@ -36,6 +37,8 @@ class PaymentController extends Controller
     {
         return [
             'enabled' => PaymentService::configured(),
+            // ABA PayWay (KHQR / cards) is offered beside the card form when set.
+            'payway_enabled' => PaywayService::configured(),
             // Publishable key — designed to be public, unlike the secret.
             'publishable_key' => PaymentService::configured()
                 ? config('services.stripe.key')
@@ -58,7 +61,7 @@ class PaymentController extends Controller
             'id' => ['required', 'integer'],
         ]);
 
-        $payable = $this->resolve($data['kind'], (int) $data['id'], $request);
+        $payable = self::resolvePayable($data['kind'], (int) $data['id'], $request);
 
         $payment = PaymentService::intentFor($payable, $request->user()->id);
 
@@ -83,7 +86,7 @@ class PaymentController extends Controller
      * confirm — a stranger's booking; without the second, a student could pay
      * for a hold that already lapsed and lost its slot.
      */
-    private function resolve(string $kind, int $id, Request $request)
+    public static function resolvePayable(string $kind, int $id, Request $request)
     {
         $class = PaymentService::PAYABLES[$kind];
 
@@ -218,8 +221,15 @@ class PaymentController extends Controller
             ]);
         }
 
-        $payable = $payment->payable;
+        self::settlePayable($payment->payable);
+    }
 
+    /**
+     * Hand over what was bought. Shared by Stripe and ABA PayWay so the two
+     * gateways cannot drift on what paying means.
+     */
+    public static function settlePayable($payable): void
+    {
         if ($payable instanceof Booking) {
             // A lesson becomes a REQUEST, not a confirmation — the tutor still
             // has to accept it. Paying is not accepting.

@@ -171,14 +171,13 @@
   background: #f9f8fe;
 }
 
-/* Unread carries a tint AND a dot — two signals, so the state survives being
-   glanced at rather than read. */
+/* Unread is the dot - no tinted fill, matching the Notifications page. */
 .nm-item.unread {
-  background: #f9f8fe;
+  background: #fff;
 }
 
 .nm-item.unread:hover {
-  background: #f1edfc;
+  background: #f9f8fe;
 }
 
 .nm-icon {

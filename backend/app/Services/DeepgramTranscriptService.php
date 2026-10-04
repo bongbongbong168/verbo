@@ -22,7 +22,11 @@ class DeepgramTranscriptService
         }
 
         $path = $disk->path($podcast->audio_path);
-        $audio = @file_get_contents($path);
+        /* STREAMED, not read into a string. Episodes may be up to 64MB and
+           PHP has 256MB: a whole file in a string plus the HTTP client's own
+           copy could run out of memory, which is a fatal error no try/catch
+           sees - the episode would sit on "Processing" for ever. */
+        $audio = @fopen($path, 'rb');
         if ($audio === false) {
             throw new RuntimeException('Verbo could not read this episode audio.');
         }
@@ -45,6 +49,10 @@ class DeepgramTranscriptService
                 ->post('https://api.deepgram.com/v1/listen?'.$query);
         } catch (\Throwable $e) {
             throw new RuntimeException('Deepgram could not be reached. Please try again.');
+        } finally {
+            if (is_resource($audio)) {
+                fclose($audio);
+            }
         }
         if (! $response->successful()) {
             report(new RuntimeException('Deepgram transcription failed: HTTP '.$response->status().' '.$response->body()));

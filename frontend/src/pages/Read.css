@@ -1,4 +1,10 @@
-.rd {
+/* The colour tokens are ALSO declared on the two sections other pages borrow
+   (comments and recommendations, used on the podcast episode). Declared only
+   on .rd they did not exist there, so the Listen button's hover went to a
+   transparent fill with white text and vanished. */
+.rd,
+.rd-comments,
+.rd-recs {
   --rd-bg: #f9f8fe;
   --rd-panel-bg: #ffffff;
   --rd-card: #f9f8fe;
@@ -10,7 +16,9 @@
   --rd-text-muted: #726c88;
   /* Tab-in for the pills and panel, measured from the Figma export */
   --rd-indent: 30px;
+}
 
+.rd {
   background: var(--rd-bg);
   min-height: var(--app-vh);
   box-sizing: border-box;
@@ -611,11 +619,13 @@
    the level is filled, since it is the one fact a learner scans for. Borders
    are inset shadows so every chip is exactly one height. */
 .rd-chip {
-  /* Hellix 600 cap-band pair (0.076em). */
+  /* Balance the whole label, including descenders, rather than lifting every
+     word by the cap-only offset. Keep the combined padding and pill size. */
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
-  padding: calc(0.32rem - 0.076em) 0.72rem calc(0.32rem + 0.076em);
+  padding: calc(0.32rem - 0.04em) 0.72rem calc(0.32rem + 0.04em);
   border-radius: 999px;
   background: #f6f3fd;
   box-shadow: inset 0 0 0 1px #ebe6f9;
@@ -623,15 +633,16 @@
   font-size: 0.74rem;
   font-weight: 600;
   line-height: 1.2;
+  text-align: center;
   white-space: nowrap;
 }
 
 .rd-chip svg {
   flex: none;
   color: #8d87ad;
-  /* Same em as the label's cap-band pair, so the glyph sits with the text. */
-  margin-top: 0.076em;
-  margin-bottom: -0.076em;
+  /* Counter the label correction so the icon stays centered in the pill. */
+  margin-top: 0.04em;
+  margin-bottom: -0.04em;
 }
 
 .rd-chip-level {

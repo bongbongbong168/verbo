@@ -1,0 +1,18 @@
+/* The animated success tick and its static stand-in. Lavender, the app's
+   own colour, to match the recoloured Lottie file. Prefix sc-. */
+.sc-anim {
+  display: block;
+}
+
+.sc-static {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #a89ce3;
+  color: #fff;
+}
+
+.sc-static svg {
+  width: 50%;
+  height: 50%;
+}

@@ -7,6 +7,7 @@ use App\Models\Podcast;
 use App\Services\ChineseTranslationService;
 use App\Services\DeepgramTranscriptService;
 use App\Services\TimedTranscriptBuilder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -35,7 +36,13 @@ class PodcastTranscriptController extends Controller
         if (! $podcast->audio_path) {
             return response()->json(['message' => 'Upload an audio file before generating a synced transcript.'], 422);
         }
+        /* One run at a time. A second click while the first is working used
+           to start a second paid transcription racing the first to write. */
+        if ($this->isRunning($podcast)) {
+            return response()->json(['message' => 'This transcript is already being generated. It will appear here when it is ready.'], 409);
+        }
         $podcast->markTimedTranscript('processing');
+        Cache::put(self::startedKey($podcast->id), now()->timestamp, now()->addDay());
 
         /* Deepgram may need up to two minutes for a long recording, and
            enriching the result can add more provider calls. Run it after
@@ -46,6 +53,12 @@ class PodcastTranscriptController extends Controller
            QUEUE_CONNECTION=sync, so a regular queued job would run inline. */
         $podcastId = $podcast->id;
         app()->terminating(function () use ($podcastId, $deepgram, $builder) {
+            /* This runs AFTER the response, still inside the admin's request.
+               Keep going if they close the tab, and lift the 120s request
+               limit for the transcription itself. */
+            ignore_user_abort(true);
+            @set_time_limit(600);
+
             $episode = Podcast::find($podcastId);
             if (! $episode) {
                 return;
@@ -93,6 +106,14 @@ class PodcastTranscriptController extends Controller
             'Verbo Pro is required to read this transcript.'
         );
 
+        /* A run that died without reporting back (the container restarted
+           mid-job, a deploy, a crash) would read "Processing" for ever and
+           the editor would poll it for ever. Past the limit it is a failure
+           the admin can retry. */
+        if (($podcast->timed_transcript_status ?? null) === 'processing' && ! $this->isRunning($podcast)) {
+            $podcast->markTimedTranscript('failed', 'Generating took too long and was stopped. Please try again.');
+        }
+
         $status = $podcast->timed_transcript_status ?? 'not_processed';
         $completed = $status === 'completed' && is_array($podcast->timed_transcript);
 
@@ -116,6 +137,25 @@ class PodcastTranscriptController extends Controller
         }
 
         return $body;
+    }
+
+    /** How long a run may take before it is treated as dead. */
+    private const STALE_AFTER_MINUTES = 15;
+
+    private static function startedKey(int $id): string
+    {
+        return "podcast-transcribe-started:{$id}";
+    }
+
+    /** True while a run is in flight and still inside its time allowance. */
+    private function isRunning(Podcast $podcast): bool
+    {
+        if (($podcast->timed_transcript_status ?? null) !== 'processing') {
+            return false;
+        }
+        $started = Cache::get(self::startedKey($podcast->id));
+
+        return $started && now()->timestamp - (int) $started < self::STALE_AFTER_MINUTES * 60;
     }
 
     /** Keep the manual Transcript tab in step with the generated lines. */

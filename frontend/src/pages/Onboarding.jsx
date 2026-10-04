@@ -1,16 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/sidebar/logo.svg";
 import feather from "../assets/signup/feather.png";
-/* The quiz launcher's celebration art, recoloured for this screen: its purples
-   already sat on the app's hue (246-259 against the app's 258), but ~28% of it
-   was gold, a colour the app uses nowhere. That family alone was rotated onto
-   #fe916a, the warm accent the level tags already wear — hue only, so every
-   highlight and shadow in the confetti survives. The quiz launcher keeps the
-   original, which is correct there. */
-import celebrate from "../assets/onboarding/celebrate.png";
+/* The graduate-with-panda art, the same file the Read banner, Profile and the
+   quiz card use, so the celebration a new learner sees here is the one they
+   meet again around the app. (The older recoloured owl version,
+   onboarding/celebrate.png, stays on disk unused.) */
+import SuccessCheck from "../components/SuccessCheck";
+import celebrate from "../assets/read/graduate-panda.webp";
 import "./Onboarding.css";
 
 function CheckIcon() {
@@ -30,34 +29,17 @@ function CheckIcon() {
 }
 
 /**
- * The completion tick: a filled disc with a check that strokes itself on.
- *
- * The check is drawn with `stroke-dasharray` equal to its own length and an
- * offset that runs to 0, which is the only way to "draw" a line in CSS.
- *
- * READ THIS BEFORE CHANGING IT: unlike every other animation in this codebase,
- * this one starts from a state that is not the finished one, so a tab that
- * never composites would hold the check half-drawn. That is allowed HERE and
- * nowhere else, because this mark is pure celebration — the heading beside it
- * says "Your learning profile is ready" and the summary below states every
- * answer, so nothing on the screen depends on the tick to be understood. The
- * disc, which is the part that reads as "done" at a glance, is static and
- * fully painted at frame 0; only the check line moves.
+ * The completion tick: the supplied animated tick (SuccessCheck, the same
+ * one Checkout plays), recoloured to the app's lavender. It draws itself
+ * once and holds on the finished frame; its timer backstop and static
+ * fallback mean it can never be left blank in a tab that does not draw.
+ * The Lottie's circle fills 80% of its box, so the 84px box gives a ~67px
+ * disc; its slot pulls in by -9px a side (see .ob-done-mark).
  */
 function DoneMark() {
   return (
     <span className="ob-done-mark" aria-hidden="true">
-      <svg viewBox="0 0 52 52" className="ob-done-svg">
-        <circle className="ob-done-disc" cx="26" cy="26" r="26" />
-        <path
-          className="ob-done-check"
-          d="M15 26.5 L23 34 L37.5 19"
-          fill="none"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <SuccessCheck size={84} />
     </span>
   );
 }
@@ -371,18 +353,24 @@ export default function Onboarding() {
                         "Not sure" — asking someone who does not know their
                         level for their HSK band is asking the same question
                         twice in a harder way. */}
-                    {values.chinese_level &&
-                      values.chinese_level !== "Not sure" && (
-                        <Group label="Do you know your HSK level?" hint="Optional">
-                          <Chips
-                            options={options.hsk_level}
-                            selected={
-                              values.hsk_level ? [values.hsk_level] : []
-                            }
-                            onToggle={(v) => pick("hsk_level", v)}
-                          />
-                        </Group>
-                      )}
+                    {/* Always mounted and folded open/shut, so picking a level
+                        grows the card smoothly instead of snapping it taller. */}
+                    <Reveal
+                      open={
+                        Boolean(values.chinese_level) &&
+                        values.chinese_level !== "Not sure"
+                      }
+                    >
+                      <Group label="Do you know your HSK level?" hint="Optional">
+                        <Chips
+                          options={options.hsk_level}
+                          selected={
+                            values.hsk_level ? [values.hsk_level] : []
+                          }
+                          onToggle={(v) => pick("hsk_level", v)}
+                        />
+                      </Group>
+                    </Reveal>
                   </>
                 )}
 
@@ -500,6 +488,55 @@ export default function Onboarding() {
 }
 
 /* ---- pieces ---- */
+
+/**
+ * A block that folds open and shut. STATE IS STATIC: open is plain height,
+ * closed is zero height - set by class, no transition. The fold is a Web
+ * Animation laid over that, cancelled by a timer just after it should end, so
+ * a tab that never draws frames still lands on the right state instead of
+ * sitting at frame 0 (a CSS transition would leave it stuck shut).
+ */
+function Reveal({ open, children }) {
+  const ref = useRef(null);
+  const lastHeight = useRef(0);
+  const first = useRef(true);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (open) lastHeight.current = el.offsetHeight;
+    if (first.current) {
+      first.current = false;
+      return undefined;
+    }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const h = open ? el.offsetHeight : lastHeight.current;
+    const frames = open
+      ? [{ height: "0px", opacity: 0 }, { height: `${h}px`, opacity: 1 }]
+      : [{ height: `${h}px`, opacity: 1 }, { height: "0px", opacity: 0 }];
+    const anim = el.animate?.(frames, {
+      duration: 300,
+      easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+    });
+    const backstop = setTimeout(() => anim?.cancel(), 380);
+    return () => {
+      clearTimeout(backstop);
+      anim?.cancel();
+    };
+  }, [open]);
+
+  return (
+    <div
+      ref={ref}
+      className={`ob-reveal${open ? " open" : ""}`}
+      aria-hidden={!open}
+      inert={!open}
+    >
+      {children}
+    </div>
+  );
+}
 
 function Group({ label, hint, children }) {
   return (

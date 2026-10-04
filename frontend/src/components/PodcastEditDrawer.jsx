@@ -52,7 +52,7 @@ const STATUS_LABELS = {
  * Deepgram is the normal route. JSON import remains available for transcripts
  * prepared elsewhere.
  */
-function SyncTab({ podcast, onChange }) {
+function SyncTab({ podcast, onChange, unsavedAudio = false }) {
   const { token } = useAuth()
   const [info, setInfo] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -121,7 +121,13 @@ function SyncTab({ podcast, onChange }) {
       setInfo(next)
       onChange?.(next)
     } catch (err) {
-      setError(err.message)
+      /* 409: a run is already going. Show its live status (which starts the
+         poll) rather than an error - nothing went wrong. */
+      if (err.status === 409) {
+        api.getTimedTranscript(token, podcast.id).then(setInfo).catch(() => {})
+      } else {
+        setError(err.message)
+      }
     } finally {
       setBusy(false)
     }
@@ -196,7 +202,10 @@ function SyncTab({ podcast, onChange }) {
         <p className="ed-hint">This episode has no audio yet, so there is nothing to sync to.</p>
       )}
 
-      {podcast.audio_url && <button type="button" className="ed-btn-primary" onClick={generate} disabled={busy}>{busy ? 'Generating…' : done ? 'Generate again' : 'Generate synced transcript'}</button>}
+      {podcast.audio_url && unsavedAudio && (
+        <p className="ed-hint">You picked new audio in Media. Save the episode first, so the transcript is made from the new file.</p>
+      )}
+      {podcast.audio_url && <button type="button" className="ed-btn-primary" onClick={generate} disabled={busy || unsavedAudio || status === 'processing'}>{busy ? 'Starting…' : status === 'processing' ? 'Generating…' : done ? 'Generate again' : 'Generate synced transcript'}</button>}
       <details className="ed-advanced-sync">
         <summary>Advanced: import transcript file</summary>
         <label className={'ed-btn-ghost' + (busy ? ' is-busy' : '')}>
@@ -640,14 +649,14 @@ export default function PodcastEditDrawer({ podcast, onSave, onClose, onTimedCha
 
               {!editing && workingPodcast && (
                 <div className="ed-media-sync ed-media-sync-existing">
-                  <SyncTab podcast={workingPodcast} onChange={onTimedChange} />
+                  <SyncTab podcast={workingPodcast} onChange={onTimedChange} unsavedAudio={Boolean(audio)} />
                 </div>
               )}
             </>
           )}
 
           {tab === 'Sync' && workingPodcast && (
-            <SyncTab podcast={workingPodcast} onChange={onTimedChange} />
+            <SyncTab podcast={workingPodcast} onChange={onTimedChange} unsavedAudio={Boolean(audio)} />
           )}
 
           {tab !== 'Sync' && (

@@ -134,6 +134,7 @@ class ArticleController extends Controller
                 'hsk_level',
                 'difficulty',
                 'category',
+                'episode',
                 'is_premium',
                 'image_path',
                 'user_id',
@@ -244,6 +245,8 @@ class ArticleController extends Controller
             // All optional: the five articles that predate this stay valid.
             'hsk_level' => ['nullable', 'string', 'in:'.implode(',', LearningPreference::HSK_LEVELS)],
             'category' => ['nullable', 'string', 'max:60'],
+            // Order within a serial (the Novel shelf). Null for ordinary pieces.
+            'episode' => ['nullable', 'integer', 'min:1', 'max:999'],
             'summary' => ['nullable', 'string', 'max:400', self::wordCap()],
             'is_premium' => ['sometimes', 'boolean'],
         ] + self::tagRules($request));
@@ -276,6 +279,8 @@ class ArticleController extends Controller
             // All optional: the five articles that predate this stay valid.
             'hsk_level' => ['nullable', 'string', 'in:'.implode(',', LearningPreference::HSK_LEVELS)],
             'category' => ['nullable', 'string', 'max:60'],
+            // Order within a serial (the Novel shelf). Null for ordinary pieces.
+            'episode' => ['nullable', 'integer', 'min:1', 'max:999'],
             'summary' => ['nullable', 'string', 'max:400', self::wordCap()],
             'is_premium' => ['sometimes', 'boolean'],
         ] + self::tagRules($request));

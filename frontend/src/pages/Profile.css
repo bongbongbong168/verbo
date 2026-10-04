@@ -1091,3 +1091,137 @@
     display: none;
   }
 }
+
+/* ---- My Tutors: a row plus its ⋯ menu ---- */
+.pf-tutor {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-tutor .pf-row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The next lesson is the one line worth a colour: it is a date to keep. */
+.pf-row-note-next {
+  color: #6a6191;
+  font-weight: 600;
+}
+
+.pf-tutor-more {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--pf-muted, #726c88);
+  cursor: pointer;
+}
+
+.pf-tutor-more:hover,
+.pf-tutor-more.open {
+  background: var(--pf-well, #f1edfc);
+  color: #2b2643;
+}
+
+.pf-tutor-more svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pf-tutor-menu {
+  position: absolute;
+  top: calc(100% - 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid #e7e3f6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(43, 38, 67, 0.14);
+}
+
+.pf-tutor-menu button {
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  color: #2b2643;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pf-tutor-menu button:hover {
+  background: #f9f8fe;
+}
+
+.pf-tutor-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: #ece8f7;
+}
+
+.pf-tutor-menu .pf-tutor-menu-hide {
+  color: #b3261e;
+}
+
+.pf-tutor-menu-note {
+  margin: 0;
+  padding: 0.45rem 0.7rem 0.5rem;
+  max-width: 220px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #726c88;
+}
+
+.pf-hidden-toggle {
+  margin-top: 0.6rem;
+  padding: 0.3rem 0.5rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6a6191;
+  cursor: pointer;
+}
+
+.pf-hidden-toggle:hover {
+  text-decoration: underline;
+}
+
+.pf-tutor-hidden {
+  opacity: 0.75;
+}
+
+.pf-row-static:hover {
+  background: none;
+}
+
+.pf-tutor-unhide {
+  flex: none;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2b2643;
+  cursor: pointer;
+}
+
+.pf-tutor-unhide:hover {
+  background: #f9f8fe;
+}

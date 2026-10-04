@@ -43,6 +43,17 @@ return [
      * into a half-configured state. `PaymentService::configured()` is what every
      * caller checks.
      */
+    /* ABA PayWay (Cambodia: ABA KHQR, cards). Off until BOTH are set. The API
+       key signs every request and must stay server-side - never a VITE_ twin.
+       PAYWAY_SANDBOX defaults ON, so nothing goes to the live gateway until
+       it is switched off on purpose. */
+    'payway' => [
+        'merchant_id' => env('PAYWAY_MERCHANT_ID'),
+        'api_key' => env('PAYWAY_API_KEY'),
+        'sandbox' => env('PAYWAY_SANDBOX', true),
+        'currency' => env('PAYWAY_CURRENCY', 'USD'),
+    ],
+
     'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),

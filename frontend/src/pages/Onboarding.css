@@ -663,13 +663,14 @@
 .ob-done-hero {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 1.2rem;
   position: relative;
   overflow: hidden;
-  height: 104px;
+  /* 128px, up from 104, for room around the larger animated tick. */
+  height: 128px;
   box-sizing: border-box;
   margin-bottom: 1.2rem;
-  padding: 0 1.15rem;
+  padding: 0 1.5rem;
   border-radius: 16px;
   background: linear-gradient(110deg, #2b2643 0%, #3d3860 55%, #6a6191 100%);
   color: #fff;
@@ -681,16 +682,16 @@
 }
 
 .ob-done-title {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.3rem;
   font-family: 'Hellix', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 700;
   line-height: 1.25;
 }
 
 .ob-done-sub {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.76);
 }
@@ -718,23 +719,27 @@
    its native 321x225 the art is 104 x 1.427 = 148px, plus its 0.4rem inset.
    Reserving 132px is what let the headline run under the graduate. */
 .ob-done-copy {
-  padding-right: 162px;
+  /* The art's width at 128px tall (742x600 file = 158px) plus its inset. */
+  padding-right: 172px;
 }
 
 /* ---- the tick ---- */
 
+/* The slot is the tick's FULL 84px box, pulled in by -9px each side so it
+   takes 66px of layout. A smaller slot does not centre an oversized child:
+   it overflowed down and right, which put the circle ~9px below the text. */
 .ob-done-mark {
-  display: block;
+  display: grid;
+  place-items: center;
   flex: none;
-  width: 54px;
-  height: 54px;
+  width: 84px;
+  height: 84px;
+  margin: -9px;
 }
 
-.ob-done-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.ob-done-mark .sc-anim,
+.ob-done-mark .sc-static {
+  flex: none;
 }
 
 /* ---- the arrival ----
@@ -752,21 +757,6 @@
 @keyframes ob-rise {
   from {
     transform: translateY(12px);
-  }
-}
-
-/* Not scale(0): a disc that starts at zero is an invisible disc if the frames
-   never come, and this one carries the "done" reading. 0.86 is enough to be
-   felt without ever being absent. */
-@keyframes ob-pop {
-  0% {
-    transform: scale(0.86);
-  }
-  62% {
-    transform: scale(1.06);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -788,40 +778,6 @@
 .ob-summary > div:nth-child(3) { animation-delay: 350ms; }
 .ob-summary > div:nth-child(4) { animation-delay: 395ms; }
 .ob-summary > div:nth-child(5) { animation-delay: 440ms; }
-
-/* The disc's fill is STATIC and fully painted — it is the part that reads as
-   "done" at a glance, so its VISIBILITY never depends on a frame arriving.
-   Only its scale moves. #a89ce3, the app's fill lavender, in place of the
-   reference's saturated violet. */
-.ob-done-mark {
-  animation: ob-pop 420ms cubic-bezier(0.34, 1.4, 0.5, 1) 90ms backwards;
-}
-
-.ob-done-disc {
-  /* --ob-fill (#a89ce3), NOT --ob-accent (#6a6191): the palette reserves the
-     lighter value for filled shapes and the deeper one for text. This replaces
-     the reference's saturated violet, which appears nowhere in the app. */
-  fill: var(--ob-fill);
-}
-
-/* The check draws itself: dasharray is the path's own length, and the offset
-   runs from that to 0. Only this line is animated — see DoneMark's comment for
-   why a non-final start state is allowed on this one element. */
-.ob-done-check {
-  stroke: #fff;
-  /* The path's own length: two segments, 10.97 + 20.86 = 31.83. Rounded up to
-     32 so the line is fully hidden at the start; setting it much higher would
-     spend the tail of the animation doing nothing visible. */
-  stroke-dasharray: 32;
-  stroke-dashoffset: 0;
-  animation: ob-draw 460ms cubic-bezier(0.65, 0, 0.35, 1) 160ms backwards;
-}
-
-@keyframes ob-draw {
-  from {
-    stroke-dashoffset: 32;
-  }
-}
 
 /* ---- the finished bar ----
    One continuous bar in place of the five segments. This is the one bar in the
@@ -861,7 +817,6 @@
    those finish at the value their surrounding text already states — so cutting
    the motion changes nothing that can be read. */
 @media (prefers-reduced-motion: reduce) {
-  .ob-done-check,
   .ob-progress-fill,
   .ob-done-hero,
   .ob-done-mark,
@@ -1289,4 +1244,15 @@
   .ob-back {
     transition: none;
   }
+}
+
+/* The HSK follow-up folds open under the level rows instead of popping in.
+   Open/closed is static here (no transition); the fold itself is a Web
+   Animation in Reveal, cancelled by a timer, so it always lands correctly. */
+.ob-reveal {
+  overflow: hidden;
+  height: 0;
+}
+.ob-reveal.open {
+  height: auto;
 }

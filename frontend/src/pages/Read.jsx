@@ -37,6 +37,7 @@ const TOPIC_ORDER = [
   "Culture",
   "Entertainment",
   "Stories",
+  "Novel",
   "Travel",
   "Business",
 ];
@@ -45,6 +46,14 @@ const TOPIC_ORDER = [
    on at the content column's width, so a full shelf fills its row exactly
    rather than leaving one empty track at the end. */
 const SHELF_SIZE = 4;
+
+/* A serial (the Novel shelf) reads in order: episode 1, 2, 3, not newest
+   first. Pieces with no episode keep the list's own order after them, so an
+   ordinary topic is untouched. Stable sort, so equal keys keep their order. */
+function byEpisode(list) {
+  if (!list.some((a) => a.episode)) return list;
+  return [...list].sort((a, b) => (a.episode ?? Infinity) - (b.episode ?? Infinity));
+}
 
 /* The generated cover moved to components/ArticleCover.jsx, so the Dashboard's
    "Pick up where you left off" tile can wear the same one. Its glyph placement
@@ -82,7 +91,9 @@ function ArticleCard({ a }) {
       <ArticleCover article={a} />
       <div className="rd-tile-body">
         <p className="rd-tile-meta">
-          {[a.category, a.hsk_level].filter(Boolean).join(" · ")}
+          {[a.category, a.episode ? `Episode ${a.episode}` : null, a.hsk_level]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
         <p className="rd-tile-title">{a.title}</p>
         <p className="rd-tile-time">{a.reading_minutes || 1} min read</p>
@@ -193,16 +204,17 @@ export default function Read() {
        that is not a topic, instead of among the six that are. The ordering
        itself lives in src/trending.js, shared with the Dashboard. */
     if (isTrending) return byTrending(articles);
-    return articles.filter((a) => a.category === activeCategory);
+    return byEpisode(articles.filter((a) => a.category === activeCategory));
   }, [articles, activeCategory, isTrending]);
 
   const shelves = useMemo(
     () =>
       topics.map((topic) => ({
         topic,
-        items: articles
-          .filter((a) => a.category === topic)
-          .slice(0, SHELF_SIZE),
+        items: byEpisode(articles.filter((a) => a.category === topic)).slice(
+          0,
+          SHELF_SIZE,
+        ),
       })),
     [topics, articles],
   );

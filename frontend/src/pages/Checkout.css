@@ -358,9 +358,13 @@
 .ck.ck-ok {
   display: flex;
   justify-content: center;
-  /* Top, not stretch: the card was pulled to the full page height. */
-  align-items: flex-start;
-  padding-top: 3rem;
+  /* Centred in the page, not pinned near the top (and not stretch, which
+     pulled the card to the full page height). `safe` keeps a card taller
+     than the screen starting at the top instead of being cut off above it.
+     Even top and bottom padding so the centre is the page's real centre. */
+  align-items: safe center;
+  padding-top: 1.6rem;
+  padding-bottom: 1.6rem;
 }
 
 .ck-ok-card {
@@ -497,19 +501,96 @@
   justify-content: center;
 }
 
-.sc-anim {
-  display: block;
+/* .sc-* lives in components/SuccessCheck.css with the component. */
+
+/* ---- smoother payment form ----
+   The skeleton holds the space until Stripe's card field has drawn, so the
+   form appears in place instead of an empty box that then jumps. */
+.ck-pay-wrap {
+  position: relative;
 }
 
-.sc-static {
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #6dcc5b;
-  color: #fff;
+/* While loading, the skeleton is in flow (it holds the height) and the form
+   is laid out but hidden on top of it, so Stripe can load the field. */
+.ck-pay-wrap.is-loading .uc-form {
+  position: absolute;
+  inset: 0 0 auto;
+  visibility: hidden;
 }
 
-.sc-static svg {
-  width: 50%;
-  height: 50%;
+/* ---- the success card arrives ----
+   A short rise instead of an instant swap. TRANSFORM-ONLY and starting
+   fully visible, per the app's rule: a tab that never draws frames shows
+   the finished card 12px low, never a missing one. */
+@keyframes ck-ok-in {
+  from {
+    transform: translateY(12px) scale(0.985);
+  }
+}
+
+.ck-ok-card {
+  animation: ck-ok-in 420ms cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-ok-card {
+    animation: none;
+  }
+}
+
+/* The skeleton is cut to the real form's height (the form measures 291-300px
+   with the card field drawn; 265 plus the skeleton's own spacing lands at
+   ~292), so the swap from placeholder to form is the same size. */
+.uc-pay .uc-skeleton {
+  box-sizing: border-box;
+  min-height: 265px;
+}
+
+/* Stripe reports "ready" before its field has grown to full height (it
+   showed 180px, then grew). The form area keeps the skeleton's height as a
+   floor, so the reveal never shrinks the card and then grows it back. */
+.ck-pay-wrap {
+  min-height: 292px;
+}
+
+/* ---- Card / ABA KHQR switch and the ABA panel ---- */
+.ck-methods {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1rem;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f1edfc;
+}
+
+.ck-methods button {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #726c88;
+  cursor: pointer;
+}
+
+.ck-methods button.on {
+  background: #fff;
+  color: #1c1730;
+  box-shadow: 0 1px 3px rgba(28, 23, 48, 0.1);
+}
+
+.ck-payway {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ck-payway-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #726c88;
 }

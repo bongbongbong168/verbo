@@ -45,6 +45,10 @@
   background: linear-gradient(135deg, #d9a9cf, #ac6f9f);
 }
 
+.ac[data-topic="novel"] {
+  background: linear-gradient(135deg, #c3b4e6, #7c6bb8);
+}
+
 .ac[data-topic="travel"] {
   background: linear-gradient(135deg, #92c9c0, #5c9c92);
 }

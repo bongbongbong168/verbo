@@ -20,12 +20,14 @@ class Article extends Model
         'hsk_level',
         'difficulty',
         'category',
+        'episode',
         'summary',
         'is_premium',
     ];
 
     protected $casts = [
         'is_premium' => 'boolean',
+        'episode' => 'integer',
     ];
 
     protected $appends = [

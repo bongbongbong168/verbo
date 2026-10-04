@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\FlashcardController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\LearningController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaywayController;
 use App\Http\Controllers\Api\PodcastController;
 use App\Http\Controllers\Api\PodcastTranscriptController;
 use App\Http\Controllers\Api\ProfileController;
@@ -97,6 +98,12 @@ Route::get('/podcasts/{podcast}/audio', [PodcastController::class, 'audio'])
 Route::post('/stripe/webhook', [PaymentController::class, 'webhook'])
     ->withoutMiddleware('throttle:api');
 
+/* ABA PayWay's server ping. Public (ABA holds no token) and safe to be:
+   the controller never believes the ping, it only asks ABA's
+   check-transaction API, so a forged call achieves nothing. */
+Route::post('/payway/callback', [PaywayController::class, 'callback'])
+    ->withoutMiddleware('throttle:api');
+
 // Whether payments are live, plus the publishable key. Public because the
 // checkout page needs it before it knows who is looking.
 Route::get('/payments/config', [PaymentController::class, 'config']);
@@ -141,6 +148,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy']);
     // Profile page + the header popover.
     Route::get('/user/overview', [ProfileController::class, 'overview']);
+    // Hide / unhide a finished tutor on the Profile's "My Tutors" list.
+    Route::post('/user/tutors/{tutor}/hide', [ProfileController::class, 'hideTutor']);
+    Route::delete('/user/tutors/{tutor}/hide', [ProfileController::class, 'unhideTutor']);
 
     Route::get('/flashcards', [FlashcardController::class, 'index']);
     Route::get('/usage/allowances', [\App\Http\Controllers\Api\UsageAllowanceController::class, 'index']);
@@ -242,6 +252,8 @@ Route::middleware('auth:sanctum')->group(function () {
        what actually fulfils. Nothing here is ever told an amount by the
        client — see PaymentService::priceOf. */
     Route::post('/payments/intent', [PaymentController::class, 'intent']);
+    Route::post('/payway/checkout', [PaywayController::class, 'checkout']);
+    Route::get('/payway/status/{tranId}', [PaywayController::class, 'status']);
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/subscription/status', [SubscriptionController::class, 'status']);
     Route::post('/subscription/checkout', [SubscriptionController::class, 'checkout']);

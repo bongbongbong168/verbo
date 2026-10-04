@@ -1,0 +1,47 @@
+/* A sender with no picture: their initial on a soft tint, with what happened
+   as a small badge on the corner. Tones match the comment avatars, so one
+   person looks the same in both places. Prefix nf-. */
+.nf-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--nf-size, 34px);
+  height: var(--nf-size, 34px);
+  border-radius: 50%;
+  color: #2b2643;
+}
+
+.nf-initial {
+  font-size: calc(var(--nf-size, 34px) * 0.42);
+  font-weight: 700;
+  line-height: 1;
+  /* Hellix sits low: lift the cap band onto the circle's centre. */
+  margin-top: -0.086em;
+  margin-bottom: 0.086em;
+}
+
+.nf-tone-0 { background: #e4dcfb; }
+.nf-tone-1 { background: #ffe1d2; }
+.nf-tone-2 { background: #d9f0e3; }
+.nf-tone-3 { background: #d8e8fb; }
+.nf-tone-4 { background: #fbefc9; }
+
+.nf-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #a89ce3;
+  color: #fff;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.nf-badge svg {
+  width: 10px;
+  height: 10px;
+}

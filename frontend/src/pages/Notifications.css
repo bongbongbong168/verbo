@@ -144,14 +144,14 @@
   background: var(--nt-bg);
 }
 
-/* Unread carries a tint AND a dot — two signals, so the state survives being
-   glanced at rather than read. */
+/* Unread is the dot and a bolder title - no tinted fill, at the user's
+   request: a lavender block behind every new row read as heavy. */
 .nt-row.unread {
-  background: #f9f8fe;
+  background: #fff;
 }
 
 .nt-row.unread:hover {
-  background: var(--nt-well);
+  background: var(--nt-bg);
 }
 
 .nt-icon {

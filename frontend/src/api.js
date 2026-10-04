@@ -66,7 +66,7 @@ async function requestMultipart(path, formData, token) {
   return parseResponse(res)
 }
 
-function articleFormData({ title, type, category, hsk_level, summary, body, body_en, image, is_premium, tags }) {
+function articleFormData({ title, type, category, episode, hsk_level, summary, body, body_en, image, is_premium, tags }) {
   const formData = new FormData()
   formData.append('title', title)
   formData.append('type', type)
@@ -80,6 +80,8 @@ function articleFormData({ title, type, category, hsk_level, summary, body, body
      sends transcript_en. */
   if (category !== undefined) formData.append('category', category ?? '')
   if (hsk_level !== undefined) formData.append('hsk_level', hsk_level ?? '')
+  // Order within a serial (the Novel shelf); empty clears it.
+  if (episode !== undefined) formData.append('episode', episode ?? '')
   // Sent even when empty, so a description can be cleared.
   if (summary !== undefined) formData.append('summary', summary ?? '')
   if (is_premium !== undefined) formData.append('is_premium', is_premium ? '1' : '0')
@@ -169,6 +171,11 @@ export const api = {
   getUserStats: (token) => request('/user/stats', { token }),
   // Profile page + the header popover: name, derived level, counts.
   getUserOverview: (token) => request('/user/overview', { token }),
+  // Both return { tutors, hidden } - the fresh My Tutors lists.
+  hideTutor: (token, tutorUserId) =>
+    request(`/user/tutors/${tutorUserId}/hide`, { method: 'POST', token }),
+  unhideTutor: (token, tutorUserId) =>
+    request(`/user/tutors/${tutorUserId}/hide`, { method: 'DELETE', token }),
   // Profile picture. Multipart, so it goes through requestMultipart.
   uploadAvatar: (token, file) => {
     const formData = new FormData()
@@ -638,6 +645,11 @@ export const api = {
      sent from here. Fulfilment happens on Stripe's webhook, not on the
      browser's return, so nothing here confirms anything. */
   paymentConfig: () => request('/payments/config'),
+  // ABA PayWay: signed fields for ABA's hosted checkout, and the status
+  // check run after the student comes back (the server asks ABA itself).
+  paywayCheckout: (token, kind, id) =>
+    request('/payway/checkout', { method: 'POST', body: { kind, id }, token }),
+  paywayStatus: (token, tranId) => request(`/payway/status/${encodeURIComponent(tranId)}`, { token }),
   paymentIntent: (token, kind, id) =>
     request('/payments/intent', { method: 'POST', token, body: { kind, id } }),
   getSubscriptionStatus: (token) => request('/subscription/status', { token }),

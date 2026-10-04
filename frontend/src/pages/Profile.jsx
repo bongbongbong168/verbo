@@ -11,6 +11,8 @@ import PremiumBadge from '../components/PremiumBadge'
    the clean original with a real alpha channel. */
 import heroArt from '../assets/read/graduate-panda.webp'
 import './Profile.css'
+import MyTutorRow, { HiddenTutorRow } from '../components/MyTutorRow'
+import { toast } from '../toast'
 
 const dateFmt = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -274,6 +276,33 @@ export default function Profile() {
   const level = overview?.level
   const books = overview?.books || []
   const tutors = overview?.tutors || []
+  const hiddenTutors = overview?.hidden_tutors || []
+  const [showHidden, setShowHidden] = useState(false)
+
+  const applyTutors = (lists) =>
+    setOverview((o) => ({ ...o, tutors: lists.tutors, hidden_tutors: lists.hidden }))
+
+  async function hideTutor(t) {
+    try {
+      applyTutors(await api.hideTutor(token, t.id))
+      toast.show({
+        type: 'success',
+        title: `${t.name} hidden from your tutors`,
+        actionLabel: 'Undo',
+        onAction: () => unhideTutor(t),
+      })
+    } catch (err) {
+      toast.show({ type: 'error', title: "Couldn't hide", message: err.message })
+    }
+  }
+
+  async function unhideTutor(t) {
+    try {
+      applyTutors(await api.unhideTutor(token, t.id))
+    } catch (err) {
+      toast.show({ type: 'error', title: "Couldn't unhide", message: err.message })
+    }
+  }
   const courses = overview?.courses || []
 
   /* "4h 20m" reads better than "4.33 hours"; below an hour drop to minutes,
@@ -420,29 +449,36 @@ export default function Profile() {
 
             {tutors.length === 0 ? (
               <p className="pf-empty">
-                Tutors you book appear here. Cancelled trials do not count.
+                {hiddenTutors.length
+                  ? 'Every tutor here is hidden. Book a lesson and they come back.'
+                  : 'Book a lesson and your tutors show up here.'}
               </p>
             ) : (
               <ul className="pf-list">
                 {tutors.map((t) => (
-                  <li key={t.id}>
-                    <Link className="pf-row" to={t.profile_id ? `/find-tutor/${t.profile_id}` : '#'}>
-                      {t.photo_url ? (
-                        <img className="pf-face" src={t.photo_url} alt="" />
-                      ) : (
-                        <span className="pf-face pf-face-initial">
-                          {(t.name || '?').charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                      <span className="pf-row-body">
-                        <span className="pf-row-name">{t.name}</span>
-                        {t.subjects && <span className="pf-row-note">{t.subjects}</span>}
-                      </span>
-                      <ChevronIcon />
-                    </Link>
-                  </li>
+                  <MyTutorRow key={t.id} t={t} token={token} onHide={hideTutor} />
                 ))}
               </ul>
+            )}
+
+            {hiddenTutors.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  className="pf-hidden-toggle"
+                  aria-expanded={showHidden}
+                  onClick={() => setShowHidden((v) => !v)}
+                >
+                  {showHidden ? 'Hide hidden tutors' : `Show hidden (${hiddenTutors.length})`}
+                </button>
+                {showHidden && (
+                  <ul className="pf-list">
+                    {hiddenTutors.map((t) => (
+                      <HiddenTutorRow key={t.id} t={t} onUnhide={unhideTutor} />
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </section>
 
