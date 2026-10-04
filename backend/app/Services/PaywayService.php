@@ -108,6 +108,8 @@ class PaywayService
             'lastname' => $last,
             'email' => (string) $user->email,
             'type' => 'purchase',
+            // KHQR: ABA returns the QR as JSON for us to show inline.
+            'payment_option' => 'abapay_khqr',
             // ABA's server-to-server "paid" ping, base64 as the docs require.
             'return_url' => base64_encode(url('/api/payway/callback')),
             'cancel_url' => $frontend.$returnPath,
@@ -121,7 +123,31 @@ class PaywayService
         }
         $fields['hash'] = self::hash($hashSource);
 
-        return ['action' => self::purchaseUrl(), 'fields' => $fields, 'tran_id' => $tranId];
+        /* Asked from the SERVER, not by sending the browser to ABA: for KHQR,
+           ABA answers with JSON (the QR as text and as a PNG, plus the app
+           deeplink), which the checkout card shows inline. Sent to the
+           browser, that same JSON just rendered as raw text. */
+        try {
+            $response = Http::asMultipart()->acceptJson()->timeout(20)->post(self::purchaseUrl(), $fields);
+        } catch (\Throwable $e) {
+            Log::warning('PayWay purchase unreachable', ['tran_id' => $tranId, 'error' => $e->getMessage()]);
+            abort(503, 'ABA PayWay could not be reached. Please try again.');
+        }
+
+        $json = $response->json() ?? [];
+        if ((string) data_get($json, 'status.code') !== '00' || ! data_get($json, 'qrImage')) {
+            Log::warning('PayWay purchase refused', ['tran_id' => $tranId, 'body' => mb_substr($response->body(), 0, 500)]);
+            abort(502, 'ABA PayWay could not start this payment. Please try again.');
+        }
+
+        return [
+            'tran_id' => $tranId,
+            'qr_image' => data_get($json, 'qrImage'),     // data:image/png;base64,...
+            'qr_string' => data_get($json, 'qrString'),
+            'deeplink' => data_get($json, 'abapay_deeplink'),
+            'amount' => $fields['amount'],
+            'currency' => $fields['currency'],
+        ];
     }
 
     /**

@@ -27,6 +27,13 @@ class PaywayTest extends TestCase
             'services.payway.api_key' => 'test-key',
             'services.payway.sandbox' => true,
         ]);
+        // ABA's KHQR purchase answer, as the sandbox really returns it.
+        Http::fake(['*payments/purchase' => Http::response([
+            'qrString' => '000201...',
+            'qrImage' => 'data:image/png;base64,iVBORw0KGgo=',
+            'abapay_deeplink' => 'abamobilebank://ababank.com?type=payway',
+            'status' => ['code' => '00', 'message' => 'Success!'],
+        ])]);
 
         $tutor = User::factory()->create();
         $profile = new TutorProfile(['bio' => 'x']);
@@ -56,23 +63,30 @@ class PaywayTest extends TestCase
             ->json('tran_id');
     }
 
-    public function test_checkout_signs_the_fields_in_abas_order_with_the_servers_price(): void
+    public function test_checkout_returns_the_khqr_and_signs_abas_fields_with_the_servers_price(): void
     {
         $res = $this->actingAs($this->student)
             ->postJson('/api/payway/checkout', ['kind' => 'lesson', 'id' => $this->booking->id, 'amount' => 0.01])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('amount', '12.00')
+            ->assertJsonPath('qr_image', 'data:image/png;base64,iVBORw0KGgo=');
+        $this->assertArrayNotHasKey('hash', $res->json()); // signing stays server-side
 
-        $f = $res->json('fields');
-        $this->assertSame('12.00', $f['amount']); // the lesson's price, not the request's
-        $this->assertStringContainsString('checkout-sandbox.payway.com.kh', $res->json('action'));
-        $this->assertLessThanOrEqual(20, strlen($f['tran_id']));
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase')) {
+                return false;
+            }
+            $f = collect($request->data())->mapWithKeys(fn ($p) => [$p['name'] => $p['contents']])->all();
+            $source = '';
+            foreach (PaywayService::PURCHASE_HASH_ORDER as $k) {
+                $source .= $f[$k] ?? '';
+            }
 
-        $source = '';
-        foreach (PaywayService::PURCHASE_HASH_ORDER as $k) {
-            $source .= $f[$k] ?? '';
-        }
-        $this->assertSame(base64_encode(hash_hmac('sha512', $source, 'test-key', true)), $f['hash']);
-        $this->assertArrayNotHasKey('api_key', $f);
+            return $f['amount'] === '12.00'
+                && $f['payment_option'] === 'abapay_khqr'
+                && strlen($f['tran_id']) <= 20
+                && $f['hash'] === base64_encode(hash_hmac('sha512', $source, 'test-key', true));
+        });
     }
 
     public function test_an_approved_payment_settles_the_booking_once_aba_confirms_it(): void

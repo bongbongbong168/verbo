@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
@@ -178,6 +178,12 @@ export default function Checkout() {
   const [clientSecret, setClientSecret] = useState(null)
 
   const isCourse = kind === 'course'
+
+  // Shared by card and KHQR: the success screen starts at the top.
+  const paidNow = useCallback(() => {
+    window.scrollTo(0, 0)
+    setPaid(true)
+  }, [])
 
   /* loadStripe fires a network request, so it is memoised on the key rather
      than called on every render. Null until the server says payments are live,
@@ -511,18 +517,24 @@ export default function Checkout() {
 
           {/* Card or ABA. Only shown when both are available. */}
           {paywayOn && payState !== 'payway-only' && (
-            <div className="ck-methods" role="tablist" aria-label="Payment method">
+            <div className="ck-paytabs" role="tablist" aria-label="Payment method">
               <button type="button" role="tab" aria-selected={method === 'card'} className={method === 'card' ? 'on' : ''} onClick={() => setMethod('card')}>
-                Card
+                <CardIcon /> Card
               </button>
               <button type="button" role="tab" aria-selected={method === 'payway'} className={method === 'payway' ? 'on' : ''} onClick={() => setMethod('payway')}>
-                ABA KHQR
+                <QrIcon /> ABA KHQR
               </button>
             </div>
           )}
 
           {method === 'payway' && paywayOn && (
-            <PaywayPanel token={token} kind={isCourse ? 'course' : 'lesson'} id={item.id} amountLabel={amount} />
+            <PaywayPanel
+              token={token}
+              kind={isCourse ? 'course' : 'lesson'}
+              id={item.id}
+              amountLabel={amount}
+              onPaid={paidNow}
+            />
           )}
 
           {method === 'card' && payState === 'loading' && <PaySkeleton />}
@@ -578,50 +590,113 @@ export default function Checkout() {
 }
 
 /**
- * ABA PayWay: one button that sends the student to ABA's own checkout page
- * (scan the KHQR with any Cambodian bank app, or pay by card there). The
- * signed fields come from our server; the browser just posts them on, the
- * same way ABA's own plugin does. ABA sends the student back here with
- * ?payway=TRAN, where the page checks the payment with the server.
+ * ABA KHQR, inline. The server asks ABA for the QR and hands back the image;
+ * the student scans it with ABA or any Cambodian bank app (or taps "Open in
+ * ABA" on a phone). The card then checks with the server every 3 seconds -
+ * the server asks ABA, never trusting the browser - and moves on by itself
+ * once the payment is approved.
  */
-function PaywayPanel({ token, kind, id, amountLabel }) {
-  const [busy, setBusy] = useState(false)
+function PaywayPanel({ token, kind, id, amountLabel, onPaid }) {
+  const [qr, setQr] = useState(null)
+  const [state, setState] = useState('loading') // loading | ready | expired | error
   const [error, setError] = useState(null)
+  const [attempt, setAttempt] = useState(0)
 
-  async function go() {
-    setBusy(true)
+  // Ask for a QR when the tab opens (and again on "New QR").
+  useEffect(() => {
+    let live = true
+    setState('loading')
     setError(null)
-    try {
-      const { action, fields } = await api.paywayCheckout(token, kind, id)
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = action
-      form.enctype = 'multipart/form-data'
-      for (const [name, value] of Object.entries(fields)) {
-        const input = document.createElement('input')
-        input.type = 'hidden'
-        input.name = name
-        input.value = value ?? ''
-        form.appendChild(input)
-      }
-      document.body.appendChild(form)
-      form.submit()
-    } catch (err) {
-      setError(err.message)
-      setBusy(false)
+    api
+      .paywayCheckout(token, kind, id)
+      .then((r) => {
+        if (!live) return
+        setQr(r)
+        setState('ready')
+      })
+      .catch((err) => {
+        if (!live) return
+        setError(err.message)
+        setState('error')
+      })
+    return () => {
+      live = false
     }
-  }
+  }, [token, kind, id, attempt])
+
+  // While the QR is up, check every 3s. Stops after ~10 minutes and offers a
+  // fresh QR, rather than polling a code nobody is going to scan.
+  useEffect(() => {
+    if (state !== 'ready' || !qr?.tran_id) return undefined
+    let live = true
+    let tries = 0
+    let timer
+    const tick = () => {
+      api
+        .paywayStatus(token, qr.tran_id)
+        .then((r) => {
+          if (!live) return
+          if (r.status === 'paid') onPaid()
+          else if (r.status === 'failed') {
+            setError('ABA says that payment was declined or cancelled. No charge was made.')
+            setState('expired')
+          } else if (++tries < 200) timer = setTimeout(tick, 3000)
+          else setState('expired')
+        })
+        .catch(() => live && (timer = setTimeout(tick, 5000)))
+    }
+    timer = setTimeout(tick, 3000)
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [state, qr, token, onPaid])
+
+  const isPhone = typeof navigator !== 'undefined' && /Android|iPhone|iPad/i.test(navigator.userAgent)
 
   return (
-    <div className="ck-payway">
-      <p className="ck-payway-text">
-        Pay with <strong>ABA KHQR</strong>: scan the code with ABA or any Cambodian bank app. You will come
-        back here once it is paid.
-      </p>
+    <div className="ck-khqr">
+      <div className="ck-khqr-card">
+        <div className="ck-khqr-head">
+          <span className="ck-khqr-brand">KHQR</span>
+          <span className="ck-khqr-amount">{amountLabel}</span>
+        </div>
+
+        <div className="ck-khqr-code">
+          {state === 'ready' && qr?.qr_image ? (
+            <img src={qr.qr_image} alt="ABA KHQR code to scan and pay" />
+          ) : state === 'loading' ? (
+            <span className="ck-khqr-wait" role="status">Making your QR…</span>
+          ) : (
+            <span className="ck-khqr-wait">QR expired</span>
+          )}
+        </div>
+      </div>
+
+      {state === 'ready' && (
+        <>
+          <p className="ck-khqr-help">
+            Scan with <strong>ABA Mobile</strong> or any bank app that supports KHQR.
+          </p>
+          <p className="ck-khqr-status" role="status">
+            <span className="ck-khqr-dot" aria-hidden="true" />
+            Waiting for your payment… this page updates by itself.
+          </p>
+          {isPhone && qr?.deeplink && (
+            <a className="uc-cta ck-khqr-open" href={qr.deeplink}>
+              Open in ABA Mobile
+            </a>
+          )}
+        </>
+      )}
+
       {error && <p className="uc-alert" role="alert">{error}</p>}
-      <button type="button" className="uc-cta" onClick={go} disabled={busy}>
-        {busy ? 'Opening ABA…' : `Pay ${amountLabel} with ABA`}
-      </button>
+
+      {(state === 'expired' || state === 'error') && (
+        <button type="button" className="uc-cta" onClick={() => setAttempt((n) => n + 1)}>
+          Get a new QR
+        </button>
+      )}
     </div>
   )
 }
@@ -652,6 +727,12 @@ function Svg({ children }) {
 }
 function ArrowLeftIcon() {
   return <Svg><path d="M19 12H5M11 6l-6 6 6 6" /></Svg>
+}
+function CardIcon() {
+  return <Svg><rect x="3" y="5.5" width="18" height="13" rx="2.5" /><path d="M3 10h18M7 15h3" /></Svg>
+}
+function QrIcon() {
+  return <Svg><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2" /></Svg>
 }
 function CalendarIcon() {
   return <Svg><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" /></Svg>
