@@ -75,8 +75,18 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_admin' => 'boolean',
-        'is_pro' => 'boolean',
+        'pro_until' => 'datetime',
     ];
+
+    /**
+     * Pro is the stored flag (kept in step with Stripe) OR a month paid by
+     * ABA KHQR that has not run out. Every Pro check in the app reads this,
+     * so a KHQR month expires on its own, with no job to switch it off.
+     */
+    public function getIsProAttribute($value): bool
+    {
+        return (bool) $value || ($this->pro_until && $this->pro_until->isFuture());
+    }
 
     public function flashcards()
     {

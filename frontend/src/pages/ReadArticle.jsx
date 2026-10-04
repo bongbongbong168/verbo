@@ -718,7 +718,10 @@ export default function ReadArticle() {
           cancelled edit leaves no stale draft behind. */}
       {editing && user?.is_admin && (
         <ArticleEditDrawer
-          key={article.updated_at || article.id}
+          /* Keyed on the article, NOT on updated_at: saving bumps updated_at,
+             and a key change rebuilt the whole editor mid-save, wiping the
+             "Saved" state and jumping back to the first tab. */
+          key={article.id}
           article={article}
           onSave={handleUpdate}
           onClose={() => setEditing(false)}

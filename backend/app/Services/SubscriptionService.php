@@ -52,8 +52,11 @@ class SubscriptionService
     public function status(User $user): array
     {
         $s = $user->subscription;
-        return ['plan' => $user->is_admin ? 'admin' : (($s && $s->grantsAccess()) ? 'pro' : 'free'),
-            'is_pro' => (bool) ($user->is_admin || ($s && $s->grantsAccess())),
+        // A month of Pro paid by ABA KHQR counts as Pro too, until it runs out.
+        $khqr = $user->pro_until && $user->pro_until->isFuture();
+        return ['plan' => $user->is_admin ? 'admin' : ((($s && $s->grantsAccess()) || $khqr) ? 'pro' : 'free'),
+            'is_pro' => (bool) ($user->is_admin || ($s && $s->grantsAccess()) || $khqr),
+            'pro_until' => $khqr ? $user->pro_until->toIso8601String() : null,
             'status' => $s?->status, 'current_period_end' => $s?->current_period_end?->toIso8601String(),
             'current_period_start' => $s?->current_period_start?->toIso8601String(), 'cancel_at_period_end' => (bool) ($s?->cancel_at_period_end),
             'cancel_at' => $s?->cancel_at?->toIso8601String(), 'canceled_at' => $s?->canceled_at?->toIso8601String(),

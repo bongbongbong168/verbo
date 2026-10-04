@@ -144,4 +144,32 @@ class PaywayTest extends TestCase
             ->assertStatus(422);
         $this->getJson('/api/payments/config')->assertJsonPath('payway_enabled', false);
     }
+
+    public function test_khqr_buys_one_month_of_pro_and_paying_early_adds_on(): void
+    {
+        config(['services.stripe.pro_monthly_amount' => 500]);
+        $this->assertFalse($this->student->is_pro);
+
+        $tran = $this->actingAs($this->student)->postJson('/api/payway/checkout', ['kind' => 'pro'])
+            ->assertOk()->assertJsonPath('amount', '5.00')->json('tran_id');
+
+        Http::fake(['*check-transaction-2' => Http::response([
+            'data' => ['payment_status_code' => 0, 'payment_amount' => 5],
+            'status' => ['code' => '00'],
+        ])]);
+        $this->actingAs($this->student)->getJson("/api/payway/status/{$tran}")->assertJsonPath('status', 'paid');
+
+        $user = $this->student->fresh();
+        $this->assertTrue($user->is_pro);
+        $this->assertTrue($user->pro_until->between(now()->addMonth()->subMinute(), now()->addMonth()->addMinute()));
+
+        // Paying again while still Pro adds a month on top, not from today.
+        $tran2 = $this->actingAs($user)->postJson('/api/payway/checkout', ['kind' => 'pro'])->json('tran_id');
+        $this->actingAs($user)->getJson("/api/payway/status/{$tran2}");
+        $this->assertTrue($user->fresh()->pro_until->greaterThan(now()->addMonth()->addWeeks(3)));
+
+        // And it runs out on its own.
+        $user->forceFill(['pro_until' => now()->subDay()])->save();
+        $this->assertFalse($user->fresh()->is_pro);
+    }
 }

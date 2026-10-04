@@ -386,6 +386,42 @@ class TutorController extends Controller
     }
 
     /**
+     * Admin: make an EXISTING account a tutor, approved straight away.
+     *
+     * Only existing accounts - this never creates a login, so nobody ends up
+     * with an account and a password they did not set. A pending or
+     * needs-info application from them is approved; an approved tutor is
+     * returned as is. The admin then fills the profile in through the usual
+     * edit drawer, which admins can already open on any profile.
+     */
+    public function addByAdmin(Request $request)
+    {
+        abort_unless($request->user()->is_admin, 403);
+
+        $data = $request->validate(['email' => ['required', 'email']]);
+        $user = \App\Models\User::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($data['email']))])->first();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'No Verbo account uses that email. Ask them to sign up first, then add them.',
+            ], 422);
+        }
+
+        $profile = $user->tutorProfile()->firstOrCreate([], []);
+        if ($profile->status !== TutorProfile::APPROVED) {
+            $profile->forceFill([
+                'status' => TutorProfile::APPROVED,
+                'submitted_at' => $profile->submitted_at ?? now(),
+                'reviewed_at' => now(),
+                'reviewed_by' => $request->user()->id,
+                'review_note' => 'Added by an admin.',
+            ])->save();
+        }
+
+        return response()->json(['id' => $profile->id, 'name' => $user->name], 201);
+    }
+
+    /**
      * Set the photo on any tutor profile. store() above is an upsert keyed on
      * the authenticated user, so a tutor can only ever change their own — which
      * leaves seeded profiles, whose accounts have no usable password, with no

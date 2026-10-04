@@ -42,6 +42,22 @@ class PaywayService
     /** payment_status_code values from check-transaction. */
     public const APPROVED = 0;
 
+    /**
+     * The price of one month of Pro, in cents: the same monthly price the
+     * Stripe plan charges, so KHQR and card can never disagree. Read from
+     * STRIPE_PRO_MONTHLY_AMOUNT, else from the Stripe price itself.
+     */
+    public static function proMonthCents(): ?int
+    {
+        $configured = config('services.stripe.pro_monthly_amount');
+        if (filled($configured) && (int) $configured > 0) {
+            return (int) $configured;
+        }
+        $price = app(SubscriptionService::class)->price();
+
+        return $price['amount'] ?? null;
+    }
+
     public static function configured(): bool
     {
         return filled(config('services.payway.merchant_id')) && filled(config('services.payway.api_key'));
@@ -71,7 +87,10 @@ class PaywayService
      */
     public static function startCheckout(Model $payable, $user, string $returnPath): array
     {
-        $amount = PaymentService::priceOf($payable);
+        // A User as the payable means "one month of Verbo Pro".
+        $amount = $payable instanceof \App\Models\User
+            ? self::proMonthCents()
+            : PaymentService::priceOf($payable);
         abort_if($amount === null, 422, 'There is nothing to pay for here.');
 
         // <= 20 chars, letters and digits only, unique.
@@ -90,9 +109,11 @@ class PaywayService
         $name = trim((string) $user->name);
         $first = Str::before($name, ' ') ?: $name;
         $last = Str::contains($name, ' ') ? Str::after($name, ' ') : '';
-        $title = $payable instanceof \App\Models\Booking
-            ? (optional($payable->lesson)->name ?: 'Lesson')
-            : (optional($payable->course)->title ?: 'Course');
+        $title = match (true) {
+            $payable instanceof \App\Models\User => 'Verbo Pro - 1 month',
+            $payable instanceof \App\Models\Booking => optional($payable->lesson)->name ?: 'Lesson',
+            default => optional($payable->course)->title ?: 'Course',
+        };
 
         $fields = [
             'req_time' => now('UTC')->format('YmdHis'),
@@ -216,7 +237,15 @@ class PaywayService
                 'paid_at' => now(),
             ]);
 
-            \App\Http\Controllers\Api\PaymentController::settlePayable($tx->payable);
+            $payable = $tx->payable;
+            if ($payable instanceof \App\Models\User) {
+                // One month of Pro, added to any time still left - paying
+                // early never throws away days already bought.
+                $from = $payable->pro_until && $payable->pro_until->isFuture() ? $payable->pro_until : now();
+                $payable->forceFill(['pro_until' => $from->copy()->addMonth()])->save();
+            } else {
+                \App\Http\Controllers\Api\PaymentController::settlePayable($payable);
+            }
         } elseif (in_array($code, [3, 7], true)) { // declined, cancelled
             $tx->update(['status' => PaywayTransaction::STATUS_FAILED]);
         }

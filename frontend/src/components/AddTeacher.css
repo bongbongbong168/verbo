@@ -1,0 +1,134 @@
+/* Admin "Add teacher" button and its small form. Prefix at-. */
+.at {
+  position: relative;
+  flex: none;
+}
+
+/* The app's main button: lavender fill, white label. Fixed height, so the
+   Hellix 600 cap-band lift is a bottom pad of 2 x 0.076em, and the icon is
+   moved back down by the same 0.076em. */
+.at-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 42px;
+  padding: 0 1rem 0.152em;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 12px;
+  background: #a89ce3;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.at-btn:hover {
+  background: #9486d6;
+}
+
+.at-btn svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 0.076em;
+  margin-bottom: -0.076em;
+}
+
+.at-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* Opens rightwards: the button sits at the header's left edge, so a
+     right-anchored box ran under the sidebar. */
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 300px;
+  padding: 1rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(28, 23, 48, 0.16);
+  animation: at-in 200ms cubic-bezier(0.22, 0.8, 0.3, 1) backwards;
+}
+
+.at-title {
+  margin: 0;
+  font-weight: 700;
+  color: #1c1730;
+}
+
+.at-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #726c88;
+}
+
+.at-input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e7e3f6;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.at-input:focus {
+  outline: none;
+  border-color: #a89ce3;
+  box-shadow: 0 0 0 3px #f1edfc;
+}
+
+.at-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b3261e;
+}
+
+.at-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.at-cancel,
+.at-add {
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.at-cancel {
+  background: none;
+  color: #726c88;
+}
+
+.at-add {
+  background: #a89ce3;
+  color: #fff;
+}
+
+.at-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Transform-only, starts fully visible: the app's entrance rule. */
+@keyframes at-in {
+  from {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at-pop {
+    animation: none;
+  }
+}

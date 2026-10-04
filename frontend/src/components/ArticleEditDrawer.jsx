@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { readCache } from '../dataCache'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
@@ -181,6 +181,9 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
     return () => URL.revokeObjectURL(url)
   }, [image])
 
+  const savedTimer = useRef(null)
+  useEffect(() => () => clearTimeout(savedTimer.current), [])
+
   async function submit(e) {
     e.preventDefault()
     setError(null)
@@ -204,7 +207,12 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
         tags,
       })
       // The caller closes on create; on edit it stays open, so say so.
-      if (editing) setFlash('Saved')
+      if (editing) {
+        setFlash('Changes saved')
+        // The button reads 'Saved ✓' for a moment, then back to normal.
+        clearTimeout(savedTimer.current)
+        savedTimer.current = setTimeout(() => setFlash(null), 2500)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -233,7 +241,7 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
               <input value={title} onChange={(e) => setTitle(e.target.value)} required />
             </label>
 
-            <div className="ed-row">
+            <div className="ed-row ed-row-grid">
               <label className="ed-field">
                 <span>Format</span>
                 <select value={type} onChange={(e) => setType(e.target.value)}>
@@ -455,8 +463,13 @@ export default function ArticleEditDrawer({ article, onSave, onClose }) {
         )}
 
         <div className="ed-actions">
+          {flash === 'Changes saved' && (
+            <span className="ed-save-status" role="status">
+              <span aria-hidden="true">✓</span> Changes saved
+            </span>
+          )}
           <button type="submit" className="ed-btn-primary" disabled={busy}>
-            {busy ? 'Saving…' : editing ? 'Save changes' : 'Publish'}
+            {busy ? (editing ? 'Saving…' : 'Publishing…') : flash === 'Changes saved' ? 'Saved ✓' : editing ? 'Save changes' : 'Publish'}
           </button>
         </div>
       </form>

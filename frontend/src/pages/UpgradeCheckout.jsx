@@ -8,6 +8,7 @@ import PremiumBadge from '../components/PremiumBadge'
 import ProCrown from '../components/ProCrown'
 import { CARD_APPEARANCE, MastercardMark, VisaMark } from '../components/CardBrands'
 import './UpgradeCheckout.css'
+import { KhqrPanel, PayTabs } from '../components/PayKhqr'
 
 /* Verbo Pro checkout at /upgrade/checkout (prefix `uc-`).
  *
@@ -129,6 +130,12 @@ export default function UpgradeCheckout() {
   // Chosen on the Upgrade page; yearly only when a yearly price exists.
   const [params] = useSearchParams()
   const yearly = params.get('interval') === 'year'
+  // ABA KHQR pays for ONE month at a time (it does not renew by itself), so
+  // it is offered on the monthly plan only.
+  const [paywayOn, setPaywayOn] = useState(false)
+  const [method, setMethod] = useState('card')
+  const [khqrPaid, setKhqrPaid] = useState(false)
+  const { setUser } = useAuth()
 
   const start = useCallback(async () => {
     setPhase('loading')
@@ -137,6 +144,14 @@ export default function UpgradeCheckout() {
       const [cfg, status] = await Promise.all([api.paymentConfig(), api.getSubscriptionStatus(token)])
       if (status?.is_pro) return setPhase('already')
       const chosen = yearly ? status?.annual_price : status?.price
+      const khqr = Boolean(cfg?.payway_enabled) && !yearly
+      setPaywayOn(khqr)
+      if ((!cfg?.enabled || !cfg.publishable_key || !chosen) && khqr && status?.price) {
+        // Card not available, KHQR is: offer KHQR alone.
+        setPrice(status.price)
+        setMethod('payway')
+        return setPhase('ready')
+      }
       if (!cfg?.enabled || !cfg.publishable_key || !chosen) return setPhase('unavailable')
       setPrice(chosen)
       const session = await api.createSubscriptionCheckout(token, 'elements', yearly ? 'year' : 'month')
@@ -226,7 +241,39 @@ export default function UpgradeCheckout() {
 
           {phase === 'loading' && <FormSkeleton />}
 
-          {phase === 'ready' && (
+          {phase === 'ready' && paywayOn && !khqrPaid && clientSecret && (
+            <PayTabs value={method} onChange={setMethod} />
+          )}
+
+          {khqrPaid && (
+            <div className="uc-state" role="status">
+              <h3>You’re on Verbo Pro</h3>
+              <p>Paid with ABA KHQR. Pro is yours for one month. Pay again any time to add another month.</p>
+              <Link to="/dashboard" className="uc-cta uc-cta-link">
+                Start learning
+              </Link>
+            </div>
+          )}
+
+          {phase === 'ready' && !khqrPaid && method === 'payway' && paywayOn && (
+            <KhqrPanel
+              token={token}
+              kind="pro"
+              amountLabel={monthly}
+              note="One month of Pro. KHQR does not renew by itself."
+              onPaid={async () => {
+                window.scrollTo(0, 0)
+                setKhqrPaid(true)
+                try {
+                  setUser(await api.me(token))
+                } catch {
+                  /* The status page will catch up on the next load. */
+                }
+              }}
+            />
+          )}
+
+          {phase === 'ready' && !khqrPaid && method === 'card' && clientSecret && (
             <CheckoutElementsProvider
               stripe={providerPromise}
               options={{ clientSecret, elementsOptions: { appearance: CARD_APPEARANCE } }}

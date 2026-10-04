@@ -70,3 +70,8 @@
 
 .tm-intro svg { width: 0.78rem; height: 0.78rem; }
 .tm-intro:hover, .tm-intro:focus-visible { background: #6a6191; }
+
+/* A photo that plays the intro on click shows it can be clicked. */
+.tm[data-playable="true"] {
+  cursor: pointer;
+}

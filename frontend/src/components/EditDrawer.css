@@ -1261,3 +1261,17 @@
 .ed-add.ed-editing .ed-group-title {
   margin-top: 0;
 }
+
+/* Four fields (Format, Topic, Episode, Level) in one flex row squeezed each
+   to a sliver and wrapped its hint one word per line. Two by two instead. */
+.ed-row.ed-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem 0.8rem;
+}
+
+.ed-row.ed-row-grid .ed-field,
+.ed-row.ed-row-grid .ed-narrow {
+  flex: none;
+  min-width: 0;
+}

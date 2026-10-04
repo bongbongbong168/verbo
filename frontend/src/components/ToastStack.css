@@ -13,14 +13,25 @@
 }
 
 .ts-stack {
-  position: absolute;
-  /* Clears the notch when the page paints under it (viewport-fit=cover:
-     landscape, or added to the home screen). 0 in ordinary portrait Safari. */
-  top: calc(16px + env(safe-area-inset-top));
-  right: 16px;
+  /* BOTTOM-RIGHT, just above the practice assistant's panda button. At the
+     top it sat over every page's bell and account buttons (reported: "the
+     slide bar kind of blocks the thing"), and since headers sit at different
+     heights - lower again under the confirm-email banner - no top offset
+     clears them all. Nothing a learner needs lives down here. */
+  position: fixed;
+  right: 24px;
+  bottom: calc(104px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  width: min(360px, calc(100% - 32px));
+  width: min(360px, calc(100vw - 32px));
+}
+
+/* Phone: above the bottom tab bar and the assistant button as well. */
+@media (max-width: 767px) {
+  .ts-stack {
+    right: 16px;
+    bottom: calc(150px + env(safe-area-inset-bottom));
+  }
 }
 
 .ts-toast {

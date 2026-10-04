@@ -76,6 +76,11 @@ export default function TutorMedia({
       data-tone={Number(tutor?.id) % 5}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      /* No hover preview (the profile page): the whole photo plays the
+         intro on click, as well as the Intro button. Before this the
+         profile had neither, so a tutor's video could not be reached. */
+      onClick={!previewOnHover && videoId && !playing ? handlePlay : undefined}
+      data-playable={!previewOnHover && videoId && !playing ? 'true' : undefined}
     >
       {playing && videoId ? (
         <iframe

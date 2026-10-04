@@ -645,6 +645,8 @@ export const api = {
      sent from here. Fulfilment happens on Stripe's webhook, not on the
      browser's return, so nothing here confirms anything. */
   paymentConfig: () => request('/payments/config'),
+  // Admin: make an existing account an approved tutor.
+  adminAddTutor: (token, email) => request('/tutors/admin-add', { method: 'POST', body: { email }, token }),
   // ABA PayWay: signed fields for ABA's hosted checkout, and the status
   // check run after the student comes back (the server asks ABA itself).
   paywayCheckout: (token, kind, id) =>

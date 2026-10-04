@@ -924,7 +924,7 @@ export default function TutorProfileDetail() {
         {/* ---- right rail ---- */}
         <aside className="td-side">
           <section className="td-card td-hire">
-            <TutorMedia tutor={tutor} className="td-video" previewOnHover={false} priority variant="profile" />
+            <TutorMedia tutor={tutor} className="td-video" previewOnHover={false} priority variant="profile" showIntro />
 
             {/* The cheapest lesson you can actually book, not the free-text
                 rate the tutor typed — those had drifted, and the old number

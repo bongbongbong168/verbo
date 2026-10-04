@@ -27,9 +27,14 @@ class PaywayController extends Controller
         abort_unless(PaywayService::configured(), 422, 'ABA PayWay is not set up yet.');
 
         $data = $request->validate([
-            'kind' => ['required', 'string', 'in:'.implode(',', array_keys(PaymentService::PAYABLES))],
-            'id' => ['required', 'integer'],
+            // `pro` = one month of Verbo Pro for the signed-in account.
+            'kind' => ['required', 'string', 'in:pro,'.implode(',', array_keys(PaymentService::PAYABLES))],
+            'id' => ['required_unless:kind,pro', 'nullable', 'integer'],
         ]);
+
+        if ($data['kind'] === 'pro') {
+            return PaywayService::startCheckout($request->user(), $request->user(), '/upgrade/checkout');
+        }
 
         $payable = PaymentController::resolvePayable($data['kind'], (int) $data['id'], $request);
 

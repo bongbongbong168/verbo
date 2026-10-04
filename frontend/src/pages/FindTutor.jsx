@@ -13,6 +13,7 @@ import PriceRange from "../components/PriceRange";
 import SaveHeartButton from "../components/SaveHeartButton";
 import TutorCover from "../components/TutorCover";
 import TutorMedia from "../components/TutorMedia";
+import AddTeacher from "../components/AddTeacher";
 import "./FindTutor.css";
 
 /* Rating is real (see reviews_avg_rating). Student count and years of
@@ -466,6 +467,7 @@ export default function FindTutor() {
           <p className="ft-subtitle">These are all the available tutors.</p>
         </div>
         <div className="ft-header-controls">
+          {user?.is_admin && <AddTeacher token={token} />}
           <div className="ft-search">
             <SearchIcon />
             <input

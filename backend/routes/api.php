@@ -214,6 +214,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tutors', [TutorController::class, 'index']);
     // Before /tutors/{tutorProfile}, or "recommended" binds as an id.
     Route::get('/tutors/recommended', [TutorController::class, 'recommended']);
+    // Admin: make an existing account an approved tutor. Before /tutors/{tutorProfile}.
+    Route::post('/tutors/admin-add', [TutorController::class, 'addByAdmin']);
     Route::post('/tutors/{tutorProfile}/save', [\App\Http\Controllers\Api\SavedLibraryController::class, 'toggleTutor']);
     Route::get('/tutor-profile', [TutorController::class, 'show']);
     Route::post('/tutor-profile', [TutorController::class, 'store']);
