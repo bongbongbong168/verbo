@@ -2932,3 +2932,37 @@ button.db-activity-range[aria-expanded='true'] {
   height: 100%;
   object-fit: contain;
 }
+
+/* ---------------------------------------------------------------------------
+   Keyboard focus. The page had no :focus-visible rule at all, so every link
+   card, pill and button here fell back to the UA ring — and the quote field
+   set `outline: none` with a transparent border, leaving it with no focus
+   indication whatsoever. One rule, in :where() so it adds no specificity and
+   cannot outrank a component's own state styling.
+
+   An outline, never a box-shadow: the cards already carry measured shadows
+   (and the pick-up row clips to a padded box sized for the hover shadow), and
+   an outline costs no layout. Static — no transition — for the same reason as
+   every other state on this page: a ring that only appears while frames
+   arrive is a ring that is missing in a tab that is not compositing.
+   Navy measures ~3.1:1 against the hero's #7d76a0 and far more on white, so
+   it clears the 3:1 non-text contrast floor on every ground it can land on.
+   --------------------------------------------------------------------------- */
+:where(.db) :where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid #2b2643;
+  outline-offset: 2px;
+}
+
+.db-quote-form input:focus-visible {
+  border-color: #2b2643;
+}
+
+/* Headings break on balanced lines rather than stranding one word on the
+   last. Only the headings that wrap freely — the card titles are clamped or
+   fade-masked to a fixed line count, and re-flowing those would move text
+   into or out of the fade. */
+.db-greeting,
+.db-section-title,
+.db-goals-title {
+  text-wrap: balance;
+}
